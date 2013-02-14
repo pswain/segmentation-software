@@ -1,0 +1,3 @@
+function selectTrapsForGroundTruth(cCellVisionGUI)
+
+cTrapSelectDisplay(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision)

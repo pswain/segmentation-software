@@ -1,0 +1,3 @@
+function editProcessTimelapse(cCellVisionGUI)
+
+cTrapDisplay(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision)
