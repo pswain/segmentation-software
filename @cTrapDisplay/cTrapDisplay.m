@@ -115,6 +115,8 @@ classdef cTrapDisplay<handle
             
             cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
+            
+            cDisplay.slider_cb();
         end
 
         % Other functions 

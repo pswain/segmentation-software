@@ -1,3 +1,3 @@
 function selectCellsPlot(cCellVisionGUI)
 
-cTrapDisplayPlot([],cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision)
+cTrapDisplayPlot(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision)

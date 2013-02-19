@@ -2,7 +2,8 @@
 
 %% Extracts data and plots averages of cell responses
 
-timeStep=2.5;
+% timeStep=2.5;
+timeStep=2;
 timepoints=0:timeStep/60:(length(cExperiment.cellInf(1).extractedMedian)-1)*timeStep/60;
 
 fl1=[];fl2=[];fl3=[];
@@ -60,7 +61,8 @@ fl3temp=smooth(fl3temp,2);
 
 bob(i,:)=fl1temp./fl3temp;
 end
-figure(10);imshow(bob,[]);colormap(jet);
+figure(10);imshow(bob,[1 7]);colormap(jet);
+
 %% trying to figure out the decline in the response to glucose limitation and whether that 
 % correlates with sensence or wether the 
 medianFl=median(bob(~isnan(bob(:))));
@@ -93,9 +95,9 @@ end
 spikeAllTimes=filteredTraces(:,spikeTiming(1:3))>spikeCutoff;
 spikeAllTimes=sum(spikeAllTimes,2)>2;
 spikeAllTimesAv=median(filteredTraces(spikeAllTimes,:));
-figure(111);plot(timepoints,spikeAllTimesAv);xlabel('Hours');pause(1);title('Only cells responding to all 3 limitations (n=87)')
+figure(111);plot(timepoints,spikeAllTimesAv+medianFl);xlabel('Hours');pause(1);title('Only cells responding to all 3 limitations (n=87)');axis([0 max(timepoints) 1 4]);
 spikeFirst=filteredTraces(:,spikeTiming(1))>spikeCutoff;
-figure(112);plot(timepoints,median(filteredTraces(spikeFirst,:)));xlabel('Hours')
+figure(112);plot(timepoints,median(filteredTraces(spikeFirst,:)));xlabel('Hours');axis([0 max(timepoints) 1 4]);
 
 
 %% clustering

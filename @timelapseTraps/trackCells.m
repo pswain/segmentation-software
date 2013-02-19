@@ -6,7 +6,7 @@ if nargin<2
     num_lines = 1;
     def = {'6'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
-    cellMovementThresh=answer{1};
+    cellMovementThresh=str2double(answer{1});
 end
 
 
@@ -26,6 +26,9 @@ for timepoint=1:length(cTimelapse.cTimepoint)
             trapMaxCell(trap)=length(trapInfo(trap).cell);
         else
              
+%             if timepoint ==55 &&trap==15
+%                 b=1;
+%             end
             trapInfo(trap).cellLabel=zeros(1,length(trapInfo(trap).cell));
             circen=[trapInfo(trap).cell(:).cellCenter];
             circen=reshape(circen,2,length(circen)/2)';
@@ -71,7 +74,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
             if isempty(pt3) && timepoint>2
                 pt3=ones(1,3)*Inf;
             end
-            aPointMatrix = repmat(pt2,size(pt1,1),1);
+%             aPointMatrix = repmat(pt2,size(pt1,1),1);
 %             dist = (sum(((aPointMatrix-pt1).^2), 2)).^0.5;
             dist=pdist2(pt1,pt2,'euclidean');
             dist2=ones(size(dist))*Inf;
@@ -89,7 +92,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                         dist(row,:)=Inf;
                         dist2(:,col)=Inf;
                         index=index+1;
-                    elseif (min(dist2(:))==Inf) & timepoint>2
+                    elseif (min(dist2(:))==Inf) && timepoint>2
 %                         aPointMatrix = repmat(pt2,size(pt3,1),1);
 %                         dist2 = (sum(((aPointMatrix-pt3).^2), 2)).^0.5;
                         
