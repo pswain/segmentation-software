@@ -36,8 +36,8 @@ for j=1:size(alltraps,3)
         image(:,:,1)=t_im;
     end
     set(cDisplay.subImage(j),'CData',image);
-    set(cDisplay.subAxes(j),'CLimMode','manual');
-    set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
+%     set(cDisplay.subAxes(j),'CLimMode','manual');
+%     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
     if cDisplay.trackOverlay
         set(cDisplay.subImage(j),'HitTest','off'); %now image button function will work
     else

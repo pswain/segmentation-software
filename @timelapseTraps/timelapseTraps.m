@@ -3,13 +3,16 @@ classdef timelapseTraps<handle
     properties
         timelapseDir
         cTimepoint
-        cTrapsLabelled
+%         cTrapsLabelled
         cTrapSize
-        image_rotation
+        image_rotation % to ensure that it lines up with the cCellVision Model
         magnification
         trapsPresent
         pixelSize
-        cellsToPlot
+        cellsToPlot %row = trap num, col is cell tracking number
+        
+        extractedData
+        channelNames
     end
     
     methods
@@ -29,11 +32,13 @@ classdef timelapseTraps<handle
         loadTimelapseScot(cTimelapse,timelapseObj);
         identifyTrapLocations(cTimelapse,cCellVision,display,num_frames)
         [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cTrap,trapLocations)
-        trackTrapsThroughTime(cTimelapse);
+%         trackTrapsThroughTime(cTimelapse);
         trackCells(cTimelapse,cellMovementThresh);
+        
         
         %%
         addSecondaryTimelapseChannel(cTimelapse,searchString)
+        extractCellData(cTimelapse,channel);
         
         %updated processing cell function
         identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
@@ -41,17 +46,19 @@ classdef timelapseTraps<handle
         addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
         identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
         identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
-        
-        %functions to process individual cells within each of the traps
         identifyCells(cTimelapse, cCellVision,traps, channel, method)
-        separateCells(cTimelapse,traps, channel, method)
+        
+        %I don't think the below functions work anymore
+        %functions to process individual cells within each of the traps
+        
+%         separateCells(cTimelapse,traps, channel, method)
 %         trackCells(cTimelapse,traps, channel, method)
         
         % functions for displaying data
-        displayTimelapse(cTimelapse,channel,pause_duration)
-        displaySingleTrapTimepoint(cTimelapse,trap_num_to_show,timepoint,channel)
-        displaySingleTrapTimelapse(cTimelapse,trap_num_to_show,channel,pause_duration)
-        displayTrapsTimelapse(cTimelapse,traps,channel,pause_duration)
+%         displayTimelapse(cTimelapse,channel,pause_duration)
+%         displaySingleTrapTimepoint(cTimelapse,trap_num_to_show,timepoint,channel)
+%         displaySingleTrapTimelapse(cTimelapse,trap_num_to_show,channel,pause_duration)
+%         displayTrapsTimelapse(cTimelapse,traps,channel,pause_duration)
         
         % functions for saving the timelapse
         savecTimelapse(cTimelapse)

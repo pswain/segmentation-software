@@ -27,7 +27,9 @@ classdef cTrapDisplay<handle
             end
             
             if nargin<4
-                channel=1;
+                cDisplay.channel=1;
+            else
+                cDisplay.channel=channel;
             end
             if nargin<5 && cTimelapse.trapsPresent
                 traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
@@ -57,8 +59,9 @@ classdef cTrapDisplay<handle
                     end
                     close(h)
                 end
+                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b 
-                image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
+                image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
 %                 if isempy(
                 for timepoint=timepoints
                     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
@@ -69,15 +72,18 @@ classdef cTrapDisplay<handle
                 end
             end
             
-            cDisplay.channel=channel;
+%             cDisplay.channel=channel;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
             cDisplay.cCellVision=cCellVision;
             cDisplay.figure=figure('MenuBar','none');
             
             dis_w=ceil(sqrt(length(traps)));
+            if dis_w>1
+                dis_w=dis_w+1;
+            end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;

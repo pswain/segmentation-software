@@ -8,6 +8,8 @@ for i=1:length(tempdir)
     names{i}=tempdir(i).name;
 end
 
+cTimelapse.channelNames=searchString;
+
 files=sort(names);
 %% Read images into timelapse class
 % Timelapse is a seletion of images from a file. These images must be

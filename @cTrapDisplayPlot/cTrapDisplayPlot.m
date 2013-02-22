@@ -45,6 +45,9 @@ classdef cTrapDisplayPlot<handle
             cDisplay.figure=figure('MenuBar','none');
             
             dis_w=ceil(sqrt(length(traps)));
+            if dis_w>1
+                dis_w=dis_w+1;
+            end
             dis_h=max(ceil(length(traps)/dis_w),1);
             image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
             
