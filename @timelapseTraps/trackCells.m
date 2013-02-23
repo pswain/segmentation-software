@@ -100,7 +100,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                     end
                     %below is to compare to timepoint-2 to see if a cell was
                     %just accidentally not foundd during one timepoint.
-                    if min(dist2(:,col))<cellMovementThresh/2
+                    if min(dist2(:,col))<cellMovementThresh*2/3
                         [val2 loc2]=min(dist2(:,col));
                         dist2(:,col)=Inf;
                         %cell number update
@@ -126,28 +126,28 @@ end
 
 cTimelapse.cTimepoint(1).trapMaxCell=trapMaxCell;
 trap=1:length(cTimelapse.cTimepoint(1).trapInfo);
-for timepoint=1:length(cTimelapse.cTimepoint)
-    disp(['Timepoint ' int2str(timepoint)]);
-    alltraps=cTimelapse.returnTrapsTimepoint(trap,timepoint);
-    
-    for j=1:size(alltraps,3)
-        image=alltraps(:,:,j);
-        image=double(image);
-        
-        seg_areas=[cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(:).segmented];
-        seg_areas=full(seg_areas);
-        seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell)]);
-%         seg_areas=full(cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(cDisplay.traps(j)).trackLabel);
-
-        segLabel=zeros(size(seg_areas));
-        for k=1:size(seg_areas,3)
-            loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(k).cellCenter);
-            if ~isempty(loc)
-                segLabel(:,:,k)=imfill(seg_areas(:,:,k),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
-                segLabel(:,:,k)=segLabel(:,:,k)*cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cellLabel(k);
-            end
-        end
-        segLabel=max(segLabel,[],3);
-        cTimelapse.cTimepoint(timepoint).trapInfo(j).trackLabel=sparse((segLabel));
-    end
-end
+% for timepoint=1:length(cTimelapse.cTimepoint)
+%     disp(['Timepoint ' int2str(timepoint)]);
+%     alltraps=cTimelapse.returnTrapsTimepoint(trap,timepoint);
+%     
+%     for j=1:size(alltraps,3)
+%         image=alltraps(:,:,j);
+%         image=double(image);
+%         
+%         seg_areas=[cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(:).segmented];
+%         seg_areas=full(seg_areas);
+%         seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell)]);
+% %         seg_areas=full(cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(cDisplay.traps(j)).trackLabel);
+% 
+%         segLabel=zeros(size(seg_areas));
+%         for k=1:size(seg_areas,3)
+%             loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(k).cellCenter);
+%             if ~isempty(loc)
+%                 segLabel(:,:,k)=imfill(seg_areas(:,:,k),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
+%                 segLabel(:,:,k)=segLabel(:,:,k)*cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cellLabel(k);
+%             end
+%         end
+%         segLabel=max(segLabel,[],3);
+%         cTimelapse.cTimepoint(timepoint).trapInfo(j).trackLabel=sparse((segLabel));
+%     end
+% end

@@ -139,13 +139,16 @@ function d_im=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,tra
 % traps=1:length(cTimelapse.cTimepoint(timepoint).trapLocations);
 j=trap;
 if cTimelapse.trapsPresent
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellCenter=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellRadius=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.segmented=sparse(zeros(size(image))>0);
+%     clear cTimelapse.cTimepoint(timepoint).trapInfo(j);
+% cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=zeros(size(image))>0;
+    cTimelapse.cTimepoint(timepoint).trapInfo(j).segmented=sparse(zeros(size(image))>0);
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellCenter]=[];
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellRadius]=[];
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().segmented]=sparse(zeros(size(image))>0);
 
 else
-    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image))>0);
@@ -171,7 +174,8 @@ if isempty(old_d_im)
     end
 end
 
-combined_d_im=d_im+old_d_im/4;
+% combined_d_im=d_im+old_d_im/6;
+combined_d_im=d_im;
 t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
 % t_im=imfilter(d_im,fspecial('disk',1));
 
@@ -187,12 +191,16 @@ for d=1:length(props)
 end
 
 bw_l=bwlabel(bw);
-props=regionprops(bw);
+props=regionprops(bw,{'Area','Eccentricity'});
 for d=1:length(props)
     if props(d).Area<5
         bw(bw_l==d)=0;
+    elseif props(d).Eccentricity>.95
+        bw(bw_l==d)=0;
     end
 end
+
+
 % bw=imclose(bw,strel('disk',2));
 
 % imshow(bw,[],'Parent',fig1);pause(.001);

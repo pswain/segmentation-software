@@ -13,7 +13,7 @@ classdef timelapseTrapsGUI<handle
         saveTimelapseButton
         
         selectChannelButton
-        
+        selectChannelText
         %         selectTrapTemplateButton=[];
         displayWholeTimelapseButton
         selectTrapsToProcessButton
@@ -42,7 +42,7 @@ classdef timelapseTrapsGUI<handle
             cTrapsGUI.timelapsePanel = uipanel('Parent',cTrapsGUI.figure,...
                 'Position',[.015 .05 .47 .9 ]);
             cTrapsGUI.processingPanel = uipanel('Parent',cTrapsGUI.figure,...
-                'Position',[.515 .05 .47 .7]);
+                'Position',[.515 .05 .47 .75]);
             
             cTrapsGUI.selectTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Create Timelapse From Images',...
                 'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)selectTimelapse(cTrapsGUI));
@@ -57,8 +57,10 @@ classdef timelapseTrapsGUI<handle
             cTrapsGUI.saveTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Save Timelapse',...
                 'Units','normalized','Position',[.025 .0 .95 .2],'Callback',@(src,event)saveTimelapse(cTrapsGUI));
             
-            cTrapsGUI.selectChannelButton = uicontrol('Parent',cTrapsGUI.figure,'Style','popupmenu','String','Testing',...
-                'Units','normalized','Position',[.515 .7 .47 .2],'Callback',@(src,event)selectChannel(cTrapsGUI));
+            cTrapsGUI.selectChannelText = uicontrol('Parent',cTrapsGUI.figure,'Style','text','String','Channel',...
+                'Units','normalized','Position',[.515 .85 .2 .05]);            
+            cTrapsGUI.selectChannelButton = uicontrol('Parent',cTrapsGUI.figure,'Style','popupmenu','String','None',...
+                'Units','normalized','Position',[.715 .7 .27 .2],'Callback',@(src,event)selectChannel(cTrapsGUI));
 
             
             
@@ -102,5 +104,6 @@ classdef timelapseTrapsGUI<handle
         editProcessTimelapse(cTrapsGUI)
         trackCells(cTrapsGUI)
         selectCellsPlot(cTrapsGUI)
+        extractData(cTrapsGUI)
     end
 end

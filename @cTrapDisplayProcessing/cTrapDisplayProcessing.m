@@ -73,6 +73,7 @@ classdef cTrapDisplayProcessing<handle
             trapsProcessed=0;tic
             for i=1:length(timepoints)
                 timepoint=timepoints(i);
+                set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
                 
                 if i>1
                     if cTimelapse.trapsPresent 
@@ -88,6 +89,10 @@ classdef cTrapDisplayProcessing<handle
                         set(cDisplay.subAxes(j),'CLim',[min(tempy_im(:)) max(tempy_im(:))]);
                     end
                     pause(.001);
+                else
+                    if cTimelapse.trapsPresent 
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i)).trapLocations);
+                    end
                 end
                 
                 for j=1:length(traps)
@@ -143,7 +148,7 @@ classdef cTrapDisplayProcessing<handle
                 else
                     pause(.5);
                 end
-                set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
+                
 
             end
             close(cDisplay.figure);
