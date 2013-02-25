@@ -50,7 +50,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
 %             catch
 %                 pt2=[trapInfo(trap).cellCenters trapInfo(trap).cellRadius'];
 %             end
-              
+      
             if timepoint>2
                 circen=[trapInfom2(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
@@ -77,12 +77,17 @@ for timepoint=1:length(cTimelapse.cTimepoint)
 %             aPointMatrix = repmat(pt2,size(pt1,1),1);
 %             dist = (sum(((aPointMatrix-pt1).^2), 2)).^0.5;
             dist=pdist2(pt1,pt2,'euclidean');
-            dist2=ones(size(dist))*Inf;
+            dist2=ones(size(dist))*NaN;
             index=1;
             if all(size(dist)>0);
                 for i=1:size(dist,2)
                     [val loc]=min(dist(:));
                     [row col]=ind2sub(size(dist),loc);
+                    
+                    if val==Inf
+                        col=find(trapInfo(trap).cellLabel==0);
+                        col=col(1);
+                    end
                     
                     if val<cellMovementThresh
                         %cell number update
@@ -92,7 +97,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                         dist(row,:)=Inf;
                         dist2(:,col)=Inf;
                         index=index+1;
-                    elseif (min(dist2(:))==Inf) && timepoint>2
+                    elseif (min(dist2(:))==NaN) && timepoint>2
 %                         aPointMatrix = repmat(pt2,size(pt3,1),1);
 %                         dist2 = (sum(((aPointMatrix-pt3).^2), 2)).^0.5;
                         
@@ -100,8 +105,10 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                     end
                     %below is to compare to timepoint-2 to see if a cell was
                     %just accidentally not foundd during one timepoint.
-                    if min(dist2(:,col))<cellMovementThresh*2/3
+                    if min(dist2(:,col))<(cellMovementThresh*.8)
                         [val2 loc2]=min(dist2(:,col));
+                        [row2 col2]=ind2sub(size(dist2),loc2);
+                        dist2(row2,:)=Inf;
                         dist2(:,col)=Inf;
                         %cell number update
                         temp_val=trapInfom2(trap).cellLabel(loc2);
