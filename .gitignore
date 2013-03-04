@@ -2,3 +2,18 @@
 *.mat
 *.mex*
 .DS_Store
+@cellVision/cellVision example-cava.m
+@cellVision/runGridSearch-cava.m
+@cellVision/runGridSearchLinear-cava.m
+@cellVision/selectTrapTemplate-cava.m
+@experimentTrackingGUI/autoSelect-Matt-HP.m
+@timelapseTraps/addSecondaryTimelapseChannel-cava-2.m
+@timelapseTraps/addSecondaryTimelapseChannel-cava.m
+@timelapseTraps/identifyCellObjects-cava.m
+@timelapseTraps/identifyCells-cava.m
+@timelapseTraps/identifyTrapLocations-cava.m
+@timelapseTraps/loadTimelapse-cava.m
+@timelapseTraps/returnSingleTrapTimelapse-cava.m
+@timelapseTraps/returnSingleTrapTimepoint-cava.m
+@timelapseTraps/returnTrapsTimepoint-cava.m
+@timelapseTraps/timelapseTraps-cava.m

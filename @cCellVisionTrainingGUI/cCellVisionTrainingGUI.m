@@ -6,6 +6,7 @@ classdef cCellVisionTrainingGUI<handle
         loadTimelapseButton
         selectTimelapseButton
         selectTrapTemplateButton=[];
+        useCurrentTrapButton
         selectTrapsForGroundTruthButton
         cropTimepointsButton
         saveTimelapseButton
@@ -50,8 +51,11 @@ classdef cCellVisionTrainingGUI<handle
             cCellVisionGUI.saveTimelapseButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Save Timelapse',...
                 'Units','normalized','Position',[.025 .0 .45 .25],'Callback',@(src,event)saveTimelapse(cCellVisionGUI));
             
-            cCellVisionGUI.selectTrapTemplateButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Select Trap Template',...
-                'Units','normalized','Position',[.525 .75 .45 .25],'Callback',@(src,event)selectTrapTemplate(cCellVisionGUI));
+            cCellVisionGUI.selectTrapTemplateButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','New Trap Template',...
+                'Units','normalized','Position',[.525 .75 .25 .25],'Callback',@(src,event)selectTrapTemplate(cCellVisionGUI));
+            cCellVisionGUI.useCurrentTrapButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Use Current Template',...
+                'Units','normalized','Position',[.775 .75 .20 .25],'Callback',@(src,event)useCurrentTrap(cCellVisionGUI));
+
             cCellVisionGUI.selectTrapsForGroundTruthButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Select Traps to Track',...
                 'Units','normalized','Position',[.525 .50 .45 .25],'Callback',@(src,event)selectTrapsForGroundTruth(cCellVisionGUI));
             cCellVisionGUI.cropTimepointsButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Crop Timelpoints',...
@@ -110,6 +114,7 @@ classdef cCellVisionTrainingGUI<handle
         loadSavedTimelapse(cCellVisionGUI)
         saveTimelapse(cCellVisionGUI)
         selectTrapTemplate(cCellVisionGUI)
+        useCurrentTrap(cCellVisionGUI)
         selectTrapsForGroundTruth(cCellVisionGUI)
         cropTimepoints(cCellVisionGUI)
         createGroundTruth(cCellVisionGUI)

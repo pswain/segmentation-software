@@ -13,9 +13,9 @@ for cell=1:length(cExperiment.cellInf)
     fl3(cell,:)=cExperiment.cellInf(cell).extractedMedian;
 end
 
-fl1(fl1==0)=1e-6;
-fl2(fl2==0)=1e-6;
-fl3(fl3==0)=1e-6;
+% fl1(fl1==0)=1e-6;
+% fl2(fl2==0)=1e-6;
+% fl3(fl3==0)=1e-6;
 
 fl1new=[];fl2new=[];fl3new=[];
 numcells=[];

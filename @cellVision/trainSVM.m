@@ -11,5 +11,5 @@ end
 
 
 
-cCellSVM.SVMModel = svmtrain(cCellSVM.trainingData.kernel_class(1,1:ss:end)', cCellSVM.trainingData.kernel_features(1:ss:end,:),cmd)
+cCellSVM.SVMModel = svmtrain2(cCellSVM.trainingData.kernel_class(1,1:ss:end)', cCellSVM.trainingData.kernel_features(1:ss:end,:),cmd)
 
