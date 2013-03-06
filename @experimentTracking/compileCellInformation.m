@@ -37,6 +37,7 @@ for i=1:length(positionsToExtract)
             cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1),:)=temp;
             temp=cTimelapse.extractedData(j).cellNum;
             cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1),:)=temp;
+            
             cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),:)=experimentPos;
     end
 

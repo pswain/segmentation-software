@@ -184,8 +184,8 @@ bw=t_im<0;
 bw_l=bwlabel(bw);
 props=regionprops(bw);
 for d=1:length(props)
-    if props(d).Area>40
-        seg_thresh=min(t_im(bw_l==d))/3;
+    if props(d).Area>50
+        seg_thresh=min(t_im(bw_l==d))/2;
         bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
     end
 end

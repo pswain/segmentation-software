@@ -44,7 +44,7 @@ for i=1:length(cTimelapse.cTimepoint)
     match=regexp(files(:),p1,'match');
     loc= ~cellfun('isempty',match);
     if sum(loc)>0
-        cTimelapse.cTimepoint(i).filename{end+1}=[folder files{loc}];
+        cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
     end
     
 end
