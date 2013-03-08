@@ -1,4 +1,4 @@
-function compilecellInf(cExperiment,positionsToExtract)
+function compileCellInformation(cExperiment,positionsToExtract)
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved

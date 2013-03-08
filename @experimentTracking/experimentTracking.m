@@ -9,6 +9,7 @@ classdef experimentTracking<handle
         currentDir
         searchString;
         pixelSize
+        magnification
         trapsPresent;
         image_rotation;
         cTimelapse;
@@ -53,7 +54,7 @@ classdef experimentTracking<handle
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
-        
+        correctSkippedFramesInf(cExperiment);
         
         extractCellInformation(cExperiment,positionsToExtract);
         compileCellInformation(cExperiment,positions);
