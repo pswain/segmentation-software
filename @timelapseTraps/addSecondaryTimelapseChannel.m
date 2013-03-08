@@ -1,5 +1,20 @@
 function addSecondaryTimelapseChannel(cTimelapse,searchString)
 
+% pattern='\d{5,6}'
+% regexp(cTimelapse.cTimepoint(1).filename{1},p1,'match')
+
+if nargin<2
+    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'GFP'});
+end
+
+searchResult=regexp(cTimelapse.channelNames,searchString,'start');
+loc= ~cellfun('isempty',searchResult);
+if sum(loc)>0
+    errordlg('Error, a channel with that name already exists');
+end
+
+cTimelapse.channelNames{end+1}=searchString{1};
+
 folder=cTimelapse.timelapseDir;
 tempdir=dir(folder);
 nfiles=0;
@@ -14,18 +29,24 @@ files=sort(names);
 % loaded in the correct order from low to high numbers to ensure that the
 % cell tracking performs correctly, and they must be rotated to ensure the
 % trap correctly aligns with the images
+
+
+searchResult=regexp(files,searchString,'start');
+
 timepoint_index=0;
-folder=[folder '/']
+folder=[folder '/'];
 % cTimelapse=cell(1)
-for n = 1:length(files);
-    if length(strfind(files{n},'tif'))| length(strfind(files{n},'png'))
-        if length(strfind(files{n},searchString))
-            image=imread([folder files{n}]);
-            if mean(image(:))>10
-                cTimelapse.cTimepoint(timepoint_index+1).secondaryImage=imrotate(image,cTimelapse.image_rotation);
-                timepoint_index=timepoint_index+1;
-            end
-        end
+for i=1:length(cTimelapse.cTimepoint)
+    pattern='\d{5,6}';
+    fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
+    
+    p1=[fileNum{1} '_' searchString{1}];
+    match=regexp(files(:),p1,'match');
+    loc= ~cellfun('isempty',match);
+    if sum(loc)>0
+        cTimelapse.cTimepoint(i).filename{end+1}=[folder files{loc}];
     end
+    
 end
+
 

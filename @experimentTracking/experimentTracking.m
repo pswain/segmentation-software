@@ -8,6 +8,9 @@ classdef experimentTracking<handle
         cellsToPlot
         currentDir
         searchString;
+        pixelSize
+        trapsPresent;
+        image_rotation;
         cTimelapse;
         cellInf
         experimentInformation
@@ -40,7 +43,7 @@ classdef experimentTracking<handle
             
         %functions for loading data and then processing to identify and
         %track the traps
-        loadTimelapsePositions(cExperiment,searchString,positionsToLoad,magnification,image_rotation,timepointsToLoad);
+        loadTimelapsePositions(cExperiment,searchString,positionsToLoad,magnification,image_rotation,trapsPresent,timepointsToLoad);
         identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify);
         segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);

@@ -6,11 +6,11 @@ end
 
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos}]);
+    load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
     cTrapDisplayProcessing(cTimelapse,cCellVision)
     
     cExperiment.posSegmented(currentPos)=1;
     save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
-    save([cExperiment.rootFolder '/' cExperiment.dirs{currentPos}],'cTimelapse');
+    save([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
     clear cTimelapse;
 end

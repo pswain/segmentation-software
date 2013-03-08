@@ -1,4 +1,4 @@
-function loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,timepointsToLoad)
+function loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,trapsPresent,timepointsToLoad)
 
 folder=cTimelapse.timelapseDir;
 tempdir=dir(folder);
@@ -7,6 +7,8 @@ names=cell(1);
 for i=1:length(tempdir)
     names{i}=tempdir(i).name;
 end
+
+cTimelapse.channelNames=searchString;
 
 files=sort(names);
 %% Read images into timelapse class
@@ -32,7 +34,7 @@ for ss=1:length(searchString)
     end
 end
 
-if nargin>=5 && ~isempty(timepointsToLoad)
+if nargin>=6 && ~isempty(timepointsToLoad)
     if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
         timepointsToLoad=timepointsToLoad(timepointsToLoad<=length(cTimelapse.cTimepoint));
     end
@@ -54,15 +56,19 @@ else
 end
 
 %
-prompt = {'Are traps present in this Timelapse?'};
-dlg_title = 'TrapsPresent';
-num_lines = 1;
-def = {'Yes'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-if ~strcmp(answer{1},'Yes')
-    cTimelapse.trapsPresent=false;
+if nargin<5 || isempty(trapsPresent)
+    prompt = {'Are traps present in this Timelapse?'};
+    dlg_title = 'TrapsPresent';
+    num_lines = 1;
+    def = {'Yes'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    if ~strcmp(answer{1},'Yes')
+        cTimelapse.trapsPresent=false;
+    else
+        cTimelapse.trapsPresent=true;
+    end
 else
-    cTimelapse.trapsPresent=true;
+    cTimelapse.trapsPresent=trapsPresent;
 end
 
 if (nargin<4 || isempty(image_rotation)) 

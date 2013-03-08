@@ -26,12 +26,13 @@ end
 cTimelapse.cTimepoint(timepoint).trapLocations=trapLocations;
 
 for j=1:length(trapLocations)
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(cTrap.trap1))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(cTrap.trap1))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellCenter=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellRadius=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.segmented=sparse(zeros(size(cTrap.trap1))>0);
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cellsPresent=0;
 end
+j=length(trapLocations);
 if j<length(cTimelapse.cTimepoint(timepoint).trapInfo)
     cTimelapse.cTimepoint(timepoint).trapInfo(j+1:end)=[];
 end

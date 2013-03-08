@@ -4,7 +4,7 @@ if nargin<2
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=3e3; %number of frames cells must be present
 %     params.cellsToCheck=4;
-    params.framesToCheck=40;
+    params.framesToCheck=100;
 end
 
 cExperiment.cellsToPlot=zeros(size(cExperiment.cellsToPlot))>0;
@@ -12,7 +12,7 @@ positionsToCheck=find(cExperiment.posTracked);
 for i=1:length(positionsToCheck)
     expPos=positionsToCheck(i);
     disp(['Experimental Position Number ' int2str(expPos)]);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{expPos}]);
+    cTimelapse=cExperiment.returnTimelapse(expPos);
     cTimepoint=cTimelapse.cTimepoint;
 
     
@@ -39,18 +39,11 @@ for i=1:length(positionsToCheck)
             locs=locs(locs<=cellsSeen);
             if ~isempty(locs)
                 for cellsForPlot=1:length(locs)
-                    cExperiment.cellsToPlot(expPos,trap,locs(cellsForPlot))=1;
+                    cTimelapse.cellsToPlot(trap,locs(cellsForPlot))=1;
                 end
             end
         end
-
-        
-%         if length(n)<params.cellsToCheck+1
-%             n=[n zeros(1,params.cellsToCheck)];
-%         end
-%         if max(n(1:params.cellsToCheck))>=length(cTimelapse.cTimepoint)*params.fraction || max(n(1:params.cellsToCheck))>params.duration
-%             [val cell]=max(n(1:params.cellsToCheck));
-%             cExperiment.cellsToPlot(expPos,trap,cell)=1;
-%         end
     end
+    save([cExperiment.rootFolder '/'],[cExperiment.dirs{currentPos}, 'cTimelapse']);
+
 end

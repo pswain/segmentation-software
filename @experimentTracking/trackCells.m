@@ -14,11 +14,11 @@ end
 %% Run the tracking on the timelapse
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos}]);
-    testTrackingMethod(cTimelapse,cellMovementThresh)
+    load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse.trackCells;
     cExperiment.posTracked(experimentPos)=1;
     save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
-    save([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos}],'cTimelapse');
+    save([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse'],'cTimelapse');
 end
 
 
