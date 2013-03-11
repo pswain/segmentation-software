@@ -38,5 +38,39 @@ for t=1:10
     pause
 end
 
+%change filenames from e bakker to ebakker1
+% 
+% for i = 2:216
+%     for c = 1
+%         
+%         disp.cTimelapse.cTimepoint(i).filename{c}(15) = [];
+%         
+%     end 
+% end
+%     
 
- 
+%display just one trap for cell identification 1:43
+n=1;
+
+ctrapdisplay(disp.cTimelapse,disp.cCellVision,false,1,n)
+n = n+1;
+
+
+%% run script in my absence
+
+ttacObjectPOS3.SegmentConsecutiveTimePoints(1,216)
+cTimelapse = ttacObjectPOS3.TimelapseTraps;
+save('~/Documents/microscope_files_swain_microscope/PDR5/2013_02_06/PDR5GFPscGlc_2perc_00/pos3/cTimelapsePOS3_AC.mat','cTimelapse');
+clear
+load('~/Documents/microscope_files_swain_microscope/PDR5/2013_02_06/PDR5GFPscGlc_2perc_00/pos2/cTimelapsePOS2_UNMODIFIED.mat');
+ttacObjectPOS2 = timelapseTrapsActiveContour(1);
+ttacObjectPOS2.passTimelapseTraps(cTimelapse);
+ttacObjectPOS2.getTrapImages(true);
+ttacObjectPOS2.makeTrapPixelImage;
+ttacObjectPOS2.findTrapLocation(1:216);
+ttacObjectPOS2.SegmentConsecutiveTimePoints(1,216);
+cTimelapse = ttacObjectPOS2.TimelapseTraps;
+save('~/Documents/microscope_files_swain_microscope/PDR5/2013_02_06/PDR5GFPscGlc_2perc_00/pos2/cTimelapsePOS2_AC.mat','cTimelapse');
+
+
+

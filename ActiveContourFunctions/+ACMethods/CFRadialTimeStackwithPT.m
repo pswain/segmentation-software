@@ -39,6 +39,9 @@ radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
 
+%multiply betaElco by median of image stack to keep a fairly common scale.
+time_change_punishing_factor = betaElco*abs(median(im_stack(:)));
+
 
 for t = 1:timepoints
     
@@ -46,6 +49,8 @@ for t = 1:timepoints
     im = im_stack(:,:,t);
     center = center_stack(t,:);
     
+    %multiply alpha by median of image to keep a fairly common scale.
+    radial_punishing_factor = alpha*abs(median(im(:)));
     
     
     %number of points, length of radii vector
@@ -103,7 +108,7 @@ for t = 1:timepoints
     
     D2radii = ACBackGroundFunctions.second_derivative_snake_horizontal(radii_mat);
     
-    F = F+alpha*(abs(F).*(sum((D2radii./radii_mat).^2,2))); %add punishment for very uneven cell outlines
+    F = F+radial_punishing_factor*((sum((D2radii./radii_mat).^2,2))); %add punishment for very uneven cell outlines
     
     Ftot = Ftot+F;
 end
@@ -120,7 +125,7 @@ radii_stack_mat = cat(2,repmat(radii_previous_timepoint,points,1),radii_stack_ma
 timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))./...
                         (radii_stack_mat(:,(radii_length+1):end) +  radii_stack_mat(:,1:(end-radii_length)))).^2;
 
-Ftot = Ftot+ betaElco*sum(timepoint_diff_mat.*timepoint_diff_mat>0.01,2);
+Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat.*timepoint_diff_mat>0.01,2);
 
 end
 

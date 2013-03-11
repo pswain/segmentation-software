@@ -59,7 +59,8 @@ classdef cTrapDisplay<handle
                     end
                     close(h)
                 end
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                %commented by elco to allow display of 1 trap at a time.
+                %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b 
                 image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
 %                 if isempy(

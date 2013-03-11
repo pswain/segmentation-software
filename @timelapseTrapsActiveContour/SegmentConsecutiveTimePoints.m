@@ -8,7 +8,7 @@ SubImageSize = 61;
 im_stack = [];
 center_stack = [];
 trap_stack = [];
-OptPoints = 4;
+OptPoints = 6;
 CellPreallocationNumber = 200;
 ITparameters = struct;%image transformation parameters
 SEGparameters = struct; %SegmentConsecutiveTimepoints parameters
@@ -26,16 +26,16 @@ if true
     ITparameters.invert = true;
 end
 
-ACparameters.alpha = 0.01;%weighs non image parts (none at the moment)
+ACparameters.alpha = 0.0001;%weighs non image parts (none at the moment)
 ACparameters.beta =0.01; %weighs difference between consecutive time points.
 ACparameters.R_min = 1;%5;
 ACparameters.R_max = 15;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
 ACparameters.opt_points = OptPoints;
 ACparameters.visualise = 1; %degree of visualisation (0,1,2,3)
 ACparameters.EVALS = 6000; %maximum number of iterations passed to fmincon
-ACparameters.spread_factor = 1; %used in particle swarm optimisation. determines spread of initial particles.
+ACparameters.spread_factor = 2; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.spread_factor_prior = 0.5; %used in particle swarm optimisation. determines spread of initial particles.
-ACparameters.seeds = 20;
+ACparameters.seeds = 60;
 
 %protects program from super crashing out by opening and closing a million
 %images.
