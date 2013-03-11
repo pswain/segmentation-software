@@ -3,13 +3,13 @@ uiload();
 cExperiment.correctSkippedFramesInf
 cExperimentFeb8=cExperiment;
 clear cExperiment;
-%%
-plot(mean(cExperimentFeb8.cellInf(2).mean)')
+%% GFP
+plot(mean(cExperimentFeb8.cellInf(2).mean)');
 fig
-%%
+%% cy5
 plot(mean(cExperimentFeb8.cellInf(3).mean)')
 fig
-%%
+%% make sure cells are present after stimulus
 channel=2;
 switchTimeFeb8=252;
 endTimeFeb8=switchTimeFeb8+6.5*12;
@@ -33,16 +33,16 @@ cellInfFeb8.radius=cellInfFeb8.radius(cellsPresentFeb8,:);
 %%
 figure(10);
 plot(median(cellInfFeb8.median)')
-%%
+%% Plot cells post stimulus 
 figure(10);
 tempData=cellInfFeb8.median(:,switchTimeFeb8:endTimeFeb8);
-tempPlot=median(tempData)';
+tempPlot=mean(tempData)';
 error=std(tempData)';
 error=error/sqrt(size(tempData,1));
 x=5:5:size(tempData,2)*5;
 x=x/60;
 % x=1:size(tempData,2);
-errorbar(x,tempPlot,error);title('Median GAL10::GFP induction after 21 hours');
+errorbar(x,tempPlot,error);title('Median GAL10::GFP induction after 21 hours (n~180)');
 xlabel('time (hours)');ylabel('Median Cell Fluorescence (AU)');
 
 %%
@@ -50,8 +50,36 @@ temp=cellInfFeb8.median;
 figure(10);imshow(temp,[]);colormap(jet);
 xlabel('time (h)')
 %%
-temp=cExperimentFeb8.cellInf(1).max5(cellsPresentFeb8,100:end);
+temp=cellInfFeb8.median(:,switchTimeFeb8:endTimeFeb8);
 figure(11);imshow(temp,[]);colormap(jet);
+%%
+%% Pretty Kymograph
+temp=cellInfFeb8.median(:,switchTimeFeb8:endTimeFeb8);
+m=mean(temp(:,end-10:end),2);
+[val loc]=sort(m,'descend');
+temp2=[];
+for i=1:size(temp,1)
+    temp2(i,:)=temp(loc(i),:);
+end
+figure(11);imshow(temp2,[0 36e3]);colormap(jet);
+%%
+%%
+tempD=temp2([9 36 72 109 90],:)';
+figure(12);plot(repmat(x',[1 size(tempD,2)]),tempD);axis([0 7 0 30e3]);
+
+%% Pretty Kymograph cells normalized to intensity
+temp=cellInfFeb8.median(:,switchTimeFeb8:endTimeFeb8);
+m=mean(temp(:,end-10:end),2);
+[val loc]=sort(m,'descend');
+temp2=[];
+for i=1:size(temp,1)
+    temp2(i,:)=temp(loc(i),:);
+    temp2(i,:)=temp2(i,:)/max(temp2(i,:));
+
+end
+figure(11);imshow(temp2,[]);colormap(jet);
+
+
 
 %%
 temp=cExperimentFeb8.cellInf(1).mean(cellsPresentFeb8,:);

@@ -10,8 +10,13 @@ cTrap=cCellVision.cTrap;
 % cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
 % cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
 
+% try
 cTrap.trap1=imresize(cTrap.trap1,cTimelapse.magnification/cCellVision.magnification);
 cTrap.trap2=imresize(cTrap.trap2,cTimelapse.magnification/cCellVision.magnification);
+% catch
+%     cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
+% cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
+% end
 
 cTrap.bb_width=ceil((size(cTrap.trap1,2)-1)/2);
 cTrap.bb_height=ceil((size(cTrap.trap1,1)-1)/2);

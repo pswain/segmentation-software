@@ -37,8 +37,10 @@ figure(101);plot(timepoints,fl1new);xlabel('Hours');axis([0 max(timepoints) 500 
 plotData=fl1new./fl3new;
 numcells=sum(fl1>0);
 
-figure(111);plot(timepoints,plotData);xlabel('Hours');axis([0 max(timepoints) 1 4]);
-figure(111);errorbar(timepoints,plotData,error);xlabel('Hours');axis([0 max(timepoints) 1 4]);
+error=error/sqrt(mean(numcells));
+figure(111);plot(timepoints,plotData);xlabel('Hours');axis([0 max(timepoints) 1 4]);ylabel('Nuclear localization (AU)');
+figure(111);errorbar(timepoints,plotData,error);xlabel('Hours');axis([0 max(timepoints) 1 4]);ylabel('Nuclear localization (AU)');
+title('msn2::gfp after pulses of gluocse limitation (n~140)');
 % figure(111);errorbar(timepoints,plotData,error./sqrt(numcells));xlabel('Hours');axis([0 max(timepoints) 1 4]);
 
 %% Shows number of cells present at each timepoint
@@ -57,6 +59,7 @@ for cell=1:length(cExperiment.cellInf)
 end
 %% Shows collection of single cell traces
 bob=[];
+
 for i=1:length(cExperiment.cellInf)
 fl1temp=fl1(i,:);
 fl2temp=fl2(i,:);
@@ -66,9 +69,18 @@ fl1temp=smooth(fl1temp,2);
 fl2temp=smooth(fl2temp,2);
 fl3temp=smooth(fl3temp,2);
 
+fl3temp(fl3temp==0)=1e-9;
 bob(i,:)=fl1temp./fl3temp;
 end
 figure(10);imshow(bob,[1 7]);colormap(jet);
+
+m=median(bob,2);
+[val loc]=sort(m,'descend');
+temp2=[];
+for i=1:size(fl1,1)
+    temp2(i,:)=bob(loc(i),:);
+end 
+figure(10);imshow(temp2,[1 7]);colormap(jet);
 
 %% trying to figure out the decline in the response to glucose limitation and whether that 
 % correlates with sensence or wether the 

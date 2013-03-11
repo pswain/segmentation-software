@@ -33,19 +33,39 @@ plot(median(cellInfFeb11.mean)')
 figure(10);
 tempData=cellInfFeb11.median(:,switchTimeFeb11:endTimeFeb11);
 % tempData=tempData./cellInfFeb11.median(:,switchTimeFeb11:endTimeFeb11);
-tempPlot=median(tempData)';
+plot(mean(cExperimentFeb10.cellInf(2).median(cellsPresentFeb10,:))')
+pause(1)
+temp=cExperimentFeb11.cellInf(2).median(~cellsPresentFeb11,:);
+plotData=[]
+for i=1:size(cExperimentFeb11.cellInf(2).median,2)
+    loc=(cExperimentFeb11.cellInf(1).median(:,i)>0) & cellsPresentFeb11';
+    plotData(i)=mean(cExperimentFeb11.cellInf(2).median(loc,i));
+end
+tempPlot=plotData';
+% tempPlot=median(tempData)';
 error=std(tempData)';
 error=error/sqrt(size(tempData,1));
 x=5:5:size(tempData,2)*5;
 x=x/60;
 % x=1:size(tempData,2);
-errorbar(x,tempPlot,error);title('Median HSP104::GFP expression');
+errorbar(x,tempPlot,error);title('Median HSP104::GFP expression (n~250)');
 xlabel('time (hours)');ylabel('Median Cell Fluorescence (AU)');
 axis([0 max(x) min(tempPlot)*.9 max(tempPlot)*1.1])
 %%
 temp=cellInfFeb11.median;
 figure(10);imshow(temp,[]);colormap(jet);
 xlabel('time (h)')
+%%
+
+%% Pretty Kymograph
+temp=cExperimentFeb11.cellInf(2).median;
+m=mean(temp(:,end-20:end),2);
+[val loc]=sort(m,'descend');
+temp2=[];
+for i=1:size(temp,1)
+    temp2(i,:)=temp(loc(i),:);
+end
+figure(11);imshow(temp,[]);colormap(jet);
 %%
 temp=cExperimentFeb11.cellInf(1).max5(cellsPresentFeb11,100:end);
 figure(11);imshow(temp,[]);colormap(jet);

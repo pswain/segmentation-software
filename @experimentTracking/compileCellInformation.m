@@ -17,8 +17,9 @@ end
 experimentPos=positionsToExtract(1);
 load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
-[cExperiment.cellInf().posNum]=[];
-for i=1:length(positionsToExtract)
+% [cExperiment.cellInf(:).posNum]=[];
+[cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
+for i=2:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     
@@ -40,6 +41,6 @@ for i=1:length(positionsToExtract)
             
             cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),:)=experimentPos;
     end
-
+    cExperiment.cTimelapse=[];
     cExperiment.saveExperiment();
 end
