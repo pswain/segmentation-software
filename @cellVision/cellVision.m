@@ -13,7 +13,7 @@ classdef cellVision<handle
         radiusSmall
         radiusLarge
         pixelSize
-        
+        magnification=60;
         
         se
         method

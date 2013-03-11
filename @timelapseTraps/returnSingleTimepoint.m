@@ -4,7 +4,13 @@ if nargin<3
     channel=1;
 end
 
-timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});
+try
+    timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});
+catch
+    timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{1});
+    timepoint(:,:)=0;
+    warning('There is no data in this channel at this timepoint');
+end
 
 % if ~isempty(cTimelapse.magnification)
 %     timepoint=imresize(timepoint,cTimelapse.magnification);

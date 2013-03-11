@@ -22,7 +22,7 @@ else
     image=trap_image;
 end
 
-image=imresize(image,cTimelapse.pixelSize/cCellVision.pixelSize);
+image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
 
 if nargin<7
     old_d_im=[];
@@ -35,19 +35,24 @@ switch cCellVision.method
     case 'medfilt2'
         fluorescence_medfilt(cTimelapse,timepoint,channel,trap,image,old_d_im);
     case 'linear'
-        d_im=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
+        [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
     case 'kernel'
         d_im=kernel_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
     case 'twostage'
-        d_im=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
+        [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
 
 end
 
-d_im=imresize(d_im,cCellVision.pixelSize/cTimelapse.pixelSize);
+% d_im=imresize(d_im,cCellVision.pixelSize/cTimelapse.pixelSize);
+% bw=imresize(bw,cCellVision.pixelSize/cTimelapse.pixelSize);
+d_im=imresize(d_im,cTimelapse.magnification/cCellVision.magnification);
+bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
+
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 
 end
 
-function d_im=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
+function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 % This preallocates the segmented images to speed up execution
 
@@ -107,7 +112,6 @@ end
 % bw=imclose(bw,strel('disk',2));
 
 % imshow(bw,[],'Parent',fig1);pause(.001);
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 
 end
 
@@ -132,20 +136,23 @@ end
 
 end
 
-function d_im=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
+function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 % image=cTimelapse.returnSingleTrapTimepoint(1,timepoint,channel);
 
 % traps=1:length(cTimelapse.cTimepoint(timepoint).trapLocations);
 j=trap;
 if cTimelapse.trapsPresent
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellCenter=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellRadius=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.segmented=sparse(zeros(size(image))>0);
+%     clear cTimelapse.cTimepoint(timepoint).trapInfo(j);
+% cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=zeros(size(image))>0;
+    cTimelapse.cTimepoint(timepoint).trapInfo(j).segmented=sparse(zeros(size(image))>0);
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellCenter]=[];
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellRadius]=[];
+    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().segmented]=sparse(zeros(size(image))>0);
 
 else
-    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image))>0);
@@ -171,7 +178,8 @@ if isempty(old_d_im)
     end
 end
 
-combined_d_im=d_im+old_d_im/4;
+% combined_d_im=d_im+old_d_im/6;
+combined_d_im=d_im;
 t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
 % t_im=imfilter(d_im,fspecial('disk',1));
 
@@ -180,23 +188,26 @@ bw=t_im<0;
 bw_l=bwlabel(bw);
 props=regionprops(bw);
 for d=1:length(props)
-    if props(d).Area>40
-        seg_thresh=min(t_im(bw_l==d))/3;
+    if props(d).Area>80
+        seg_thresh=min(t_im(bw_l==d))/4;
         bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
     end
 end
 
 bw_l=bwlabel(bw);
-props=regionprops(bw);
+props=regionprops(bw,{'Area','Eccentricity'});
 for d=1:length(props)
     if props(d).Area<5
         bw(bw_l==d)=0;
+    elseif props(d).Eccentricity>.95
+        bw(bw_l==d)=0;
     end
 end
+
+
 % bw=imclose(bw,strel('disk',2));
 
 % imshow(bw,[],'Parent',fig1);pause(.001);
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 end
 
 

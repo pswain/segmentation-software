@@ -39,7 +39,7 @@ cCellVision.trainingParams.gamma=.25 %or 2 and .25 or 2 and 1 or 1 and 2
 
 %
 step_size=15;
-cmd = ['-t 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
+cmd = ['-t 2 -w0 1 -w1 2.5 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 

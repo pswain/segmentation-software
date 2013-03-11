@@ -1,4 +1,4 @@
-function [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cTrap,trapLocations)
+function [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations)
 
 %% For each timepoint, identify the locations of the traps
 %Go trhough each image in the timepoint object, and extract the locations
@@ -6,6 +6,34 @@ function [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,time
 
 %pass the trapLocations matrix from t-1 for the calculation of t cc. Uses the mask of
 %the traps to increase the likelihood of finding the same trap again.
+cTrap=cCellVision.cTrap;
+% cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
+% cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
+
+% try
+cTrap.trap1=imresize(cTrap.trap1,cTimelapse.magnification/cCellVision.magnification);
+cTrap.trap2=imresize(cTrap.trap2,cTimelapse.magnification/cCellVision.magnification);
+% catch
+%     cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
+% cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
+% end
+
+cTrap.bb_width=ceil((size(cTrap.trap1,2)-1)/2);
+cTrap.bb_height=ceil((size(cTrap.trap1,1)-1)/2);
+
+d1=size(cTrap.trap1,1)-(cTrap.bb_height*2+1);
+d2=size(cTrap.trap1,2)-(cTrap.bb_width*2+1);
+
+if d1>0
+    cTrap.trap1=padarray(cTrap.trap1,[d1 0],median(cTrap.trap1(:)),'post');
+    cTrap.trap2=padarray(cTrap.trap2,[d1 0],median(cTrap.trap2(:)),'post');
+end
+if d2>0
+    cTrap.trap1=padarray(cTrap.trap1,[0 d2],median(cTrap.trap1(:)),'post');
+    cTrap.trap2=padarray(cTrap.trap2,[0 d2],median(cTrap.trap2(:)),'post');
+end
+
+
 
 cTimelapse.cTrapSize.bb_width=cTrap.bb_width;
 cTimelapse.cTrapSize.bb_height=cTrap.bb_height;
@@ -26,12 +54,13 @@ end
 cTimelapse.cTimepoint(timepoint).trapLocations=trapLocations;
 
 for j=1:length(trapLocations)
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(cTrap.trap1))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(cTrap.trap1))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(cTrap.trap1))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(cTrap.trap1))>0),'trackLabel',sparse(zeros(size(cTrap.trap1))>0));
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellCenter=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellRadius=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.segmented=sparse(zeros(size(cTrap.trap1))>0);
     cTimelapse.cTimepoint(timepoint).trapInfo(j).cellsPresent=0;
 end
+j=length(trapLocations);
 if j<length(cTimelapse.cTimepoint(timepoint).trapInfo)
     cTimelapse.cTimepoint(timepoint).trapInfo(j+1:end)=[];
 end
@@ -102,17 +131,17 @@ for i=1:length(trapLocations)
     xcurrent=trapLocations(i).xcenter+cTrap.bb_width;
     ycurrent=trapLocations(i).ycenter+cTrap.bb_height;
     
-    temp_im=cc(ycurrent-cTrap.bb_height/2:ycurrent+cTrap.bb_height/2,xcurrent-cTrap.bb_width/2:xcurrent+cTrap.bb_width/2);
+    temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
     
     [maxval maxloc]=max(temp_im(:));
     [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
     
-    xcenter=xcurrent+xpeak-cTrap.bb_width/2-1;
-    ycenter=ycurrent+ypeak-cTrap.bb_height/2-1;
+    xcenter=xcurrent+xpeak-cTrap.bb_width/3-1;
+    ycenter=ycurrent+ypeak-cTrap.bb_height/3-1;
 
     trapLocations(i).xcenter=xcenter-cTrap.bb_width;
     trapLocations(i).ycenter=ycenter-cTrap.bb_height;
-    trap_mask(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height,xcenter-cTrap.bb_width:xcenter+cTrap.bb_width)=true(size(cTrap.trap1,1),size(cTrap.trap1,2));
+    trap_mask(round(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height),round(xcenter-cTrap.bb_width:xcenter+cTrap.bb_width))=true(size(cTrap.trap1,1),size(cTrap.trap1,2));
 end
 trap_mask=trap_mask(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
 
