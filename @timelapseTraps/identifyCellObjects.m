@@ -48,7 +48,7 @@ end
 
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 
-searchRadius=[cCellVision.radiusSmall cCellVision.radiusLarge]*(cCellVision.pixelSize/cTimelapse.pixelSize);
+searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
 for j=1:size(image,3)
     temp_im=image(:,:,j);
     if isempty(bw_mask)

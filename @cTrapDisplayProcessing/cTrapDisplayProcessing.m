@@ -77,7 +77,7 @@ classdef cTrapDisplayProcessing<handle
                 
                 if i>1
                     if cTimelapse.trapsPresent 
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
                     end
                     trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(i),channel);
                     trap_images=double(trap_images);
@@ -91,7 +91,7 @@ classdef cTrapDisplayProcessing<handle
                     pause(.001);
                 else
                     if cTimelapse.trapsPresent 
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i)).trapLocations);
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i)).trapLocations);
                     end
                 end
                 

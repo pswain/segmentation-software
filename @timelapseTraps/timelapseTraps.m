@@ -6,7 +6,7 @@ classdef timelapseTraps<handle
 %         cTrapsLabelled
         cTrapSize
         image_rotation % to ensure that it lines up with the cCellVision Model
-        magnification
+        magnification=60;
         trapsPresent
         pixelSize
         cellsToPlot %row = trap num, col is cell tracking number
@@ -30,8 +30,8 @@ classdef timelapseTraps<handle
         %track the traps
         loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,timepointsToLoad);
         loadTimelapseScot(cTimelapse,timelapseObj);
-        identifyTrapLocations(cTimelapse,cCellVision,display,num_frames)
-        [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cTrap,trapLocations)
+        
+        [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations)
 %         trackTrapsThroughTime(cTimelapse);
         trackCells(cTimelapse,cellMovementThresh);
         
@@ -49,6 +49,11 @@ classdef timelapseTraps<handle
         identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
         identifyCells(cTimelapse, cCellVision,traps, channel, method)
         
+        
+        
+        
+        
+        identifyTrapLocations(cTimelapse,cCellVision,display,num_frames)
         %I don't think the below functions work anymore
         %functions to process individual cells within each of the traps
         

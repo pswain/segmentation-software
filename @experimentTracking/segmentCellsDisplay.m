@@ -7,10 +7,13 @@ end
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
     load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-    cTrapDisplayProcessing(cTimelapse,cCellVision)
+    cExperiment.cTimelapse=cTimelapse;
+    if isempty(cExperiment.cTimelapse.magnification)
+        cExperiment.cTimelapse.magnification=60;
+    end
+    cTrapDisplayProcessing(cTimelapse,cCellVision);
     
     cExperiment.posSegmented(currentPos)=1;
-    save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
-    save([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    cExperiment.saveTimelapseExperiment(currentPos);   
     clear cTimelapse;
 end

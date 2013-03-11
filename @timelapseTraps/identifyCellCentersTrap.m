@@ -22,7 +22,7 @@ else
     image=trap_image;
 end
 
-image=imresize(image,cTimelapse.pixelSize/cCellVision.pixelSize);
+image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
 
 if nargin<7
     old_d_im=[];
@@ -35,19 +35,24 @@ switch cCellVision.method
     case 'medfilt2'
         fluorescence_medfilt(cTimelapse,timepoint,channel,trap,image,old_d_im);
     case 'linear'
-        d_im=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
+        [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
     case 'kernel'
         d_im=kernel_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
     case 'twostage'
-        d_im=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
+        [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
 
 end
 
-d_im=imresize(d_im,cCellVision.pixelSize/cTimelapse.pixelSize);
+% d_im=imresize(d_im,cCellVision.pixelSize/cTimelapse.pixelSize);
+% bw=imresize(bw,cCellVision.pixelSize/cTimelapse.pixelSize);
+d_im=imresize(d_im,cTimelapse.magnification/cCellVision.magnification);
+bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
+
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 
 end
 
-function d_im=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
+function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 % This preallocates the segmented images to speed up execution
 
@@ -107,7 +112,6 @@ end
 % bw=imclose(bw,strel('disk',2));
 
 % imshow(bw,[],'Parent',fig1);pause(.001);
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 
 end
 
@@ -132,7 +136,7 @@ end
 
 end
 
-function d_im=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
+function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 % image=cTimelapse.returnSingleTrapTimepoint(1,timepoint,channel);
 
@@ -184,8 +188,8 @@ bw=t_im<0;
 bw_l=bwlabel(bw);
 props=regionprops(bw);
 for d=1:length(props)
-    if props(d).Area>40
-        seg_thresh=min(t_im(bw_l==d))/3;
+    if props(d).Area>80
+        seg_thresh=min(t_im(bw_l==d))/4;
         bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
     end
 end
@@ -204,7 +208,6 @@ end
 % bw=imclose(bw,strel('disk',2));
 
 % imshow(bw,[],'Parent',fig1);pause(.001);
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;
 end
 
 

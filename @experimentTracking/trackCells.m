@@ -8,17 +8,22 @@ if nargin<2
 end
 
 if nargin<3
-    cellMovementThresh=6;
+    prompt = {'Max change in position and radius before a cell is classified as a new cell'};
+    dlg_title = 'Tracking Threshold';
+    num_lines = 1;
+    def = {'8'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    cellMovementThresh=str2double(answer{1});
 end
 
 %% Run the tracking on the timelapse
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
     load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
-    cTimelapse.trackCells;
+    cTimelapse.trackCells(cellMovementThresh);
     cExperiment.posTracked(experimentPos)=1;
-    save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
-    save([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse'],'cTimelapse');
+    cExperiment.cTimelapse=cTimelapse;
+    cExperiment.saveTimelapseExperiment(experimentPos);
 end
 
 

@@ -12,6 +12,6 @@ for i=1:length(positionsToIdentify)
     cTrapSelectDisplay(cTimelapse,cCellVision);
     
     uiwait();
-    save([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
-    save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
+    cExperiment.cTimelapse=cTimelapse;
+    cExperiment.saveTimelapseExperiment(currentPos);
 end

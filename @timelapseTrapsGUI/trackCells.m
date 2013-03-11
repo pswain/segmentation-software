@@ -1,4 +1,4 @@
 function trackCells(cCellVisionGUI)
 
 cCellVisionGUI.cTimelapse.trackCells;
-cTrapDisplayPlot(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision,1)
+cTrapDisplayPlot(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision)

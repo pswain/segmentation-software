@@ -84,15 +84,18 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                 dist2=ones(size(dist))*1e6;
             end
             index=1;
+            noLabel=ones(1,size(dist,2));
             if all(size(dist)>0);
                 for i=1:size(dist,2)
                     [val loc]=min(dist(:));
                     [row col]=ind2sub(size(dist),loc);
                     
-                    if val==Inf
-                        col=find(trapInfo(trap).cellLabel==0);
-                        col=col(1);
-                    end
+%                     if val==Inf
+%                         col=find(trapInfo(trap).cellLabel==0);
+%                         col=col(1);
+%                     end
+                    
+
                     
                     if val<cellMovementThresh
                         %cell number update
@@ -101,6 +104,7 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                         dist(:,col)=Inf;
                         dist(row,:)=Inf;
                         dist2(:,col)=Inf;
+                        noLabel(col)=0;
                         
                         if timepoint>2
                             locPrev=find(trapInfom2(trap).cellLabel==temp_val);
@@ -110,31 +114,28 @@ for timepoint=1:length(cTimelapse.cTimepoint)
                         end
                         
                         index=index+1;
-%                     elseif (min(dist2(:))==1e6) && timepoint>2
-% %                         aPointMatrix = repmat(pt2,size(pt3,1),1);
-% %                         dist2 = (sum(((aPointMatrix-pt3).^2), 2)).^0.5;
-%                         
-%                         dist2=pdist2(pt3,pt2,'euclidean');
                     end
+                end
+                
+                for i=1:sum(noLabel(:))
                     %below is to compare to timepoint-2 to see if a cell was
-                    %just accidentally not foundd during one timepoint.
-
-%                     if timepoint==27 && trap==3
-%                         b=1;
-%                     end
-                    
-                    if min(dist2(:,col))<(cellMovementThresh*.95)
+                    %just accidentally not foundd during one timepoint.                    
+                    col=find(noLabel);
+                    col=col(1);
+                    noLabel(col)=0;
+                    if min(dist2(:,col))<(cellMovementThresh*1)
                         [val2 loc2]=min(dist2(:,col));
                         [row2 col2]=ind2sub(size(dist2),loc2);
                         dist2(row2,:)=Inf;
                         dist2(:,col2)=Inf;
                         %cell number update
-                        temp_val=trapInfom2(trap).cellLabel(loc2);
+                        temp_val=trapInfom2(trap).cellLabel(row2);
                         trapInfo(trap).cellLabel(1,col)=temp_val;
-                        index=index+1;
                     end
                 end
             end
+            
+
             
             %for all cells that are "new" cells to the image, update them
             %and the maxCell value

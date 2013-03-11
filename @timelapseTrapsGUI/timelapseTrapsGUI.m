@@ -36,7 +36,16 @@ classdef timelapseTrapsGUI<handle
     %that has been loaded. It uses the trap positions identified in the DIC
     %image to display either the primary or secondary information.
     methods
-        function cTrapsGUI=timelapseTrapsGUI()
+        function cTrapsGUI=timelapseTrapsGUI(cTimelapse,cCellVision)
+            
+            
+            
+            if nargin<3
+                cTrapsGUI.cCellVision=cellVision();
+            else
+                cTrapsGUI.cCellVision=cCellVision;
+            end
+            
             scrsz = get(0,'ScreenSize');
             cTrapsGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(3)/3 scrsz(4)/3]);
             
@@ -45,10 +54,6 @@ classdef timelapseTrapsGUI<handle
             cTrapsGUI.processingPanel = uipanel('Parent',cTrapsGUI.figure,...
                 'Position',[.515 .05 .47 .75]);
             
-            cTrapsGUI.selectTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Create Timelapse From Images',...
-                'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)selectTimelapse(cTrapsGUI));
-            cTrapsGUI.loadSavedTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Load Timelapse File',...
-                'Units','normalized','Position',[.025 .7 .95 .15],'Callback',@(src,event)loadSavedTimelapse(cTrapsGUI));
             cTrapsGUI.addSecondaryChannelButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Add image channel',...
                 'Units','normalized','Position',[.025 .55 .55 .15],'Callback',@(src,event)addSecondaryChannel(cTrapsGUI));
             cTrapsGUI.cropTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Crop Timepoints',...
@@ -62,7 +67,16 @@ classdef timelapseTrapsGUI<handle
                 'Units','normalized','Position',[.515 .85 .2 .05]);            
             cTrapsGUI.selectChannelButton = uicontrol('Parent',cTrapsGUI.figure,'Style','popupmenu','String','None',...
                 'Units','normalized','Position',[.715 .7 .27 .2],'Callback',@(src,event)selectChannel(cTrapsGUI));
-
+            
+            if nargin<2
+                cTrapsGUI.selectTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Create Timelapse From Images',...
+                    'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)selectTimelapse(cTrapsGUI));
+                cTrapsGUI.loadSavedTimelapseButton = uicontrol(cTrapsGUI.timelapsePanel,'Style','pushbutton','String','Load Timelapse File',...
+                    'Units','normalized','Position',[.025 .7 .95 .15],'Callback',@(src,event)loadSavedTimelapse(cTrapsGUI));
+            else
+                cTrapsGUI.cTimelapse=cTimelapse;
+                set(cTrapsGUI.selectChannelButton,'String',cTrapsGUI.cTimelapse.channelNames,'Value',1);
+            end
             
             
             cTrapsGUI.displayWholeTimelapseButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','Display Timelapse',...
@@ -78,14 +92,10 @@ classdef timelapseTrapsGUI<handle
             cTrapsGUI.selectCellsPlotButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','Select cells to plot',...
                 'Units','normalized','Position',[.025 .2 .65 .2],'Callback',@(src,event)selectCellsPlot(cTrapsGUI));
             cTrapsGUI.autoSelectButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
-                'Units','normalized','Position',[.7 .2 .25 .2],'Callback',@(src,event)autoSelect(cTrapsGUI));
+                'Units','normalized','Position',[.68 .2 .295 .2],'Callback',@(src,event)autoSelect(cTrapsGUI));
 
             cTrapsGUI.extractDataButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
                 'Units','normalized','Position',[.025 .0 .95 .2],'Callback',@(src,event)extractData(cTrapsGUI));
-
-
-            
-            cTrapsGUI.cCellVision=cellVision();
             
         end
 
