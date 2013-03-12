@@ -35,7 +35,8 @@ ACparameters.visualise = 1; %degree of visualisation (0,1,2,3)
 ACparameters.EVALS = 6000; %maximum number of iterations passed to fmincon
 ACparameters.spread_factor = 2; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.spread_factor_prior = 0.5; %used in particle swarm optimisation. determines spread of initial particles.
-ACparameters.seeds = 60;
+ACparameters.seeds = 80;
+ACparameters.TerminationEpoch = 200;%number of epochs of one unchanging point being the best before optimisation closes.
 
 %protects program from super crashing out by opening and closing a million
 %images.

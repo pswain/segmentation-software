@@ -57,7 +57,7 @@ method = 'PSO'; %'PSO','fmincon'
 debug = false;%if set to one the final radii found will be stored in the debug folder of the cell_serpent folder.
 res_points = 49;%number of the snake points passed to the results matrix (needs to match 'snake_size'field of OOFdataobtainer object
 %for storing results
-epochs_to_terminate = 500;
+epochs_to_terminate = ACparameters.TerminationEpoch;%500;
 
 
 sub_image_size = (size(forcing_images,1)-1)/2; %subimage is a size 2*sub_image_size +1 square.
