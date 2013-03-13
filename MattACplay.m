@@ -52,7 +52,7 @@ end
 %display just one trap for cell identification 1:43
 n=1;
 
-ctrapdisplay(disp.cTimelapse,disp.cCellVision,false,1,n)
+ctrapDisplay(disp.cTimelapse,disp.cCellVision,false,1,n)
 n = n+1;
 
 

@@ -4,9 +4,6 @@ function ttacObject = getTrapImages(ttacObject,TrapBoolean)
 
 ttacObject.TrapPresentBoolean = TrapBoolean;
 
-
-ttacObject.TrapPresentBoolean = TrapBoolean;
-
 if TrapBoolean
     
     %temporary until I write a proper trap entry GUI.

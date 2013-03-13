@@ -29,25 +29,29 @@ Plotfig = figure;
 TimeDifference = 5;%time between each image
 %% plot data all together
 
+figure(Plotfig);
 plot((1:length(data))*TimeDifference,data);
 xlabel('time')
-ylabel(ToExtract)
+ylabel(toExtract)
 
 
 %% plot data Nplot at a time
-Nplot = 4;
+Nplot = 8;
+
+MData = max(data(:));
 
 figure(Plotfig);
-plothandle = plot((1:length(data))*TimeDifference,data(1:4,:),'-o');
+plothandle = plot((1:size(data,2))*TimeDifference,data(1:Nplot,:),'-o');
 xlabel('time')
 ylabel(toExtract)
-ylim([0 max(data(:))])
+ylim([0 MData])
+pause
 for i = 1:(floor(size(data,1)/Nplot)-1)
     for n=1:Nplot
         delete(plothandle(n))
     end
-    plothandle = plot((1:length(data))*TimeDifference,data((1:Nplot)+(Nplot*i),:),'-o');
-    ylim([0 max(data(:))])
+    plothandle = plot((1:size(data,2))*TimeDifference,data((1:Nplot)+(Nplot*i),:),'-o');
+    ylim([0 MData])
 pause
 end
 

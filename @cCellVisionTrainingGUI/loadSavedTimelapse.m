@@ -4,4 +4,6 @@ function loadSavedTimelapse(cCellVisionGUI)
 load(fullfile(PathName,FileName),'cTimelapse');
 cCellVisionGUI.cTimelapse=cTimelapse;
 cCellVisionGUI.cCellVision.pixelSize=cCellVisionGUI.cTimelapse.pixelSize;
+cCellVisionGUI.cCellVision.magnification=cCellVisionGUI.cTimelapse.magnification;
+
 set(cCellVisionGUI.setPixelSizeMenu,'String',num2str(cCellVisionGUI.cTimelapse.pixelSize));

@@ -26,17 +26,17 @@ if true
     ITparameters.invert = true;
 end
 
-ACparameters.alpha = 0.0001;%weighs non image parts (none at the moment)
-ACparameters.beta =0.01; %weighs difference between consecutive time points.
-ACparameters.R_min = 1;%5;
-ACparameters.R_max = 15;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
+ACparameters.alpha = 0.01;%weighs non image parts (none at the moment)
+ACparameters.beta =100; %weighs difference between consecutive time points.
+ACparameters.R_min = 5;%5;
+ACparameters.R_max = 118;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
 ACparameters.opt_points = OptPoints;
-ACparameters.visualise = 1; %degree of visualisation (0,1,2,3)
+ACparameters.visualise = 3; %degree of visualisation (0,1,2,3)
 ACparameters.EVALS = 6000; %maximum number of iterations passed to fmincon
 ACparameters.spread_factor = 2; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.spread_factor_prior = 0.5; %used in particle swarm optimisation. determines spread of initial particles.
-ACparameters.seeds = 80;
-ACparameters.TerminationEpoch = 200;%number of epochs of one unchanging point being the best before optimisation closes.
+ACparameters.seeds = 60;
+ACparameters.TerminationEpoch = 150;%number of epochs of one unchanging point being the best before optimisation closes.
 
 %protects program from super crashing out by opening and closing a million
 %images.

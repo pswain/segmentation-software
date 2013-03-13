@@ -54,7 +54,7 @@ classdef cTrapDisplay<handle
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
                         timepoint=timepoints(i);
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
                         waitbar(timepoint/timepoints(end));
                     end
                     close(h)

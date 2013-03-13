@@ -5,6 +5,8 @@ function ttacObject = passTimelapseTraps(ttacObject,timelapseTraps)
 
 ttacObject.TimelapseTraps = timelapseTraps;
 
+ttacObject.TrapPresentBoolean = timelapseTraps.trapsPresent;
+
 ttacObject.TrapLocation = [];
 
 
