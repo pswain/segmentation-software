@@ -1,9 +1,9 @@
 function automaticSelectCells(cTimelapse,params)
 if nargin<2
     params.fraction=.7; %fraction of timelapse length that cells must be present or
-    params.duration=3e3; %number of frames cells must be present
+    params.duration=40; %number of frames cells must be present
 %     params.cellsToCheck=4;
-    params.framesToCheck=100;
+    params.framesToCheck=175;
 end
 
 cTimelapse.cellsToPlot(:)=0;

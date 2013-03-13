@@ -54,11 +54,13 @@ classdef cTrapDisplay<handle
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
                         timepoint=timepoints(i);
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
                         waitbar(timepoint/timepoints(end));
                     end
                     close(h)
                 end
+                %commented by elco to allow display of 1 trap at a time.
+                %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b 
                 image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
 %                 if isempy(

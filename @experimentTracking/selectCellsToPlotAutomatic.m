@@ -6,9 +6,9 @@ end
 
 if nargin<3
     params.fraction=.8; %fraction of timelapse length that cells must be present or
-    params.duration=3e3; %number of frames cells must be present
+    params.duration=40; %number of frames cells must be present
 %     params.cellsToCheck=4;
-    params.framesToCheck=100;
+    params.framesToCheck=160;
 end
 
 
