@@ -23,7 +23,7 @@ save('~/Documents/microscope_files_swain_microscope/PDR5/2013_02_06/PDR5GFPscGlc
 
 %% prep for new data
 
-toExtract = 'median';
+toExtract = 'mean';
 data = CompiledExtractedData.(toExtract);
 Plotfig = figure;
 TimeDifference = 5;%time between each image
@@ -54,6 +54,16 @@ for i = 1:(floor(size(data,1)/Nplot)-1)
     ylim([0 MData])
 pause
 end
+
+%% find mean of all time courses
+
+for t = 1:size(data,2)
+
+MeanOfData(t) = mean(data((data(:,t)~=0),t));
+
+end
+
+plot(1:size(data,2)*TimeDifference,MeanOfData)
 
 
 

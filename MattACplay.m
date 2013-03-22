@@ -73,4 +73,8 @@ cTimelapse = ttacObjectPOS2.TimelapseTraps;
 save('~/Documents/microscope_files_swain_microscope/PDR5/2013_02_06/PDR5GFPscGlc_2perc_00/pos2/cTimelapsePOS2_AC.mat','cTimelapse');
 
 
-
+for n= 1:124
+    for i= 1:3
+    cTimelapse.cTimepoint(n).filename{i} = ['/Users/ebakker/Documents/microscope_files_swain_microscope/matt_images/msn2 from mar 2/pos1/' cTimelapse.cTimepoint(n).filename{i}(end-18:end)];
+        end
+        end

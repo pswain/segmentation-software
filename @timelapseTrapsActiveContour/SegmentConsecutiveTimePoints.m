@@ -29,7 +29,7 @@ end
 ACparameters.alpha = 0.01;%weighs non image parts (none at the moment)
 ACparameters.beta =100; %weighs difference between consecutive time points.
 ACparameters.R_min = 5;%5;
-ACparameters.R_max = 118;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
+ACparameters.R_max = 18;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
 ACparameters.opt_points = OptPoints;
 ACparameters.visualise = 3; %degree of visualisation (0,1,2,3)
 ACparameters.EVALS = 6000; %maximum number of iterations passed to fmincon
@@ -69,7 +69,7 @@ Timepoints = FirstTimepoint:LastTimepoint;
 
 %CellsToSegment is a logical encoding which cells to plot (and therefore to
 %active contour segment) as true points at [trapinfo CellLabel]
-CellsToPlotGiven = true;
+CellsToPlotGiven = false;
 if ~isempty(ttacObject.TimelapseTraps.cellsToPlot)
     CellsToSegment = full(ttacObject.TimelapseTraps.cellsToPlot);
 else
@@ -217,6 +217,9 @@ TrapCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TrapCentreS
 TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width;ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
 CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
 
+%shouldn't happen, but it has.
+TrueCentres(TrueCentres<1 | TrueCentres>512) = 1;
+
 ImageStack = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,TrueCentres');
 
 %transform images
@@ -349,6 +352,10 @@ fprintf('timepoint %d \n',TP)
     TrapCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TrapCentreStrings{end})],2,[]);
     TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width ; ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
     CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
+    
+    %shouldn't happen, but it has.
+    TrueCentres(TrueCentres<1 | TrueCentres>512) = 1;
+
     
     ImageStack = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,TrueCentres');
     
