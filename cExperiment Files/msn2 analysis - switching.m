@@ -6,11 +6,12 @@ timeStep=2.5;
 % timeStep=2;
 timepoints=0:timeStep/60:(length(cExperiment.cellInf(1).extractedMedian)-1)*timeStep/60;
 
-fl1=[];fl2=[];fl3=[];
+fl1=[];fl2=[];fl3=[];cellInfAug26=struct;
 for cell=1:length(cExperiment.cellInf)
     fl1(cell,:)=cExperiment.cellInf(cell).extractedMax5;
     fl2(cell,:)=cExperiment.cellInf(cell).extractedMean;
     fl3(cell,:)=cExperiment.cellInf(cell).extractedMedian;
+
 end
 
 % fl1(fl1==0)=1e-6;
@@ -19,13 +20,21 @@ end
 
 fl1new=[];fl2new=[];fl3new=[];
 numcells=[];
-error=[];
+error=[];errorAug26=[];
 for i=1:length(cExperiment.cellInf(1).extractedMean)
     fl1new(i)=mean(fl1(fl1(:,i)>0,i));
     fl2new(i)=mean(fl2(fl2(:,i)>0,i));
     fl3new(i)=mean(fl3(fl3(:,i)>0,i));
+    
+        cellInfAug26.max5(i,:)=fl1new(i);
+    cellInfAug26.mean(i,:)=fl2new(i);
+    cellInfAug26.median(i,:)=fl3new(i);
+
+    
     error(i)=std(fl1(fl1(:,i)>0,i)./fl3(fl3(:,i)>0,i));
     numcells(i)=sum(fl1(:,i)>0);
+        errorAug26(i)=error(i)/sqrt(numcells(i));
+
 end
 fl1new=smooth(fl1new,2,'moving');
 fl2new=smooth(fl2new,2,'moving');

@@ -89,8 +89,8 @@ if cTimelapse.trapsPresent
         bb=max([cTrap.bb_width cTrap.bb_height])+10;
         bb_image=padarray(image,[bb bb]);
         for j=1:length(traps)
-            y=cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb;
-            x=cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb;
+            y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
+            x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
             temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
             temp_im(temp_im==0)=median(temp_im(:));
             trapsTimepoint(:,:,j)=temp_im;

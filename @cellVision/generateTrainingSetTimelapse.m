@@ -20,7 +20,8 @@ end
 
 
 index=1;
-if cTimelapse.trapsPresent
+if isempty(cTimelapse.trapsPresent) ||cTimelapse.trapsPresent
+    cTimelapse.trapsPresent=true;
     features=cCellVision.createImFilterSetCellTrap(cTimelapse.returnSingleTrapTimepoint(1,1,1));
 else
     features=cCellVision.createImFilterSetCellAsic(cTimelapse.returnSingleTrapTimepoint(1,1,1));
@@ -45,7 +46,7 @@ tic; time=toc;
 if isempty(cCellVision.cTrap)
     se_edge=strel('disk',12);
 else
-    se_edge=strel('disk',9);
+    se_edge=strel('disk',6);
 end
 
 se1 = strel('disk',1);
@@ -64,7 +65,7 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             
             
-            if cTimelapse.trapsPresent
+            if isempty(cTimelapse.trapsPresent) || cTimelapse.trapsPresent
                 features=cCellVision.createImFilterSetCellTrap(image(:,:,trap));
             else
                 features=cCellVision.createImFilterSetCellAsic(image(:,:,trap));
@@ -72,18 +73,25 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             %used to broaden the lines for more accurate classification
             %             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
-            trapInfo=struct('cellRadius',[],'cellCenters',[]);
-            trapInfo.cellRadius=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellRadius];
-            tempy=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellCenter];
-            trapInfo.cellCenters=reshape(tempy,[2 length(tempy)/2])';
-            class=zeros([size(image(:,:,trap)) length(trapInfo.cellRadius)+1]);
             
+            if isfield(cTimelapse.cTimepoint(timepoint).trapInfo(trap),'cellRadius')
+                trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
+            else
+                trapInfo=struct('cellRadius',[],'cellCenters',[]);
+                trapInfo.cellRadius=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellRadius];
+                tempy=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellCenter];
+                trapInfo.cellCenters=reshape(tempy,[2 length(tempy)/2])';
+            end
+            
+            class=zeros([size(image(:,:,trap)) length(trapInfo.cellRadius)+1]);
             if size(trapInfo.cellRadius,1)>0
                 for num_cells=1:length(trapInfo.cellRadius)
                     class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
-                    if trapInfo.cellRadius<11
+                    if trapInfo.cellRadius<7
+%                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
+                    elseif trapInfo.cellRadius<10
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius<14
+                    elseif trapInfo.cellRadius<16
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
                     else
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se4);
