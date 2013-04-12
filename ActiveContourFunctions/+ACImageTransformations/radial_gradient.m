@@ -44,9 +44,27 @@ end
 %% radial gradient
 image = -ximg.*cos(angle) -yimg.*sin(angle);
 
-
-if parameters.invert
-    image = max(image(:))-image;
+if isfield(parameters,'postprocessing')
+switch parameters.postprocessing
+    case 'none' 
+        %do nothing
+    case 'invert'
+        %invert the image
+        image = max(image(:))-image;
+    case 'absolute'
+        %take the absolute of the image
+        image = abs(image - median(image(:)));
+        image = max(image(:))-image;
+    case 'absolute+'
+        % negative of (absolute followed by addition of  half the original
+        % image)
+        image = abs(image - median(image(:))) + 0.5*(image - median(image(:)));
+        image = max(image(:))-image;
+    case 'absolute-'
+        %absolute followed by subtraction of  half the original image
+        image = abs(image - median(image(:))) - 0.5*(image - median(image(:)));
+        image = max(image(:))-image;
+end
 end
 
 
@@ -69,27 +87,27 @@ imageStack(:,:,i) = image;
 end
 
 end
-
-
-function error_message = checkparams(parameters)
-
-if ~islogical(parameters,'invert')
-error_message = [field ' must be a parameter of this function'];
-error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition.' field ' must be a parameter'])
-end
-
-if ~islogical(parameters.invert)
-error_message = ['invert must be logical'];
-error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition. invert must be a single logical'])
-end
-
-if any(~size((parameters.invert)==[1 1]))
-error_message = [field ' must be a single number'];
-error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition. invert must be a single number'])
-end
-
-error_message = [];
-end
+% checkparams - nobody got time for that.
+% 
+% function error_message = checkparams(parameters)
+% 
+% if ~islogical(parameters,'invert')
+% error_message = [field ' must be a parameter of this function'];
+% error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition.' field ' must be a parameter'])
+% end
+% 
+% if ~islogical(parameters.invert)
+% error_message = ['invert must be logical'];
+% error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition. invert must be a single logical'])
+% end
+% 
+% if any(~size((parameters.invert)==[1 1]))
+% error_message = [field ' must be a single number'];
+% error(['incorrect parameters passed to radial_gradient_DICangle_and_radialaddition. invert must be a single number'])
+% end
+% 
+% error_message = [];
+% end
 
 
 

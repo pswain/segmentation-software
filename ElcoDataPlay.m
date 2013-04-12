@@ -14,7 +14,7 @@ for s = 1:length(EDfields)
     
 end
 
-clear('newExtractedData');
+clear('newExtractedData','s');
 
 %% save data
 
@@ -31,8 +31,8 @@ TimeDifference = 5;%time between each image
 
 figure(Plotfig);
 plot((1:length(data))*TimeDifference,data);
-xlabel('time')
-ylabel(toExtract)
+xlabel('time (min)')
+ylabel([toExtract ' fluorescence (arbitrary units)'])
 
 
 %% plot data Nplot at a time

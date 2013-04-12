@@ -1,15 +1,10 @@
 function ttacObject = SegmentConsecutiveTimePoints(ttacObject,FirstTimepoint,LastTimepoint)
 
-filt = fspecial('disk',30);
-gauss = fspecial('gaussian',20,1);
+
 slice_size = 2;%slice of the timestack you look at in one go
 keepers = 1;%number of timpoints from that slice that you will keep (normally slice_size-1)
 SubImageSize = 61;
-im_stack = [];
-center_stack = [];
-trap_stack = [];
 OptPoints = 6;
-CellPreallocationNumber = 200;
 ITparameters = struct;%image transformation parameters
 SEGparameters = struct; %SegmentConsecutiveTimepoints parameters
 
@@ -31,12 +26,21 @@ ACparameters.beta =100; %weighs difference between consecutive time points.
 ACparameters.R_min = 5;%5;
 ACparameters.R_max = 18;%30; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
 ACparameters.opt_points = OptPoints;
-ACparameters.visualise = 3; %degree of visualisation (0,1,2,3)
+ACparameters.visualise = 1; %degree of visualisation (0,1,2,3)
 ACparameters.EVALS = 6000; %maximum number of iterations passed to fmincon
 ACparameters.spread_factor = 2; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.spread_factor_prior = 0.5; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.seeds = 60;
 ACparameters.TerminationEpoch = 150;%number of epochs of one unchanging point being the best before optimisation closes.
+
+ACparameters = ttacObject.Parameters.ActiveContour;
+ITparameters = ttacObject.Parameters.ImageTransformation;
+slice_size = ttacObject.Parameters.ImageSegmentation.slice_size; %2;%slice of the timestack you look at in one go
+keepers = ttacObject.Parameters.ImageSegmentation.keepers;    %1;%number of timpoints from that slice that you will keep (normally slice_size-1)
+SubImageSize = ttacObject.Parameters.ImageSegmentation.SubImageSize;%61;
+OptPoints = ttacObject.Parameters.ImageSegmentation.OptPoints;%6;
+
+CellPreallocationNumber = 200;
 
 %protects program from super crashing out by opening and closing a million
 %images.
@@ -46,7 +50,7 @@ end
 
 %make the image transform function indicated by the string in SEGparameters
 %a function handle to act on image stacks.
-ImageTransformFunction = str2func(['ACImageTransformations.' SEGparameters.ImageTransformFunction]);
+ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageSegmentation.ImageTransformFunction]);
 
 % DICangle = -45;
 % 
@@ -57,9 +61,13 @@ ImageTransformFunction = str2func(['ACImageTransformations.' SEGparameters.Image
 %Better to assign it here than every time in the loop.
 FauxCentersStack = round(SubImageSize/2)*ones(slice_size,2);
 
-%size of trap image stored in Timelapse.
-TrapImageSize = 2*[ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height]+1;
-
+%size of trap image stored in Timelapse. If there are no traps, this is the
+%size of the image.
+if ttacObject.TrapPresentBoolean
+    TrapImageSize = 2*[ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height]+1;
+else
+    TrapImageSize = size(ttacObject.TimelapseTraps.returnSingleTimepoint(FirstTimepoint));
+end
 %angles vector given as a default when no other is provided
 DefaultAngles = linspace(0,2*pi,(OptPoints+1));
 DefaultAngles = DefaultAngles(1:(end-1));
@@ -69,12 +77,14 @@ Timepoints = FirstTimepoint:LastTimepoint;
 
 %CellsToSegment is a logical encoding which cells to plot (and therefore to
 %active contour segment) as true points at [trapinfo CellLabel]
-CellsToPlotGiven = false;
+CellsToPlotGiven = ttacObject.Parameters.ImageSegmentation.CellsToPlotGiven;
 if ~isempty(ttacObject.TimelapseTraps.cellsToPlot)
     CellsToSegment = full(ttacObject.TimelapseTraps.cellsToPlot);
 else
     CellsToPlotGiven = false;
 end
+
+CellsToSegment(1,1) = true;
 %% NOTES
 
 %load in images for the slice size
@@ -188,9 +198,9 @@ for TI = 1:size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo,2)
             %If there are no available cell entries left initialise a
             %whole new tranch of cell entries
             if isempty(CellEntry)
-                CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
                 CellEntry = length(CellInfo)+1;
-                EmptyCellEntries = [EmptyCellEntries;true(1,CellPreallocationNumber)];
+                CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
+                EmptyCellEntries = [EmptyCellEntries true(1,CellPreallocationNumber)];
             end
             
             EmptyCellEntries(CellEntry) = false;
@@ -199,7 +209,13 @@ for TI = 1:size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo,2)
             CellInfo(CellEntry).CellLabel = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel(CI);
             CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
             CellInfo(CellEntry).(CellCentreStrings{end}) =double(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellCenter);
-            CellInfo(CellEntry).(TrapCentreStrings{end}) = [ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).xcenter ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).ycenter];
+            
+            if ttacObject.TrapPresentBoolean
+                CellInfo(CellEntry).(TrapCentreStrings{end}) = [ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).xcenter ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).ycenter];
+            else
+                CellInfo(CellEntry).(TrapCentreStrings{end}) = [0 0];
+            end
+            
             CellInfo(CellEntry).(PriorRadiiStrings{end}) = double(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellRadius)*ones(1,OptPoints);%set prior to be the radus found by matt's hough transform
             CellInfo(CellEntry).(PriorAnglesStrings{end}) = DefaultAngles;%set prior angles to be evenly spaced
             CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
@@ -214,7 +230,13 @@ end
 %Get Subimages of Cells
 CellCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellCentreStrings{end})],2,[]);
 TrapCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TrapCentreStrings{end})],2,[]);
-TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width;ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
+
+if ttacObject.TrapPresentBoolean
+    TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width;ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
+else
+    TrueCentres = CellCentres;
+end
+
 CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
 
 %shouldn't happen, but it has.
@@ -246,19 +268,18 @@ for TP = Timepoints(2:end)
 fprintf('timepoint %d \n',TP)
             
     UpdatedPreviousTimepoint = [CellInfo(:).UpdatedThisTimepoint];
-    
 
     for CN = find((~UpdatedPreviousTimepoint) & (~EmptyCellEntries))
         
         %take cells which for which no cell was present at the previous
         %timepoint and makes the segmentation result the prior result for
         %all cells.
-        for RN = keepers - (mod(CellInfo(CN).TimePointsPresent-slice_size,keepers)):(slice_size-1)
+        for RN = (keepers - (mod(CellInfo(CN).TimePointsPresent-slice_size,keepers))):(slice_size-1)
             [px,py] = ACBackGroundFunctions.get_full_points_from_radii((CellInfo(CN).(PriorRadiiStrings{RN}))',(CellInfo(CN).(PriorAnglesStrings{RN}))',CellInfo(CN).(CellCentreStrings{RN}),TrapImageSize);
             TempResultImage = false(TrapImageSize);
-            TempResultImage(py+TrapImageSize(1,2)*(px-1))=true;
+            TempResultImage(py+TrapImageSize(1,1)*(px-1))=true;
             %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.TimelapseTraps.cTimepoint((TP-1)+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).segmented = sparse(TempResultImage);  
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).segmented = sparse(TempResultImage);  
             
         end
         
@@ -314,9 +335,9 @@ fprintf('timepoint %d \n',TP)
                     %If there are no available cell entries left initialise a
                     %whole new tranch of cell entries
                     if isempty(CellEntry)
-                        CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
                         CellEntry = length(CellInfo)+1;
-                        EmptyCellEntries = [EmptyCellEntries;true(1,CellPreallocationNumber)];
+                        CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
+                        EmptyCellEntries = [EmptyCellEntries true(1,CellPreallocationNumber)];
                     end
                     
                     CellInfo(CellEntry).CellNumber = CellEntry;
@@ -334,7 +355,13 @@ fprintf('timepoint %d \n',TP)
 
                 CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
                 CellInfo(CellEntry).(CellCentreStrings{end}) =double(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellCenter);
-                CellInfo(CellEntry).(TrapCentreStrings{end}) = [ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).xcenter ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).ycenter];
+                
+                if ttacObject.TrapPresentBoolean
+                    CellInfo(CellEntry).(TrapCentreStrings{end}) = [ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).xcenter ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(TI).ycenter];
+                else
+                    CellInfo(CellEntry).(TrapCentreStrings{end}) = [0 0];
+                end
+                
                 CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
                 CellInfo(CellEntry).UpdatedThisTimepoint = true;
                 NumberOfCellsUpdated = NumberOfCellsUpdated+1;
@@ -350,7 +377,15 @@ fprintf('timepoint %d \n',TP)
 
     CellCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellCentreStrings{end})],2,[]);
     TrapCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TrapCentreStrings{end})],2,[]);
-    TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width ; ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
+    
+    %if there are no traps present then cell coordinates in
+    %ttacObject.TimelapseTraps are absolute coordinates.
+    if ttacObject.TrapPresentBoolean
+        TrueCentres = CellCentres +TrapCentres - repmat([ttacObject.TimelapseTraps.cTrapSize.bb_width ; ttacObject.TimelapseTraps.cTrapSize.bb_height],1,NumberOfCellsUpdated);
+    else
+        TrueCentres = CellCentres;
+    end
+    
     CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
     
     %shouldn't happen, but it has.
@@ -393,10 +428,13 @@ fprintf('timepoint %d \n',TP)
         for RN = 1:keepers
             [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult(RN,:)',AnglesResult(RN,:)',CellInfo(CN).(CellCentreStrings{RN}),TrapImageSize);
             TempResultImage = false(TrapImageSize);
-            TempResultImage(py+TrapImageSize(1,2)*(px-1))=true;
+            TempResultImage(py+TrapImageSize(1,1)*(px-1))=true;
             %write the results to keep (1:keepers) to the cTimelapse object
             ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).segmented = sparse(TempResultImage);
-            
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).cellAngles = AnglesResult(RN,:);  
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).cellRadii = RadiiResult(RN,:);
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).ActiveContourParameters = ttacObject.Parameters;            
+
         end
         
         CellInfo(CN).PreviousTimepointResult = RadiiResult(keepers,:);
@@ -429,9 +467,12 @@ fprintf('timepoint %d \n',TP)
         for RN = 1:keepers
             [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult(RN,:)',AnglesResult(RN,:)',CellInfo(CN).(CellCentreStrings{RN}),TrapImageSize);
             TempResultImage = false(TrapImageSize);
-            TempResultImage(py+TrapImageSize(1,2)*(px-1))=true;
+            TempResultImage(py+TrapImageSize(1,1)*(px-1))=true;
             %write the results to keep (1:keepers) to the cTimelapse object
             ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).segmented = sparse(TempResultImage);  
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).cellAngles = AnglesResult(RN,:);  
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).cellRadii = RadiiResult(RN,:);
+            ttacObject.TimelapseTraps.cTimepoint(TP+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).ActiveContourParameters = ttacObject.Parameters;
 
         end
         
@@ -450,6 +491,30 @@ fprintf('timepoint %d \n',TP)
     
     
 end
+
+%end of the timeperiod to be segmented.write remaining priors to the
+%segmentation results.
+
+
+for CN = find([CellInfo(:).UpdatedThisTimepoint])
+    
+    %take cells which for which no cell was present at the previous
+    %timepoint and makes the segmentation result the prior result for
+    %all cells.
+    for RN = (keepers - (mod(CellInfo(CN).TimePointsPresent-slice_size,keepers))+1):slice_size
+        [px,py] = ACBackGroundFunctions.get_full_points_from_radii((CellInfo(CN).(PriorRadiiStrings{RN}))',(CellInfo(CN).(PriorAnglesStrings{RN}))',CellInfo(CN).(CellCentreStrings{RN}),TrapImageSize);
+        TempResultImage = false(TrapImageSize);
+        TempResultImage(py+TrapImageSize(1,1)*(px-1))=true;
+        %write the results to keep (1:keepers) to the cTimelapse object
+        ttacObject.TimelapseTraps.cTimepoint((LastTimepoint)+RN-slice_size).trapInfo(CellInfo(CN).TrapNumber).cell(CellInfo(CN).(CellNumberTimelapseStrings{RN})).segmented = sparse(TempResultImage);
+        
+    end
+    
+    
+    CellInfo(CN) = InitialisedCellInfo;
+    EmptyCellEntries(CN) = true;
+end
+
 
 end
 

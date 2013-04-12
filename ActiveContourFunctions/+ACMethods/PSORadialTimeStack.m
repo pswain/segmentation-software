@@ -100,7 +100,7 @@ six = size(forcing_images,1);
 for iP=1:Timepoints
     %fprintf('cell %d \n',iP)
     
-    [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,round(six/2), round(siy/2),R_min,R_max);
+    [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max);
     radii_init_score_all = [radii_init_score_all radii_init_score'];
     [D2radii] = ACBackGroundFunctions.second_derivative_snake(radii_init_score);
     D2radii_all = [D2radii_all D2radii'];
@@ -111,14 +111,14 @@ for iP=1:Timepoints
     figure(fig_handle);
     subplot(1,Timepoints,iP);
     imshow(forcing_images(:,:,iP),[])
-    [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_init_score,angles,Centers_stack(:,iP),res_points,(sub_image_size*[2 2]+1));
+    [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_init_score,angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
     hold on
     plot(px,py,'b');
     title(['timepoint ' num2str(iP)])
     
     if size(varargin,2)>=2 && iP==1
         
-        [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_previous_time_point',angles,Centers_stack(:,iP),res_points,(sub_image_size*[2 2]+1));
+        [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_previous_time_point',angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
         plot(px,py,'g');
     
     
