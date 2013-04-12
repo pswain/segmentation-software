@@ -35,7 +35,7 @@ end
 end
 
 function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image)
-s1=strel('disk',0);
+% s1=strel('disk',0);
 % for i=1:length(cTimelapse.cTrapsLabelled(traps(1)).timepoint)
 % disp(['Timepoint ',int2str(timepoint)])
 
@@ -53,7 +53,7 @@ for j=1:size(image,3)
     temp_im=image(:,:,j);
     if isempty(bw_mask)
         bw_mask=trapInfo(traps(j)).segCenters;
-        bw_mask=imdilate(bw_mask,s1);
+%         bw_mask=imdilate(bw_mask,s1);
         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
         
         %may need to change the radiusSmall and the radiusLarge below to
@@ -77,10 +77,11 @@ for j=1:size(image,3)
 %                     trapInfo(traps(j)).cellCenters=uint16(round(circen));
 %                     trapInfo(traps(j)).cellRadius=uint16(round(cirrad));
     else
-        
+        s2=strel('disk',4);
+        bw_mask=imdilate(bw_mask,s2);
         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
-        temp_mask=imdilate(bw_mask,strel('disk',cCellVision.radiusLarge*2));
-        temp_im(~temp_mask)=median(temp_im(:));
+%         temp_mask=imdilate(bw_mask,strel('disk',cCellVision.radiusLarge*2));
+%         temp_im(~temp_mask)=median(temp_im(:));
         [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
         %             bw_mask=[];
         
@@ -407,7 +408,7 @@ end
 prm_r_range = sort(max( [0,0;radrange(1),radrange(2)] ));
 
 % Parameters (default values)
-prm_grdthres = .01;
+prm_grdthres = .0001;
 prm_fltrLM_R = 8;
 prm_multirad = .5;
 func_compu_cen = true;
@@ -436,6 +437,7 @@ vap_fltr4accum = 4; % filter for smoothing the accumulation array
 	fltr4accum = ones(5,5);
 	fltr4accum(2:4,2:4) = 2;
 	fltr4accum(3,3) = 6;
+    fltr4accum=imresize(fltr4accum,.6);
 
 
 func_compu_cen = ( nargout > 1 );
@@ -641,7 +643,7 @@ for k = 1 : size(accumAOI, 1),
     for ilabel = 1 : candLM_nRgn,
         % Indices (to current AOI) of the pixels in the group
         temp_im=candLM_label == ilabel;
-        temp_im=imdilate(temp_im,se2);
+%         temp_im=imdilate(temp_im,se2);
 %         candgrp_masklin = find( candLM_label == ilabel );
         candgrp_masklin = find( temp_im );
 

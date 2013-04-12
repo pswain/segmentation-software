@@ -41,6 +41,8 @@ classdef timelapseTraps<handle
         extractCellData(cTimelapse);
         automaticSelectCells(cTimelapse,params);
         
+        correctSkippedFramesInf(cTimelapse);
+        
         %updated processing cell function
         identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
         d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,channel, method,trap_image,old_d_im)

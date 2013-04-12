@@ -31,8 +31,13 @@ for channel=1:length(cTimelapse.channelNames)
             
             temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
             if temp_loc
-                trapIm=trapImages(:,:,j);
+                if ~cTimelapse.trapsPresent
+                    trapIm=trapImages(:,:,j);
+                else
+                    trapIm=trapImages;
+                end
                 
+               
                 
                 seg_areas=full(trapInfo(currTrap).cell(temp_loc).segmented);
                 segLabel=zeros(size(seg_areas));

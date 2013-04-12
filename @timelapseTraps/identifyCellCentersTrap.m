@@ -59,13 +59,11 @@ function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,
 % traps=1:length(cTimelapse.cTimepoint(timepoint).trapLocations);
 j=trap;
 if cTimelapse.trapsPresent
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellCenter=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.cellRadius=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).cell.segmented=sparse(zeros(size(image))>0);
+    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
+        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
 
 else
-    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
+    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image))>0);
@@ -93,14 +91,14 @@ t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
 
 bw=t_im<0;
 % bw=imclose(bw,strel('disk',2));
-bw_l=bwlabel(bw);
-props=regionprops(bw);
-for d=1:length(props)
-    if props(d).Area>40
-        seg_thresh=min(t_im(bw_l==d))/3;
-        bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
-    end
-end
+% bw_l=bwlabel(bw);
+% props=regionprops(bw);
+% for d=1:length(props)
+%     if props(d).Area>40
+%         seg_thresh=min(t_im(bw_l==d))/3;
+%         bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
+%     end
+% end
 
 bw_l=bwlabel(bw);
 props=regionprops(bw);
@@ -143,13 +141,14 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channe
 % traps=1:length(cTimelapse.cTimepoint(timepoint).trapLocations);
 j=trap;
 if cTimelapse.trapsPresent
-%     clear cTimelapse.cTimepoint(timepoint).trapInfo(j);
-% cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=zeros(size(image))>0;
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).segmented=sparse(zeros(size(image))>0);
-    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellCenter]=[];
-    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellRadius]=[];
-    [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().segmented]=sparse(zeros(size(image))>0);
+    %     clear cTimelapse.cTimepoint(timepoint).trapInfo(j);
+    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',zeros(size(image))>0,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
+        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+%     cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=zeros(size(image))>0;
+%     cTimelapse.cTimepoint(timepoint).trapInfo(j).segmented=sparse(zeros(size(image))>0);
+%     [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellCenter]=[];
+%     [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().cellRadius]=[];
+%     [cTimelapse.cTimepoint(timepoint).trapInfo(j).cell().segmented]=sparse(zeros(size(image))>0);
 
 else
     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
@@ -178,28 +177,28 @@ if isempty(old_d_im)
     end
 end
 
-% combined_d_im=d_im+old_d_im/6;
-combined_d_im=d_im;
-t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
+combined_d_im=d_im+old_d_im/4;
+% combined_d_im=d_im;
+t_im=imfilter(combined_d_im,fspecial('gaussian',4,.6));
 % t_im=imfilter(d_im,fspecial('disk',1));
 
 bw=t_im<0;
 % bw=imclose(bw,strel('disk',2));
 bw_l=bwlabel(bw);
 props=regionprops(bw);
-for d=1:length(props)
-    if props(d).Area>80
-        seg_thresh=min(t_im(bw_l==d))/4;
-        bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
-    end
-end
+% for d=1:length(props)
+%     if props(d).Area>100
+%         seg_thresh=min(t_im(bw_l==d))/4;
+%         bw(bw_l==d)=t_im(bw_l==d)<seg_thresh;
+%     end
+% end
 
 bw_l=bwlabel(bw);
 props=regionprops(bw,{'Area','Eccentricity'});
 for d=1:length(props)
     if props(d).Area<5
         bw(bw_l==d)=0;
-    elseif props(d).Eccentricity>.95
+    elseif props(d).Eccentricity>.97
         bw(bw_l==d)=0;
     end
 end

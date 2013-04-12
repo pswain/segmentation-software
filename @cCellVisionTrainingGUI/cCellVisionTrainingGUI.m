@@ -1,32 +1,35 @@
 classdef cCellVisionTrainingGUI<handle
     properties
         figure = [];
-        timelapsePanel
-        cellVisionPanel
-        loadTimelapseButton
-        selectTimelapseButton
+        timelapsePanel;
+        cellVisionPanel;
+        loadTimelapseButton;
+        addSegmentedTimelapseButton;
+        loadCellVisionButton;
+        selectTimelapseButton;
         selectTrapTemplateButton=[];
-        useCurrentTrapButton
-        selectTrapsForGroundTruthButton
-        cropTimepointsButton
-        saveTimelapseButton
-        createGroundTruthButton
+        useCurrentTrapButton;
+        selectTrapsForGroundTruthButton;
+        cropTimepointsButton;
+        cropTrapsButton;
+        saveTimelapseButton;
+        createGroundTruthButton;
         
-        trainStageOneButton
-        trainStageTwoButton
-        saveCellVisionButton
-        setCellVisionTypeMenu
-        setCellVisionTypeText
-        setMinRadiusMenu
-        setMinRadiusText
-        setMaxRadiusMenu
-        setMaxRadiusText
-        setPixelSizeMenu
-        setPixelSizeText
-        setNegTrainingNumMenu
-        setNegTrainingNumText
+        trainStageOneButton;
+        trainStageTwoButton;
+        saveCellVisionButton;
+        setCellVisionTypeMenu;
+        setCellVisionTypeText;
+        setMinRadiusMenu;
+        setMinRadiusText;
+        setMaxRadiusMenu;
+        setMaxRadiusText;
+        setPixelSizeMenu;
+        setPixelSizeText;
+        setNegTrainingNumMenu;
+        setNegTrainingNumText;
 
-        cTimelapse=[]
+        cTimelapse=[];
         cCellVision=[];
     end % properties
     %% Displays timelapse for a single trap
@@ -47,7 +50,12 @@ classdef cCellVisionTrainingGUI<handle
             cCellVisionGUI.selectTimelapseButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Load Timelapse Images',...
                 'Units','normalized','Position',[.025 .75 .45 .25],'Callback',@(src,event)selectTimelapse(cCellVisionGUI));
             cCellVisionGUI.loadTimelapseButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Load Timelapse Class',...
-                'Units','normalized','Position',[.025 .50 .45 .25],'Callback',@(src,event)loadSavedTimelapse(cCellVisionGUI));
+                'Units','normalized','Position',[.025 .50 .225 .25],'Callback',@(src,event)loadSavedTimelapse(cCellVisionGUI));
+            cCellVisionGUI.addSegmentedTimelapseButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Add Segmented Timelapse',...
+                'Units','normalized','Position',[.25 .50 .225 .25],'Callback',@(src,event)addSegmentedTimelapse(cCellVisionGUI));
+            cCellVisionGUI.loadCellVisionButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Load cellVision Model',...
+                'Units','normalized','Position',[.025 .25 .45 .25],'Callback',@(src,event)loadCellVision(cCellVisionGUI));
+
             cCellVisionGUI.saveTimelapseButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Save Timelapse',...
                 'Units','normalized','Position',[.025 .0 .45 .25],'Callback',@(src,event)saveTimelapse(cCellVisionGUI));
             
@@ -58,8 +66,11 @@ classdef cCellVisionTrainingGUI<handle
 
             cCellVisionGUI.selectTrapsForGroundTruthButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Select Traps to Track',...
                 'Units','normalized','Position',[.525 .50 .45 .25],'Callback',@(src,event)selectTrapsForGroundTruth(cCellVisionGUI));
-            cCellVisionGUI.cropTimepointsButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Crop Timelpoints',...
-                'Units','normalized','Position',[.525 .25 .45 .25],'Callback',@(src,event)cropTimepoints(cCellVisionGUI));
+            cCellVisionGUI.cropTimepointsButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Crop Timepoints',...
+                'Units','normalized','Position',[.525 .25 .225 .25],'Callback',@(src,event)cropTimepoints(cCellVisionGUI));
+                        cCellVisionGUI.cropTrapsButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Crop Traps',...
+                'Units','normalized','Position',[.75 .25 .225 .25],'Callback',@(src,event)cropTraps(cCellVisionGUI));
+
             cCellVisionGUI.createGroundTruthButton = uicontrol(cCellVisionGUI.timelapsePanel,'Style','pushbutton','String','Create Ground/Truth',...
                 'Units','normalized','Position',[.525 .0 .45 .25],'Callback',@(src,event)createGroundTruth(cCellVisionGUI));
             
@@ -112,11 +123,14 @@ classdef cCellVisionTrainingGUI<handle
         % Other functions 
         selectTimelapse(cCellVisionGUI)
         loadSavedTimelapse(cCellVisionGUI)
+        addSegmentedTimelapse(cCellVisionGUI)
+        loadCellVision(cCellVisionGUI)
         saveTimelapse(cCellVisionGUI)
         selectTrapTemplate(cCellVisionGUI)
         useCurrentTrap(cCellVisionGUI)
         selectTrapsForGroundTruth(cCellVisionGUI)
         cropTimepoints(cCellVisionGUI)
+        cropTraps(cCellVisionGUI)
         createGroundTruth(cCellVisionGUI)
         
         trainCellVisionStageOne(cCellVisionGUI)
