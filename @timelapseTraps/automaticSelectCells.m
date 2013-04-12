@@ -3,7 +3,11 @@ if nargin<2
     params.fraction=.7; %fraction of timelapse length that cells must be present or
     params.duration=40; %number of frames cells must be present
 %     params.cellsToCheck=4;
+<<<<<<< HEAD
     params.framesToCheck=175;
+=======
+    params.framesToCheck=84;
+>>>>>>> ElcoACCode
 end
 
 cTimelapse.cellsToPlot(:)=0;
