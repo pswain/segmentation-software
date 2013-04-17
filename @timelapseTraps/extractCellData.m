@@ -13,6 +13,8 @@ for channel=1:length(cTimelapse.channelNames)
     
     cTimelapse.extractedData(channel).radius=zeros(numCells,length(cTimelapse.cTimepoint));
     
+    cTimelapse.extractedData(channel).area=zeros(numCells,length(cTimelapse.cTimepoint));
+    
     cTimelapse.extractedData(channel).trapNum=trap;
     cTimelapse.extractedData(channel).cellNum=cell;
     
@@ -31,7 +33,7 @@ for channel=1:length(cTimelapse.channelNames)
             
             temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
             if temp_loc
-                if ~cTimelapse.trapsPresent
+                if cTimelapse.trapsPresent
                     trapIm=trapImages(:,:,j);
                 else
                     trapIm=trapImages;
@@ -62,6 +64,7 @@ for channel=1:length(cTimelapse.channelNames)
                 cTimelapse.extractedData(channel).median(j,timepoint)=median(cellFL(:));
                 cTimelapse.extractedData(channel).std(j,timepoint)=std(double(cellFL(:)));
                 cTimelapse.extractedData(channel).radius(j,timepoint)=trapInfo(currTrap).cell(temp_loc).cellRadius;
+                cTimelapse.extractedData(channel).area(j,timepoint)=length(cellFL);
                 
             end
         end
