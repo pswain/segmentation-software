@@ -1,5 +1,7 @@
 function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
 
+allowedOverlap=.2;
+
 if nargin<3
     timepoint=1;
 end
@@ -28,13 +30,13 @@ end
 % intensity value and the best threshold to use for all traps
 switch method
     case 'hough'
-        hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image)
+        hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
     case 'active_contour'
         linear_segmentation(cTimelapse,cCellVision,traps,channel)
 end
 end
 
-function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image)
+function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
 % s1=strel('disk',0);
 % for i=1:length(cTimelapse.cTrapsLabelled(traps(1)).timepoint)
 % disp(['Timepoint ',int2str(timepoint)])
@@ -53,7 +55,7 @@ for j=1:size(image,3)
     temp_im=image(:,:,j);
     if isempty(bw_mask)
         bw_mask=trapInfo(traps(j)).segCenters;
-%         bw_mask=imdilate(bw_mask,s1);
+        %         bw_mask=imdilate(bw_mask,s1);
         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
         
         %may need to change the radiusSmall and the radiusLarge below to
@@ -67,21 +69,43 @@ for j=1:size(image,3)
             cirrad=cirrad(m);
         end
         
+        cellsIndex=1;
+        nseg=128;
         for numCells=1:length(cirrad)
-            trapInfo(traps(j)).cell(numCells).cellCenter=uint16(round(circen(numCells,:)));
-            trapInfo(traps(j)).cell(numCells).cellRadius=uint16(round(cirrad(numCells)));
-            trapInfo(traps(j)).cellsPresent=1;
+            
+            temp_im=zeros(size(temp_im))>0;
+            x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
+            x=double(x);y=double(y);r=double(r);
+            theta = 0 : (2 * pi / nseg) : (2 * pi);
+            pline_x = round(r * cos(theta) + x);
+            pline_y = round(r * sin(theta) + y);
+            loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
+            pline_x(loc)=[];pline_y(loc)=[];
+            for i=1:length(pline_x)
+                temp_im(pline_y(i),pline_x(i),1)=1;
+            end
+            locfill=[y x];
+            temp_im=imfill(temp_im,round(locfill))>0;
+            cellOverlapTrap=temp_im&cCellVision.cTrap.trapOutline;
+            ratioCellToTrap=sum(cellOverlapTrap(:))/sum(temp_im(:));
+            
+            if ratioCellToTrap<allowedOverlap;
+                trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
+                trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
+                trapInfo(traps(j)).cellsPresent=1;
+                cellsIndex=cellsIndex+1;
+            else
+                b=1;
+            end
         end
         trapInfo(traps(j)).cellsPresent=~isempty(circen);
         
-%                     trapInfo(traps(j)).cellCenters=uint16(round(circen));
-%                     trapInfo(traps(j)).cellRadius=uint16(round(cirrad));
-    else
+        
+        
+    else %for the add/remove cells part of the GUI after processing is done
         s2=strel('disk',4);
         bw_mask=imdilate(bw_mask,s2);
         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
-%         temp_mask=imdilate(bw_mask,strel('disk',cCellVision.radiusLarge*2));
-%         temp_im(~temp_mask)=median(temp_im(:));
         [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
         %             bw_mask=[];
         
@@ -100,20 +124,10 @@ for j=1:size(image,3)
         trapInfo(traps(j)).cell(cellsThere+1).cellCenter=uint16(round(circen(numCells,:)));
         trapInfo(traps(j)).cell(cellsThere+1).cellRadius=uint16(round(cirrad(numCells)));
         trapInfo(traps(j)).cellsPresent=1;
-        
-%                     trapInfo(traps(j)).cellCenters(end+1,:)=uint16(round(circen));
-%                     trapInfo(traps(j)).cellRadius(end+1,1)=uint16(round(cirrad));
     end
-%     emptyCir=find(trapInfo(traps(j)).cellRadius==0);
-%     if ~isempty(emptyCir)
-%         trapInfo(traps(j)).cellRadius(emptyCir,:)=[];
-%         trapInfo(traps(j)).cellCenters(emptyCir,:)=[];
-%     end
-%     while size(trapInfo(traps(j)).cellRadius,1)>size(trapInfo(traps(j)).cellCenters,1)
-%         trapInfo(traps(j)).cellRadius(end,:)=[];
-%     end
-    %         circen=trapInfo(traps(j)).cellCenters;
-    %         cirrad=trapInfo(traps(j)).cellRadius;
+    
+    
+    
     if trapInfo(traps(j)).cellsPresent
         circen=[trapInfo(traps(j)).cell(:).cellCenter];
         circen=reshape(circen,2,length(circen)/2)';
@@ -138,6 +152,10 @@ for j=1:size(image,3)
             trapInfo(traps(j)).cell(k).segmented=sparse(temp_im);
         end
     end
+    
+    
+    
+    
 end
 cTimelapse.cTimepoint(timepoint).trapInfo=trapInfo;
 
@@ -433,11 +451,11 @@ vap_multirad = 3;
 
 vap_fltr4accum = 4; % filter for smoothing the accumulation array
 
-    % Default filter (5-by-5)
-	fltr4accum = ones(5,5);
-	fltr4accum(2:4,2:4) = 2;
-	fltr4accum(3,3) = 6;
-    fltr4accum=imresize(fltr4accum,.6);
+% Default filter (5-by-5)
+fltr4accum = ones(5,5);
+fltr4accum(2:4,2:4) = 2;
+fltr4accum(3,3) = 6;
+fltr4accum=imresize(fltr4accum,.6);
 
 
 func_compu_cen = ( nargout > 1 );
@@ -484,18 +502,18 @@ linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
     (rr_4linaccum(1) + 0.5) : rr_4linaccum(2) ];
 
 lin2accum_aJ = floor( ...
-	double(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-	repmat( double(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
-);
+    double(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( double(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
+    );
 lin2accum_aI = floor( ...
-	double(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-	repmat( double(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
-);
+    double(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( double(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
+    );
 
 % Clip the votings that are out of the accumulation array
 mask_valid_aJaI = ...
-	lin2accum_aJ > 0 & lin2accum_aJ < (size(grdmag,2) + 1) & ...
-	lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
+    lin2accum_aJ > 0 & lin2accum_aJ < (size(grdmag,2) + 1) & ...
+    lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
 
 mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
 lin2accum_aJ = lin2accum_aJ .* mask_valid_aJaI + mask_valid_aJaI_reverse;
@@ -553,13 +571,13 @@ accum = filter2( fltr4accum, accum );
 if prm_useaoi,
     % Threshold value for 'accum'
     prm_llm_thres1 = prm_grdthres * prm_aoithres_s;
-
+    
     % Thresholding over the accumulation array
     accummask = ( accum > prm_llm_thres1 );
-
+    
     % Segmentation over the mask
     [accumlabel, accum_nRgn] = bwlabel( accummask, 8 );
-
+    
     % Select AOIs from segmented regions
     accumAOI = ones(0,4);
     for k = 1 : accum_nRgn,
@@ -569,7 +587,7 @@ if prm_useaoi,
         rgn_top = min( accumrgn_IdxI );
         rgn_bottom = max( accumrgn_IdxI );
         rgn_left = min( accumrgn_IdxJ );
-        rgn_right = max( accumrgn_IdxJ );        
+        rgn_right = max( accumrgn_IdxJ );
         % The AOIs selected must satisfy a minimum size
         if ( (rgn_right - rgn_left + 1) >= prm_aoiminsize && ...
                 (rgn_bottom - rgn_top + 1) >= prm_aoiminsize ),
@@ -591,14 +609,14 @@ fltr4LM = zeros(2 * prm_fltrLM_R + 1);
 [mesh4fLM_x, mesh4fLM_y] = meshgrid(-prm_fltrLM_R : prm_fltrLM_R);
 mesh4fLM_r = sqrt( mesh4fLM_x.^2 + mesh4fLM_y.^2 );
 fltr4LM_mask = ...
-	( mesh4fLM_r > prm_fltrLM_r & mesh4fLM_r <= prm_fltrLM_R );
+    ( mesh4fLM_r > prm_fltrLM_r & mesh4fLM_r <= prm_fltrLM_R );
 fltr4LM = fltr4LM - ...
-	fltr4LM_mask * (prm_fltrLM_s / sum(fltr4LM_mask(:)));
+    fltr4LM_mask * (prm_fltrLM_s / sum(fltr4LM_mask(:)));
 
 if prm_fltrLM_R >= 4,
-	fltr4LM_mask = ( mesh4fLM_r < (prm_fltrLM_r - 1) );
+    fltr4LM_mask = ( mesh4fLM_r < (prm_fltrLM_r - 1) );
 else
-	fltr4LM_mask = ( mesh4fLM_r < prm_fltrLM_r );
+    fltr4LM_mask = ( mesh4fLM_r < prm_fltrLM_r );
 end
 fltr4LM = fltr4LM + fltr4LM_mask / sum(fltr4LM_mask(:));
 
@@ -624,7 +642,7 @@ for k = 1 : size(accumAOI, 1),
     % Clear the margins of 'candLM_mask'
     candLM_mask([1:prm_fltrLM_R, (end-prm_fltrLM_R+1):end], :) = 0;
     candLM_mask(:, [1:prm_fltrLM_R, (end-prm_fltrLM_R+1):end]) = 0;
-
+    
     % **** Debug code (begin)
     if dbg_on,
         dbg_LMmask(aoi(1):aoi(2), aoi(3):aoi(4)) = ...
@@ -632,7 +650,7 @@ for k = 1 : size(accumAOI, 1),
             accumaoi_LBMask + 2 * candLM_mask;
     end
     % **** Debug code (end)
-
+    
     candLM_mask=mattmask;
     % Group the local maxima candidates by adjacency, compute the
     % centroid position for each group and take that as the center
@@ -643,24 +661,24 @@ for k = 1 : size(accumAOI, 1),
     for ilabel = 1 : candLM_nRgn,
         % Indices (to current AOI) of the pixels in the group
         temp_im=candLM_label == ilabel;
-%         temp_im=imdilate(temp_im,se2);
-%         candgrp_masklin = find( candLM_label == ilabel );
+        %         temp_im=imdilate(temp_im,se2);
+        %         candgrp_masklin = find( candLM_label == ilabel );
         candgrp_masklin = find( temp_im );
-
+        
         [candgrp_IdxI, candgrp_IdxJ] = ...
             ind2sub( size(candLM_label) , candgrp_masklin );
-
+        
         % Indices (to 'accum') of the pixels in the group
         candgrp_IdxI = candgrp_IdxI + ( aoi(1) - 1 );
         candgrp_IdxJ = candgrp_IdxJ + ( aoi(3) - 1 );
         candgrp_idx2acm = ...
             sub2ind( size(accum) , candgrp_IdxI , candgrp_IdxJ );
-
+        
         % Minimum number of qulified pixels in the group
-%         if sum(accumaoi_LBMask(candgrp_masklin)) < prm_fltrLM_npix,
-%             continue;
-%         end
-
+        %         if sum(accumaoi_LBMask(candgrp_masklin)) < prm_fltrLM_npix,
+        %             continue;
+        %         end
+        
         % Compute the centroid position
         candgrp_acmsum = sum( accum(candgrp_idx2acm) );
         cc_x = sum( candgrp_IdxJ .* accum(candgrp_idx2acm) ) / ...
@@ -718,7 +736,7 @@ for k = 1 : size(circen,1),
     if SCvR_J1 > size(grdx,2),
         SCvR_J1 = size(grdx,2);
     end
-
+    
     % Build the sgn. curve
     SgnCvMat_dx = repmat( (SCvR_J0:SCvR_J1) - circen(k,1) , ...
         [SCvR_I1 - SCvR_I0 + 1 , 1] );
@@ -726,36 +744,36 @@ for k = 1 : size(circen,1),
         [1 , SCvR_J1 - SCvR_J0 + 1] );
     SgnCvMat_r = sqrt( SgnCvMat_dx .^2 + SgnCvMat_dy .^2 );
     SgnCvMat_rp1 = round(SgnCvMat_r) + 1;
-
+    
     f4SgnCv = abs( ...
         double(grdx(SCvR_I0:SCvR_I1, SCvR_J0:SCvR_J1)) .* SgnCvMat_dx + ...
         double(grdy(SCvR_I0:SCvR_I1, SCvR_J0:SCvR_J1)) .* SgnCvMat_dy ...
         ) ./ SgnCvMat_r;
     SgnCv = accumarray( SgnCvMat_rp1(:) , f4SgnCv(:) );
-
+    
     SgnCv_Cnt = accumarray( SgnCvMat_rp1(:) , ones(numel(f4SgnCv),1) );
     SgnCv_Cnt = SgnCv_Cnt + (SgnCv_Cnt == 0);
     SgnCv = SgnCv ./ SgnCv_Cnt;
-
+    
     % Suppress the undesired entries in the sgn. curve
     % -- Radii that correspond to short arcs
     SgnCv = SgnCv .* ( SgnCv_Cnt >= (pi/4 * [0:(numel(SgnCv_Cnt)-1)]') );
     % -- Radii that are out of the given range
     SgnCv( 1 : (round(prm_r_range(1))+1) ) = 0;
     SgnCv( (round(prm_r_range(2))+1) : end ) = 0;
-
+    
     % Get rid of the zero radius entry in the array
     SgnCv = SgnCv(2:end);
     % Smooth the sgn. curve
     SgnCv = filtfilt( fltr4SgnCv , [1] , SgnCv );
-
+    
     % Get the maximum value in the sgn. curve
     SgnCv_max = max(SgnCv);
     if SgnCv_max <= 0,
         cirrad(k) = 0;
         continue;
     end
-
+    
     % Find the local maxima in sgn. curve by 1st order derivatives
     % -- Mark the ascending edges in the sgn. curve as 1s and
     % -- descending edges as 0s
@@ -768,13 +786,13 @@ for k = 1 : size(circen,1),
     end
     SgnCv_LMmask = [ 0; 0; SgnCv_AscEdg(1:(end-2)) ] & (~SgnCv_AscEdg);
     SgnCv_LMmask = SgnCv_LMmask & [ SgnCv_LMmask(2:end) ; 0 ];
-
+    
     % Incorporate the minimum value requirement
     SgnCv_LMmask = SgnCv_LMmask & ...
         ( SgnCv(1:(end-1)) >= (prm_multirad * SgnCv_max) );
     % Get the positions of the peaks
     SgnCv_LMPos = sort( find(SgnCv_LMmask) );
-
+    
     % Save the detected radii
     if isempty(SgnCv_LMPos),
         cirrad(k) = 0;

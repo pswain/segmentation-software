@@ -109,8 +109,9 @@ fltr4accum = fltr4accum / sum(fltr4accum(:));
 fltr4accum=imresize(fltr4accum,.8);
 
 % accum=zeros(size(im,1),size(im,2),size(filt_im,3));
-trap2=imdilate(cCellSVM.cTrap.trapOutline,se3)>0;
-f1=fspecial('gaussian',5,3);
+trap2=imdilate(cCellSVM.cTrap.trapOutline,se1)>0;
+
+f1=fspecial('gaussian',4,1);
 for i=1:size(filt_im,3)
     [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.6)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.001,6,fltr4accum);
     temp_im=accum;
@@ -118,7 +119,7 @@ for i=1:size(filt_im,3)
     temp_index=temp_index+1;
     filt_feat(:,temp_index)=temp_im(:);
 
-    temp_im = imfilter((accum),f1,'replicate');
+    temp_im = imfilter((temp_im),f1,'replicate');
     temp_im(trap2)=0;
     temp_index=temp_index+1;
     filt_im2(:,:,(i-1)*nHough/2+1)=temp_im;
@@ -130,7 +131,7 @@ for i=1:size(filt_im,3)
     temp_index=temp_index+1;
     filt_feat(:,temp_index)=temp_im(:);
     
-    temp_im = imfilter((accum),f1,'replicate');
+    temp_im = imfilter((temp_im),f1,'replicate');
     temp_im(trap2)=0;
     temp_index=temp_index+1;
     filt_im2(:,:,(i-1)*nHough/2+2)=temp_im;
@@ -185,7 +186,7 @@ for i=1:(size(filt_im,3)+(size(filt_im2,3)))
         end
 %         figure(1);imshow(im_fill,[]);title(int2str(i));pause(1);
 im_fill_notrap=im_fill;
-        im_fill_notrap(trap2)=0;
+        im_fill_notrap(cCellSVM.cTrap.trapOutline)=0;
         
         
         temp_im=bwdist(~im_fill_notrap);
@@ -199,9 +200,9 @@ im_fill_notrap=im_fill;
         
         D=-temp_im;
         D(temp_im<1) = -Inf;
-        D(trap2)=-Inf;
+        D(cCellSVM.cTrap.trapOutline)=-Inf;
         imw=watershed(D);
-        imw(trap2)=0;
+        imw(cCellSVM.cTrap.trapOutline)=0;
         
         bw_w=imw>1;
         bw_w=imerode(bw_w,se1);

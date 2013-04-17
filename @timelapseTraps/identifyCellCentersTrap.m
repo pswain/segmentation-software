@@ -86,10 +86,10 @@ if isempty(old_d_im)
 end
 
 combined_d_im=d_im+old_d_im/4;
-t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
+t_im=imfilter(combined_d_im,fspecial('gaussian',3,.6));
 % t_im=imfilter(d_im,fspecial('disk',1));
 
-bw=t_im<0;
+bw=t_im<cCellVision.twoStageThresh;
 % bw=imclose(bw,strel('disk',2));
 % bw_l=bwlabel(bw);
 % props=regionprops(bw);
@@ -179,8 +179,12 @@ end
 
 combined_d_im=d_im+old_d_im/4;
 % combined_d_im=d_im;
-t_im=imfilter(combined_d_im,fspecial('gaussian',4,.6));
+t_im=imfilter(combined_d_im,fspecial('gaussian',4,.5));
 % t_im=imfilter(d_im,fspecial('disk',1));
+% 
+% figure(123);imshow(t_im,[]);impixelinfo;
+% uiwait();
+
 
 bw=t_im<0;
 % bw=imclose(bw,strel('disk',2));
@@ -196,7 +200,7 @@ props=regionprops(bw);
 bw_l=bwlabel(bw);
 props=regionprops(bw,{'Area','Eccentricity'});
 for d=1:length(props)
-    if props(d).Area<5
+    if props(d).Area<4
         bw(bw_l==d)=0;
     elseif props(d).Eccentricity>.97
         bw(bw_l==d)=0;

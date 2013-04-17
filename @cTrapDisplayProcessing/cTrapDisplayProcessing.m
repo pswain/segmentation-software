@@ -20,7 +20,7 @@ classdef cTrapDisplayProcessing<handle
 %             if nargin<3
 %                 method='twostage';
 %             end
-            if nargin<3
+            if nargin<3 || isempty(timepoints)
                 timepoints=1:length(cTimelapse.cTimepoint);
             end
             
@@ -149,6 +149,7 @@ classdef cTrapDisplayProcessing<handle
                     pause(.5);
                 end
                 
+                cTimelapse.timepointsProcessed(timepoint)=1;
 
             end
             close(cDisplay.figure);

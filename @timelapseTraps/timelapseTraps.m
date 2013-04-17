@@ -10,7 +10,7 @@ classdef timelapseTraps<handle
         trapsPresent
         pixelSize
         cellsToPlot %row = trap num, col is cell tracking number
-        
+        timepointsProcessed
         extractedData
         channelNames
     end

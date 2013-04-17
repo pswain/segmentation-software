@@ -3,6 +3,16 @@ function trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel)
 % traps indicated at the timepoint indicated. If there are no traps in the
 % timelapse however, it return the entire frame in a single 2D image.
 
+if nargin<3
+    timepoint=1;
+end
+
+if nargin<2||isempty(traps)
+    traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
+end
+
+
+
 if nargin<4
     channel=1;
 end

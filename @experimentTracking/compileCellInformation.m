@@ -32,6 +32,24 @@ for i=2:length(positionsToExtract)
             cExperiment.cellInf(j).max5(end+1:end+size(temp,1),:)=temp;
             temp=cTimelapse.extractedData(j).std;
             cExperiment.cellInf(j).std(end+1:end+size(temp,1),:)=temp;
+            
+            temp=cTimelapse.extractedData(j).smallmean;
+            cExperiment.cellInf(j).smallmean(end+1:end+size(temp,1),:)=temp;
+            temp=cTimelapse.extractedData(j).smallmedian;
+            cExperiment.cellInf(j).smallmedian(end+1:end+size(temp,1),:)=temp;
+            temp=cTimelapse.extractedData(j).smallmax5;
+            cExperiment.cellInf(j).smallmax5(end+1:end+size(temp,1),:)=temp;
+            
+            temp=cTimelapse.extractedData(j).imBackground;
+try            cExperiment.cellInf(j).imBackground(end+1:end+size(temp,1),:)=temp;
+catch
+    uglypiece=1;
+end
+    temp=cTimelapse.extractedData(j).min;
+            cExperiment.cellInf(j).min(end+1:end+size(temp,1),:)=temp;
+
+            
+            
             temp=cTimelapse.extractedData(j).radius;
             cExperiment.cellInf(j).radius(end+1:end+size(temp,1),:)=temp;
             temp=cTimelapse.extractedData(j).trapNum;
