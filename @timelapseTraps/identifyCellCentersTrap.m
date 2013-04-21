@@ -89,7 +89,7 @@ combined_d_im=d_im+old_d_im/4;
 t_im=imfilter(combined_d_im,fspecial('gaussian',3,.4));
 % t_im=imfilter(d_im,fspecial('disk',1));
 
-bw=t_im<0;
+bw=t_im<cCellVision.twoStageThresh;
 % bw=imclose(bw,strel('disk',2));
 % bw_l=bwlabel(bw);
 % props=regionprops(bw);
