@@ -39,12 +39,12 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
                 cirrad=[trapInfo(trap).cell(:).cellRadius]';
-                pt2=[circen cirrad];
+                pt2=[circen cirrad/2 ];
                 
                 circen=[trapInfom1(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
                 cirrad=[trapInfom1(trap).cell(:).cellRadius]';
-                pt1=[circen cirrad];
+                pt1=[circen cirrad/2];
                 
                 %             try
                 %                 pt1=[trapInfom1(trap).cellCenters trapInfom1(trap).cellRadius];
@@ -61,7 +61,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     circen=[trapInfom2(trap).cell(:).cellCenter];
                     circen=reshape(circen,2,length(circen)/2)';
                     cirrad=[trapInfom2(trap).cell(:).cellRadius]';
-                    pt3=[circen cirrad];
+                    pt3=[circen cirrad/2];
                     %                 try
                     %                     pt3=[trapInfom2(trap).cellCenters trapInfom2(trap).cellRadius];
                     %                 catch

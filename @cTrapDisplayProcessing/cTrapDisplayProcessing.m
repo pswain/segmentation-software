@@ -69,7 +69,8 @@ classdef cTrapDisplayProcessing<handle
             end
             pause(.001);
             
-            d_im=zeros(size(trap_images,1),size(trap_images,2),length(traps));
+            scalingFactor=cCellVision.magnification/cTimelapse.magnification;
+            d_im=zeros(size(trap_images,1)*scalingFactor,size(trap_images,2)*scalingFactor,length(traps));
             trapsProcessed=0;tic
             for i=1:length(timepoints)
                 timepoint=timepoints(i);

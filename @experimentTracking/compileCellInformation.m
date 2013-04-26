@@ -23,7 +23,8 @@ for i=2:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     
-    for j=1:length(cTimelapse.channelNames)
+    if max(cTimelapse.timepointsProcessed)>0
+        for j=1:length(cTimelapse.channelNames)
             temp=cTimelapse.extractedData(j).mean;
             cExperiment.cellInf(j).mean(end+1:end+size(temp,1),:)=temp;
             temp=cTimelapse.extractedData(j).median;
@@ -41,13 +42,10 @@ for i=2:length(positionsToExtract)
             cExperiment.cellInf(j).smallmax5(end+1:end+size(temp,1),:)=temp;
             
             temp=cTimelapse.extractedData(j).imBackground;
-try            cExperiment.cellInf(j).imBackground(end+1:end+size(temp,1),:)=temp;
-catch
-    uglypiece=1;
-end
-    temp=cTimelapse.extractedData(j).min;
+            cExperiment.cellInf(j).imBackground(end+1:end+size(temp,1),:)=temp;
+            temp=cTimelapse.extractedData(j).min;
             cExperiment.cellInf(j).min(end+1:end+size(temp,1),:)=temp;
-
+            
             
             
             temp=cTimelapse.extractedData(j).radius;
@@ -58,6 +56,7 @@ end
             cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1),:)=temp;
             
             cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),:)=experimentPos;
+        end
     end
     cExperiment.cTimelapse=[];
     cExperiment.saveExperiment();

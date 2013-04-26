@@ -51,6 +51,7 @@ end
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
+cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
 for j=1:size(image,3)
     temp_im=image(:,:,j);
     if isempty(bw_mask)
@@ -70,13 +71,19 @@ for j=1:size(image,3)
         end
         
         cellsIndex=1;
-        nseg=128;
+        nseg=80;
         for numCells=1:length(cirrad)
             
             temp_im=zeros(size(temp_im))>0;
             x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
             x=double(x);y=double(y);r=double(r);
-            theta = 0 : (2 * pi / nseg) : (2 * pi);
+            if r<11
+                theta = 0 : (2 * pi / nseg) : (2 * pi);
+            elseif r<18
+                theta = 0 : (2 * pi / nseg/2) : (2 * pi);
+            else
+                theta = 0 : (2 * pi / nseg/4) : (2 * pi);
+            end
             pline_x = round(r * cos(theta) + x);
             pline_y = round(r * sin(theta) + y);
             loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
@@ -86,7 +93,7 @@ for j=1:size(image,3)
             end
             locfill=[y x];
             temp_im=imfill(temp_im,round(locfill))>0;
-            cellOverlapTrap=temp_im&cCellVision.cTrap.trapOutline;
+            cellOverlapTrap=temp_im&cellTrap;
             ratioCellToTrap=sum(cellOverlapTrap(:))/sum(temp_im(:));
             
             if ratioCellToTrap<allowedOverlap;

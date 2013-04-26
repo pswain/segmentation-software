@@ -45,7 +45,8 @@ end
 
 % d_im=imresize(d_im,cCellVision.pixelSize/cTimelapse.pixelSize);
 % bw=imresize(bw,cCellVision.pixelSize/cTimelapse.pixelSize);
-d_im=imresize(d_im,cTimelapse.magnification/cCellVision.magnification);
+
+% d_im=imresize(d_im,cTimelapse.magnification/cCellVision.magnification);
 bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
 
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=bw>0;

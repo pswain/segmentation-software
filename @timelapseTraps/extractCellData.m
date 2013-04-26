@@ -7,6 +7,15 @@ s1=strel('disk',1);
 % convMatrix2=single(getnhood(strel('disk',2)));
 
 
+if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProcessed)==1
+    tempSize=[cTimelapse.cTimepoint.trapInfo];
+    cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+    if length(cTimelapse.timepointsProcessed)==1
+        cTimelapse.timepointsProcessed=0;
+    end
+end
+
+
 for channel=1:length(cTimelapse.channelNames)
     cTimelapse.extractedData(channel).mean=zeros(numCells,length(cTimelapse.timepointsProcessed));
     cTimelapse.extractedData(channel).median=zeros(numCells,length(cTimelapse.timepointsProcessed));
@@ -93,6 +102,7 @@ for channel=1:length(cTimelapse.channelNames)
                         if ~isempty(loc)
                             seg_areas=imfill(seg_areas(:,:,1),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
                         end
+                        figure(10);imshow(seg_areas,[]);pause(1)
                     end
                     seg_areas=~seg_areas;
                     

@@ -42,7 +42,7 @@ for j=1:length(cExperiment.cellInf)
         
         temp=cExperiment.cellInf(j).smallmax5;
         temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;
-        cExperiment.cellInf(j).max5=temp;
+        cExperiment.cellInf(j).smallmax5=temp;
         
         temp=cExperiment.cellInf(j).min;
         temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;
