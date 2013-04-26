@@ -1,8 +1,16 @@
-function selectCellsToPlot(cExperiment,cCellVision,position)
+function selectCellsToPlot(cExperiment,cCellVision,positionsToIdentify)
 
 if nargin<3
-    position=1;
+    positionsToIdentify=1:length(cExperiment.dirs);
 end
-cTimelapse=cExperiment.returnTimelapse(position);
-
-cTrapDisplayPlot(cExperiment,cTimelapse,cCellVision)
+    
+%% Load timelapses
+for i=1:length(positionsToIdentify)
+    currentPos=positionsToIdentify(i);
+    load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    cTrapDisplayPlot(cTimelapse,cCellVision);
+    
+    uiwait();
+    cExperiment.cTimelapse=cTimelapse;
+    cExperiment.saveTimelapseExperiment(currentPos);
+end
