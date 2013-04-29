@@ -98,7 +98,7 @@ for channel=1:length(cTimelapse.channelNames)
                     seg_areas=zeros(size(trapInfo(currTrap).cell(1).segmented));
                     for allCells=1:length(trapInfo(currTrap).cellLabel)
                         seg_areas=seg_areas|full(trapInfo(currTrap).cell(allCells).segmented);
-%                         seg_areas=imdilate(seg_areas,s1);
+                        seg_areas=imdilate(seg_areas,s1);
                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(allCells).cellCenter);
                         if ~isempty(loc)
                             seg_areas=imfill(seg_areas(:,:,1),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
