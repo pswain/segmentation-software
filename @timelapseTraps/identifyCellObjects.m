@@ -47,18 +47,42 @@ if isempty(trap_image)
 else
     image=trap_image;
 end
+image=double(image);
+
+%blur/reduce the edges of the traps so they don't impact the hough
+%transform as much
+f1=fspecial('gaussian',9,1);
+se1=cCellVision.se.se1;
+trapEdge=cCellVision.cTrap.contour;
+trapEdge=imdilate(trapEdge,se1);
+trapG=imfilter(trapEdge,f1);
+trapG=trapG/max(trapG(:));
 
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
+searchRadius(1)=searchRadius(1)-2;
 cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
+cellTrap=bwlabel(cellTrap);
+
+se1=cCellVision.se.se1;
+f1=fspecial('gaussian',5,1);
+
 for j=1:size(image,3)
     temp_im=image(:,:,j);
     if isempty(bw_mask)
-        bw_mask=trapInfo(traps(j)).segCenters;
-        %         bw_mask=imdilate(bw_mask,s1);
-        temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
+        bw_mask=full(trapInfo(traps(j)).segCenters);
         
+        %blur/reduce the edges of the traps so they don't impact the hough
+        %transform as much
+        diffIm=temp_im-median(temp_im(:));
+        diffImAbs=abs(diffIm);
+        diffImAbs=diffImAbs/max(diffImAbs(:));
+        fIm=imfilter(diffImAbs,f1);
+        fIm=fIm/max(fIm(:));
+        temp_im=image-(fIm.*diffIm);
+        temp_im=temp_im-diffIm.*trapG;
+
         %may need to change the radiusSmall and the radiusLarge below to
         %adjust for changes in the pixelSize
         [~, circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
@@ -93,8 +117,10 @@ for j=1:size(image,3)
             end
             locfill=[y x];
             temp_im=imfill(temp_im,round(locfill))>0;
-            cellOverlapTrap=temp_im&cellTrap;
-            ratioCellToTrap=sum(cellOverlapTrap(:))/sum(temp_im(:));
+            cellOverlapTrap1=temp_im&(cellTrap==1);
+            cellOverlapTrap2=temp_im&(cellTrap==2);
+            cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
+            ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
             
             if ratioCellToTrap<allowedOverlap;
                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
@@ -106,15 +132,15 @@ for j=1:size(image,3)
             end
         end
         trapInfo(traps(j)).cellsPresent=~isempty(circen);
-        
-        
-        
+                
     else %for the add/remove cells part of the GUI after processing is done
-        s2=strel('disk',4);
+        s2=strel('disk',2);
         bw_mask=imdilate(bw_mask,s2);
-        temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
+%         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
+        diffIm=temp_im-median(temp_im(:));
+        temp_im=temp_im-diffIm.*trapG;
+
         [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
-        %             bw_mask=[];
         
         [b m n]=unique(circen,'rows');
         if size(b,1)~=size(circen,1)
@@ -133,18 +159,13 @@ for j=1:size(image,3)
         trapInfo(traps(j)).cellsPresent=1;
     end
     
-    
-    
     if trapInfo(traps(j)).cellsPresent
         circen=[trapInfo(traps(j)).cell(:).cellCenter];
         circen=reshape(circen,2,length(circen)/2)';
         cirrad=[trapInfo(traps(j)).cell(:).cellRadius];
         nseg=128;
         
-        
-        %         trapInfo(traps(j)).segmented=sparse(zeros(size(temp_im))>0);
         for k=1:length(cirrad)
-            %             trapInfo(traps(j)).cell(k).segmented=sparse(zeros(size(temp_im))>0);
             temp_im=zeros(size(temp_im))>0;
             x=circen(k,1);y=circen(k,2);r=cirrad(k);
             x=double(x);y=double(y);r=double(r);
@@ -159,9 +180,6 @@ for j=1:size(image,3)
             trapInfo(traps(j)).cell(k).segmented=sparse(temp_im);
         end
     end
-    
-    
-    
     
 end
 cTimelapse.cTimepoint(timepoint).trapInfo=trapInfo;
@@ -435,7 +453,7 @@ prm_r_range = sort(max( [0,0;radrange(1),radrange(2)] ));
 % Parameters (default values)
 prm_grdthres = .0001;
 prm_fltrLM_R = 8;
-prm_multirad = .5;
+prm_multirad = .1;
 func_compu_cen = true;
 func_compu_radii = true;
 
@@ -462,7 +480,7 @@ vap_fltr4accum = 4; % filter for smoothing the accumulation array
 fltr4accum = ones(5,5);
 fltr4accum(2:4,2:4) = 2;
 fltr4accum(3,3) = 6;
-fltr4accum=imresize(fltr4accum,.6);
+fltr4accum=imresize(fltr4accum,.7);
 
 
 func_compu_cen = ( nargout > 1 );
@@ -664,7 +682,6 @@ for k = 1 : size(accumAOI, 1),
     % of one circle detected
     [candLM_label, candLM_nRgn] = bwlabel( candLM_mask, 8 );
     
-    se2=strel('disk',2);
     for ilabel = 1 : candLM_nRgn,
         % Indices (to current AOI) of the pixels in the group
         temp_im=candLM_label == ilabel;

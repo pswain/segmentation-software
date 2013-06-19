@@ -31,14 +31,15 @@ classdef timelapseTraps<handle
         loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,timepointsToLoad);
         loadTimelapseScot(cTimelapse,timelapseObj);
         
-        [trapLocations trap_mask]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations)
-%         trackTrapsThroughTime(cTimelapse);
+        [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
+        trackTrapsThroughTime(cTimelapse,cCellVision,timepoints);
         trackCells(cTimelapse,cellMovementThresh);
-        
+        [histCellDist bins]=trackCellsHistDist(cTimelapse,cellMovementThresh);
         
         %%
         addSecondaryTimelapseChannel(cTimelapse,searchString)
         extractCellData(cTimelapse);
+        extractCellParamsOnly(cTimelapse)
         automaticSelectCells(cTimelapse,params);
         
         correctSkippedFramesInf(cTimelapse);

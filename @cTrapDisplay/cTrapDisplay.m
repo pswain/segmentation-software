@@ -58,16 +58,20 @@ classdef cTrapDisplay<handle
             
             if cTimelapse.trapsPresent
                 %In case the traps haven't been tracked through time
-                if isempty(cTimelapse.cTimepoint(end).trapLocations) && trackThroughTime
+                if trackThroughTime %isempty(cTimelapse.cTimepoint(end).trapLocations) && trackThroughTime
+                    trapImagesPrevTp=cTimelapse.returnTrapsTimepoint();
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
+                        i
                         timepoint=timepoints(i);
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        %                         cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
+                        
                         waitbar(timepoint/timepoints(end));
                     end
                     close(h)
                 end
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+%                 traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b
                 image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
                 %                 if isempy(

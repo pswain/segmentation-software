@@ -17,6 +17,8 @@ classdef experimentTracking<handle
         experimentInformation
         timepointsToLoad
         timepointsToProcess
+        trackTrapsOverwrite
+        cellVisionThresh
     end
     
     methods

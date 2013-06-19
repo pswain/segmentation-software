@@ -31,6 +31,14 @@ for j=1:length(cTimelapse.extractedData)
         temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;
         cTimelapse.extractedData(j).radius=temp;
         
+        temp=cTimelapse.extractedData(j).xloc;
+        temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;
+        cTimelapse.extractedData(j).xloc=temp;
+        
+        temp=cTimelapse.extractedData(j).yloc;
+        temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;
+        cTimelapse.extractedData(j).yloc=temp;
+
         
         temp=cTimelapse.extractedData(j).smallmean;
         temp(row(k),col(l))=(temp(row(k),col(l)-1)+temp(row(k),col(l)+1))/2;

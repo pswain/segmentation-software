@@ -34,6 +34,9 @@ classdef cTrapDisplayProcessing<handle
                 channel=1;
             end
             
+            if isempty(cTimelapse.magnification)
+                cTimelapse.magnification=60;
+            end
             
             cTimelapse=cTimelapse;
             cDisplay.traps=traps;
@@ -72,14 +75,15 @@ classdef cTrapDisplayProcessing<handle
             scalingFactor=cCellVision.magnification/cTimelapse.magnification;
             d_im=zeros(size(trap_images,1)*scalingFactor,size(trap_images,2)*scalingFactor,length(traps));
             trapsProcessed=0;tic
+            trapImagesPrevTp=[];
             for i=1:length(timepoints)
                 timepoint=timepoints(i);
                 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
                 
                 if i>1
-                    if cTimelapse.trapsPresent 
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
-                    end
+%                     if cTimelapse.trapsPresent 
+%                         [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
+%                     end
                     trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(i),channel);
                     trap_images=double(trap_images);
                     trap_images=trap_images/max(trap_images(:))*.75;
@@ -91,9 +95,9 @@ classdef cTrapDisplayProcessing<handle
                     end
                     pause(.001);
                 else
-                    if cTimelapse.trapsPresent 
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i)).trapLocations);
-                    end
+%                     if cTimelapse.trapsPresent 
+%                         [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i)).trapLocations,trapImagesPrevTp);
+%                     end
                 end
                 
                 for j=1:length(traps)

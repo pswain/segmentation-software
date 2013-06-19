@@ -1,3 +1,20 @@
+cCellVision.se.trap=[]
+    
+traps=cDictionary.returnTrapsTimepoint([],1);
+[x n]=imhist(traps(:,:,1));
+x=zeros(1,length(x));
+for j=1:10
+    traps=cDictionary.returnTrapsTimepoint([],j);
+    
+    for i=1:size(traps,3)
+        tempIm=traps(:,:,i);
+        temp=hist(tempIm(:),n);
+        x=x+temp;
+    end
+end
+figure(12);bar(n,x);
+cCellVision.se.trap.hgram=x;
+
 
 %% Identify the trap outline
 cCellVision.identifyTrapOutline(cTimelapse,7);
@@ -9,6 +26,8 @@ for i=1:size(cDictionary.cTrap(trap).image,3)
     pause(.01);
 end
 %%
+cCellVision.radiusLarge=12;
+cCellVision.radiusSmall=4;
 step_size=1;
 cCellVision.generateTrainingSetTimelapse(cDictionary,step_size);
 
@@ -16,33 +35,37 @@ cCellVision.generateTrainingSetTimelapse(cDictionary,step_size);
 cCellVision.trainingParams.cost=.25
 cCellVision.trainingParams.gamma=1
 %%
-step_size=30;
+step_size=20;
+cmd='-s 2 -w0 1 -w1 1 -v 5 -c ';
 cCellVision.runGridSearchLinear(step_size);
 %%
-step_size=5;
-cCellVision.trainingParams.cost=1;
-cmd = ['-s 1 -w0 1 -w1 5 -c ', num2str(cCellVision.trainingParams.cost)];
+step_size=3;
+cCellVision.trainingParams.cost=4;
+cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
 cCellVision.trainSVMLinear(step_size,cmd);toc
+cCellVision.method='linear';
+
 %%
 %%
 cCellVision.twoStageThresh=.7;
 step_size=2;
 cCellVision.generateTrainingSet2Stage(cDictionary,step_size);
 %%
-step_size=75;
-cmdin='-t 2 -w0 1 -w1 4 '
+step_size=90;
+cmdin='-t 2 -w0 1 -w1 1 '
 cCellVision.runGridSearch(step_size,cmdin);
 %%
-cCellVision.trainingParams.cost=.5
-cCellVision.trainingParams.gamma=2 %or 2 and .25 or 2 and 1 or 1 and 2
+cCellVision.trainingParams.cost=2
+cCellVision.trainingParams.gamma=.5; % 1 1 or 2 .5 or 2 1
 %4 1 ; 4 .5 ; 2 2; 1 4 
 %
-step_size=15;
-cmd = ['-t 2 -w0 1 -w1 9 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
+step_size=30;
+cmd = ['-t 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 
+cCellVision.method='twostage';
 %%
 folder='/Users/mcrane/TimelapseImages'
 cTimelapse=timelapseTraps();

@@ -84,6 +84,16 @@ end
 temp2(1,:)=[];
 figure(11);imshow(temp2,[1 5]);colormap(jet);impixelinfo
 %%
+%%
+medianFl=median(temp2(~isnan(temp2(:))));
+spikeCutoff=1.2*medianFl;
+
+filteredTraces=temp2;%-medianFl;
+spikes=filteredTraces>spikeCutoff;
+figure(10);imshow(spikes,[]);colormap(jet);
+
+sum(spikes(:,25))/size(spikes,1)
+
 %% single cell examples
 tempD=temp2([1 5 20 40 45],:)';
 figure(12);plot(repmat(x',[1 size(tempD,2)]),tempD);axis([-2 2 1 5]);
