@@ -12,7 +12,7 @@ filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.
 
 labels=ones(size(image,1)*size(image,2),1);
 
-[predict_label, accuracy, dec_values] = predict(labels, sparse(filtered_image), cCellSVM.SVMModelLinear); % test the training data]\
+[predict_label, ~, dec_values] = predict(labels, sparse(filtered_image), cCellSVM.SVMModelLinear); % test the training data]\
 % [predict_label, accuracy, dec_values] = predict(ones(size(image,1)*size(image,2),1), (filtered_image), cCellSVM.SVMModel); % test the training data]\
 
 

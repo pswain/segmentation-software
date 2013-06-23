@@ -73,13 +73,14 @@ spikes=filteredTraces>spikeCutoff;
 figure(10);imshow(spikes,[]);colormap(jet);
 
 spike_fraction=[];
-spikeTiming=[30 221 412];
-spike_fraction(1)=sum(spikes(:,spikeTiming(1)));
+spikeTiming=[28 219 413];
+spike_fraction(1)=sum(max(spikes(:,spikeTiming(1):spikeTiming(1)+1),[],2));
 
-spike_fraction(2)=sum(spikes(:,spikeTiming(2)));
+spike_fraction(2)=sum(max(spikes(:,spikeTiming(2):spikeTiming(2)+1),[],2));
 
-spike_fraction(3)=sum(spikes(:,spikeTiming(3)))
+spike_fraction(3)=sum(max(spikes(:,spikeTiming(3):spikeTiming(3)+1),[],2))
 
+%%
 loc=filteredTraces(:,spikeTiming(1))>spikeCutoff;
 spikeStrength=mean(filteredTraces(loc,spikeTiming(1)));
 

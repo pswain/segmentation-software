@@ -18,26 +18,28 @@ classdef cTrapDisplay<handle
     %that has been loaded. It uses the trap positions identified in the DIC
     %image to display either the primary or secondary information.
     methods
-        function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps)
+        function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
             
-            if nargin<3
+            if nargin<3 || isempty(overlay)
                 cDisplay.trackOverlay=false;
             else
                 cDisplay.trackOverlay=overlay;
             end
             
-            if nargin<4
+            if nargin<4 || isempty(channel)
                 cDisplay.channel=1;
             else
                 cDisplay.channel=channel;
             end
-            if nargin<5 && cTimelapse.trapsPresent
+            if (nargin<5 || isempty(traps) ) && cTimelapse.trapsPresent 
                 traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif ~cTimelapse.trapsPresent
                 traps=1;
             end
             
-            
+            if nargin<6 || isempty(trackThroughTime)
+                trackThroughTime=false;
+            end
             
             timepoints=1:length(cTimelapse.cTimepoint);
             
@@ -48,22 +50,32 @@ classdef cTrapDisplay<handle
                 b=1;
             end
             
-            if cTimelapse.trapsPresent           
+            if isempty(cTimelapse.timepointsProcessed)
+                tempSize=[cTimelapse.cTimepoint.trapInfo];
+                cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+            end
+            
+            
+            if cTimelapse.trapsPresent
                 %In case the traps haven't been tracked through time
-                if isempty(cTimelapse.cTimepoint(end).trapLocations)
+                if trackThroughTime %isempty(cTimelapse.cTimepoint(end).trapLocations) && trackThroughTime
+                    trapImagesPrevTp=cTimelapse.returnTrapsTimepoint();
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
+                        i
                         timepoint=timepoints(i);
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        %                         cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
+                        
                         waitbar(timepoint/timepoints(end));
                     end
                     close(h)
                 end
                 %commented by elco to allow display of 1 trap at a time.
                 %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
-            elseif b 
+            elseif b
                 image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
-%                 if isempy(
+                %                 if isempy(
                 for timepoint=timepoints
                     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
                     cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
@@ -112,7 +124,7 @@ classdef cTrapDisplay<handle
             cDisplay.slider=uicontrol('Style','slider',...
                 'Parent',gcf,...
                 'Min',1,...
-                'Max',length(cTimelapse.cTimepoint),...
+                'Max',sum(cTimelapse.timepointsProcessed),...
                 'Units','normalized',...
                 'Value',1,...
                 'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...

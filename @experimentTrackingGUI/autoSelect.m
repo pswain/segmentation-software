@@ -5,6 +5,8 @@ posVals=get(cExpGUI.posList,'Value');
 params.fraction=.8; %fraction of timelapse length that cells must be present or
 params.duration=3e3; %number of frames cells must be present
 params.framesToCheck=100;
+params.framesToCheckEnd=1;
+
 
 num_lines=1;
 prompt = {'Fraction of whole timelapse a cell must be present'};
@@ -22,6 +24,10 @@ dlg_title = 'Frames To Check';    def = {num2str(params.framesToCheck)};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 params.framesToCheck=str2double(answer{1});
 
+prompt = {'Cell must be present after frame X'};
+dlg_title = 'Frames To Check';    def = {num2str(params.framesToCheck)};
+answer = inputdlg(prompt,dlg_title,num_lines,def);
+params.framesToCheckEnd=str2double(answer{1});
 
 
 cExpGUI.cExperiment.selectCellsToPlotAutomatic(posVals,params);
