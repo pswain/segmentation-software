@@ -5,11 +5,16 @@ alltraps=cDisplay.cTimelapse.returnTrapsTimepoint(cDisplay.traps,timepoint,cDisp
 trapInfo=cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo;
 
 for j=1:size(alltraps,3)
-    tracked=full(cDisplay.cTimelapse.cellsToPlot(cDisplay.traps(j),trapInfo(cDisplay.traps(j)).cellLabel))>0;
+    if trapInfo(cDisplay.traps(j)).cellLabel
+        tracked=full(cDisplay.cTimelapse.cellsToPlot(cDisplay.traps(j),trapInfo(cDisplay.traps(j)).cellLabel))>0;
+    else
+        tracked=0;
+    end
 
     image=alltraps(:,:,j);
     image=double(image);
     image=image/max(image(:))*.95;
+% image=image/2000;
     image=repmat(image,[1 1 3]);
     
     segLabel=[];
@@ -17,13 +22,18 @@ for j=1:size(alltraps,3)
         seg_areas=[trapInfo(cDisplay.traps(j)).cell(:).segmented];
         seg_areas=full(seg_areas);
         seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(trapInfo(cDisplay.traps(j)).cell)]);
+        seg_areas_not=max(seg_areas(:,:,~tracked),[],3);
+        seg_areas_tracked=max(seg_areas(:,:,tracked),[],3);
+        
     else
         seg_areas=zeros([size(image,1) size(image,2)])>0;
         segLabel=zeros([size(image,1) size(image,2)])>0;
+        seg_areas_not=zeros([size(image,1) size(image,2)])>0;
+        seg_areas_tracked=zeros([size(image,1) size(image,2)])>0;
     end
     
-    seg_areas_not=max(seg_areas(:,:,~tracked),[],3);
-    seg_areas_tracked=max(seg_areas(:,:,tracked),[],3);
+%     seg_areas_not=max(seg_areas(:,:,~tracked),[],3);
+%     seg_areas_tracked=max(seg_areas(:,:,tracked),[],3);
     
     %
     if cDisplay.trackOverlay

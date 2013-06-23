@@ -20,6 +20,7 @@ classdef experimentTrackingGUI<handle
         trackCellsButton
         
         autoSelectButton
+        selectButton
         extractDataButton
         compileDataButton
         
@@ -76,13 +77,16 @@ classdef experimentTrackingGUI<handle
 
             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
                 'Units','normalized','Position',[.025 .4 .47 .15],'Callback',@(src,event)autoSelect(cExpGUI));
+            cExpGUI.selectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Cells',...
+                'Units','normalized','Position',[.505 .4 .47 .15],'Callback',@(src,event)select(cExpGUI));
+
             cExpGUI.extractDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
-                'Units','normalized','Position',[.505 .4 .47 .15],'Callback',@(src,event)extractData(cExpGUI));
+                'Units','normalized','Position',[.025 .25 .47 .15],'Callback',@(src,event)extractData(cExpGUI));
             cExpGUI.compileDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Compile Data',...
-                'Units','normalized','Position',[.025 .25 .47 .15],'Callback',@(src,event)compileData(cExpGUI));
+                'Units','normalized','Position',[.505 .25 .47 .15],'Callback',@(src,event)compileData(cExpGUI));
 
             cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
-                'Units','normalized','Position',[.505 .25 .47 .15],'Callback',@(src,event)processIndTimelapse(cExpGUI));
+                'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
             
             
         end
@@ -110,6 +114,7 @@ classdef experimentTrackingGUI<handle
         trackCells(cExpGUI)
         selectCellsPlot(cExpGUI)
         autoSelect(cExpGUI)
+        select(cExpGUI)
         extractData(cExpGUI)
         compileData(cExpGUI)
         

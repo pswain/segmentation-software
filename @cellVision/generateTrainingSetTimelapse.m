@@ -46,7 +46,7 @@ tic; time=toc;
 if isempty(cCellVision.cTrap)
     se_edge=strel('disk',12);
 else
-    se_edge=strel('disk',6);
+    se_edge=strel('disk',9);
 end
 
 se1 = strel('disk',1);
@@ -87,11 +87,11 @@ for timepoint=1:frame_ss:total_num_timepoints
             if size(trapInfo.cellRadius,1)>0
                 for num_cells=1:length(trapInfo.cellRadius)
                     class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
-                    if trapInfo.cellRadius<7
-%                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius<10
+                    if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
+                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
+                    elseif trapInfo.cellRadius<9
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius<16
+                    elseif trapInfo.cellRadius<14
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
                     else
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se4);

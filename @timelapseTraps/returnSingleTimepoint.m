@@ -9,7 +9,7 @@ if channel<=length(cTimelapse.cTimepoint(timepoint).filename)
 else
         timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{1});
     timepoint(:,:)=0;
-    warning('There is no data in this channel at this timepoint');
+    disp('There is no data in this channel at this timepoint');
 end
 % try
 %     timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});

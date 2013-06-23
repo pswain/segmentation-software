@@ -82,8 +82,8 @@ for timepoint=1:frame_ss:total_num_timepoints
                 for num_cells=1:length(trapInfo.cellRadius)
                     class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                     if trapInfo.cellRadius<7
-%                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius<10
+                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
+                    elseif trapInfo.cellRadius<9
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
                     elseif trapInfo.cellRadius<16
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
@@ -101,7 +101,7 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             bw_im=d_im<cCellVision.twoStageThresh;
             if cTimelapse.trapsPresent
-                bw_im=imdilate(bw_im,se3);
+                bw_im=imdilate(bw_im,se4);
             else
                 bw_im=imdilate(bw_im,se5);
             end

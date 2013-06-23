@@ -51,7 +51,7 @@ classdef cellVision<handle
         trainSVMLinear(cCellSVM,ss,cmd);
         runGridSearch(cCellSVM,ss,cmd);
         runGridSearch2Stage(cCellSVM,ss,cmd);
-        runGridSearchLinear(cCellSVM,cmd)
+        runGridSearchLinear(cCellSVM,ss,cmd)
         
         %to classify an image
         [predicted_im decision_im filtered_image]=classifyImage(cCellSVM,image);
