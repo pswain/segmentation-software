@@ -17,11 +17,18 @@ cTrap=cCellVision.cTrap;
 % cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
 
 % try
+<<<<<<< HEAD
+% cTrap.trap1=imresize(cTrap.trap1,cTimelapse.magnification/cCellVision.magnification);
+% cTrap.trap2=imresize(cTrap.trap2,cTimelapse.magnification/cCellVision.magnification);
+=======
 if isempty(cTimelapse.magnification)
     cTimelapse.magnification=60;
 end
 
 
+cTrap.trap1=imresize(cTrap.trap1,cTimelapse.magnification/cCellVision.magnification);
+cTrap.trap2=imresize(cTrap.trap2,cTimelapse.magnification/cCellVision.magnification);
+>>>>>>> 00094f8f7af43ce4b4f87174cacc3755549d237f
 % catch
 %     cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
 % cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
