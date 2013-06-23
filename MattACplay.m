@@ -93,7 +93,26 @@ n=1;
 ctrapDisplay(disp.cTimelapse,disp.cCellVision,false,1,n)
 n = n+1;
 
+%% hacking for bleaching
 
+%make DIC image all the DIC images
+for i=1:30
+    disp.cTimelapse.cTimepoint(i) = disp.cTimelapse.cTimepoint(1);
+end
+
+for i=1:9
+   
+    disp.cTimelapse.cTimepoint(i).filename{2} = ['/Users/ebakker/Documents/microscope_files_swain_microscope/bleaching/2013_05_05/strain54_SCGal_0.2perc_04/strain54_SCGal_0.2perc_00000' int2str(i) '_GFP_.png'];
+    
+end
+
+%add GFP for all timepoints
+
+for i=10:30
+   
+       disp.cTimelapse.cTimepoint(i).filename{2} = ['/Users/ebakker/Documents/microscope_files_swain_microscope/bleaching/2013_05_05/strain54_SCGal_0.2perc_04/strain54_SCGal_0.2perc_0000' int2str(i) '_GFP_.png'];
+    
+end
 %% run script in my absence
 
 ttacObjectPOS3.SegmentConsecutiveTimePoints(1,216)
