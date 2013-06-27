@@ -40,7 +40,7 @@ for i=1:length(cTimelapse.cTimepoint)
     pattern='\d{3,6}';%CHANGE BACK TO {5,6}!!!!!!!!!
     fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
     
-    p1=[fileNum{1} '_' searchString{1}];
+    p1=[fileNum{end} '_' searchString{1}];
     match=regexp(files(:),p1,'match');
     loc= ~cellfun('isempty',match);
     if sum(loc)>0

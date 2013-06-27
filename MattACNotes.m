@@ -34,3 +34,18 @@
 %not picked up by matt because it was for the linear cellvision model, and
 %all hist are probably fancier than that.
 
+
+%% cellVision addition
+% 
+% cell vision now has a field:
+%  cCellVision.cTrap.contour 
+% which is a binary image 0 everywhere but the
+%  edge of the test traps (trap 1 and trap2). Could make it different for
+%  every trap by replacing this field at each trap but also need to rerun
+%  lines 33 - 46 of createImFilterSetCellTrap so probably not worth doing.
+
+% To create a cellVision model put a trap contour in
+% cCellVision.cTrap.contour (can just be trap outline in the same
+% structure). then put a debug at line 48 of createImFilterSetCellTrap abd
+% rerun the 'if' loop. May throw errors a few times but will eventually
+% work.
