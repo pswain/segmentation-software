@@ -22,6 +22,7 @@ for i=2:length(timepoints)
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
     yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
     
+    cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepoint-1).trapLocations;
     xlocCELL=num2cell(xloc);
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     ylocCELL = num2cell(yloc);
@@ -77,6 +78,8 @@ for i=2:length(timepoints)
     yloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).ycenter]+meanDY;
     
     xlocCELL=num2cell(xloc);
+    cTimelapse.cTimepoint(timepoint).trapLocations=cTimelapse.cTimepoint(timepoint-1).trapLocations;
+    
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     ylocCELL = num2cell(yloc);
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
