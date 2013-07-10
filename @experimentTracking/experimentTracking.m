@@ -61,6 +61,7 @@ classdef experimentTracking<handle
         
         extractCellInformation(cExperiment,positionsToExtract);
         compileCellInformation(cExperiment,positions);
+        compileCellInformationParamsOnly(cExperiment,positions);
         
         cTimelapse=returnTimelapse(cExperiment,timelapseNum);
         saveTimelapseExperiment(cExperiment,currentPos);

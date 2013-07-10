@@ -125,7 +125,21 @@ xlabel('time post switch (hours)');
 ylabel('fraction of cells');
 
 [h,p ]=kstest2(f2h,f18h)
+[h,p ]=ttest2(f2h,f18h)
 
+%%
+
+std2h=std(dataOrdered2h)
+% std18h=std(dataOrdered18);
+
+mean2h=mean(dataOrdered2h);
+mean18h=mean(dataOrdered18h);
+
+
+[h,p ]=kstest2(dataOrdered2h,dataOrdered18h)
+
+%%
+ttest2(dataOrdered2h,dataOrdered18h)
 %%
 v18=f18h.*xi;
 v2=f2h.*xi;

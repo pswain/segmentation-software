@@ -40,12 +40,14 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
     cellLabelsEnd(cellLabelsEnd==0)=[];
     cellLabels=tempLabels;
     n=hist(cellLabels,0:max(cellLabels));
-    n(1)=[];
-    nEnd=hist(cellLabelsEnd,0:max(cellLabels));
-    nEnd(1)=[];
-    cellsSeenEnd=min(cellLabelsEnd);
-    
-    n(nEnd<1)=0;
+    if ~isempty(n)
+        n(1)=[];
+        nEnd=hist(cellLabelsEnd,0:max(cellLabels));
+        nEnd(1)=[];
+        cellsSeenEnd=min(cellLabelsEnd);
+        
+        n(nEnd<1)=0;
+    end
     locs=find(n>=sum(cTimelapse.timepointsProcessed)*params.fraction | n>=params.duration);
     
     if ~isempty(cellsSeen) && ~isempty(locs)

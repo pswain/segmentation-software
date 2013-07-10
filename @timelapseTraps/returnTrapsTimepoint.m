@@ -105,7 +105,7 @@ if cTimelapse.trapsPresent
 %             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),2) + bb);
 %             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),1) + bb);
             temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
-            temp_im(temp_im==0)=median(temp_im(:));
+            temp_im(temp_im==0)=mean(temp_im(:));
             trapsTimepoint(:,:,j)=temp_im;
         end
     end

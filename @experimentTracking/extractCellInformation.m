@@ -13,11 +13,24 @@ if nargin<2
 %     positionsToTrack=1:length(cExperiment.dirs);
 end
 
+num_lines=1;
+prompt = {'Extract all Params?'};
+dlg_title = 'All Params';    def = {'1'};
+answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+answer=str2num(answer{1});
+
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
-    cTimelapse.extractCellData();
+    %
+    if answer
+        cTimelapse.extractCellData();
+    else
+        cTimelapse.extractCellParamsOnly();
+    end
+
     
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(experimentPos);

@@ -113,7 +113,7 @@ for i=1:size(im,3)
     filt_feat(:,(i-1)*n_filt+4)=temp_im(:);
     filt_im(:,:,(i-1)*n_filt+4)=temp_im;
     
-    for index=1:size(h,3)
+    parfor index=1:size(h,3)
         g(:,:,index)=imfilter(im_slice,h(:,:,index),'replicate');
     end
     

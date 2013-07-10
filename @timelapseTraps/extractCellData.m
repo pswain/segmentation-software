@@ -110,6 +110,12 @@ for channel=1:length(cTimelapse.channelNames)
                     seg_areas=~seg_areas;
                     
                     bkg=trapIm(seg_areas);
+                    bkg=bkg(~isnan(bkg(:)));
+                    if isempty(bkg)
+                        bkg=trapIm;
+                    end
+
+                    
                     extractedData(channel).std(j,timepoint)=std(double(cellFL(:)));
                     extractedData(channel).imBackground(j,timepoint)=median(bkg(:));
                     extractedData(channel).min(j,timepoint)=min(cellFL(:));
