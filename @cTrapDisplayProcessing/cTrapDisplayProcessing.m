@@ -84,16 +84,19 @@ classdef cTrapDisplayProcessing<handle
 %                     if cTimelapse.trapsPresent 
 %                         [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
 %                     end
+                set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint-1),' of ', num2str(max(timepoints)),' (',timePerTrap, 's /trap']);
+                drawnow;
+                
                     trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(i),channel);
                     trap_images=double(trap_images);
                     trap_images=trap_images/max(trap_images(:))*.75;
-                    for j=1:size(trap_images,3)
-                        tempy_im=repmat(trap_images(:,:,j),[1 1 3]);
-                        set(cDisplay.subImage(j),'CData',tempy_im);
-                        set(cDisplay.subAxes(j),'CLimMode','manual');
-                        set(cDisplay.subAxes(j),'CLim',[min(tempy_im(:)) max(tempy_im(:))]);
-                    end
-                    pause(.001);
+%                     for j=1:size(trap_images,3)
+%                         tempy_im=repmat(trap_images(:,:,j),[1 1 3]);
+%                         set(cDisplay.subImage(j),'CData',tempy_im);
+%                         set(cDisplay.subAxes(j),'CLimMode','manual');
+%                         set(cDisplay.subAxes(j),'CLim',[min(tempy_im(:)) max(tempy_im(:))]);
+%                     end
+%                     pause(.001);
                 else
 %                     if cTimelapse.trapsPresent 
 %                         [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i)).trapLocations,trapImagesPrevTp);
@@ -122,34 +125,31 @@ classdef cTrapDisplayProcessing<handle
                     t_im=image(:,:,1);
                     t_im(seg_areas)=1; %t_im(seg_areas)*3;
                     image(:,:,1)=t_im;
+                    
+                    temp_image{j}=image;
+                end
+                for j=1:length(traps)
+                    image=temp_image{j};
                     set(cDisplay.subImage(j),'CData',image);
                     set(cDisplay.subAxes(j),'CLimMode','manual');
                     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
-%                 end
-%                 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint)]);
                     
-% 
-%                     if cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cellsPresent
-%                         seg_areas=[cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cell(:).segmented];
-%                         seg_areas=full(seg_areas);
-%                         seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cell)]);
-%                         seg_areas=max(seg_areas,[],3);
-%                     else
-%                         seg_areas=zeros([size(image,1) size(image,2)])>0;
-%                     end
-%                     t_im=image(:,:,1);
-%                     t_im(seg_areas)=t_im(seg_areas)*3;
-%                     image(:,:,1)=t_im;
-%                     set(cDisplay.subImage(j),'CData',image);
-%                     set(cDisplay.subAxes(j),'CLimMode','manual');
-%                     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
-                    p_time=toc;
-                    trapsProcessed=trapsProcessed+1;
-                    disp(['Average Time per Trap ', num2str(p_time/trapsProcessed)]);
-                    pause(.001);
+                    if rem(j,6)==0
+                        drawnow;
+                    end
+
+                    
+                    trapsProcessed=1+trapsProcessed;
                 end
+                
+                p_time=toc;
+                timePerTrap=num2str(p_time/sum(trapsProcessed),2);
+%                 disp(['Average Time per Trap ', num2str(p_time/sum(trapsProcessed))]);
+%                 pause(.0001);
+                
+                
                 if cTimelapse.trapsPresent
-                    pause(.05);
+                    pause(.001);
                 else
                     pause(.5);
                 end
