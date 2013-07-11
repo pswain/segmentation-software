@@ -103,10 +103,10 @@ classdef cTrapDisplayProcessing<handle
 %                     end
                 end
                 
-                for j=1:length(traps)
+                parfor j=1:length(traps)
                     image=trap_images(:,:,j);
                     
-                    d_im(:,:,j)=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps(j),channel,image,d_im(:,:,j));
+                    cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps(j),channel,image,d_im(:,:,j));
                     cTimelapse.identifyCellObjects(cCellVision,timepoint,traps(j),channel,'hough',[],image);
                     
                     %                     image=cTimelapse.returnSingleTrapTimepoint(traps(j),timepoint,channel);
@@ -128,19 +128,27 @@ classdef cTrapDisplayProcessing<handle
                     
                     temp_image{j}=image;
                 end
+                
+                tempy_im=zeros([size(trap_images,1) size(trap_images,2) 3]);
+                for j=1:size(trap_images,3)
+                    set(cDisplay.subImage(j),'CData',tempy_im);
+                    set(cDisplay.subAxes(j),'CLimMode','manual');
+                    set(cDisplay.subAxes(j),'CLim',[0 1]);
+                end
+                drawnow;
+                
                 for j=1:length(traps)
                     image=temp_image{j};
                     set(cDisplay.subImage(j),'CData',image);
                     set(cDisplay.subAxes(j),'CLimMode','manual');
                     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
                     
-                    if rem(j,6)==0
+                    if rem(j,12)==0
                         drawnow;
                     end
-
-                    
                     trapsProcessed=1+trapsProcessed;
                 end
+                drawnow;
                 
                 p_time=toc;
                 timePerTrap=num2str(p_time/sum(trapsProcessed),2);
@@ -148,11 +156,11 @@ classdef cTrapDisplayProcessing<handle
 %                 pause(.0001);
                 
                 
-                if cTimelapse.trapsPresent
-                    pause(.001);
-                else
-                    pause(.5);
-                end
+%                 if cTimelapse.trapsPresent
+%                     pause(.001);
+%                 else
+%                     pause(.5);
+%                 end
                 
                 cTimelapse.timepointsProcessed(timepoint)=1;
 
