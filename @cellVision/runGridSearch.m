@@ -11,8 +11,8 @@ else
 end
 
 bestcv = 0;
-for log2c = -1:2,
-  for log2g = -3:1,
+for log2c = -1:1,
+  for log2g = -3:2,
     cmd = [cmdin,' -v 5 -c ', num2str(2^log2c), ' -g ', num2str(2^log2g)];
 %     cv = svmtrain2(cCellSVM.trainingData.kernel_class(1,1:ss:end)', (cCellSVM.trainingData.kernel_features(1:ss:end,:)), cmd);
     cv = svmtrain2(cCellSVM.trainingData.class(1,1:ss:end)', (cCellSVM.trainingData.features(1:ss:end,:)), cmd);

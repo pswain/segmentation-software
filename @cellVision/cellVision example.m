@@ -39,8 +39,8 @@ step_size=20;
 cmd='-s 2 -w0 1 -w1 1 -v 5 -c ';
 cCellVision.runGridSearchLinear(step_size);
 %%
-step_size=3;
-cCellVision.trainingParams.cost=4;
+step_size=5;
+cCellVision.trainingParams.cost=2;
 cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
 cCellVision.trainSVMLinear(step_size,cmd);toc
@@ -52,15 +52,15 @@ cCellVision.twoStageThresh=.7;
 step_size=2;
 cCellVision.generateTrainingSet2Stage(cDictionary,step_size);
 %%
-step_size=90;
+step_size=35;
 cmdin='-t 2 -w0 1 -w1 1 '
 cCellVision.runGridSearch(step_size,cmdin);
 %%
 cCellVision.trainingParams.cost=2
-cCellVision.trainingParams.gamma=.5; % 1 1 or 2 .5 or 2 1
+cCellVision.trainingParams.gamma=1; % 1 1 or 2 .5 or 2 1
 %4 1 ; 4 .5 ; 2 2; 1 4 
 %
-step_size=30;
+step_size=20;
 cmd = ['-t 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
 tic
 cCellVision.trainSVM(step_size,cmd);toc

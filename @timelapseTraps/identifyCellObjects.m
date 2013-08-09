@@ -61,17 +61,18 @@ trapG=trapG/max(trapG(:));
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
-searchRadius(1)=searchRadius(1)-2;
+searchRadius(1)=searchRadius(1)-1;
 cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
 cellTrap=bwlabel(cellTrap);
 
 se1=cCellVision.se.se1;
 f1=fspecial('gaussian',5,1);
 
-for j=1:size(image,3)
-    temp_im=image(:,:,j);
-    if isempty(bw_mask)
-        bw_mask=full(trapInfo(traps(j)).segCenters);
+if isempty(bw_mask)
+    parfor j=1:size(image,3)
+        temp_im=image(:,:,j);
+        k=traps(j);
+        bw_mask=full(trapInfo(k).segCenters);
         
         %blur/reduce the edges of the traps so they don't impact the hough
         %transform as much
@@ -80,14 +81,17 @@ for j=1:size(image,3)
         diffImAbs=diffImAbs/max(diffImAbs(:));
         fIm=imfilter(diffImAbs,f1);
         fIm=fIm/max(fIm(:));
-        temp_im=image-(fIm.*diffIm);
+        temp_im=image(:,:,j)-(fIm.*diffIm);
         temp_im=temp_im-diffIm.*trapG;
-
+        
         %may need to change the radiusSmall and the radiusLarge below to
         %adjust for changes in the pixelSize
-        [~, circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
+        scale=1;
+        [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'));
         bw_mask=[];
         
+        circen=circen/scale;
+        cirrad=cirrad/scale;
         [b m n]=unique(circen,'rows');
         if size(b,1)~=size(circen,1)
             circen=b;
@@ -96,7 +100,7 @@ for j=1:size(image,3)
         
         cellsIndex=1;
         nseg=80;
-        for numCells=1:length(cirrad)
+        for numCells=length(cirrad):-1:1
             
             temp_im=zeros(size(temp_im))>0;
             x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
@@ -122,18 +126,36 @@ for j=1:size(image,3)
             cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
             ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
             
-            if ratioCellToTrap<allowedOverlap;
-                trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
-                trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
-                trapInfo(traps(j)).cellsPresent=1;
+            if ~(ratioCellToTrap<allowedOverlap)
+                circen(numCells,:)=[];
+                cirrad(numCells)=[];
+
+%                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
+%                 trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
+%                 trapInfo(traps(j)).cellsPresent=1;
                 cellsIndex=cellsIndex+1;
             else
                 b=1;
             end
         end
-        trapInfo(traps(j)).cellsPresent=~isempty(circen);
-                
-    else %for the add/remove cells part of the GUI after processing is done
+        cell{j}.circen=circen;
+        cell{j}.cirrad=cirrad;
+    end
+    
+    for j=1:size(image,3) 
+        circen=cell{j}.circen;
+        cirrad=cell{j}.cirrad;
+       for numCells=1:length(cirrad)
+           trapInfo(traps(j)).cell(numCells).cellCenter=uint16(round(circen(numCells,:)));
+           trapInfo(traps(j)).cell(numCells).cellRadius=double((cirrad(numCells)));
+           trapInfo(traps(j)).cellsPresent=1;
+       end
+       trapInfo(traps(j)).cellsPresent=~isempty(circen);      
+    end
+else %for the add/remove cells part of the GUI after processing is done
+    for j=1:size(image,3)
+        temp_im=image(:,:,j);
+
         s2=strel('disk',2);
         bw_mask=imdilate(bw_mask,s2);
 %         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
@@ -158,7 +180,11 @@ for j=1:size(image,3)
         trapInfo(traps(j)).cell(cellsThere+1).cellRadius=uint16(round(cirrad(numCells)));
         trapInfo(traps(j)).cellsPresent=1;
     end
-    
+end
+
+for j=1:size(image,3)
+    temp_im=image(:,:,j);
+
     if trapInfo(traps(j)).cellsPresent
         circen=[trapInfo(traps(j)).cell(:).cellCenter];
         circen=reshape(circen,2,length(circen)/2)';

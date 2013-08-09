@@ -103,12 +103,13 @@ classdef cTrapDisplayProcessing<handle
 %                     end
                 end
                 
-                parfor j=1:length(traps)
+                
+                
+                cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,channel,trap_images,d_im(:,:,j));
+                cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+                
+                for j=1:length(traps)
                     image=trap_images(:,:,j);
-                    
-                    cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps(j),channel,image,d_im(:,:,j));
-                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps(j),channel,'hough',[],image);
-                    
                     %                     image=cTimelapse.returnSingleTrapTimepoint(traps(j),timepoint,channel);
                     image=double(image);
                     image=image/max(image(:))*.75;
