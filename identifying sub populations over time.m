@@ -25,7 +25,7 @@ index=1;
 for i=1:size(rad,1);
     loc=rad(i,:)>0;
     if sum(loc)>0
-        temp=smooth(rad(i,loc),5,'moving');
+        temp=smooth(rad(i,loc),1,'moving');
         newRad(index,1:sum(loc))=temp;
         
         tempy=temp(1:end);
@@ -183,7 +183,7 @@ for i=1:size(postC,1);
     temp=postC(i,:);
     temp=temp(temp>0);
     temp=temp*10;
-%     temp=smooth(temp,7,'lowess')';
+    temp=smooth(temp,7,'lowess')';
     temp(temp<0)=0;
     temp(temp>9)=9;
     seq{i}=floor(temp)+1;
@@ -215,7 +215,7 @@ state=hmmdecode(seq{i},TRANS,EMIS);
 
 seq{i}
 figure(123);stem((state(1,:)>.5)+1); axis([0 100 0 2])
-pause(1)
+pause(.3)
 end
 (seq{i}<5)+1
 % postC(i,1:10)*10

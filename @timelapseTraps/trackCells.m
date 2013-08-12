@@ -19,13 +19,16 @@ end
 for timepoint=1:length(cTimelapse.timepointsProcessed)
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
-        trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
+        
         if timepoint>1
-            trapInfom1=cTimelapse.cTimepoint(timepoint-1).trapInfo;
+            trapInfom1=trapInfo;
         end
         if timepoint>2
-            trapInfom2=cTimelapse.cTimepoint(timepoint-2).trapInfo;
+            trapInfom2=trapInfom1;
         end
+        trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
+        
+%         trapMaxCell=zeros(1,length(cTimelapse.cTimepoint(1).trapInfo));
         for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
             if timepoint==1
                 if trapInfo(trap).cellsPresent
@@ -35,13 +38,13 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     len=0;
                     trapInfo(trap).cellLabel=0;
                 end
-                trapMaxCell(trap)=len;
+                trapMaxCell(trap)=len;            
             else
                 trapInfo(trap).cellLabel=zeros(1,length(trapInfo(trap).cell));
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
                 cirrad=[trapInfo(trap).cell(:).cellRadius]';
-                pt2=[circen cirrad ];
+                pt2=[circen cirrad];
                 
                 circen=[trapInfom1(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
@@ -121,8 +124,8 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 
                 
                 
-                %for all cells that are "new" cells to the image, update them
-                %and the maxCell value
+%                 for all cells that are "new" cells to the image, update them
+%                 and the maxCell value
                 if ~trapInfo(trap).cellsPresent
                     unlabelledCellNum=0;
                 elseif trapInfo(trap).cellsPresent && isempty(trapInfo(trap).cell(1).cellCenter)
