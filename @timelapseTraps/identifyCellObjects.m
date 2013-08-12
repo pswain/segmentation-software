@@ -73,7 +73,9 @@ se1=cCellVision.se.se1;
 f1=fspecial('gaussian',5,1);
 
 if isempty(bw_mask)
-    parfor j=1:size(image,3)
+    %parfor j=1:size(image,3)
+    for j=1:size(image,3)
+        
         temp_im=image(:,:,j);
         k=traps(j);
         bw_mask=full(trapInfo(k).segCenters);
