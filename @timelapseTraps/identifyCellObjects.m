@@ -49,22 +49,26 @@ else
 end
 image=double(image);
 
-%blur/reduce the edges of the traps so they don't impact the hough
-%transform as much
+
 f1=fspecial('gaussian',9,1);
 se1=cCellVision.se.se1;
-trapEdge=cCellVision.cTrap.contour;
-trapEdge=imdilate(trapEdge,se1);
-trapG=imfilter(trapEdge,f1);
-trapG=trapG/max(trapG(:));
+
+
+if cTimelapse.trapsPresent
+    %blur/reduce the edges of the traps so they don't impact the hough
+    %transform as much
+    trapEdge=cCellVision.cTrap.contour;
+    trapEdge=imdilate(trapEdge,se1);
+    trapG=imfilter(trapEdge,f1);
+    trapG=trapG/max(trapG(:));
+    
+    cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
+    cellTrap=bwlabel(cellTrap);
+end
 
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
-
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
-searchRadius(1)=searchRadius(1)-1;
-cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
-cellTrap=bwlabel(cellTrap);
-
+searchRadius(1)=searchRadius(1)-2;
 se1=cCellVision.se.se1;
 f1=fspecial('gaussian',5,1);
 
@@ -82,7 +86,10 @@ if isempty(bw_mask)
         fIm=imfilter(diffImAbs,f1);
         fIm=fIm/max(fIm(:));
         temp_im=image(:,:,j)-(fIm.*diffIm);
-        temp_im=temp_im-diffIm.*trapG;
+        
+        if cTimelapse.trapsPresent
+            temp_im=temp_im-diffIm.*trapG;
+        end
         
         %may need to change the radiusSmall and the radiusLarge below to
         %adjust for changes in the pixelSize
@@ -121,11 +128,13 @@ if isempty(bw_mask)
             end
             locfill=[y x];
             temp_im=imfill(temp_im,round(locfill))>0;
-            cellOverlapTrap1=temp_im&(cellTrap==1);
-            cellOverlapTrap2=temp_im&(cellTrap==2);
-            cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
-            ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
             
+            if cTimelapse.trapsPresent
+                cellOverlapTrap1=temp_im&(cellTrap==1);
+                cellOverlapTrap2=temp_im&(cellTrap==2);
+                cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
+                ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
+                
             if ~(ratioCellToTrap<allowedOverlap)
                 circen(numCells,:)=[];
                 cirrad(numCells)=[];
@@ -133,10 +142,18 @@ if isempty(bw_mask)
 %                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
 %                 trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
 %                 trapInfo(traps(j)).cellsPresent=1;
-                cellsIndex=cellsIndex+1;
-            else
-                b=1;
+                    cellsIndex=cellsIndex+1;
+                else
+                    b=1;
+                end
+            else %if there are no traps, behave as though the overlap test was passed.
+                trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
+                trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
+                trapInfo(traps(j)).cellsPresent=1;
+                cellsIndex=cellsIndex+1;  
             end
+
+           
         end
         cell{j}.circen=circen;
         cell{j}.cirrad=cirrad;
@@ -160,7 +177,9 @@ else %for the add/remove cells part of the GUI after processing is done
         bw_mask=imdilate(bw_mask,s2);
 %         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
         diffIm=temp_im-median(temp_im(:));
-        temp_im=temp_im-diffIm.*trapG;
+        if cTimelapse.trapsPresent
+            temp_im=temp_im-diffIm.*trapG;
+        end
 
         [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
         
