@@ -60,33 +60,35 @@ end
 function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 % This preallocates the segmented images to speed up execution
+tPresent=cTimelapse.trapsPresent;
 
-j=trap;
-if cTimelapse.trapsPresent
-    cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
-        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
-else
-    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image))>0),'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
-    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
-    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image))>0);
-    cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
+parfor k=1:length(trap)
+    j=trap(k);  
+    [p_im d_im]=cCellVision.classifyImageLinear(image(:,:,j));
+    
+    % combined_d_im=d_im+old_d_im/5;
+    t_im=imfilter(d_im,fspecial('gaussian',3,.4)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %  
+    bw=t_im<cCellVision.twoStageThresh; 
+    segCenters{k}=sparse(bw>0); 
 end
 
-[p_im d_im]=cCellVision.classifyImageLinear(image);
-
-if isempty(old_d_im)
-    if timepoint>1
-        temp_im=cTimelapse.returnSingleTrapTimepoint(trap,timepoint-1,channel);
-        [p_im old_d_im]=cCellVision.classifyImageLinear(temp_im);
+for k=1:length(trap)
+    j=trap(k);
+    if tPresent
+        cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image(:,:,j)))>0)), ...
+            'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image(:,:,j)))>0),'trackLabel',sparse(zeros(size(image(:,:,j)))>0));
     else
-        old_d_im=zeros(size(d_im));
+        cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image(:,:,j)))>0),'trackLabel',sparse(zeros(size(image(:,:,j)))>0));
+        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
+        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
+        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image(:,:,j)))>0);
+        cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
     end
+    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=segCenters{k};
 end
 
-t_im=d_im+imfilter(old_d_im,fspecial('gaussian',5,1))/6; %imfilter(d_im,fspecial('gaussian',3,.4));
-
-bw=t_im<cCellVision.twoStageThresh;
+d_im=1;
+bw=1;
 
 end
 
