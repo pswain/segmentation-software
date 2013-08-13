@@ -38,12 +38,12 @@ switch cCellVision.method
         fluorescence_medfilt(cTimelapse,timepoint,channel,trap,image,old_d_im);
     case 'linear'
         [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
-        bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
-        cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=sparse(bw>0);
+%         bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
+%         cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=sparse(bw>0);
     case 'kernel'
         d_im=kernel_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
-        bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
-        cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=sparse(bw>0);
+%         bw=imresize(bw,cTimelapse.magnification/cCellVision.magnification);
+%         cTimelapse.cTimepoint(timepoint).trapInfo(trap).segCenters=sparse(bw>0);
     case 'twostage'
         [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channel,trap,image,old_d_im);
 end
