@@ -1,3 +1,3 @@
 function createGroundTruth(cCellVisionGUI)
 
-cTrapDisplay(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision,[],[],1)
+cTrapDisplay(cCellVisionGUI.cTimelapse,cCellVisionGUI.cCellVision,[],[],[],1)

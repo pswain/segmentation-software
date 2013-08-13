@@ -63,8 +63,8 @@ end
 
 cTimelapse.cTimepoint(timepoint).trapLocations=trapLocations;
 
-% cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
-%         'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
+        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
 cTimelapse.cTimepoint(timepoint).trapInfo(1:length(trapLocations))=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
         'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
 
