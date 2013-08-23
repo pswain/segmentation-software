@@ -18,7 +18,7 @@ if nargin<3
         
         image=cTimelapse.returnSingleTimepoint(1);
         
-        h=figure;title('Select the center of a representative trap with 1 cell');imshow(image,[]);
+        h=figure;set(gcf,'name','Select the center of a representative trap with  no cell','NumberTitle','off');imshow(image,[]);
         [x y]=getpts(gca);
         x=floor(x);y=floor(y);
         cCellVision.cTrap.trap1=image(y-cCellVision.cTrap.bb_height:y+cCellVision.cTrap.bb_height,x-cCellVision.cTrap.bb_width:x+cCellVision.cTrap.bb_width);
@@ -26,7 +26,7 @@ if nargin<3
         figure;imshow(cCellVision.cTrap.trap1,[]);uiwait();
         
         
-        h=figure;title('Select the center of a representative trap with several cells');imshow(image,[]);
+        h=figure;set(gcf,'name','Select the center of a representative trap with one cell','NumberTitle','off');imshow(image,[]);
         [x y]=getpts(gca);
         close(h);
         x=floor(x);y=floor(y);

@@ -73,7 +73,9 @@ se1=cCellVision.se.se1;
 f1=fspecial('gaussian',5,1);
 
 if isempty(bw_mask)
-    parfor j=1:size(image,3)
+    %parfor j=1:size(image,3)
+    for j=1:size(image,3)
+        
         temp_im=image(:,:,j);
         k=traps(j);
         bw_mask=full(trapInfo(k).segCenters);
@@ -135,22 +137,22 @@ if isempty(bw_mask)
                 cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
                 ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
                 
-            if ~(ratioCellToTrap<allowedOverlap)
-                circen(numCells,:)=[];
-                cirrad(numCells)=[];
-
-%                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
-%                 trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
-%                 trapInfo(traps(j)).cellsPresent=1;
+                if ~(ratioCellToTrap<allowedOverlap)
+                    circen(numCells,:)=[];
+                    cirrad(numCells)=[];
+                    
+                    %                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
+                    %                 trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
+                    %                 trapInfo(traps(j)).cellsPresent=1;
                     cellsIndex=cellsIndex+1;
                 else
                     b=1;
                 end
             else %if there are no traps, behave as though the overlap test was passed.
-                    trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
-                    trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
-                    trapInfo(traps(j)).cellsPresent=1;
-                cellsIndex=cellsIndex+1;  
+%                 trapInfo(traps(j)).cell(cellsIndex).cellCenter=uint16(round(circen(numCells,:)));
+%                 trapInfo(traps(j)).cell(cellsIndex).cellRadius=uint16(round(cirrad(numCells)));
+%                 trapInfo(traps(j)).cellsPresent=1;
+                cellsIndex=cellsIndex+1;
                 end
 
            
