@@ -22,7 +22,7 @@ im=im-min(im(:));
     
     for i=1:2
         
-        NumIter = 400; %iterations
+        NumIter = 5000; %iterations
         timestep=0.01; %time step
         mu=0.1/timestep;% level set regularization term, please refer to "Chunming Li and et al. Level Set Evolution Without Re-initialization: A New Variational Formulation, CVPR 2005"
         sigma = 3;%size of kernel

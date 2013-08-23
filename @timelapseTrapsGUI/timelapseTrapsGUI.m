@@ -40,7 +40,7 @@ classdef timelapseTrapsGUI<handle
             
             
             
-            if nargin<3
+            if nargin<2
                 cTrapsGUI.cCellVision=cellVision();
             else
                 cTrapsGUI.cCellVision=cCellVision;
