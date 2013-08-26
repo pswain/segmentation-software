@@ -13,7 +13,7 @@ cTimelapse.automaticSelectCells(params);
 cTimelapse.extractCellParamsOnly;
 sum(cTimelapse.cellsToPlot(:))
 sum([cTimelapse.cTimepoint(1).trapMaxCell])
-%%
+%% Create the features for the classification
 cTimelapse.correctSkippedFramesInf;
 rad=cTimelapse.extractedData(1).radius;
 
@@ -47,9 +47,20 @@ for i=1:size(rad,1);
     
 end
 
+
+%% remove cells that have been there a long time
+
 duration=sum(newRad>0,2);
 cellNum=cTimelapse.extractedData(1).cellNum;
-%
+
+del=duration>50;
+growth(del,:)=[];
+xloc(del,:)=[];
+yloc(del,:)=[];
+duration(del)=[];
+cellNum(del)=[];
+%% Create the speed by smoothing locations over time.
+
 xspeed=diff(xloc,1,2);
 yspeed=diff(yloc,1,2);
 t=xloc==0;
@@ -69,7 +80,7 @@ for i=1:size(xspeed,1)
 end
 % 
 speed=sqrt(meanx.^2+meany.^2);
-%%
+%% Create the actual feature vector that is used to classify cell stages as young or old
 index=1;
 % features=zeros(sum(duration),4*2);
 features=[];
@@ -79,7 +90,7 @@ for i=1:size(xspeed,1)
     for j=1:1:duration(i)-ss-1
 %         if j<3 | j>7
             features(index,:)=[abs(mean(xspeed(i,j:j+ss))) abs(mean(yspeed(i,j:j+ss))) ...
-                range(newRad(i,j:j+ss)) ...
+                (max(newRad(i,j:j+ss)) - min(newRad(i,j:j+ss))) ...
                 median(newRad(i,j:j+ss)) min(newRad(i,j:j+ss)) ...
                 max(growth(i,j:j+ss)) mean(abs(growth(i,j:j+ss))) mean((growth(i,j:j+ss)))...
                 sqrt(mean(xspeed(i,j:j+ss)).^2 + mean(yspeed(i,j:j+ss)).^2) mean(speed(i,j:j+ss))];

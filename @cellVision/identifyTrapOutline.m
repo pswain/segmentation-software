@@ -15,8 +15,8 @@ if ~isempty(cCellVision.cTrap)
     im=imfilter(im,fspecial('disk',2));
     im=imerode(im,strel('disk',1));
     % im=im-median(im(:));
-%     im=abs(im);
-im=im-min(im(:));
+    %     im=abs(im);
+    im=im-min(im(:));
     im=im/max(im(:))*255;
     imflat=zeros([size(im) 2]);
     
@@ -72,7 +72,7 @@ im=im-min(im(:));
     end
     imflat=max(imflat,[],3);
     cCellVision.cTrap.contour=imflat;
-
+    
     imflat=imfill(imflat,'holes');
     imflat=imerode(imflat,strel('disk',1));
     h=figure;imshow(imflat,[]);title('Final Trap Outline');

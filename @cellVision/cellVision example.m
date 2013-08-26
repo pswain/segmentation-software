@@ -17,7 +17,7 @@ cCellVision.se.trap.hgram=x;
 
 
 %% Identify the trap outline
-cCellVision.identifyTrapOutline(cTimelapse,7);
+cCellVision.identifyTrapOutline(cTimelapse,1);
 figure(1);imshow(cCellVision.cTrap.trapOutline,[]);
 %%
 trap=19;
