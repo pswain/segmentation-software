@@ -8,7 +8,7 @@ fprintf('please select cell vision model used to identify the cells in the timel
 
 [CVname,CVpath] = uigetfile('~/Matt\ Seg\ GUI/');
 
-load([CVpath '/' CVname]);
+load([CVpath '/' CVname],'cCellVision');
 %this file should only have the cCellVision variable
 
 ttacObject.TrapPixelImage = ACTrapFunctions.makeTrapPixelsFromBinaryFunction(cCellVision.cTrap.trapOutline);
@@ -27,7 +27,7 @@ clear('image');
 
 for TP=1:length(ttacObject.TimelapseTraps.cTimepoint)
     
-    CentrePixels = imageY*([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).xcenter]-1) +  [ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).ycenter];
+    CentrePixels = imageY*(round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).xcenter]-1)) +  round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).ycenter]);
     
     tempTrapCentre(CentrePixels) = true;
     

@@ -14,10 +14,10 @@ classdef editActiveContourTimelapseGUI<handle
         trackOverlay = [];
         ttacObject = [];
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+  
+    %GUI by which to select cells to edit their contours as found by active
+    %contour.
+    
     methods
         function cDisplay=editActiveContourTimelapseGUI(ttacObject,channel,overlay,traps)
             
