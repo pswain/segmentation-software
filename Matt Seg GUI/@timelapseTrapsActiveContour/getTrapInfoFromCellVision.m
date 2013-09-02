@@ -13,6 +13,8 @@ load([CVpath '/' CVname],'cCellVision');
 
 ttacObject.TrapPixelImage = ACTrapFunctions.makeTrapPixelsFromBinaryFunction(cCellVision.cTrap.trapOutline);
 
+ttacObject.TrapImageSize= size(cCellVision.cTrap.trapOutline);
+
 %% get image dimensions
 
 image = imread(ttacObject.TimelapseTraps.cTimepoint(1).filename{1});
@@ -36,5 +38,6 @@ for TP=1:length(ttacObject.TimelapseTraps.cTimepoint)
     tempTrapCentre(CentrePixels) = false;
     
 end
+
 
 end

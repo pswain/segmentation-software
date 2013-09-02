@@ -9,5 +9,7 @@ ttacObject.TrapPresentBoolean = timelapseTraps.trapsPresent;
 
 ttacObject.TrapLocation = [];
 
+ttacObject.TrapImageSize = [2*timelapseTraps.cTrapSize.bb_height + 1   2*timelapseTraps.cTrapSize.bb_width + 1];
+
 
 end

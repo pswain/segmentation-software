@@ -27,15 +27,31 @@ classdef editActiveContourCellGUI<handle
             end
             
             if nargin<5 || isempty(StripWidth)
-                StripWidth = 7;
+                CellACDisplay.StripWidth = 7;
             else 
                 CellACDisplay.StripWidth = StripWidth;
             end
             
+            MiddleOfStripWidth = ceil(StripWidth/2;)
+            
             if nargin<6 || isempty(channel)
-                channel = 1;
+                CellACDisplay.channel = 1;
             else
                 CellACDisplay.channel=channel;   
+            end
+            
+            maxTimepoint = length(ttacObject.TimelapseTraps.cTimepoint)-floor(CellACDisplay.StripWidth/2);
+            
+            if Timepoint<MiddleOfStripWidth
+                Timepoint = MiddleOfStripWidth;
+            elseif Timepoint>maxTimepoint
+                Timepoint = maxTimepoint;
+            end
+            
+            TimepointsInStrip = (1:CellACDisplay.StripWidth) + Timepoint - MiddleOfStripWidth;
+            
+            if any(TimepointsInStrip<1)
+                TimepointsInStrip = TimepointsInStrip + 1 - min(TimepointsInStrip,[],2);
             end
             
             
@@ -57,7 +73,13 @@ classdef editActiveContourCellGUI<handle
             
            
             dis_h=(length(cTimelapse.cTimepoint(1).filename) + 1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,CellACDisplay.channel);
+            
+            
+            %%%NEED to EDIT THIS TO GIVE SAME IMAGES AS SEGMENTATION SCRIPT
+            image = [];
+            for timepointi = TimepointsInStrip
+                image=cat(3,image,cTimelapse.returnTrapsTimepoint(CellACDisplay.trapNum,timepointi,CellACDisplay.channel));
+            end
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -72,36 +94,31 @@ classdef editActiveContourCellGUI<handle
                     CellACDisplay.trapNum(index)=traps(index);
                     CellACDisplay.subImage(index)=subimage(image(:,:,i));
                     set(CellACDisplay.subAxes(index),'xtick',[],'ytick',[])
-                    set(CellACDisplay.subImage(index),'ButtonDownFcn',@(src,event)chooseCellToEdit(CellACDisplay,CellACDisplay.subAxes(index),CellACDisplay.trapNum(index))); % Set the motion detector.
-                    if CellACDisplay.trackOverlay
-                        set(CellACDisplay.subImage(index),'HitTest','off'); %now image button function will work
-                    else
-                        set(CellACDisplay.subImage(index),'HitTest','on'); %now image button function will work
-                    end
+                    
+                    % THIS FUNCTION CALLBACK SHOULD LOOK SOMETHING LIKE EditContour(CellACDisplay,Timepoint,trapNum,CellNum,pt,CellCenter)
+                    set(CellACDisplay.subImage(index),'ButtonDownFcn',@(src,event)EditContour(CellACDisplay,CellACDisplay.subAxes(index),CellACDisplay.trapNum)); % Set the motion detector.
+                    set(CellACDisplay.subImage(index),'HitTest','on'); %now image button function will work
+
                     index=index+1;
                 end
             end
             
             CellACDisplay.slider=uicontrol('Style','slider',...
                 'Parent',gcf,...
-                'Min',1,...
-                'Max',length(cTimelapse.cTimepoint),...
+                'Min',MiddleOfStripWidth,...
+                'Max',maxTimepoint,...
                 'Units','normalized',...
-                'Value',1,...
+                'Value',Timepoint,...
                 'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
-                'SliderStep',[1/(length(cTimelapse.cTimepoint)-1) 1/(length(cTimelapse.cTimepoint)-1)],...
+                'SliderStep',[1/(maxTimepoint - MiddleOfStripWidth) 10/(maxTimepoint - MiddleOfStripWidth)],...
                 'Callback',@(src,event)slider_cb(CellACDisplay));
+            
+            %This hlistener line means that everytime the property 'Value'
+            %of CellACDisplay.slider changes the callback slider_cb is run.
             hListener = addlistener(CellACDisplay.slider,'Value','PostSet',@(src,event)slider_cb(CellACDisplay));
-            
-%             CellACDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
-%                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(CellACDisplay));
-            
+        
             CellACDisplay.slider_cb();
         end
 
-        % Other functions 
-        chooseCellToEdit(CellACDisplay,subAx,trap)
-        slider_cb(CellACDisplay)
-        tracksDisplay(CellACDisplay);
     end
 end
