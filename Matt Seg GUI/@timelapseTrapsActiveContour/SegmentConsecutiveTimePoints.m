@@ -57,13 +57,6 @@ if LastTimepoint-FirstTimepoint>50
     ACparameters.visualise = 0;
 end
 
-%make the image transform function indicated by the string in SEGparameters
-%a function handle to act on image stacks.
-ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageSegmentation.ImageTransformFunction]);
-
-% DICangle = -45;
-% 
-% sub_image_size = 30; %subimage is a size 2*sub_image_size +1 square.
 
 %FauxCentersStack is just a filler for the PSO optimisation that takes centers
 %(because in this code the centers are always at the centers of the image).
@@ -72,16 +65,9 @@ FauxCentersStack = round(SubImageSize/2)*ones(slice_size,2);
 
 %size of trap image stored in Timelapse. If there are no traps, this is the
 %size of the image.
-if ttacObject.TrapPresentBoolean
-    TrapImageSize = fliplr(ttacObject.TrapPixelImage);
-else
-    TrapImageSize = size(ttacObject.ReturnImage(FirstTimepoint));
-end
 
 
 Timepoints = FirstTimepoint:LastTimepoint;
-
-CellsToPlotGiven = ttacObject.Parameters.ImageSegmentation.CellsToPlotGiven;
 
 %% NOTES
 
@@ -142,6 +128,7 @@ TransformedImageStrings = cell(1,slice_size);
 PriorRadiiStrings = cell(1,slice_size);
 PriorAnglesStrings = cell(1,slice_size);
 CellNumberTimelapseStrings = cell(1,slice_size);
+TimePointStrings = cell(1,slice_size);
 
 for i=1:slice_size
 CellCentreStrings{i} = ['CellCentre' int2str(i)];
@@ -156,6 +143,8 @@ PriorAnglesStrings{i} = ['PriorAngles' int2str(i)];
 CellInfo.(PriorAnglesStrings{i}) = zeros(1,OptPoints);
 CellNumberTimelapseStrings{i} = ['CellNumberTimelapse' int2str(i)];
 CellInfo.(CellNumberTimelapseStrings{i}) = 0;
+TimePointStrings{i} = ['Timepoint' int2str(i)];
+CellInfo.(TimePointStrings{i}) = 0;
 end
 
 
@@ -170,11 +159,6 @@ EmptyCellEntries = true(1,CellPreallocationNumber);
 
 TP = Timepoints(1);
 
-Image = ttacObject.ReturnImage(TP);
-
-if ttacObject.TrapPresentBoolean
-    TrapImage = ttacObject.ReturnTrapImage(TP);
-end
 NumberOfCellsUpdated = 0;
 
 fprintf('timepoint %d \n',TP)
@@ -201,6 +185,7 @@ for TI = ttacObject.TrapsToCheck(TP)
         CellInfo(CellEntry).TrapNumber = TI;
         CellInfo(CellEntry).CellLabel = ttacObject.ReturnLabel(TP,TI,CI);
         CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
+        CellInfo(CellEntry).(TimePointStrings{end}) = TP;
         CellInfo(CellEntry).(CellCentreStrings{end}) = ttacObject.ReturnCellCentreAbsolute(TP,TI,CI); %absolute cell position
         CellInfo(CellEntry).(TrapCentreStrings{end}) = ttacObject.ReturnTrapCentre(TP,TI);
         
@@ -216,24 +201,12 @@ for TI = ttacObject.TrapsToCheck(TP)
 end
 
 %Get Subimages of Cells
-CellCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellCentreStrings{end})],2,[])';
 
 CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
 
+ImageStack = ttacObject.ReturnTransformedImagesForSingleCell([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TimePointStrings{end})],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).TrapNumber],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellNumberTimelapseStrings{end})]);
 
 
-ImageStack = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,CellCentres);
-
-%transform images
-
-if ttacObject.TrapPresentBoolean  
-    TrapImageStack = ACBackGroundFunctions.get_cell_image(TrapImage,SubImageSize,CellCentres);
-    %ImageStack = ACImageTransformations.radial_gradient_DICangle_and_radialaddition(ImageStack,ITparameters,TrapImageStack);
-    ImageStack = ImageTransformFunction(ImageStack,ITparameters,TrapImageStack);
-    
-else
-    ImageStack = ImageTransformFunction(ImageStack,ITparameters);
-end
 
 %redistribute amongst data structure
 
@@ -267,8 +240,8 @@ fprintf('timepoint %d \n',TP)
         for RN = setdiff((1:slice_size-1),1:(mod(CellInfo(CN).TimePointsPresent+1-slice_size,keepers)))
             %this is set_diff(all entries with priors, those already written to data structure by segmentation )
             
-            %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.WriteACResults(TP+RN-slice_size-1,CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            %write the results to keep to the cTimelapse object
+            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
         end
         
         
@@ -285,17 +258,12 @@ fprintf('timepoint %d \n',TP)
         [CellInfo(UpdatedPreviousTimepoint).(PriorRadiiStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(PriorRadiiStrings{SN+1}));          
         [CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN+1}));          
         [CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN+1}));          
+        [CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN+1}));          
         
     end
     
     
 
-    
-    Image = ttacObject.ReturnImage(TP);
-    
-    if ttacObject.TrapPresentBoolean
-        TrapImage = ttacObject.ReturnTrapImage(TP);
-    end
     NumberOfCellsUpdated = 0;
     %checksum =0;
     
@@ -324,19 +292,29 @@ fprintf('timepoint %d \n',TP)
                     EmptyCellEntries = [EmptyCellEntries true(1,CellPreallocationNumber)];
                 end
                 
+                % Properties only updated on the first occurrence of a cell
+                
                 CellInfo(CellEntry).CellNumber = CellEntry;
                 CellInfo(CellEntry).TrapNumber = TI;
                 CellInfo(CellEntry).CellLabel = ttacObject.ReturnLabel(TP,TI,CI);
                 CellInfo(CellEntry).(PriorRadiiStrings{end}) = ttacObject.ReturnCellRadii(TP,TI,CI);%set prior to be the radus found by matt's hough transform
                 CellInfo(CellEntry).(PriorAnglesStrings{end}) = ttacObject.ReturnCellAngles(TP,TI,CI);%set prior angles to be evenly spaced
+                %it may seem strange that both these are only taken for the
+                %first occurence of a cell. This is because the prior is
+                %set to the segmentation result once the cells are
+                %segmented and 'left behind' to be the prior for future
+                %cells. May want to change this to be more sophisticated at
+                %some point.
+                
                 EmptyCellEntries(CellEntry) = false;
                 
             end
             
             
-            
+            % Properties updated on ever occurrence of a cell
             
             CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
+            CellInfo(CellEntry).(TimePointStrings{end}) = TP;
             CellInfo(CellEntry).(CellCentreStrings{end}) = ttacObject.ReturnCellCentreAbsolute(TP,TI,CI);
             CellInfo(CellEntry).(TrapCentreStrings{end}) = ttacObject.ReturnTrapCentre(TP,TI);
             CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
@@ -351,23 +329,11 @@ fprintf('timepoint %d \n',TP)
     
     %Get Subimages of Cells
     
-
-    CellCentres = reshape([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellCentreStrings{end})],2,[])';
     CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
-    
 
-    ImageStack = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,CellCentres);
-    
-    %transform images
-    
-    if ttacObject.TrapPresentBoolean
-        TrapImageStack = ACBackGroundFunctions.get_cell_image(TrapImage,SubImageSize,CellCentres);
-        %ImageStack = ACImageTransformations.radial_gradient_DICangle_and_radialaddition(ImageStack,ITparameters,TrapImageStack);
-        ImageStack = ImageTransformFunction(ImageStack,ITparameters,TrapImageStack);
-    
-    else
-        ImageStack = ImageTransformFunction(ImageStack,ITparameters);
-    end
+    ImageStack = ttacObject.ReturnTransformedImagesForSingleCell([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TimePointStrings{end})],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).TrapNumber],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellNumberTimelapseStrings{end})]);
+
+ 
     
     %redistribute amongst data structure
     
@@ -392,7 +358,7 @@ fprintf('timepoint %d \n',TP)
         for RN = 1:keepers
 
             %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.WriteACResults(TP+RN-slice_size,CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
 
         end
         
@@ -425,7 +391,7 @@ fprintf('timepoint %d \n',TP)
         %write results to keep to the timelapse object
         for RN = 1:keepers
                         %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.WriteACResults(TP+RN-slice_size,CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
 
         end
         
@@ -458,7 +424,7 @@ for CN = find([CellInfo(:).UpdatedThisTimepoint])
 
         %write the results to keep (1:keepers) to the cTimelapse object
 
-        ttacObject.WriteACResults((LastTimepoint)+RN-slice_size,CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+        ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
         
     end
     

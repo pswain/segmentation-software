@@ -32,7 +32,7 @@ classdef editActiveContourCellGUI<handle
                 CellACDisplay.StripWidth = StripWidth;
             end
             
-            MiddleOfStripWidth = ceil(StripWidth/2;)
+            MiddleOfStripWidth = ceil(StripWidth/2);
             
             if nargin<6 || isempty(channel)
                 CellACDisplay.channel = 1;
@@ -40,7 +40,7 @@ classdef editActiveContourCellGUI<handle
                 CellACDisplay.channel=channel;   
             end
             
-            maxTimepoint = length(ttacObject.TimelapseTraps.cTimepoint)-floor(CellACDisplay.StripWidth/2);
+            maxTimepoint = ttacObject.LengthOfTimelapse;
             
             if Timepoint<MiddleOfStripWidth
                 Timepoint = MiddleOfStripWidth;
@@ -58,17 +58,8 @@ classdef editActiveContourCellGUI<handle
             CellACDisplay.ttacObject = ttacObject;
             cTimelapse = ttacObject.TimelapseTraps;
 
-            timepoints=1:length(cTimelapse.cTimepoint);
+            timepoints=1:ttacObject.LengthOfTimelapse;
             
-            try
-                isempty(cTimelapse.cTimepoint(1).trapInfo);
-                b=0;
-            catch
-                b=1;
-            end
-
-%             CellACDisplay.channel=channel;
-            CellACDisplay.cTimelapse=cTimelapse;
             CellACDisplay.figure=figure('MenuBar','none');
             
            
@@ -78,7 +69,8 @@ classdef editActiveContourCellGUI<handle
             %%%NEED to EDIT THIS TO GIVE SAME IMAGES AS SEGMENTATION SCRIPT
             image = [];
             for timepointi = TimepointsInStrip
-                image=cat(3,image,cTimelapse.returnTrapsTimepoint(CellACDisplay.trapNum,timepointi,CellACDisplay.channel));
+                image=cat(3,image,ImageStack = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,CellCentres);
+
             end
             
             t_width=.9/dis_w;
