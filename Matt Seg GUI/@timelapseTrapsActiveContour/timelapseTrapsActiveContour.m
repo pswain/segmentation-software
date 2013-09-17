@@ -28,6 +28,7 @@ classdef timelapseTrapsActiveContour<handle
         ImageSize = [512 512]; %Size of the images in the Timelapse (just as though you had done 'size')
         TrapImageSize = []; %Size of the trap images (just as though you had done 'size')
         LengthOfTimelapse = []; %number
+        ChannelsToFlip = []; %sometimes channels need flipping. These ones get flipped leftright
         
     end
     
@@ -115,6 +116,8 @@ classdef timelapseTrapsActiveContour<handle
            CellCentre(CellCentre(:,1)>ttacObject.ImageSize(1,2),1) = ttacObject.ImageSize(1,2);
            CellCentre(CellCentre(:,2)>ttacObject.ImageSize(1,1),2) = ttacObject.ImageSize(1,1);
            
+           CellCentre = double(CellCentre);
+           
            
            
         end
@@ -133,6 +136,7 @@ classdef timelapseTrapsActiveContour<handle
            CellCentre(CellCentre(:,1)>ttacObject.TrapImageSize(2),1) = ttacObject.TrapImageSize(2);
            CellCentre(CellCentre(:,2)>ttacObject.TrapImageSize(1),2) = ttacObject.TrapImageSize(1);
            
+           CellCentre = double(CellCentre);
            
            
         end
@@ -153,7 +157,7 @@ classdef timelapseTrapsActiveContour<handle
                 TrapCentre = repmat([0 0],length(Trapindex),1);
             end
         end
-        
+         
         
         function CellRadii = ReturnCellRadii(ttacObject,TP,TI,CI)
             % ReturnCellRadii = ReturnRadii(ttacObject,TP,TI,CI)
@@ -203,6 +207,12 @@ classdef timelapseTrapsActiveContour<handle
             end
             
             Image = ttacObject.TimelapseTraps.returnSingleTimepoint(Timepoint,Channel);
+            
+            %%%REALLY TEMPORARY JUST TO FIX DOA1%%%%%%%%%%%
+            
+            if ismember(Channel,ttacObject.ChannelsToFlip)
+                Image = fliplr(Image);
+            end
             
             
         end
@@ -286,6 +296,11 @@ classdef timelapseTrapsActiveContour<handle
             % TrapImage = ReturnTrapImage(ttacObject,Timepoint)
             
             % returns the trap image (boolean with trap pixels) for a particular timepoint
+            
+            
+            %%%%%%%%%%WARNING%%%%%%%%%%%%%%%%%
+            % If you are editing this the ReturnTrapPixelForSingleCell
+            % method does not use this method - so may need to edit both.
             
             if ttacObject.TrapPresentBoolean
                 TrapImage = conv2(1*full(ttacObject.TrapLocation{Timepoint}),ttacObject.TrapPixelImage,'same');
@@ -374,10 +389,12 @@ classdef timelapseTrapsActiveContour<handle
             
             CellTrapImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
             
+            if ttacObject.TrapPresentBoolean
+            
             for TP =UniqueTimepoints
                 
-                Image = ttacObject.ReturnTrapImage(TP);
-                
+                Image = full(ttacObject.TrapLocation{TP});
+
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
                 
                 RelevantEntries = find(Timepoints==TP);
@@ -388,28 +405,106 @@ classdef timelapseTrapsActiveContour<handle
                     
                 end
                 
-                CellTrapImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres);
+                CellTrapImage(:,:,RelevantEntries) = convn(1*ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres),ttacObject.TrapPixelImage,'same');
                 
                 
+            end
             end
             
             
 
         end
         
-        function CellTransformedImage = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
-            %CellTransformedImage = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
+        function [CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
+            %[CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             
             ttacTransformFunction = str2func(['ttacImageTansformationMethods.' ttacObject.Parameters.ImageSegmentation.ImageTransformMethod]);
 
-            CellTransformedImage = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
+            [CellTransformedImage CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
+               
+        end
+        
+        
+        function CellOutlines = ReturnCellOutlinesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
+            %return the logical of the pixels making up the cell outline.
             
+            
+            CellOutlines = false(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
+            
+            
+            for index = 1:length(Timepoints);
+                TP = Timepoints(index);
+                
+                TI = TrapIndices(index);
+                
+                CI = CellIndices(index);
+                
+                if CI<= length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell) && ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellsPresent && TI<=length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo)
+                    
+                    CellOutlines(:,:,index)  =  ACBackGroundFunctions.get_cell_image(full(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).segmented),ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.ReturnCellCentreRelative(TP,TI,CI));
+                    
+                end
+                
+                
+            end
             
             
         end
         
         
-    end
+        function CellIndices = ReturnCellIndex(ttacObject,Timepoints,TrapIndices,CellLabels)
+            % CellIndices = ReturnCellIndex(ttacObject,Timepoint,Trapindex,CellLabel)
+            
+            %returns the index of a cell from it's label,timepoint and
+            %trapindex. Returns zero if no cell with those identifiers is
+            %present at that timepoint.
+            
+            %Timepoints,Trapindices,CellLabels are all 1 x n vectors.
+            
+            CellIndices = zeros(size(Timepoints));
+            
+            UniqueTimepoints = unique(Timepoints);
+            
+            for TP = UniqueTimepoints
+                
+                UniqueTrapIndices = unique(TrapIndices(Timepoints==TP));
+                
+                for TI = UniqueTrapIndices
+                    
+                    CellsOfInterest = find(Timepoints==TP & TrapIndices == TI);
+                    
+                    LabelsFromTrap = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel;
+                    
+                    for CL = CellsOfInterest
+                        
+                        if ismember(CellLabels(CL),LabelsFromTrap)
+                        
+                            CellIndices(CL) = find(LabelsFromTrap==CellLabels(CL));
+                        end
+                    
+                        
+                    end
+                    
+                end
+                 
+            end
+            
+            
+        end
+        
+        
+        function AvailableChannels = ReturnAvailableChannels(ttacObject)
+            %just returns a row vector of available channels
+            
+            
+            AvailableChannels = 1:length(ttacObject.TimelapseTraps.channelNames);
+            
+            
+        end
+        
+        
+        
+    end %methods
     
-end
+end %classdef
 

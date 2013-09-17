@@ -1,4 +1,4 @@
-function ImageStack = SimpleTransformOfSingleTimepoint(ttacObject,Timepoints,TrapIndices,CellIndices)
+function [TransformedImageStack ImageStack] = SimpleTransformOfSingleTimepoint(ttacObject,Timepoints,TrapIndices,CellIndices)
 %TransformedImageStack = SimpleTransformOfSingleTimepoint(ttacObject,Timepoints,TrapIndices,CellIndices)
 
 %takes Timepoints,TrapIndices and CellIndices and applies one of the
@@ -35,10 +35,10 @@ ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Paramete
 if ttacObject.TrapPresentBoolean  
     TrapImageStack =  ttacObject.ReturnTrapPixelsForSingleCell(Timepoints,TrapIndices,CellIndices);
 
-    ImageStack = ImageTransformFunction(ImageStack,ttacObject.Parameters.ImageTransformation.TransformParameters,TrapImageStack);
+    TransformedImageStack = ImageTransformFunction(ImageStack,ttacObject.Parameters.ImageTransformation.TransformParameters,TrapImageStack);
     
 else
-    ImageStack = ImageTransformFunction(ImageStack,ITparameters);
+    TransformedImageStack = ImageTransformFunction(ImageStack,ITparameters);
 end
    
 
