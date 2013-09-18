@@ -4,7 +4,6 @@ classdef editActiveContourCellGUI<handle
         subImage = [];
         subAxes=[];
         slider = [];
-        pause_duration=[];
         cTimelapse=[]
         channel=1;
         tracksDisplayBox=[];
@@ -13,6 +12,9 @@ classdef editActiveContourCellGUI<handle
         subAxesTimepoints = [];
         subAxesIndex = [];
         ttacObject = [];
+        
+         %a boolean of whether to show the other channels in the
+            %timelapse. Decide what to do with this later.
         ShowOtherChannels = true;
         BaseImages = [];
         CellOutlines = [];
@@ -26,36 +28,38 @@ classdef editActiveContourCellGUI<handle
     % and the transformed image.
     
       methods
-        function CellACDisplay=editActiveContourCellGUI(ttacObject,Timepoint,TrapIndex,CellIndex,StripWidth,channel)
+        function CellACDisplay=editActiveContourCellGUI(ttacObject,Timepoint,TrapIndex,CellIndex,StripWidth,ShowOtherChannels)
             % CellACDisplay=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional))
             
-            %a boolean of whether to show the other channels in the
-            %timelapse. Decide what to do with this later.
-            CellACDisplay.ShowOtherChannels = true;
-            
+           
             CellACDisplay.ttacObject = ttacObject;            
             
-            if nargin<4 || isempty(Timepoint)
+            if nargin<2 || isempty(Timepoint)
                 Timepoint = 1;
             end
             
-            if nargin<5 || isempty(StripWidth)
-                CellACDisplay.StripWidth = 7;
-            else 
+            if ~(nargin<3 || isempty(TrapIndex))
+                CellACDisplay.trapIndex = TrapIndex;
+            end
+            
+            if nargin<4 || isempty(CellIndex)
+                CellIndex = 1;
+            end
+            
+            if ~(nargin<5 || isempty(StripWidth))
                 CellACDisplay.StripWidth = StripWidth;
             end
             
-            MiddleOfStripWidth = ceil(CellACDisplay.StripWidth/2);
-
-            if nargin<6 || isempty(channel)
-                CellACDisplay.channel = 1;
-            else
-                CellACDisplay.channel=channel;   
+            if ~(nargin<6 || isempty(ShowOtherChannels))
+                CellACDisplay.ShowOtherChannels = ShowOtherChannels;
             end
             
+            
+            MiddleOfStripWidth = ceil(CellACDisplay.StripWidth/2);
+
             maxTimepoint = ttacObject.LengthOfTimelapse;
             
-            CellACDisplay.CellLabel = ttacObject.ReturnLabel(Timepoint,TrapIndex,CellIndex);
+            CellACDisplay.CellLabel = ttacObject.ReturnLabel(Timepoint,CellACDisplay.trapIndex,CellIndex);
             
             if CellACDisplay.ShowOtherChannels
                 
@@ -70,8 +74,8 @@ classdef editActiveContourCellGUI<handle
             
             CellACDisplay.UpdateTimepointsInStrip(Timepoint);
             
-            CellACDisplay.getImages;
-            CellACDisplay.getCellOutlines;
+            CellACDisplay.BaseImages = CellACDisplay.getImages;
+            CellACDisplay.CellOutlines = CellACDisplay.getCellOutlines;
             
             
             CellACDisplay.figure=figure('MenuBar','none');
@@ -97,7 +101,7 @@ classdef editActiveContourCellGUI<handle
                     set(CellACDisplay.subAxes(index),'xtick',[],'ytick',[])
                     
                     % THIS FUNCTION CALLBACK SHOULD LOOK SOMETHING LIKE EditContour(CellACDisplay,Timepoint,trapNum,CellNum,pt,CellCenter)
-                    set(CellACDisplay.subImage(index),'ButtonDownFcn',@(src,event)EditContour(CellACDisplay,CellACDisplay.subAxes(index))); % Set the motion detector.
+                    set(CellACDisplay.subImage(index),'ButtonDownFcn',@(src,event) EditContour(CellACDisplay,CellACDisplay.subAxes(index),CellACDisplay.subAxesIndex(index))); % Set the motion detector.
                     set(CellACDisplay.subImage(index),'HitTest','on'); %now image button function will work
 
                     index=index+1;
@@ -117,7 +121,12 @@ classdef editActiveContourCellGUI<handle
             %This hlistener line means that everytime the property 'Value'
             %of CellACDisplay.slider changes the callback slider_cb is run.
             hListener = addlistener(CellACDisplay.slider,'Value','PostSet',@(src,event)editActiveContourCell_slider_cb(CellACDisplay));
-        
+            
+            if Timepoint<MiddleOfStripWidth
+                Timepoint = ceil(MiddleOfStripWidth);
+            elseif Timepoint>maxTimepoint-MiddleOfStripWidth
+                Timepoint = floor(maxTimepoint-MiddleOfStripWidth);
+            end
             set(CellACDisplay.slider,'Value',Timepoint);
             editActiveContourCell_slider_cb(CellACDisplay);
             
@@ -205,7 +214,7 @@ classdef editActiveContourCellGUI<handle
             
             close(h);
             
-            CellACDisplay.BaseImages = Images;
+            %CellACDisplay.BaseImages = Images;
             
         end
         
@@ -259,7 +268,7 @@ classdef editActiveContourCellGUI<handle
                 
             end
             
-            CellACDisplay.CellOutlines = CellOutlines;
+            %CellACDisplay.CellOutlines = CellOutlines;
             
         end
         
