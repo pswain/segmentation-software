@@ -3,6 +3,8 @@
 *.mat
 *.mex*
 .DS_Store
+*.sct
+*.pdf
 @cellVision/cellVision example-cava.m
 @cellVision/runGridSearch-cava.m
 @cellVision/runGridSearchLinear-cava.m
