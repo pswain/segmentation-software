@@ -6,26 +6,43 @@ if nargin<3 || isempty(timepoints)
 end
 
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
-regIm=double(regIm);
+bb=10;
 accumCol=0;
 accumRow=0;
-timepointReg=timepoints(1);
+regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
+regIm=double(regIm);
+regIm=regIm(bb:end-bb,bb:end-bb);
 for i=2:length(timepoints)
+    timepointReg=timepoints(i-1);
+
+    
         timepoint=timepoints(i);
     newIm=cTimelapse.returnSingleTimepoint(timepoint);
     newIm=double(newIm);
-    [output ~] = dftregistration(fft2(regIm),fft2(newIm),150);
-
+    newIm=newIm(bb:end-bb,bb:end-bb);
+%     newIm=padarray(newIm,[bb bb],median(newIm(:)));
+    [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
+    regIm=newIm;
+    
     colDif=output(4)+accumCol;
     rowDif=output(3)+accumRow;
+    if colDif>cTimelapse.cTrapSize.bb_width
+        colDif=0;
+    end
+    if rowDif>cTimelapse.cTrapSize.bb_width
+        rowDif=0;
+    end
+    
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
     yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
     
-    cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepoint-1).trapLocations;
+    cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
+    
     xlocCELL=num2cell(xloc);
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     ylocCELL = num2cell(yloc);
+
+
+    [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
     
     waitbar(timepoint/timepoints(end));

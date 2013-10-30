@@ -6,3 +6,5 @@ cCellVisionGUI.cTimelapse.loadTimelapse(searchString);
 
 set(cCellVisionGUI.setPixelSizeMenu,'String',num2str(cCellVisionGUI.cTimelapse.pixelSize));
 cCellVisionGUI.cCellVision.pixelSize=cCellVisionGUI.cTimelapse.pixelSize;
+cCellVisionGUI.cCellVision.magnification=cCellVisionGUI.cTimelapse.magnification;
+

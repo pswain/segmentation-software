@@ -51,7 +51,7 @@ for channel=1:length(cTimelapse.channelNames)
                 currTrap=extractedData(channel).trapNum(j);
                 
                 temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
-                if temp_loc
+                if temp_loc & sum(trapInfo(currTrap).cell(temp_loc).segmented(:))>5
                     if cTimelapse.trapsPresent
                         trapIm=trapImages(:,:,j);
                     else
@@ -80,7 +80,6 @@ for channel=1:length(cTimelapse.channelNames)
                     convMatrix(2,:)=1;convMatrix(:,2)=1;
                     %                 flPeak=conv2(single(trapIm),convMatrix);
                     %                 flPeak=flPeak(cellLoc);
-                    
                     extractedData(channel).max5(j,timepoint)=mean(flsorted(1:5));
                     extractedData(channel).mean(j,timepoint)=mean(cellFL(:));
                     extractedData(channel).median(j,timepoint)=median(cellFL(:));

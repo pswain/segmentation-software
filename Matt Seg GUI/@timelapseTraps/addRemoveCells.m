@@ -17,10 +17,17 @@ cellPt=pt;
 
 switch selection
     case 'add'
-        bw=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented));
-        bw(pt(1,2),pt(1,1))=1;
-        bw=imdilate(bw,strel('disk',3));
-        cTimelapse.identifyCellObjects(cCellVision,timepoint,trap,channel,method,bw);            
+        if cTimelapse.magnification<100
+            bw=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented));
+            bw(pt(1,2),pt(1,1))=1;
+            bw=imdilate(bw,strel('disk',3));
+            cTimelapse.identifyCellObjects(cCellVision,timepoint,trap,channel,method,bw);
+        else
+            bw=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented));
+            bw(pt(1,2),pt(1,1))=1;
+            bw=imdilate(bw,strel('disk',10));
+            cTimelapse.identifyCellObjects(cCellVision,timepoint,trap,channel,method,bw);
+        end
     case 'remove'
         try
             pts=[];

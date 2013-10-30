@@ -51,8 +51,12 @@ classdef cTrapDisplay<handle
             end
             
             if isempty(cTimelapse.timepointsProcessed)
-                tempSize=[cTimelapse.cTimepoint.trapInfo];
-                cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+                if cTimelapse.trapsPresent
+                    tempSize=[cTimelapse.cTimepoint.trapInfo];
+                    cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+                else
+                    cTimelapse.timepointsProcessed=1;
+                end
             end
             
             

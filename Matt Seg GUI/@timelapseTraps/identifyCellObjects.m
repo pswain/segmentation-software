@@ -49,7 +49,6 @@ else
 end
 image=double(image);
 
-
 f1=fspecial('gaussian',9,1);
 se1=cCellVision.se.se1;
 
@@ -68,10 +67,18 @@ end
 
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
-searchRadius(1)=searchRadius(1)-2;
-se1=cCellVision.se.se1;
-f1=fspecial('gaussian',5,1);
+searchRadius(1)=searchRadius(1)-1;
+% searchRadius(2)=searchRadius(2)+1;
 
+se1=cCellVision.se.se1;
+
+if cTimelapse.magnification<100
+%     f1=fspecial('gaussian',5,1);
+    f1=fspecial('disk',2 );
+else
+    f1=fspecial('disk',2);
+%     f1=fspecial('gaussian',7,2);
+end
 if isempty(bw_mask)
     %parfor j=1:size(image,3)
     for j=1:size(image,3)
@@ -88,20 +95,32 @@ if isempty(bw_mask)
         fIm=imfilter(diffImAbs,f1);
         fIm=fIm/max(fIm(:));
         temp_im=image(:,:,j)-(fIm.*diffIm);
-        
+
         if cTimelapse.trapsPresent
             temp_im=temp_im-diffIm.*trapG;
         end
-        
+        temp_im=medfilt2(temp_im);
+
         %may need to change the radiusSmall and the radiusLarge below to
         %adjust for changes in the pixelSize
         scale=1;
-        [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'));
+        fltr4accum = ones(5,5);
+        fltr4accum(2:4,2:4) = 2;
+        fltr4accum(3,3) = 6;
+        if cTimelapse.magnification<100
+            fltr4accum=imresize(fltr4accum,1);
+            [accum, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.5,fltr4accum);
+        else
+            fltr4accum=imresize(fltr4accum,2);
+            [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.7,fltr4accum);
+        end
+        
+        %         [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'));
         bw_mask=[];
         
         circen=circen/scale;
         cirrad=cirrad/scale;
-        [b m n]=unique(circen,'rows');
+        [b m n]=unique(circen,'rows','first');
         if size(b,1)~=size(circen,1)
             circen=b;
             cirrad=cirrad(m);
@@ -174,16 +193,25 @@ if isempty(bw_mask)
 else %for the add/remove cells part of the GUI after processing is done
     for j=1:size(image,3)
         temp_im=image(:,:,j);
-
         s2=strel('disk',2);
+
         bw_mask=imdilate(bw_mask,s2);
-%         temp_im=imfilter(temp_im,fspecial('gaussian',3,.7));
+        temp_im=medfilt2(temp_im);
         diffIm=temp_im-median(temp_im(:));
         if cTimelapse.trapsPresent
             temp_im=temp_im-diffIm.*trapG;
         end
-
-        [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask);
+        
+        fltr4accum = ones(5,5);
+        fltr4accum(2:4,2:4) = 2;
+        fltr4accum(3,3) = 6;
+        if cTimelapse.magnification<100
+            fltr4accum=imresize(fltr4accum,.9);
+            [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask,max(temp_im(:))*.1,8,.5,fltr4accum);
+        else
+            fltr4accum=imresize(fltr4accum,2);
+            [accum circen cirrad] =CircularHough_Grd_matt(temp_im,searchRadius,bw_mask,max(temp_im(:))*.1,16,1,fltr4accum);
+        end
         
         [b m n]=unique(circen,'rows');
         if size(b,1)~=size(circen,1)
@@ -498,9 +526,9 @@ end
 prm_r_range = sort(max( [0,0;radrange(1),radrange(2)] ));
 
 % Parameters (default values)
-prm_grdthres = .0001;
+prm_grdthres = .001;
 prm_fltrLM_R = 8;
-prm_multirad = .1;
+prm_multirad = .9;
 func_compu_cen = true;
 func_compu_radii = true;
 
@@ -522,12 +550,13 @@ vap_fltr4LM = 2;    % filter for the search of local maxima
 vap_multirad = 3;
 
 vap_fltr4accum = 4; % filter for smoothing the accumulation array
+fltr4accum=varargin{end};
 
 % Default filter (5-by-5)
-fltr4accum = ones(5,5);
-fltr4accum(2:4,2:4) = 2;
-fltr4accum(3,3) = 6;
-fltr4accum=imresize(fltr4accum,.7);
+% fltr4accum = ones(5,5);
+% fltr4accum(2:4,2:4) = 2;
+% fltr4accum(3,3) = 6;
+% % fltr4accum=imresize(fltr4accum,.7);
 
 
 func_compu_cen = ( nargout > 1 );
