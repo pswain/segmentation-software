@@ -1,7 +1,6 @@
 .DS_Store
 *.m~
 *.mat
-*.mex*
 .DS_Store
 *.sct
 *.pdf
