@@ -146,6 +146,7 @@ classdef curateCellTrackingGUI<handle
             %set the scroll wheel function
             
             set(TrackingCurator.figure,'WindowScrollWheelFcn',@(src,event)curateCellTrackingGUI_ScrollWheel_cb(TrackingCurator,src,event));
+            set(TrackingCurator.figure,'WindowKeyPressFcn',@(src,event)curateCellTrackingGUI_KeyPress_cb(TrackingCurator,src,event));
             
         end
         

@@ -12,6 +12,8 @@ classdef cTrapDisplay<handle
         trackOverlay=[];
         tracksDisplayBox=[];
         trapNum;
+        CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
+        
     end % properties
     %% Displays timelapse for a single trap
     %This can either dispaly the primary channel (DIC) or a secondary channel
@@ -140,6 +142,12 @@ classdef cTrapDisplay<handle
 %                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
             
             cDisplay.slider_cb();
+            
+            %scroll wheel function
+            set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)cDisplay_ScrollWheel_cb(cDisplay,src,event));
+            %keydown function
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)cDisplay_KeyPress_cb(cDisplay,src,event));
+            
         end
 
         % Other functions 

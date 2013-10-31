@@ -178,7 +178,7 @@ if isempty(bw_mask)
         end
         cell{j}.circen=circen;
         cell{j}.cirrad=cirrad;
-            end
+          %  end
 
            
     end
