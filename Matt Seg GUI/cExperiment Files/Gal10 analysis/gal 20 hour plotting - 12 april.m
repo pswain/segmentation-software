@@ -1,15 +1,17 @@
 
 %% 18 hour cell traces
 cExperiment.correctSkippedFramesInf
-loc18h=min(cExperiment.cellInf(1).smallmean(:,30:340),[],2)>0 & max(cExperiment.cellInf(2).smallmean(:,50:340),[],2)>10e3 ...
+loc18h=min(cExperiment.cellInf(1).smallmean(:,30:340),[],2)>0 & max(cExperiment.cellInf(2).smallmean(:,50:340),[],2)>1e3 ...
     & max(diff(cExperiment.cellInf(2).smallmean(:,50:340),2,2),[],2)<2e4;
 galMed_18h=[];numCells=[];error18h=[];
 for i=1:size(cExperiment.cellInf(2).median,2)
     cellsPres=cExperiment.cellInf(1).smallmean(:,i)>0;
     cellsPres=loc18h;
-    galMed_18h(i,:)=mean(cExperiment.cellInf(2).smallmedian(cellsPres,i));
+    fl=cExperiment.cellInf(2).max5(cellsPres,i);
+    galMed_18h(i,:)=mean(fl);
     numCells(i)=sum(cellsPres);
     error18h(i)=sqrt(galMed_18h(i,:));
+    error18h(i)=std(fl);
 
 end
 
@@ -58,17 +60,21 @@ axis([-1 10 0 65e3]);
 %% 2h plotting
 cExperiment.correctSkippedFramesInf
 
-loc2h=min(cExperiment.cellInf(1).smallmean(:,20:150),[],2)& max(cExperiment.cellInf(2).smallmean(:,20:150),[],2)>10e3 & ...
+loc2h=min(cExperiment.cellInf(1).smallmean(:,20:150),[],2)& max(cExperiment.cellInf(2).smallmean(:,20:150),[],2)>5e3 & ...
          max(diff(cExperiment.cellInf(2).smallmean(:,20:150),2,2),[],2)<2e4;
 
+cellBack=mean(cExperiment.cellInf(2).max5(loc2h,1:12),2);
 galMed_2h=[];numCells=[];error2h=[];galOn2h=[];
 for i=1:size(cExperiment.cellInf(2).median,2)
     cellsPres=cExperiment.cellInf(1).smallmean(:,i)>0;
     cellsPres=loc2h;
-    galMed_2h(i,:)=mean(cExperiment.cellInf(2).smallmedian(cellsPres,i));
+    fl=cExperiment.cellInf(2).max5(cellsPres,i)-cellBack;
+    galMed_2h(i,:)=mean(fl);
 %     galOn2h(i,:)=
     numCells(i)=sum(cellsPres);
     error2h(i)=sqrt(galMed_2h(i,:));
+    error2h(i)=std(fl);
+
 end
 
 figure(12);plot(galMed_2h);
@@ -95,6 +101,7 @@ for i=1:size(cExperiment.cellInf(2).imBackground,2)
         b=1
     end
 end
+figure(1235);plot(background2h);
 
 %% Plot single cells from the 2 hour selection
 temp=dataOrdered;
@@ -123,8 +130,8 @@ figure(11);imshow(cExperiment.cellInf(2).imBackground,[0 1e3]);colormap(jet);imp
 
 %%
 galMed=[];
-galMed(:,1)=galMed_18h(galMed_18h>0);
-galMed(:,2)=galMed_2h(1:lengthGal18);
+galMed(:,1)=galMed_18h(galMed_18h>0)-background18h(galMed_18h>0)';
+galMed(:,2)=galMed_2h(1:lengthGal18)-background2h(1:lengthGal18)';
 error=[];
 error(:,1)=error18h(galMed_18h>0);
 error(:,2)=error2h(1:lengthGal18);
@@ -141,4 +148,4 @@ figure(14);
     errorbar(x,galMed,error);title('Mean of median GAL10::GFP induction');
 xlabel('time post stimulation (hours)');ylabel('Median Cell Fluorescence (AU)');
 legend(['20 hour (n=',num2str(sum(loc18h)),')'],['2 hour (n=',num2str(sum(loc2h)),')']);
-axis([-1 10 0 25e3]);
+axis([-1 10 0 35e3]);

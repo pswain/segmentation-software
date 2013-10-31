@@ -26,36 +26,36 @@ for i=2:length(positionsToExtract)
     if max(cTimelapse.timepointsProcessed)>0
         for j=1:length(cTimelapse.channelNames)
             temp=cTimelapse.extractedData(j).mean;
-            cExperiment.cellInf(j).mean(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).mean(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).median;
-            cExperiment.cellInf(j).median(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).median(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).max5;
-            cExperiment.cellInf(j).max5(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).max5(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).std;
-            cExperiment.cellInf(j).std(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).std(end+1:end+size(temp,1),1:size(temp,2))=temp;
             
             temp=cTimelapse.extractedData(j).smallmean;
-            cExperiment.cellInf(j).smallmean(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).smallmean(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).smallmedian;
-            cExperiment.cellInf(j).smallmedian(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).smallmedian(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).smallmax5;
-            cExperiment.cellInf(j).smallmax5(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).smallmax5(end+1:end+size(temp,1),1:size(temp,2))=temp;
             
             temp=cTimelapse.extractedData(j).imBackground;
-            cExperiment.cellInf(j).imBackground(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).imBackground(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).min;
-            cExperiment.cellInf(j).min(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).min(end+1:end+size(temp,1),1:size(temp,2))=temp;
             
             
             
             temp=cTimelapse.extractedData(j).radius;
-            cExperiment.cellInf(j).radius(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).radius(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).trapNum;
-            cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).cellNum;
-            cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1),:)=temp;
+            cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1),1:size(temp,2))=temp;
             
-            cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),:)=experimentPos;
+            cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),1:size(temp,2))=experimentPos;
         end
     end
     cExperiment.cTimelapse=[];

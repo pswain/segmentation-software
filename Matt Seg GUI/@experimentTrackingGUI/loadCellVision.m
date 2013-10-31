@@ -5,4 +5,6 @@ function loadCellVision(cExpGUI)
 load(fullfile(PathName,FileName),'cCellVision');
 
 cExpGUI.cCellVision=cCellVision;
+cExpGUI.cExperiment.cCellVision=cCellVision;
+
 
