@@ -43,8 +43,13 @@ for i=1:length(cTimelapse.cTimepoint)
     p1=[fileNum{1} '_' searchString{1}];
     match=regexp(files(:),p1,'match');
     loc= ~cellfun('isempty',match);
-    if sum(loc)>0
-        cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
+    if sum(loc)==1
+        %cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
+        %EDIT MADE BY ELCO AND MARGARITIS to try and fix faulty file loading, THAT;S RIGHT WE MESSED WITH YOUR CODE
+        cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[files{loc}];
+    elseif sum(loc)>1
+        cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[files{loc(round(length(loc)/2))}];
+        
     end
     
 end
