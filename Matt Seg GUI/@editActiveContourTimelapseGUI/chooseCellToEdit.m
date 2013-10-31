@@ -12,7 +12,7 @@ CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,
 
 if ~isempty(CellNumNearestCell)
     
-    editActiveContourCellGUI(cDisplay.ttacObject,trap,CellNumNearestCell,timepoint);
+    editActiveContourCellGUI(cDisplay.ttacObject,timepoint,trap,CellNumNearestCell);
     
 end
 end

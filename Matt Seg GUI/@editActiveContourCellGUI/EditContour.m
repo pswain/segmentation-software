@@ -12,7 +12,7 @@ if any([Cx Cy]~=0)
     if strcmp(get(gcbf,'SelectionType'),'alt')
         fprintf('no right click function at the moment. Do you have a suggestion?\n')
     else
-        fprintf('modified cell %d in trap %d at timepoint %d',CellACDisplay.CellLabel,CellACDisplay.trapIndex,timepoint)
+        fprintf('modified cell %d in trap %d at timepoint %d \n',CellACDisplay.CellLabel,CellACDisplay.trapIndex,timepoint)
         CellACDisplay.ttacObject.AlterOutlineFromGivenPoint(timepoint,CellACDisplay.trapIndex,CellACDisplay.ttacObject.ReturnCellIndex(timepoint,CellACDisplay.trapIndex,CellACDisplay.CellLabel),[Cx Cy]);
         CellACDisplay.CellOutlines(:,:,timepoint) = CellACDisplay.getCellOutlines(timepoint,CellACDisplay.trapIndex,CellACDisplay.CellLabel);
         CellACDisplay.UpdateImages;

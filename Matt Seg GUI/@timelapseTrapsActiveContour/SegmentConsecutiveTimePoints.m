@@ -420,7 +420,7 @@ for CN = find([CellInfo(:).UpdatedThisTimepoint])
     %take cells which for which no cell was present at the previous
     %timepoint and makes the segmentation result the prior result for
     %all cells.
-    for RN = setdiff((1:slice_size),1:(mod(TimePointsPresent-slice_size,keepers+1)))
+    for RN = setdiff((1:slice_size),1:(mod(CellInfo(CN).TimePointsPresent-slice_size,keepers+1)))
 
         %write the results to keep (1:keepers) to the cTimelapse object
 
