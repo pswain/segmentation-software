@@ -23,6 +23,7 @@ if strcmp(key,cDisplay.CurateTracksKey)
         
         TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
+        TrackingCurator.UpdateImages;
         
     end
     

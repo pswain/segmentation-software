@@ -21,26 +21,31 @@ else
     fprintf('modified cell with label %d in trap %d at timepoint %d to have label %d \n',TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell),TrackingCurator.trapIndex,timepoint,TrackingCurator.CellLabel)
     oldLabel = TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell);
     OutlinesToUpdate = [];
+    TrapInfoMissing = [];
     for TP = timepoint:length(TrackingCurator.cTimelapse.cTimepoint)
-        UpdateOutline = false;
-        TPLabels = TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel;
-        
-        if any(TPLabels == oldLabel) && oldLabel ~= TrackingCurator.CellLabel
-            TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==oldLabel) = TrackingCurator.CellLabel;
-            UpdateOutline = true; %update list of TP at which to update the outline
+        if ~isempty(TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo)
+            UpdateOutline = false;
+            TPLabels = TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel;
+            
+            if any(TPLabels == oldLabel) && oldLabel ~= TrackingCurator.CellLabel
+                TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==oldLabel) = TrackingCurator.CellLabel;
+                UpdateOutline = true; %update list of TP at which to update the outline
+            end
+            
+            if any(TPLabels == TrackingCurator.CellLabel ) && oldLabel ~= TrackingCurator.CellLabel %the and in this statement is added in case people pick the cell that already has the label
+                TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==TrackingCurator.CellLabel) = TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex)+1;
+                UpdateMaxCell = true;
+                UpdateOutline = true;
+            end
+            
+            if UpdateOutline
+                OutlinesToUpdate = [OutlinesToUpdate TP];
+            end
+            
+        else
+            TrapInfoMissing = [TrapInfoMissing TP];
+            
         end
-        
-        if any(TPLabels == TrackingCurator.CellLabel ) && oldLabel ~= TrackingCurator.CellLabel %the and in this statement is added in case people pick the cell that already has the label
-            TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==TrackingCurator.CellLabel) = TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex)+1; 
-            UpdateMaxCell = true;
-            UpdateOutline = true;
-        end 
-        
-        if UpdateOutline
-            OutlinesToUpdate = [OutlinesToUpdate TP];
-        end
-        
-        
     end
     
     
@@ -51,6 +56,12 @@ else
     
     for TP = OutlinesToUpdate
         TrackingCurator.CellOutlines(:,:,TP) =TrackingCurator.getCellOutlines(TP,TrackingCurator.trapIndex);
+    end
+    
+    if ~isempty(TrapInfoMissing)
+        fprintf('\n \nWARNING!! Trap info missing for the following timepoints:')
+        display(TrapInfoMissing)
+        fprintf('\n \n')
     end
     
    

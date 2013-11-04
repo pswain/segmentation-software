@@ -17,10 +17,11 @@ classdef curateCellTrackingGUI<handle
         
         %a boolean of whether to show the other channels in the
         %timelapse. Decide what to do with this later.
-        ShowOtherChannels = true;
-        BaseImages = [];
-        CellOutlines = [];
-        StripWidth = 7;
+        ShowOtherChannels = false;
+        BaseImages = []; % images stored of traps
+        CellOutlines = [];% outlines stored of traps
+        DataObtained = []; %vector of whether the data has been obtained for each timepoint.
+        StripWidth = 5;
         TimepointsInStrip;
     end % properties
     
@@ -90,8 +91,10 @@ classdef curateCellTrackingGUI<handle
             
             TrackingCurator.UpdateTimepointsInStrip(Timepoint);
             
-            TrackingCurator.BaseImages = TrackingCurator.getImages;
-            TrackingCurator.CellOutlines = TrackingCurator.getCellOutlines;
+            TrackingCurator.instantiateImages;
+            TrackingCurator.instantiateCellOutlines;
+            TrackingCurator.DataObtained = false(1,maxTimepoint);
+            
             
             
             TrackingCurator.figure=figure('MenuBar','none');
@@ -169,7 +172,7 @@ classdef curateCellTrackingGUI<handle
         end
         
         function Images = getImages(TrackingCurator,Timepoints,TrapIndex)
-            %Images = getImages(TrackingCurator,Timepoints,TrapIndex,CellLabel)
+            %Images = getImages(TrackingCurator,Timepoints,TrapIndex)
             
             %Return the images of the of the cell defined by
             %TrapIndex,CellLabel at the timepoints Timepoints. Images are
@@ -178,11 +181,13 @@ classdef curateCellTrackingGUI<handle
             
             %Timpoints is a row vector
             %TrapIndex is a single index
-            %cellLabel is a single number
+
             
-            
+            DoAWaitBar = false;
             if nargin<2
                 Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+                DoAWaitBar = true;
+                
             end
             
             
@@ -190,26 +195,62 @@ classdef curateCellTrackingGUI<handle
                 TrapIndex = TrackingCurator.trapIndex ;
             end
             
+            
+            if DoAWaitBar
+                h = waitbar(0,'Please wait as we obtain your images ...');
+            end
+            
             Images = cell(1,(length(TrackingCurator.Channels)));
             
             [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
             
-            %waitbar
-            h = waitbar(0,'Please wait as we obtain your images ...');
             ProgressCounter = 0;
             TotalTime = length(TrackingCurator.Channels)*length(Timepoints);
             for CH = TrackingCurator.Channels
                 for TPi = 1:length(Timepoints)
                     Images{CH}(:,:,TPi) = double(TrackingCurator.cTimelapse.returnTrapsTimepoint(TrapIndex,Timepoints(TPi),CH));
-                    ProgressCounter = ProgressCounter+1;
-                    waitbar(ProgressCounter/TotalTime,h);
+                    if DoAWaitBar
+                        ProgressCounter = ProgressCounter+1;
+                        waitbar(ProgressCounter/TotalTime,h);
+                    end
                 end
             end
             
-            close(h);
+            if DoAWaitBar
+                close(h);
+            end
             
             %TrackingCurator.BaseImages = Images;
             
+        end
+        
+        
+        function Images = instantiateImages(TrackingCurator)
+            %Images = instantiateImages(TrackingCurator)
+            
+            %Return empty cells for the images
+            
+            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            
+            Images = cell(1,(length(TrackingCurator.Channels)));
+            
+            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            
+            TrackingCurator.BaseImages = Images;
+        end
+        
+        
+          function CellOutines = instantiateCellOutlines(TrackingCurator)
+            %Images = instantiateCellOutlines(TrackingCurator)
+            
+            %Return empty cells for the images
+            
+            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            
+            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            
+            TrackingCurator.CellOutlines = CellOutlines;
+           
         end
         
         
@@ -244,18 +285,25 @@ classdef curateCellTrackingGUI<handle
             end
             
             for TPi = 1:length(Timepoints)
-                
-                if TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellsPresent
-                    
-                    tempCellOutline = CellOutlines(:,:,TPi);
-                    for CI = 1:length(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell)
+             
+                if ~isempty(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo)
+                    if TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellsPresent
                         
-                        tempCellOutline(imdilate(full(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell(CI).segmented),[0 1 0;1 1 1;0 1 0],'same')) =...
-                            TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI));
+                        tempCellOutline = CellOutlines(:,:,TPi);
+                        for CI = 1:length(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell)
+                            
+                            tempCellOutline(imdilate(full(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell(CI).segmented),[0 1 0;1 1 1;0 1 0],'same')) =...
+                                TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI));
+                            
+                        end
+                        
+                        CellOutlines(:,:,TPi) = tempCellOutline(:,:);
                         
                     end
+                else
                     
-                    CellOutlines(:,:,TPi) = tempCellOutline(:,:);
+                    fprintf('\n \n No trap infor at timepoint %d \n \n',Timepoints(TPi))
+                    
                 end
                 if nargin<2
                     ProgressCounter = ProgressCounter+1;
@@ -277,6 +325,16 @@ classdef curateCellTrackingGUI<handle
             
             
             for widthi = 1:TrackingCurator.StripWidth
+                if ~TrackingCurator.DataObtained(TrackingCurator.TimepointsInStrip(widthi))
+                    Image = TrackingCurator.getImages(TrackingCurator.TimepointsInStrip(widthi));
+                    Outline = TrackingCurator.getCellOutlines(TrackingCurator.TimepointsInStrip(widthi));
+                    for heighti = 1:length(TrackingCurator.BaseImages)
+                        TrackingCurator.BaseImages{heighti}(:,:,TrackingCurator.TimepointsInStrip(widthi)) = Image{heighti}(:,:);
+                    end
+                    TrackingCurator.CellOutlines(:,:,TrackingCurator.TimepointsInStrip(widthi)) = Outline(:,:);
+                    %store information that data is saved
+                    TrackingCurator.DataObtained(TrackingCurator.TimepointsInStrip(widthi)) = 1;
+                end
                 for heighti = 1:length(TrackingCurator.BaseImages)
                     tempImage = TrackingCurator.BaseImages{heighti}(:,:,TrackingCurator.TimepointsInStrip(widthi));
                     tempOutline = TrackingCurator.CellOutlines(:,:,TrackingCurator.TimepointsInStrip(widthi));
