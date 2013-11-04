@@ -13,6 +13,7 @@ classdef cTrapDisplay<handle
         tracksDisplayBox=[];
         trapNum;
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
+        KeyPressed = [];%stores value of key being held down while it is pressed
         
     end % properties
     %% Displays timelapse for a single trap
@@ -144,9 +145,12 @@ classdef cTrapDisplay<handle
             cDisplay.slider_cb();
             
             %scroll wheel function
-            set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)cDisplay_ScrollWheel_cb(cDisplay,src,event));
+            set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
             %keydown function
-            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)cDisplay_KeyPress_cb(cDisplay,src,event));
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)KeepKey_Press_cb(cDisplay,'KeyPressed',src,event));
+            %key release function
+            set(cDisplay.figure,'WindowKeyReleaseFcn',@(src,event)KeepKey_Release_cb(cDisplay,'KeyPressed',src,event));
+
             
         end
 

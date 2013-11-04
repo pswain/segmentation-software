@@ -68,10 +68,13 @@ classdef curateCellTrackingGUI<handle
                 end
             end
             
-            
             MiddleOfStripWidth = ceil(TrackingCurator.StripWidth/2);
             
             maxTimepoint =length(cTimelapse.cTimepoint);
+            
+            if TrackingCurator.StripWidth>maxTimepoint
+                TrackingCurator.StripWidth = maxTimepoint;
+            end
             
             TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex));
             
@@ -121,33 +124,48 @@ classdef curateCellTrackingGUI<handle
                 end
             end
             
-            TrackingCurator.slider=uicontrol('Style','slider',...
-                'Parent',gcf,...
-                'Min',MiddleOfStripWidth,...
-                'Max',maxTimepoint-MiddleOfStripWidth,...
-                'Units','normalized',...
-                'Value',Timepoint,...
-                'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
-                'SliderStep',[1/(maxTimepoint - MiddleOfStripWidth) 10/(maxTimepoint - MiddleOfStripWidth)],...
-                'Callback',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
-            
-            %This hlistener line means that everytime the property 'Value'
-            %of TrackingCurator.slider changes the callback slider_cb is run.
-            hListener = addlistener(TrackingCurator.slider,'Value','PostSet',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
-            
-            if Timepoint<MiddleOfStripWidth
-                Timepoint = ceil(MiddleOfStripWidth);
-            elseif Timepoint>maxTimepoint-MiddleOfStripWidth
-                Timepoint = floor(maxTimepoint-MiddleOfStripWidth);
+            if TrackingCurator.StripWidth<maxTimepoint
+                %if the StripWidth is larger than the nmber of timepoints
+                %in the timelapse the slider should not be made and the
+                %figure should simply display all the images in the
+                %timelapse.
+                
+                TrackingCurator.slider=uicontrol('Style','slider',...
+                    'Parent',gcf,...
+                    'Min',MiddleOfStripWidth,...
+                    'Max',maxTimepoint-MiddleOfStripWidth,...
+                    'Units','normalized',...
+                    'Value',Timepoint,...
+                    'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
+                    'SliderStep',[1/(maxTimepoint - MiddleOfStripWidth) 10/(maxTimepoint - MiddleOfStripWidth)],...
+                    'Callback',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
+                
+                %This hlistener line means that everytime the property 'Value'
+                %of TrackingCurator.slider changes the callback slider_cb is run.
+                hListener = addlistener(TrackingCurator.slider,'Value','PostSet',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
+                
+                if Timepoint<MiddleOfStripWidth
+                    Timepoint = ceil(MiddleOfStripWidth);
+                elseif Timepoint>maxTimepoint-MiddleOfStripWidth
+                    Timepoint = floor(maxTimepoint-MiddleOfStripWidth);
+                end
+                set(TrackingCurator.slider,'Value',Timepoint);
+                curateCellTrackingGUI_slider_cb(TrackingCurator);
+                
+                %set the scroll wheel function - just a generic move slider
+                %function
+                
+                set(TrackingCurator.figure,'WindowScrollWheelFcn',@(src,event)curateCellTrackingGUI_ScrollWheel_cb(TrackingCurator,src,event));
+            else
+          
+                TrackingCurator.UpdateTimepointsInStrip(1);%the input given shouldn't matter in this case.
+                TrackingCurator.UpdateImages;
+                
             end
-            set(TrackingCurator.slider,'Value',Timepoint);
-            curateCellTrackingGUI_slider_cb(TrackingCurator);
             
-            %set the scroll wheel function
-            
-            set(TrackingCurator.figure,'WindowScrollWheelFcn',@(src,event)curateCellTrackingGUI_ScrollWheel_cb(TrackingCurator,src,event));
             set(TrackingCurator.figure,'WindowKeyPressFcn',@(src,event)curateCellTrackingGUI_KeyPress_cb(TrackingCurator,src,event));
-            
+
+                
         end
         
         function Images = getImages(TrackingCurator,Timepoints,TrapIndex)
@@ -319,7 +337,7 @@ classdef curateCellTrackingGUI<handle
                 
             end
             
-            set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end))]);
+            set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ]);
             
             
             

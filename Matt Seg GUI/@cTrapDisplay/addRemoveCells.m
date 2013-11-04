@@ -2,7 +2,11 @@ function addRemoveCells(cDisplay,subAx,trap)
 
 cp=get(subAx,'CurrentPoint');
 
-key=get(cDisplay.figure,'CurrentCharacter');
+key=cDisplay.KeyPressed;
+cDisplay.KeyPressed = [];
+%reset the key value to [] because the key release function will not
+%trigger when a new GUI is opened by the call back.
+
 
 cp=round(cp);
 Cx=cp(1,1);
@@ -13,15 +17,15 @@ timepoint = floor(get(cDisplay.slider,'Value'));
 if strcmp(key,cDisplay.CurateTracksKey)
     
 
-CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
-
-if ~isempty(CellNumNearestCell)
+    CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
     
-    TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap);
-    TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
-
-end
-  
+    if ~isempty(CellNumNearestCell)
+        
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap);
+        TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
+        
+    end
+    
     
     
 else
