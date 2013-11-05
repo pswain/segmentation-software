@@ -57,17 +57,18 @@ classdef CycleTime<extractdata.ExtractData
             %to have different numbers of timepoints - some can skip
             %timepoints.
             thresholded=timelapseObj.Data.(obj.parameters.datasource)-obj.parameters.threshold>=0; 
-            a=zeros(size(timelapseObj.Data.(obj.datasource)));
+            a=zeros(size(timelapseObj.Data.(obj.parameters.datasource)));
             for c=1:highest%Loop through the cells                
                 thisCellThresh=thresholded(c,:);
-                exitTimes=find(thisCellThresh);
+                findFallingEdge=[0 diff(thisCellThresh)]==-1;
+                exitTimes=find(findFallingEdge);
                 for n=1:length(exitTimes)
                     if n==length(exitTimes)
                         lastInd=size(a,2);
                     else
                         lastInd=exitTimes(n+1);
                     end
-                    a(exitTimes(n):lastInd)=[0:lastInd-exitTimes(n)];
+                    a(c,exitTimes(n):lastInd)=[0:lastInd-exitTimes(n)];
                 end
             end
             timelapseObj.Data.(obj.datafield)=a.*obj.parameters.interval;

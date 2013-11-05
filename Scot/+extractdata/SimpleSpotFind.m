@@ -96,35 +96,17 @@ classdef SimpleSpotFind<extractdata.ExtractData
                             disp('debug here');
                         end
                         if ~isnan (cellnumber)%ie if this cell hasn't been deleted - entry would be nan
-                            region=timelapseObj.TrackingData(t).cells(c).region;   
-                            if any(region<=1)
-                                region(region<1)=1;
+                            if nnz(timelapseObj.Result(t).timepoints(trackingnumber).slices)>5
+                                cellpixels=mean2d(timelapseObj.Result(t).timepoints(trackingnumber).slices);
+                                [a,ix] = sort(cellpixels(:),'descend');
+                                a = a(1:5);
+                                sumIntensities=sum(a);%The sum of the top 5 values                            
+                                medianResult=double(median(cellpixels));
+                               timelapseObj.Data.(obj.datafield)(cellnumber,t)=sumIntensities/medianResult;
+                            else%Cell has <6 pixels - above code will give an error
+                                timelapseObj.Data.(obj.datafield)(cellnumber,t)=nan;
                             end
-                            try
-                                target=mean2d(region(2):min(region(2)+region(4)-1,timelapseObj.ImageSize(2)),region(1):min(region(1)+region(3)-1,timelapseObj.ImageSize(1)));
-                            catch
-                                disp('debug point');
                             end
-                            try
-                            
-                            result=timelapseObj.Result(t).timepoints(trackingnumber).slices(region(2):min(region(2)+region(4)-1,timelapseObj.ImageSize(2)),region(1):min(region(1)+region(3)-1,timelapseObj.ImageSize(1)));
-                            cellpixels=target(result);
-                            [a,ix] = sort(cellpixels(:),'descend');
-                            catch
-                                disp('debug point2 in simplespotfind run method');
-                            end
-                          
-                            a = a(1:5);
-                            %ix = ix(1:5);
-                            %[row column]=ind2sub(size(target),ix);
-                            sumIntensities=sum(a);%The sum of the top 5 values
-                            try
-                            medianResult=double(median(target(result)));
-                            catch
-                                disp('medianResult bug in simplespotfind');
-                            end
-                            timelapseObj.Data.(obj.datafield)(cellnumber,t)=sumIntensities/medianResult;
-                            
                         end
                             
                                               
@@ -134,4 +116,3 @@ classdef SimpleSpotFind<extractdata.ExtractData
 
         end
     end
-end

@@ -29,10 +29,8 @@ function object =  getobj(Timelapse,objecttype,objectname,varargin)
 
 if isempty(Timelapse.ObjectStruct)
     
-    path=mfilename('fullpath');%path of this file
-    r = regexp(path,'/');%location of characters following '/'characters
-    D = dir(path(1:r(end-1))); %all files in the directory above @Timelapse
-    D = {D(regexpcmp({D.name},'+.*') & [D.isdir]).name};%cell array of all pakages
+    
+    D = MethodsSuperClass.listMethodPackages;
     D = regexprep(D,'+','');%take the plus off the package name
     c = cell(size(D));%construction of cell array to construct Timelapse.ObjectStruct with fields of empty structures
     c(:) = deal({struct});
