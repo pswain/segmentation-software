@@ -18,7 +18,7 @@ filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.
 % [predict_label, accuracy, dec_values] = predict(ones(size(image,1)*size(image,2),1), (filtered_image), cCellSVM.SVMModel); % test the training data]\
 
 [B,IX]=sort(dec_values(:),'ascend');
-l=length(IX)*.033;
+l=length(IX)*.037;
 loc=IX(1:(round(l)));
 
 % 

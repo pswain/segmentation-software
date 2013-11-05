@@ -56,6 +56,8 @@ classdef cTimelapseDisplay<handle
 %                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
             
             cDisplay.slider_cb();
+            set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
+
         end
 
         % Other functions 

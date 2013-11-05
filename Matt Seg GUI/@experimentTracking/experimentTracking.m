@@ -19,6 +19,8 @@ classdef experimentTracking<handle
         timepointsToProcess
         trackTrapsOverwrite
         cellVisionThresh
+        
+        cCellVision;
     end
     
     methods
@@ -53,6 +55,8 @@ classdef experimentTracking<handle
         segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
         trackCells(cExperiment,positionsToTrack,cellMovementThresh)       
+        selectTPToProcess(cExperiment,positions);
+        combineTracklets(cExperiment,positions);
         
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);

@@ -1,7 +1,6 @@
 .DS_Store
 *.m~
 *.mat
-*.mex*
 .DS_Store
 *.sct
 *.pdf
@@ -36,3 +35,5 @@ MattACNotes.m
 MattACplay.m
 Matt_Seg_GUI_commit_draft.txt
 *.csv
+*.asv
+

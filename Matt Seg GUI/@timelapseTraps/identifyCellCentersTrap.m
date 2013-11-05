@@ -67,7 +67,17 @@ parfor k=1:length(trap)
     [p_im d_im]=cCellVision.classifyImageLinear(image(:,:,j));
     
     % combined_d_im=d_im+old_d_im/5;
-    t_im=imfilter(d_im,fspecial('gaussian',3,.4)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %  
+    if cTimelapse.magnification<100
+        t_im=imfilter(d_im,fspecial('gaussian',4,1.1)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
+            bw=t_im<cCellVision.twoStageThresh; 
+            
+    else
+        t_im=imfilter(d_im,fspecial('disk',4)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
+        bw=t_im<cCellVision.twoStageThresh;
+        if ~cTimelapse.trapsPresent
+            bw=imerode(bw,strel('disk',2));
+        end
+    end
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
@@ -128,7 +138,7 @@ parfor k=1:length(trap)
     [p_im d_im]=cCellVision.classifyImage2Stage(image(:,:,j));
     
     % combined_d_im=d_im+old_d_im/5;
-    t_im=imfilter(d_im,fspecial('gaussian',3,.4)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %  
+    t_im=imfilter(d_im,fspecial('gaussian',4,1.2)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end

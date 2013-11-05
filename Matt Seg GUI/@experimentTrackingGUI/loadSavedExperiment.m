@@ -13,6 +13,7 @@ cExpGUI.cExperiment=cExperiment;
 try
     load(fullfile(PathName,FileName),'cCellVision');
     cExpGUI.cCellVision= cCellVision;
+    cExpGUI.cExperiment.cCellVision=cCellVision;
 catch
 
     fprintf('no cell vision model found. Please load one. \n \n')

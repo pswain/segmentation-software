@@ -59,8 +59,8 @@ for timepoint=1:frame_ss:total_num_timepoints
     image=cTimelapse.returnTrapsTimepoint(traps,timepoint,1);
     for trap=1:max(traps)
             elapsed_t=toc-time;
-            disp(sprintf('Trap %d', i, 'Frame %d', j))
-            disp(sprintf('Time %d', elapsed_t))
+            fprintf('Trap %d Frame %d : ', trap, timepoint)
+            fprintf('Time %d\n', elapsed_t)
             
             
             [p_im d_im features]=cCellVision.classifyImageLinear(image(:,:,trap));

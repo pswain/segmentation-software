@@ -44,7 +44,7 @@ n_points=[];
 tic; time=toc;
 
 if isempty(cCellVision.cTrap)
-    se_edge=strel('disk',12);
+    se_edge=strel('disk',20);
 else
     se_edge=strel('disk',9);
 end
@@ -53,6 +53,9 @@ se1 = strel('disk',1);
 se2 = strel('disk',2);
 se3 = strel('disk',3);
 se4 = strel('disk',4);
+se5 = strel('disk',5);
+se6 = strel('disk',6);
+
 % figure;imshow(cTimelapse.returnSingleTrapTimepoint(1,1,1),[]);
 % fig1=gca;
 for timepoint=1:frame_ss:total_num_timepoints
@@ -89,12 +92,16 @@ for timepoint=1:frame_ss:total_num_timepoints
                     class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                     if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius<9
+                    elseif trapInfo.cellRadius<10
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius<14
+                    elseif trapInfo.cellRadius<15
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
-                    else
+                    elseif trapInfo.cellRadius<22
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se4);
+                    elseif trapInfo.cellRadius<27
+                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se5);
+                    else
+                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se6);
                     end      
                 end
             end

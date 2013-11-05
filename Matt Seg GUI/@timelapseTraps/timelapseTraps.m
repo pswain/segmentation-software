@@ -13,6 +13,7 @@ classdef timelapseTraps<handle
         timepointsProcessed
         extractedData
         channelNames
+        imSize
     end
     
     methods
