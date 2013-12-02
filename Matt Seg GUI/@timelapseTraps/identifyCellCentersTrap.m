@@ -68,7 +68,7 @@ parfor k=1:length(trap)
     
     % combined_d_im=d_im+old_d_im/5;
     if cTimelapse.magnification<100
-        t_im=imfilter(d_im,fspecial('gaussian',4,1.1)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
+        t_im=imfilter(d_im,fspecial('gaussian',4,1.1));% +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
             bw=t_im<cCellVision.twoStageThresh; 
             
     else
@@ -132,13 +132,14 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channe
 % image=cTimelapse.returnSingleTrapTimepoint(1,timepoint,channel);
 
 tPresent=cTimelapse.trapsPresent;
-
+new_dim=zeros(size(old_d_im));
 parfor k=1:length(trap)
     j=trap(k);  
     [p_im d_im]=cCellVision.classifyImage2Stage(image(:,:,j));
     
-    % combined_d_im=d_im+old_d_im/5;
-    t_im=imfilter(d_im,fspecial('gaussian',4,1.2)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %  
+%     combined_d_im=d_im+old_d_im(:,:,j)/5;
+    new_dim(:,:,k)=d_im;
+    t_im=imfilter(d_im,fspecial('gaussian',4,1.2)) +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2))/5; %  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
@@ -158,7 +159,8 @@ for k=1:length(trap)
     cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=segCenters{k};
 end
 
-d_im=1;
+% d_im=1;
+d_im=new_dim;
 bw=1;
 end
 

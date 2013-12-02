@@ -6,32 +6,40 @@ if nargin<3 || isempty(timepoints)
 end
 
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-bb=10;
+bb=30;
 accumCol=0;
 accumRow=0;
 regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
 regIm=double(regIm);
 regIm=regIm(bb:end-bb,bb:end-bb);
+timepointReg=timepoints(1);
 for i=2:length(timepoints)
-    timepointReg=timepoints(i-1);
+    
 
     
         timepoint=timepoints(i);
     newIm=cTimelapse.returnSingleTimepoint(timepoint);
     newIm=double(newIm);
+    newIm=newIm/median(newIm(:))*median(regIm(:));
     newIm=newIm(bb:end-bb,bb:end-bb);
 %     newIm=padarray(newIm,[bb bb],median(newIm(:)));
     [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
-    regIm=newIm;
+    if rem(timepoints,5)==0
+        regIm=newIm;
+        timepointReg=timepoints(i-1);
+    end
     
     colDif=output(4)+accumCol;
     rowDif=output(3)+accumRow;
-    if colDif>cTimelapse.cTrapSize.bb_width
+    
+    %i
+    if abs(colDif)>cTimelapse.cTrapSize.bb_width*2/3
         colDif=0;
     end
-    if rowDif>cTimelapse.cTrapSize.bb_width
+    if abs(rowDif)>cTimelapse.cTrapSize.bb_width*2/3
         rowDif=0;
     end
+
     
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
     yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;

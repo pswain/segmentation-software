@@ -98,7 +98,7 @@ max_cc=max_im_cc;
 trap_index=1;
 trap_mask=false(size(cc,1),size(cc,2));
 
-while max_cc> .75*max_im_cc
+while max_cc> .65*max_im_cc
     [ypeak, xpeak] = ind2sub(size(cc),imax(1));
     cc(ypeak-cTrap.bb_height*1:ypeak+cTrap.bb_height*1,xpeak-cTrap.bb_width*1:xpeak+cTrap.bb_width*1)=0;
     xcenter=xpeak-cTrap.bb_width;
