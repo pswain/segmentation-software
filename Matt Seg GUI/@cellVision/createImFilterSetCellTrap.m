@@ -179,7 +179,7 @@ for i=1:size(filt_im,3)
  
     diffIm=accum.*trapG;
     temp_im=accum-diffIm;
-    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/3;
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
     temp_index=temp_index+1;
     filt_im2(:,:,(i-1)*nHough/2+1)=temp_im;
     filt_feat(:,temp_index)=temp_im(:);
@@ -201,7 +201,7 @@ for i=1:size(filt_im,3)
     accum = imfilter((accum),f1,'replicate');
     diffIm=accum.*trapG2;
     temp_im=accum-diffIm;  
-    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/3;
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
     temp_index=temp_index+1;
     filt_feat(:,temp_index)=temp_im(:);
      

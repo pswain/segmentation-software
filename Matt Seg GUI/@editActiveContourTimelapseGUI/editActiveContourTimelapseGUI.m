@@ -1,4 +1,4 @@
-classdef cTrapDisplay<handle
+classdef editActiveContourTimelapseGUI<handle
     properties
         figure = [];
         subImage = [];
@@ -9,15 +9,26 @@ classdef cTrapDisplay<handle
         traps=[];
         channel=[]
         cCellVision=[];
-        trackOverlay=[];
+        tracksDisplayBox=[];
         trapNum;
+        trackOverlay = [];
+        ttacObject = [];
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+  
+    %GUI by which to select cells to edit their contours as found by active
+    %contour.
+    
     methods
-        function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps)
+        function cDisplay=editActiveContourTimelapseGUI(ttacObject,channel,overlay,traps)
+            
+            cDisplay.ttacObject = ttacObject;
+            cTimelapse = ttacObject.TimelapseTraps;
+            
+            if nargin<2
+                cDisplay.channel=1;
+            else
+                cDisplay.channel=channel;
+            end
             
             if nargin<3
                 cDisplay.trackOverlay=false;
@@ -25,13 +36,8 @@ classdef cTrapDisplay<handle
                 cDisplay.trackOverlay=overlay;
             end
             
-            if nargin<4
-                channel=1;
-            end
-            if nargin<5 && cTimelapse.trapsPresent
+            if nargin<4 && cTimelapse.trapsPresent
                 traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
-            else
-                traps=1;
             end
             
             
@@ -51,13 +57,15 @@ classdef cTrapDisplay<handle
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
                         timepoint=timepoints(i);
-                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision.cTrap,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
+                        cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
                         waitbar(timepoint/timepoints(end));
                     end
                     close(h)
                 end
+                %commented by elco to allow display of 1 trap at a time.
+                %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b 
-                image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
+                image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
 %                 if isempy(
                 for timepoint=timepoints
                     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
@@ -68,15 +76,17 @@ classdef cTrapDisplay<handle
                 end
             end
             
-            cDisplay.channel=channel;
+%             cDisplay.channel=channel;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
-            cDisplay.cCellVision=cCellVision;
             cDisplay.figure=figure('MenuBar','none');
             
             dis_w=ceil(sqrt(length(traps)));
+            if dis_w>1
+                dis_w=dis_w+1;
+            end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -87,11 +97,11 @@ classdef cTrapDisplay<handle
                     if index>length(traps)
                         break;
                     end
-                    cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);
+                    cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*3 t_width t_height]);
                     cDisplay.trapNum(index)=traps(index);
                     cDisplay.subImage(index)=subimage(image(:,:,i));
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
-                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
+                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)chooseCellToEdit(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
                     if cDisplay.trackOverlay
                         set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
                     else
@@ -107,16 +117,19 @@ classdef cTrapDisplay<handle
                 'Max',length(cTimelapse.cTimepoint),...
                 'Units','normalized',...
                 'Value',1,...
-                'Position',[bb bb*.8 1-bb*2 bb],...
+                'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
                 'SliderStep',[1/(length(cTimelapse.cTimepoint)-1) 1/(length(cTimelapse.cTimepoint)-1)],...
                 'Callback',@(src,event)slider_cb(cDisplay));
             hListener = addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
             
-            cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','
+%             cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
+%                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
+            
+            cDisplay.slider_cb();
         end
 
         % Other functions 
-        addRemoveCells(cDisplay,subAx,trap)
+        chooseCellToEdit(cDisplay,subAx,trap)
         slider_cb(cDisplay)
         tracksDisplay(cDisplay);
     end

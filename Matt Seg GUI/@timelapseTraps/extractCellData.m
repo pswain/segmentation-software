@@ -28,6 +28,8 @@ for channel=1:length(cTimelapse.channelNames)
     extractedData(channel).min=zeros(numCells,length(cTimelapse.timepointsProcessed));
     extractedData(channel).imBackground=zeros(numCells,length(cTimelapse.timepointsProcessed));
 
+    cTimelapse.extractedData(channel).area=zeros(numCells,length(cTimelapse.cTimepoint));
+    
     
     extractedData(channel).radius=zeros(numCells,length(cTimelapse.timepointsProcessed));
     extractedData(channel).xloc=zeros(numCells,length(cTimelapse.timepointsProcessed));
@@ -80,6 +82,7 @@ for channel=1:length(cTimelapse.channelNames)
                     convMatrix(2,:)=1;convMatrix(:,2)=1;
                     %                 flPeak=conv2(single(trapIm),convMatrix);
                     %                 flPeak=flPeak(cellLoc);
+                    extractedData(channel).area(j,timepoint)=length(cellFL);
                     extractedData(channel).max5(j,timepoint)=mean(flsorted(1:5));
                     extractedData(channel).mean(j,timepoint)=mean(cellFL(:));
                     extractedData(channel).median(j,timepoint)=median(cellFL(:));
