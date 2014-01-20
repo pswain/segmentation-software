@@ -45,9 +45,7 @@ for t=1:tl.TimePoints
     trackingnumber=0;  
     for tr=1:numTraps
         disp(['Timepoint:' num2str(t)])
-        if t==255
-            disp('stop');
-        end
+        
         if ct.cTimepoint(t).trapInfo(tr).cellsPresent
             numCells=length(ct.cTimepoint(t).trapInfo(tr).cell); 
             %Are traps present?
@@ -151,10 +149,10 @@ for t=1:tl.TimePoints
                         height=ct.cTimepoint(t).trapInfo.cell(c).cellRadius*2.5;
                         width=ct.cTimepoint(t).trapInfo.cell(c).cellRadius*2.5;
                         
-                        leftx=max(1,x-width);
-                        rightx=x+width;
-                        topy=max(1,y-height);
-                        bottomy=y+height;
+                        leftx=max(1,x-(width/2));
+                        rightx=x+(width/2);
+                        topy=max(1,y-(height/2));
+                        bottomy=y+(height/2);
                         
                         
                         if y-height<1%The trap image extends off the top of the image - need to correct that
@@ -185,27 +183,35 @@ for t=1:tl.TimePoints
 
                         %Correct centroid coordinates to take rotation into
                         %account - first get the coordinates from ct
-                        oldx=double(ct.cTimepoint(t).trapInfo(tr).cell(c).cellCenter(1)+leftx);
-                        oldy=double(ct.cTimepoint(t).trapInfo(tr).cell(c).cellCenter(2)+topy);
-                        oldtopy=topy;
-                        oldleftx=leftx;
-                        if ct.image_rotation==-90
-                           newx=oldy;
-                           newy=512-oldx;
-                           newtopy=(512-oldleftx-2*ct.cTrapSize.bb_width);
-                           newleftx=oldtopy;                       
+                        if ct.trapsPresent
+                            oldx=double(ct.cTimepoint(t).trapInfo(tr).cell(c).cellCenter(1)+leftx);
+                            oldy=double(ct.cTimepoint(t).trapInfo(tr).cell(c).cellCenter(2)+topy);
+                            oldtopy=topy;
+                            oldleftx=leftx;
+                            if ct.image_rotation==-90
+                               newx=oldy;
+                               newy=512-oldx;
+                               newtopy=(512-oldleftx-2*ct.cTrapSize.bb_width);
+                               newleftx=oldtopy;                       
 
-                        else
-                           newx=oldx;
-                           newy=oldy;
-                           newleftx=oldleftx;
-                           newtopy=oldtopy;
+                            else
+                               newx=oldx;
+                               newy=oldy;
+                               newleftx=oldleftx;
+                               newtopy=oldtopy;
+                            end
+                        else 
+                            newx=x;
+                            newy=y;
+                            newleftx=leftx;
+                            newtopy=topy;
                         end
-
+                    
+                    end
 
                         tl.TrackingData(t).cells(trackingnumber).centroidx=newx;
                         tl.TrackingData(t).cells(trackingnumber).centroidy=newy;
-                        tl.TrackingData(t).cells(trackingnumber).region=[newleftx newtopy min(2*width, tl.ImageSize(1)) min(height, tl.ImageSize(2))];
+                        tl.TrackingData(t).cells(trackingnumber).region=[newleftx newtopy min(width, tl.ImageSize(1)) min(height, tl.ImageSize(2))];
                         tl.TrackingData(t).cells(trackingnumber).segobject=tl.ObjectNumber;
                     end
                 
@@ -214,8 +220,7 @@ for t=1:tl.TimePoints
             end
         end
         
-    end
-    
+   
     %Create an empty (preallocated) LevelObjects array
     numLevelObjects=tl.TimePoints * tl.RunMethod.numObjects;
     a=int16(0);
