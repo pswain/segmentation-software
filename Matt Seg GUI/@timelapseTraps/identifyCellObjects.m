@@ -1,6 +1,6 @@
 function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
 
-allowedOverlap=.2;
+allowedOverlap=.15;
 
 if nargin<3
     timepoint=1;
@@ -79,6 +79,8 @@ else
     f1=fspecial('disk',2);
 %     f1=fspecial('gaussian',7,2);
 end
+% f2=fspecial('disk',3);
+
 if isempty(bw_mask)
     %parfor j=1:size(image,3)
     for j=1:size(image,3)
@@ -99,7 +101,9 @@ if isempty(bw_mask)
         if cTimelapse.trapsPresent
             temp_im=temp_im-diffIm.*trapG;
         end
-        temp_im=medfilt2(temp_im);
+        temp_im=medfilt2(temp_im,[4 4]);
+%         temp_im=imfilter(temp_im,f2);
+
 
         %may need to change the radiusSmall and the radiusLarge below to
         %adjust for changes in the pixelSize
@@ -153,6 +157,15 @@ if isempty(bw_mask)
             if cTimelapse.trapsPresent
                 cellOverlapTrap1=temp_im&(cellTrap==1);
                 cellOverlapTrap2=temp_im&(cellTrap==2);
+                
+                %below is to help make sure that cells in between the traps
+                %aren't removed.
+                bb=round(size(temp_im,1)/8);
+                mbb=round(size(temp_im,1)/2);
+                cellOverlapTrap1(mbb-bb:mbb+bb,:)=0;
+                cellOverlapTrap2(mbb-bb:mbb+bb,:)=0;
+                
+                
                 cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
                 ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
                 

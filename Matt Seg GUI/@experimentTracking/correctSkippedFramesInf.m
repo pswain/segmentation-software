@@ -1,6 +1,6 @@
 function correctSkippedFramesInf(cExperiment)
 
-for nSkip=1:2
+for nSkip=1:1
     for channel=1:length(cExperiment.cellInf)
         d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
         dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
@@ -47,17 +47,19 @@ for nSkip=1:2
 end
 fprintf('Finished skipped frames \n');
 
-for nSkip=3:-1:1;
-    d=abs(diff(cExperiment.cellInf(1).mean,nSkip,2));
-    dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
-    dPost=d;dPost=padarray(dPost,[0 nSkip],0,'pre');
-    
-    locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(1).mean==0);
-    [row col]=find(locSkipped);
-    
-    for j=1:length(cExperiment.cellInf)
+for j=1:length(cExperiment.cellInf)
+    channel=j;
+    for nSkip=2:4;
+        d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
+        dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
+        dPost=d;dPost=padarray(dPost,[0 nSkip],0,'pre');
+        
+        locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(channel).mean==0);
+        [row col]=find(locSkipped);
+        
         
         for k=1:length(row)
+            k
             l=k;
             temp=cExperiment.cellInf(j).mean;
             x=[1 nSkip*2+1]; xi=1:nSkip*2+1;

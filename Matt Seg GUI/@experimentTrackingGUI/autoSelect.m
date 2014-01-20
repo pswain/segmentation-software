@@ -1,7 +1,11 @@
 function autoSelect(cExpGUI)
 
+if isempty(cExpGUI.cExperiment.saveFolder)
+    cExpGUI.cExperiment.saveFolder=cExpGUI.cExperiment.rootFolder;
+end
+
 posVals=get(cExpGUI.posList,'Value');
-    load([cExpGUI.cExperiment.rootFolder '/' cExpGUI.cExperiment.dirs{1},'cTimelapse']);
+    load([cExpGUI.cExperiment.saveFolder '/' cExpGUI.cExperiment.dirs{1},'cTimelapse']);
 
 params.fraction=.8; %fraction of timelapse length that cells must be present or
 params.duration=length(cTimelapse.cTimepoint); %number of frames cells must be present

@@ -105,7 +105,7 @@ classdef cTrapDisplayProcessing<handle
                 
                 
                 
-                cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,channel,trap_images,d_im(:,:,j));
+                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,channel,trap_images,d_im);%%index j was changed to i
                 cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
                 
                 for j=1:length(traps)

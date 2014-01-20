@@ -23,7 +23,7 @@ answer=str2num(answer{1});
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %
     if answer
         cTimelapse.extractCellData();
