@@ -6,9 +6,9 @@ function ttacObject = getTrapInfoFromCellVision(ttacObject)
 
 fprintf('please select cell vision model used to identify the cells in the timelapse: \n')
 
-[CVname,CVpath] = uigetfile('~/Matt\ Seg\ GUI/');
+[CVname,CVpath] = uigetfile(pwd);
 
-load(fullfile([CVpath, CVname),'cCellVision');
+load(fullfile(CVpath, CVname),'cCellVision');
 %this file should only have the cCellVision variable
 
 ttacObject.TrapPixelImage = ACTrapFunctions.makeTrapPixelsFromBinaryFunction(cCellVision.cTrap.trapOutline);
