@@ -65,6 +65,22 @@ function obj=loadTimelapse(fileName)
         obj.DisplayResult=DisplayResult;
         obj.Target=Target;
         obj.SegMethod=SegMethod;
+        %Check if the image folder is mounted
+        if exist(obj.Moviedir)~=7
+            errordlg('Folder with images has changed or disk not mounted. Select a valid folder');
+            [name path]=uigetdir;
+            if ischar(path)
+                obj.Moviedir=path;
+                %Need to redefine the image file list
+                for n=1:length(obj.ImageFileList)
+                    label=obj.ImageFileList(n).label;
+                    identifier=obj.ImageFileList(n).identifier;
+                    obj.addImageFileList(label,obj.Moviedir,identifier);
+                    
+                    
+                end
+            end
+        end
     else
         showMessage('Invalid file name entered - no file loaded.');
     end

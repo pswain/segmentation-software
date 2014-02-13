@@ -34,7 +34,13 @@ function [Timelapse index]= addImageFileList(Timelapse,label,directory,identifie
 % directory     -- a string giving the directory in which the files
 %                  associated with the channel are found.
 
-
+%Clear any existing entries for this identifier
+for n=1:length(Timelapse.ImageFileList)
+   if strcmp(Timelapse.ImageFileList(n).identifier,identifier)
+       Timelapse.ImageFileList(n)=[];
+       break;
+   end    
+end
 allfile_details=dir(fullfile(directory,['*' identifier '*']));
 timepoints=size(allfile_details,1)/sections;
 %Check timepoints is an integer here and if not, return with error

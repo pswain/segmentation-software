@@ -3,10 +3,12 @@ function saveTimelapse (obj, path, name)
     %                    object
     %
     % Synopsis:        saveTimelapse (obj, path, name)
+    %                  saveTimelapse (obj, fullPath)
     %
     % Input:           obj = an object of a Timelapse class
-    %                  path = string, path of folder to save timelapse
-    %                  path = string, name of file to save
+    %                  path = string, path of folder to save timelapse or full path to filename
+    %                  name = string, name of file to save
+    %                  
     % 
     % Output:          
     
@@ -17,7 +19,11 @@ function saveTimelapse (obj, path, name)
     %           objects.
     
     %Save each field in turn
-    filename=[path name];
+    if nargin<3
+        filename=path;
+    else
+        filename=[path name];
+    end
     interval=obj.Interval;
     save(filename,'interval');
     TimePoints=obj.TimePoints;

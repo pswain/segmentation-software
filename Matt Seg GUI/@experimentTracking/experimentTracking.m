@@ -1,7 +1,8 @@
 classdef experimentTracking<handle
     
     properties
-        rootFolder
+        rootFolder %folder where images are
+        saveFolder %folder to save the timelapse objects
         dirs
         posSegmented
         posTracked
@@ -29,9 +30,11 @@ classdef experimentTracking<handle
             %% Read filenames from folder
             if nargin<1
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
+                saveFolder=uigetdir(pwd,'Select the folder where data should be saved');
             end
             
             cExperiment.rootFolder=folder;
+            cExperiment.saveFolder=saveFolder;
             cExperiment.posSegmented=0;
             cExperiment.posTracked=0;
             tempdir=dir(cExperiment.rootFolder);
@@ -45,7 +48,7 @@ classdef experimentTracking<handle
                     index=index+1;
                 end
             end
-            cExperiment.cellsToPlot=zeros(length(cExperiment.dirs),50,500)>0;
+            cExperiment.cellsToPlot=cell(1);
         end
             
         %functions for loading data and then processing to identify and

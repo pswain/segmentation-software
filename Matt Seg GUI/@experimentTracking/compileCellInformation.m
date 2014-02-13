@@ -15,13 +15,13 @@ end
 
 %% Run the tracking on the timelapse
 experimentPos=positionsToExtract(1);
-load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
 for i=2:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     
     if max(cTimelapse.timepointsProcessed)>0
         for j=1:length(cTimelapse.channelNames)

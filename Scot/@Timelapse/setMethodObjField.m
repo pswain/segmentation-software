@@ -1,4 +1,4 @@
-function obj=setMethodObjField(obj, objectNumber, field, value)
+function obj=setMethodObjField(obj, objectNumber, field, value,param)
     % setMethodObjField ---  %Alters a field in a method object saved in timelapse.ObjectStruct
     %
     % Synopsis:        obj = setMethodObjField (obj, objectNumber, field, value)
@@ -7,10 +7,14 @@ function obj=setMethodObjField(obj, objectNumber, field, value)
     %                  objectNumber = integer, ObjectNumber of the required method object
     %                  field = string, the name of the field to be modified
     %                  value = any type, the value of the field to be modified
+    %                  param = logical, true if the field is in the methodObj.parameters structure, false or not input if not
     %
     % Output:          obj = an object of a timelapse class
     
     % Notes:
+    if nargin<5
+        param=false;
+    end
     packages=fields(obj.ObjectStruct);
     for p = 1:size(packages,1)%loop through packages
         classes=fields(obj.ObjectStruct.(packages{p}));%List of method classes for which objects exist in this package
@@ -26,8 +30,11 @@ function obj=setMethodObjField(obj, objectNumber, field, value)
                             %good to rewrite this in a better way if problems
                             %arise.
                             %eval_str = ['obj.ObjectStruct.' packages{p} '.' class '(' num2str(m) ').' field '=value;'];
-                            eval_str = ['obj.ObjectStruct.' packages{p} '(' num2str(m) ').' class '.' field '=value;'];
-
+                            if param
+                                eval_str = ['obj.ObjectStruct.' packages{p} '(' num2str(m) ').' class '.parameters.' field '=value;'];
+                            else
+                                eval_str = ['obj.ObjectStruct.' packages{p} '(' num2str(m) ').' class '.' field '=value;'];
+                            end
                             eval(eval_str);
                         end
                     end

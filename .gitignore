@@ -34,6 +34,7 @@ cExperiment Files/bethany data/msn2 plots 2 hour and 18 hour.ai
 MattACNotes.m
 MattACplay.m
 Matt_Seg_GUI_commit_draft.txt
+*.csv
 *.asv
 Scot/Fiji.app/plugins/DeconvolutionLab/DeconvolutionLab_.jar
 Scot/Fiji.app/plugins/DeconvolutionLab/FFTWJNIWin32.dll

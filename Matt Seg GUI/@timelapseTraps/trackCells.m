@@ -167,7 +167,7 @@ if ~isempty(pt1) && ~isempty(pt2)
     if find(temp<0)
         loc=temp<0;
 %         temp(loc)=temp(loc).^2;
-        temp(loc)=temp(loc).^2*1.5;
+%         temp(loc)=temp(loc).^2*1.5;
 
     end
     dist(:,:,3)=temp;

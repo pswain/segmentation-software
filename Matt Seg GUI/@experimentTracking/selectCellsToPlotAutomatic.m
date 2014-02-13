@@ -11,12 +11,19 @@ if nargin<3
     params.framesToCheck=160;
 end
 
+if size(cExperiment.cellsToPlot,3)>1
+    cExperiment.cellsToPlot=cell(1);
+    for i=1:length(cExperiment.posTracked)
+        cExperiment.cellsToPlot{i}=sparse(zeros(1,1));
+    end
+end
 
 %% Run the tracking on the timelapse
 for i=1:length(positionsToCheck)
     experimentPos=positionsToCheck(i);
-    load([cExperiment.rootFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     cTimelapse.automaticSelectCells(params);
     cExperiment.cTimelapse=cTimelapse;
+    cExperiment.cellsToPlot{i}=cTimelapse.cellsToPlot;
     cExperiment.saveTimelapseExperiment(experimentPos);
 end
