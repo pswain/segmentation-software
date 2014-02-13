@@ -35,3 +35,12 @@ MattACNotes.m
 MattACplay.m
 Matt_Seg_GUI_commit_draft.txt
 *.asv
+Scot/Fiji.app/plugins/DeconvolutionLab/DeconvolutionLab_.jar
+Scot/Fiji.app/plugins/DeconvolutionLab/FFTWJNIWin32.dll
+Scot/Fiji.app/plugins/DeconvolutionLab/FFTWJNIWin64.dll
+Scot/Fiji.app/plugins/DeconvolutionLab/Settings
+Scot/Fiji.app/plugins/DeconvolutionLab/Wisdom
+Scot/Fiji.app/plugins/DeconvolutionLab/libFFTWJNIMac.jnilib
+Scot/Fiji.app/plugins/mij.jar
+Scot/active contour without edge/description.m
+yeah.ps

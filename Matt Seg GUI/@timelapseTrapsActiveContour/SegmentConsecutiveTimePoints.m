@@ -353,6 +353,12 @@ fprintf('timepoint %d \n',TP)
         %For debugging
 %         RadiiResult = PriorRadiiStack;
 %         AnglesResult = repmat(DefaultAngles,slice_size,1);
+
+        %put all radii in the CellInfoarray
+        for RN = 1:slice_size
+            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
+            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
+        end
         
         %write results to keep to the timelapse object
         for RN = 1:keepers
@@ -363,14 +369,6 @@ fprintf('timepoint %d \n',TP)
         end
         
         CellInfo(CN).PreviousTimepointResult = RadiiResult(keepers,:);
-        
-        %put all radii not to be kept in the CellInfoarray
-        for RN = (keepers+1):slice_size
-            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
-            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
-        end
-        
-
         
     end
     
@@ -386,7 +384,11 @@ fprintf('timepoint %d \n',TP)
 %         RadiiResult = PriorRadiiStack;
 %         AnglesResult = repmat(DefaultAngles,slice_size,1);
 %         
-        
+        %put all radii in the CellInfoarray
+        for RN = 1:slice_size
+            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
+            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
+        end
         
         %write results to keep to the timelapse object
         for RN = 1:keepers
@@ -397,11 +399,7 @@ fprintf('timepoint %d \n',TP)
         
         CellInfo(CN).PreviousTimepointResult = RadiiResult(keepers,:);
         
-        %put all radii not to be kept in the CellInfoarray
-        for RN = (keepers+1):slice_size
-            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
-            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
-        end
+        
            
         
     end

@@ -1,4 +1,4 @@
-function [TrapCentersCell] = findTraps(InputImStack,AllTrapIm,TrapIm)
+function [TrapCentersCell] = findTraps(InputImStack,AllTrapIm,TrapIm,threshTITI)
 
 %InputImStack   -   stack of images in which to find traps
 %AllTrapIm      -   image of a field of view with no cells present
@@ -8,8 +8,9 @@ function [TrapCentersCell] = findTraps(InputImStack,AllTrapIm,TrapIm)
 
 %threshold for cross correlation between single Trap image (TrapIm) and
 %empty field of view (AllTrapIm)
-threshTITI = 0.5;
-
+if nargin<4
+    threshTITI = 0.5;
+end
 %% do whole trap image cross correlations
 TITIcorr = normxcorr2(TrapIm,padarray(AllTrapIm,size(TrapIm),median(AllTrapIm(:))));
 %find central region corresponding to actual image with peaks for traps at
@@ -18,6 +19,50 @@ TITIcorr = TITIcorr((1+floor(1.5*size(TrapIm,1))):(end-floor(1.5*size(TrapIm,1))
 
 TITIcorrThresh = TITIcorr>threshTITI;
 TITIcorr = TITIcorr.*TITIcorrThresh;
+TITIcorr = TITIcorr.*imregionalmax(TITIcorr);
+
+%if two centers occur within trap image of each other keep only the best
+%one:
+[Centrei,Centrej,Score] = find(TITIcorr);
+
+NumberOfEntries = length(Score);
+
+%Distance of each x coordinate from another in the y direction
+Is = repmat(Centrei,1,NumberOfEntries);
+Is = abs(Is - Is');
+
+%Distance of each x coordinate from another in the x direction
+Js = repmat(Centrej,1,NumberOfEntries);
+Js = abs(Js - Js');
+
+MaxDistance = size(TrapIm)/2;
+
+%entries closer together than the max distance
+TroubleMakers = Is<MaxDistance(1) & Js<MaxDistance(2);
+
+[TroubleMakersi,TroubleMakersj] = find(TroubleMakers);
+
+for TMi = 1:length(TroubleMakersi)
+    
+    if TroubleMakersi(TMi)>TroubleMakersj(TMi)
+        
+        if Score(TroubleMakersi(TMi))>Score(TroubleMakersj(TMi))
+            
+            TITIcorr(Centrei(TroubleMakersj(TMi)),Centrej(TroubleMakersj(TMi))) = 0;
+            
+        else
+            
+            
+            TITIcorr(Centrei(TroubleMakersi(TMi)),Centrej(TroubleMakersi(TMi))) = 0;
+        end
+        
+    end
+    
+end
+
+%convolve TITIcorr with gaussian to allow for some spread
+TITIcorr = conv2(TITIcorr,fspecial('gaussian',5,2),'same');
+
 
 %find the limits of the AllTrapIm which are still good trap images (i.e.
 %not cut off by the field of view)
@@ -68,6 +113,13 @@ for i =1:size(InputImStack,3)
     %find central region corresponding to actual image with peaks for traps at
     %center.
     trap_corr = trap_corr((1+floor(size(TrapIm,1)/2)):(end-floor(size(TrapIm,1)/2)),(1+floor(size(TrapIm,2)/2)):(end-floor(size(TrapIm,2)/2)));
+    
+    %% do whole trap image cross correlations
+trap_corr = normxcorr2(TrapIm,padarray(InputIm,size(TrapIm),median(InputIm(:))));
+%find central region corresponding to actual image with peaks for traps at
+%center.
+trap_corr = trap_corr((1+floor(1.5*size(TrapIm,1))):(end-floor(1.5*size(TrapIm,1))),(1+floor(1.5*size(TrapIm,2))):(end-floor(1.5*size(TrapIm,2))));
+
     
     %% merge single and all trap correlations and convolve with trap pixel image.
     
