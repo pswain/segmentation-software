@@ -35,10 +35,17 @@ if ~isempty(cCellVision.cTrap)
         nu = 0.001*255*255;%length term
         alf = 20;%data term weight
         
-        h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal
+        h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal;
         
         [Height Wide] = size(im);
         [xx yy] = meshgrid(1:Wide,1:Height);
+        
+        if i==1
+        fprintf('please select the centre of one of the two traps\n')
+        else
+            fprintf('please select the ceontre of the other trap\n')
+        end
+        
         [loc(1) loc(2)]=getpts(gca);
         PntX = loc(1);
         PntY = loc(2);

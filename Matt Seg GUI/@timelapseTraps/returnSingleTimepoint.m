@@ -23,7 +23,7 @@ if sum(loc)>0
         ind=find(loc);
         for i=1:sum(loc)
             file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-            locSlash=strfind(file,'/');
+            %locSlash=strfind(file,'/');
             file=file(locSlash(end)+1:end);
             cTimelapse.cTimepoint(timepoint).filename{ind(i)}=file;
         end
@@ -54,15 +54,15 @@ if sum(loc)>0
         h=errordlg('Directory seems to have changed');
         uiwait(h);
         while folder==0
-            fprintf(['Select the correct folder for: ',cTimelapse.timelapseDir]);
-            folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
+            fprintf(['Select the correct folder for: \n    ',cTimelapse.timelapseDir '\n']);
+            folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir ]);
             cTimelapse.timelapseDir=folder;
         end
         ind=find(loc);
         file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
         ffile=fullfile(cTimelapse.timelapseDir,file);
         if ~isempty(cTimelapse.imSize)
-            timepointIm=zeros([imSize sum(loc)]);
+            timepointIm=zeros([cTimelapse.imSize sum(loc)]);
             timepointIm(:,:,1)=imread(ffile);
         else
             timepointIm=imread(ffile);
@@ -113,7 +113,9 @@ if image_rotation~=0
     timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
 end
 
-if any(cTimelapse.offset(channel,:)~=0)
+if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
+    %first part of this statement is to guard against cases where channel
+    %has not been assigned
     TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
     timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
     LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;

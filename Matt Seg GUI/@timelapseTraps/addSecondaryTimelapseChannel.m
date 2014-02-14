@@ -52,5 +52,5 @@ for i=1:length(cTimelapse.cTimepoint)
     
 end
 
-cTimelapse.offset = cat(2,cTimelapse.offset,[0 0]);
+cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
 
