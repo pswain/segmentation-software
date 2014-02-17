@@ -1,5 +1,8 @@
 function trackCells(cExperiment,positionsToTrack,cellMovementThresh)
 
+if isempty(cExperiment.saveFolder)
+    cExperiment.saveFolder=cExperiment.rootFolder;
+end
 
 
 if nargin<2

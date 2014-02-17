@@ -14,6 +14,8 @@ classdef timelapseTraps<handle
         extractedData
         channelNames
         imSize
+        
+        lineageInfo
     end
     
     methods
@@ -36,6 +38,7 @@ classdef timelapseTraps<handle
         trackTrapsThroughTime(cTimelapse,cCellVision,timepoints);
         trackCells(cTimelapse,cellMovementThresh);
         [histCellDist bins]=trackCellsHistDist(cTimelapse,cellMovementThresh);
+        motherIndex=findMotherIndex(cTimelapse);
         
         %%
         addSecondaryTimelapseChannel(cTimelapse,searchString)
