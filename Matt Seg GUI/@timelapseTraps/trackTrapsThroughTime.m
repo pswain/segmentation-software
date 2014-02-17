@@ -24,21 +24,21 @@ for i=2:length(timepoints)
     newIm=newIm(bb:end-bb,bb:end-bb);
 %     newIm=padarray(newIm,[bb bb],median(newIm(:)));
     [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
-    if rem(timepoints,5)==0
-        regIm=newIm;
-        timepointReg=timepoints(i-1);
-    end
+
     
-    colDif=output(4)+accumCol;
-    rowDif=output(3)+accumRow;
+    colDif=output(4);
+    rowDif=output(3);
     
     %i
-    if abs(colDif)>cTimelapse.cTrapSize.bb_width*2/3
-        colDif=0;
+    if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*2/3
+        colDif=accumCol;
     end
-    if abs(rowDif)>cTimelapse.cTrapSize.bb_width*2/3
-        rowDif=0;
+    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*2/3
+        rowDif=accumRow;
     end
+    
+    accumCol = colDif;
+    accumRow = rowDif;
 
     
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
@@ -52,6 +52,13 @@ for i=2:length(timepoints)
 
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
+    
+    if rem(i,5)==0
+        regIm=newIm;
+        timepointReg=timepoints(i);
+        accumCol = 0;
+        accumRow = 0;
+    end
     
     waitbar(timepoint/timepoints(end));
 
