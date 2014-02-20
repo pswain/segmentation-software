@@ -16,6 +16,7 @@ classdef timelapseTraps<handle
         imSize
         
         lineageInfo
+        offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/down.
     end
     
     methods

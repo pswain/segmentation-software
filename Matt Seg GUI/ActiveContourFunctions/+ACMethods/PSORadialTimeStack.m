@@ -11,7 +11,7 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 %                  timepoints, with the center of the cell at the center of the image.
 %ACparameters    - Structure of parameters set of parameters that can be set by the user:
 %     alpha                 default =0.01  weighs non image parts (none at the moment)
-%     0.01                  default = 0.01 weighs difference between consecutive time points.
+%     beta                  default = 0.01 weighs difference between consecutive time points.
 %     R_min                 default = 1 smallest allowed radius of cell
 %     R_max                 default =  15 largest allowed radius of cell
 %     opt_points            default = 8  number of radii used to create cell contour
@@ -20,6 +20,7 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 %     spread_factor         default = 1 used in particle swarm optimisation. determines spread of initial particles.
 %     spread_factor_prior   default =  0.5 used in particle swarm optimisation. determines spread of initial particles.
 %     seeds                 default = 100 number of seeds used for Particle Swarm Optimisation
+%     TerminationEpoch      default = 500 number of epochs to run for sure before terminating
 % Centers_stack  - [x y] matix of centers of cell at each image in stack
 % varargin{1}    - priors of radii for the timepoints to be segmented
 % varargin{2}    - fixed contour (in terms of radii) for the time point prior
@@ -252,8 +253,11 @@ for iP = 1:Timepoints
         py2 = [py(end);py];
         figure(fig_handle);
         hold on
+        if Timepoints>1 %for some reason subplot seems to crap out with hold if there is only one timepoint
         subplot(1,Timepoints,iP);
+        end
         hold on
+        
         plot(px2,py2,'r');
         drawnow
         hold off
@@ -263,8 +267,18 @@ for iP = 1:Timepoints
 end
 
 if visualise>=3
-    pause
-    
+    if false
+        pause
+    else
+        pause(0.3)
+        [pxFULL,pyFULL] = ACBackGroundFunctions.get_full_points_from_radii(radii_res(1,:)',angles,Centers_stack(1,:),([2 2]*sub_image_size)+1);
+        LogicalPoints = false(([2 2]*sub_image_size)+1);
+        LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
+        OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
+        figure;
+        imshow(OutlineImage,[]);
+        pause
+    end
 else
     pause(0.1)
 end

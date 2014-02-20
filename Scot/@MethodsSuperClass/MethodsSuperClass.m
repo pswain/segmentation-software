@@ -19,7 +19,9 @@ classdef MethodsSuperClass
        fieldHistory=addToFieldHistory(fieldHistory, fieldHistory2, fieldIndex);
        [inputObj fieldHistory] = useMethodClass(varargin)
        classNames=listMethodClasses(package);
+       packageNames=listMethodPackages;
        showProgress(percent,message);
+       
     end    
     methods
         function showDisplayResult(obj, inputObj, axesHandle)

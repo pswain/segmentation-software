@@ -11,7 +11,8 @@ function methodList=listMethodClasses(package)
     % Notes:     This function is used to populate the list of available
     %            methods in the GUI or from a method's checkParams method
     %            to check parameters that specify which method from a
-    %            package should be used. 
+    %            package should be used. If the input package name is not a
+    %            Scot method package then the output methodList is empty.
 
     %Problem is to avoid superclasses in this list - the method classes all
     %have no subclasses - but may have superclasses.
@@ -44,15 +45,18 @@ function methodList=listMethodClasses(package)
             superClasses(1).isMethod(n)=false;
         end
     end
+    
     %Now test each class to see if it has any subclasses - nested loop
     for n=1:nClasses%Loop through the classes to check - is class number n a subclass of any of the others?
         for c=1:nClasses%Loop through the classes to check - is class number c a superclass of class number n?
             cClass=metaInfo.Classes(c);
             cClass=cClass{:};
-            for s=1:size(superClasses(n).sClassNames)%Loop through the superclasses of class n to see if c is one of them
-                if strcmp(cClass.Name,superClasses(n).sClassNames(s))
-                    %This c class is a superclass of this n class
-                    superClasses(1).isMethod(c)=false;
+            if length(superClasses)>=n
+                for s=1:length(superClasses(n).sClassNames)%Loop through the superclasses of class n to see if c is one of them
+                    if strcmp(cClass.Name,superClasses(n).sClassNames(s))
+                        %This c class is a superclass of this n class
+                        superClasses(1).isMethod(c)=false;
+                    end
                 end
             end
         end    

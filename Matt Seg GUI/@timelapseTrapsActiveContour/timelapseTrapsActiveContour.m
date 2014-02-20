@@ -108,7 +108,14 @@ classdef timelapseTrapsActiveContour<handle
            if ttacObject.TrapPresentBoolean
            
            CellCentre = CellCentre + ...
-               repmat(ttacObject.ReturnTrapCentre(Timepoint,TrapIndex) - [ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height],length(CellIndex),1);
+               repmat(ttacObject.ReturnTrapCentre(Timepoint,TrapIndex) - [ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height],length(CellIndex),1) - 1;
+           % the -1 on this might seem strange but think about it. if the
+           % cell center relative is [1 1] it should be at the first square
+           % [1 1] square of the trap image so then you should add [0 0] to
+           % the first entry of the trap image which is 
+           %    trap_centre - bb_width
+           % so then for [1 1] the answer [1 1] + trap_centre - bb_width - [1 1]
+        
            end
            
            %shouldn't ever happen

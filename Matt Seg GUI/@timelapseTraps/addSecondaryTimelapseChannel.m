@@ -37,7 +37,7 @@ timepoint_index=0;
 folder=[folder '/'];
 % cTimelapse=cell(1)
 for i=1:length(cTimelapse.cTimepoint)
-    pattern='\d{5,6}';%CHANGE BACK TO {5,6}!!!!!!!!!
+    pattern='\d{5,6}';
     fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
     
     p1=[fileNum{end} '_' searchString{1}];
@@ -52,4 +52,5 @@ for i=1:length(cTimelapse.cTimepoint)
     
 end
 
+cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
 

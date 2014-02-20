@@ -41,10 +41,14 @@ thresh = paramScoreFnc{1}; %threshold separation above which two cells are deeme
 %coordinates of cells of interests at timpoint tnow
 Xnow = [Timelapse.TrackingData(tnow).cells(TNnow).centroidx] ;
 Ynow = [Timelapse.TrackingData(tnow).cells(TNnow).centroidy];
+Xnow=double(Xnow);
+Ynow=double(Ynow);
 
 %coordinates of cells of interests at timpoint tpast
 Xpast = [Timelapse.TrackingData(tpast).cells(TNpast).centroidx];
 Ypast = [Timelapse.TrackingData(tpast).cells(TNpast).centroidy];
+Xpast=double(Xpast);
+Ypast=double(Ypast);
 
 Xpast = Xpast'*ones(1,Nnow);
 Ypast = Ypast'*ones(1,Nnow);

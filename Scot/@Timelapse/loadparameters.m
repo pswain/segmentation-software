@@ -25,7 +25,7 @@ function obj = loadparameters(obj,varargin)
 %provided they use the parseparams methods of the super classes as advised.
 
 
-% * classtypes were instigated to that naming did not have to be unique
+% * classtypes were instigated so that naming did not have to be unique
 %across the class types. for example, there could be classes labeled
 %'segmethod1' for both the timepoint segmentation method and the cell
 %segmentation methods. They are labeled according to the packages they are
@@ -37,10 +37,7 @@ function obj = loadparameters(obj,varargin)
 
 if isempty(obj.SpecifiedParameters)
     
-    path=mfilename('fullpath');%path of this file
-    r = regexp(path,'/');%location of characters following '/'characters
-    D = dir(path(1:r(end-1))); %all files in the directory above @Timelapse
-    D = {D(regexpcmp({D.name},'+.*') & [D.isdir]).name};%cell array of all pakages
+    D = MethodsSuperClass.listMethodPackages;
     D = regexprep(D,'+','');%take the plus off the package name
     c = cell(size(D));%construction of cell array to construct Timelapse.SpecifiedParameters with fields of empty structures
     c(:) = deal({struct});

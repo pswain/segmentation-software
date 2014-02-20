@@ -22,53 +22,89 @@ if ~isempty(cCellVision.cTrap)
     
     for i=1:2
         
-        NumIter = 5000; %iterations
+        NumIter = 100; %iterations
         timestep=0.01; %time step
         mu=0.1/timestep;% level set regularization term, please refer to "Chunming Li and et al. Level Set Evolution Without Re-initialization: A New Variational Formulation, CVPR 2005"
         sigma = 3;%size of kernel
         epsilon = 1.5;
         c0 = 4; % the constant value
         lambda1=1.0;%outer weight, please refer to "Chunming Li and et al,  Minimization of Region-Scalable Fitting Energy for Image Segmentation, IEEE Trans. Image Processing, vol. 17 (10), pp. 1940-1949, 2008"
-        lambda2=1.11;%inner weight
+        lambda2=1.0;%inner weight
         %if lambda1>lambda2; tend to inflate
         %if lambda1<lambda2; tend to deflate
         nu = 0.001*255*255;%length term
         alf = 20;%data term weight
         
-        h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal
+        h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal;
         
         [Height Wide] = size(im);
         [xx yy] = meshgrid(1:Wide,1:Height);
+        
+        if i==1
+        fprintf('please select the centre of one of the two traps\n')
+        else
+            fprintf('please select the ceontre of the other trap\n')
+        end
+        
         [loc(1) loc(2)]=getpts(gca);
-        phi = (sqrt(((xx - loc(1)).^2 + (yy - loc(2)).^2 )) - 25);
-        phi = sign(phi).*c0;
-        close;
+        PntX = loc(1);
+        PntY = loc(2);
         
-        
-        Ksigma=fspecial('gaussian',round(2*sigma)*2 + 1,sigma); %  kernel
-        ONE=ones(size(im));
-        KONE = imfilter(ONE,Ksigma,'replicate');
-        KI = imfilter(im,Ksigma,'replicate');
-        KI2 = imfilter(im.^2,Ksigma,'replicate');
-        
-        h=figure;
-        for iter = 1:NumIter
-            phi =evolution_LGD(im,phi,epsilon,Ksigma,KONE,KI,KI2,mu,nu,lambda1,lambda2,timestep,alf);
-            if(mod(iter,25) == 0)
+        if false %use the stuff matt originally wrote
+            phi = (sqrt(((xx - loc(1)).^2 + (yy - loc(2)).^2 )) - 25);
+            phi = sign(phi).*c0;
+            close;
+            
+            
+            Ksigma=fspecial('gaussian',round(2*sigma)*2 + 1,sigma); %  kernel
+            ONE=ones(size(im));
+            KONE = imfilter(ONE,Ksigma,'replicate');
+            KI = imfilter(im,Ksigma,'replicate');
+            KI2 = imfilter(im.^2,Ksigma,'replicate');
+            
+            h=figure;
+            for iter = 1:NumIter
+                phi =evolution_LGD(im,phi,epsilon,Ksigma,KONE,KI,KI2,mu,nu,lambda1,lambda2,timestep,alf);
+                if(mod(iter,25) == 0)
+                    
+                    imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal,title(num2str(iter))
+                    hold on,[c,h] = contour(phi,[0 0],'r','linewidth',1); hold off
+                    pause(0.01);
+                end
                 
-                imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal,title(num2str(iter))
-                hold on,[c,h] = contour(phi,[0 0],'r','linewidth',1); hold off
-                pause(0.01);
             end
+            close;
+            c(:,1)=[];
+            tempFlat=zeros(size(im));
+            
+            loc=sub2ind(size(im),floor(c(2,:)),floor(c(1,:)));
+            tempFlat(loc)=1;
+            imflat(:,:,i)=tempFlat;
+        else %use elco's active contour stuff
+            ImageTransformParameters = struct('invert',false);
+             ACparameters = struct('alpha',0.01,'beta','0','R_min',2,'R_max',size(im,1),'opt_points',8,...
+                'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',20,'TerminationEpoch',500);
+            
+            ForcingImage = double(cCellVision.cTrap.trap1);
+            ForcingImage = ForcingImage/median(ForcingImage(:));
+            TrapImage = ACBackGroundFunctions.get_cell_image(ForcingImage,min(size(ForcingImage),[],2),[PntX PntY]);
+            TrapImage = ACImageTransformations.radial_gradient(TrapImage,ImageTransformParameters);
+           
+            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(TrapImage,ACparameters,floor(size(TrapImage)/2));
+            
+            [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiRes',AngleRes',[PntX PntY],size(ForcingImage));
+            
+            %fudge factor : somewhere in the process the outlines are being
+            %shifted by 1. I'm not sure why.
+            px = px-1;
+            py = py-1;
+            
+            SegmentationBinary = zeros(size(ForcingImage));
+            SegmentationBinary(py+size(ForcingImage,1)*(px-1))=1;
+            imflat(:,:,i) = SegmentationBinary;
             
         end
-        close;
-        c(:,1)=[];
-        tempFlat=zeros(size(im));
         
-        loc=sub2ind(size(im),floor(c(2,:)),floor(c(1,:)));
-        tempFlat(loc)=1;
-        imflat(:,:,i)=tempFlat;
     end
     imflat=max(imflat,[],3);
     cCellVision.cTrap.contour=imflat;

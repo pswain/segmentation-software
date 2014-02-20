@@ -19,6 +19,7 @@ function handles=chSelect_callback(source, event, handles)
         input=inputs{value};
     else
         input=inputs;
+    end
     if strcmp(input,'Add channel')
         %Open a dialogue to get the identifier string (this will be
         %replaced when accessing data from an Omero database)
@@ -30,12 +31,27 @@ function handles=chSelect_callback(source, event, handles)
         handles=loadRawImages(handles, handles.timelapse,identifier);
         handles.rawDisplay=identifier;
         %Add the identifier as an option to the channel selection menu
+        %Also need to a add the identifier for the main image set if it's
+        %not already there
         if ~iscell(inputs)
             inputs={inputs};
+        end              
+        
+        
+        %Get the main identifier
+        for ch=1:length(handles.timelapse.ImageFileList)
+            if strcmp(handles.timelapse.ImageFileList(ch).label,'main')
+                main=handles.timelapse.ImageFileList(ch).identifier;
+            end
         end
-        inputs{end}=identifier;
-        inputs{end+1}='Add channel';
-        set(source,'String',inputs, 'Value',(size(inputs,1)-1));        
+        %Add the main identifier if it's not there
+        if ~any(strcmp(main,inputs))
+            inputs{end+1}=main;
+        end
+        %Add the new identifier
+        inputs{end+1}=identifier;
+        
+        set(source,'String',inputs, 'Value',(size(inputs,2)));        
     else%User has selected an existing channel
         handles.rawDisplay=input;        
     end

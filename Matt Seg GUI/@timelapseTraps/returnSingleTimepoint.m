@@ -14,11 +14,16 @@ loc= ~cellfun('isempty',fileNum);
 if sum(loc)>0
     file=[cTimelapse.cTimepoint(timepoint).filename{loc}];
     locSlash=strfind(file,'/');
+    
+    if isempty(locSlash) 
+        locSlash=strfind(file,'\'); %in case file was made on a windows machine
+    end
+    
     if locSlash
         ind=find(loc);
         for i=1:sum(loc)
             file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-            locSlash=strfind(file,'/');
+            %locSlash=strfind(file,'/');
             file=file(locSlash(end)+1:end);
             cTimelapse.cTimepoint(timepoint).filename{ind(i)}=file;
         end
@@ -50,7 +55,7 @@ if sum(loc)>0
         uiwait(h);
         attempts=0;
         while folder==0 && attempts<3
-            fprintf(['Select the correct folder for: ',cTimelapse.timelapseDir]);
+            fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
             folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
             cTimelapse.timelapseDir=folder;
             attempts=attempts+1;
@@ -59,7 +64,7 @@ if sum(loc)>0
         file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
         ffile=fullfile(cTimelapse.timelapseDir,file);
         if ~isempty(cTimelapse.imSize)
-            timepointIm=zeros([imSize sum(loc)]);
+            timepointIm=zeros([cTimelapse.imSize sum(loc)]);
             timepointIm(:,:,1)=imread(ffile);
         else
             timepointIm=imread(ffile);
@@ -83,6 +88,11 @@ else
     end
     disp('There is no data in this channel at this timepoint');
 end
+
+if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
+            cTimelapse.imSize = size(timepointIm);
+end
+        
 % try
 %     timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});
 % catch
@@ -103,4 +113,14 @@ end
 
 if image_rotation~=0
     timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
+end
+
+if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
+    %first part of this statement is to guard against cases where channel
+    %has not been assigned
+    TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
+    timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
+    LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
+    HigherTimepointBoundaries = cTimelapse.imSize + TimepointBoundaries + abs(TimepointBoundaries);
+    timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2));
 end
