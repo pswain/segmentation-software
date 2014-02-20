@@ -11,6 +11,10 @@ fprintf('please select cell vision model used to identify the cells in the timel
 load(fullfile(CVpath, CVname),'cCellVision');
 %this file should only have the cCellVision variable
 
+ttacObject.cCellVision = ccellVision;
+
+ttacObject.TrapImage = cCellVision.cTrap.trapOutline;
+
 ttacObject.TrapPixelImage = ACTrapFunctions.makeTrapPixelsFromBinaryFunction(cCellVision.cTrap.trapOutline);
 
 ttacObject.TrapImageSize= size(cCellVision.cTrap.trapOutline);

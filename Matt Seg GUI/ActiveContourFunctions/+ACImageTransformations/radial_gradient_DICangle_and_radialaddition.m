@@ -14,6 +14,7 @@ function imageStack = radial_gradient_DICangle_and_radialaddition(imageStack,par
 error_message = checkparams(parameters,'DICangle');
 error_message = checkparams(parameters,'Rdiff');
 error_message = checkparams(parameters,'anglediff');
+%should probably write param check for traphandle bit.
 
 image_length = (size(imageStack,1)-1)/2;%half the length of the image
 
@@ -37,10 +38,6 @@ angle = reshape(angle,(2*image_length+1),(2*image_length+1));
 for i=1:size(imageStack,3)
 
 image = imageStack(:,:,i);
-if size(varargin,2)>=1
-    trap_px = varargin{1}(:,:,i);
-end
-
 
 [ximg,yimg] = gradient(image);
 
@@ -65,21 +62,19 @@ end
 
 image = image2;
 
-if size(varargin,2)>=1
-   MAXimage = max(abs(image(:)));
-   image = image+((median(image(:))-image).*trap_px);
-   image(trap_px>3) = MAXimage; 
-   
-   %just for easier image
-   image(image>(2*MAXimage)) = 2*MAXimage;
-   
-   
-
-end
-
 imageStack(:,:,i) = image;
 
 end
+
+if size(varargin,2)>=1
+    
+    TrapRemovealFunctionHandle = str2func(['ACImageTransformations.' parameters.TrapHandleFunction]);
+    
+    imageStack = TrapRemovealFunctionHandle(imageStack,parameters.TrapHandleFunctionParameters,varargin{1});
+    
+
+end
+
 end
 
 

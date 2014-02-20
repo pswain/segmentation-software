@@ -21,7 +21,7 @@ classdef timelapseTrapsActiveContour<handle
         Parameters %structure of parameters for trap detection and segmentation
         TrapPresentBoolean = false;%boolean value to indicate if there are traps in the image
         TrapImage =[]; %DIC image of an empty trap
-        TrapPixelImage=[]; %grayscale image of trappiness
+        TrapPixelImage=[]; %grayscale image of trappiness. Consider 1 or larger to be definitely traps.
         TrapGridImage = [];%image of field of view with no traps
         TrapLocation = []; %location of traps in timecourse
         TimelapseTraps = []; %Object of the TimelapseTraps class
@@ -29,6 +29,7 @@ classdef timelapseTrapsActiveContour<handle
         TrapImageSize = []; %Size of the trap images (just as though you had done 'size')
         LengthOfTimelapse = []; %number
         ChannelsToFlip = []; %sometimes channels need flipping. These ones get flipped leftright
+        cCellVision = []; %if data was taken from a cellvision class, that cellvision class is stored here.
         
     end
     
