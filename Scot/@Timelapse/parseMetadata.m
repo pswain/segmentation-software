@@ -141,12 +141,12 @@ function metaData=parseMetadata(moviedir)
        tagString=rawdataLog{tagHeading+1};
        k=strfind(tagString,',');
        if ~isempty(k)
-            for n=1:length(k)+1
+            for n=1:length(k)
                 if n==1
                     metaData.tags{n}=tagString(1:k(1)-1);
                 else
-                    if n==length(k)+1
-                        metaData.tags{n}=tagString(k(n-1)+1:end);
+                    if n==length(k)
+                        metaData.tags{n}=tagString(k(n-1)+1:end-1);
                     else
                         metaData.tags{n}=tagString(k(n-1)+1:k(n)-1);
                     end

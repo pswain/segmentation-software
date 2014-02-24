@@ -38,7 +38,7 @@ if ttacObject.TrapPresentBoolean
     TransformedImageStack = ImageTransformFunction(ImageStack,ttacObject.Parameters.ImageTransformation.TransformParameters,TrapImageStack);
     
 else
-    TransformedImageStack = ImageTransformFunction(ImageStack,ITparameters);
+    TransformedImageStack = ImageTransformFunction(ImageStack,ttacObject.Parameters.ImageTransformation.TransformParameters);
 end
    
 

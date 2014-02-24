@@ -1,6 +1,6 @@
 classdef TrapFindingMethods<MethodsSuperClass
     properties
-        requiredFields
+        
     end
     methods (Abstract)
         [timepointObj]=run(obj,timepointObj);
