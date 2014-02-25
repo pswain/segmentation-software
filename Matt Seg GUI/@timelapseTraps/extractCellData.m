@@ -17,23 +17,23 @@ end
 
 
 for channel=1:length(cTimelapse.channelNames)
-    extractedData(channel).mean=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).median=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).max5=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).std=zeros(numCells,length(cTimelapse.timepointsProcessed));
+    extractedData(channel).mean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).median=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).max5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).std=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     
-    extractedData(channel).smallmean=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).smallmedian=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).smallmax5=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).min=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).imBackground=zeros(numCells,length(cTimelapse.timepointsProcessed));
+    extractedData(channel).smallmean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).smallmedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).smallmax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).min=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).imBackground=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
 
-    cTimelapse.extractedData(channel).area=zeros(numCells,length(cTimelapse.cTimepoint));
+    cTimelapse.extractedData(channel).area=sparse(zeros(numCells,length(cTimelapse.cTimepoint)));
     
     
-    extractedData(channel).radius=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).xloc=zeros(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).yloc=zeros(numCells,length(cTimelapse.timepointsProcessed));
+    extractedData(channel).radius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     
     extractedData(channel).trapNum=trap;
     extractedData(channel).cellNum=cell;

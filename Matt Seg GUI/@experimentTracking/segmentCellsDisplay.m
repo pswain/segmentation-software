@@ -27,7 +27,10 @@ for i=1:length(positionsToSegment)
         cExperiment.cTimelapse.magnification=60;
     end
     
-    cTrapDisplayProcessing(cTimelapse,cCellVision,cExperiment.timepointsToProcess);
+    b=[cTimelapse.cTimepoint.trapLocations];
+    if ~isempty(b)
+        cTrapDisplayProcessing(cTimelapse,cCellVision,cExperiment.timepointsToProcess);
+    end
     
     cExperiment.posSegmented(currentPos)=1;
     cExperiment.saveTimelapseExperiment(currentPos);
