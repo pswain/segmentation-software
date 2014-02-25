@@ -4,13 +4,18 @@ if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
-    def = {'5'};
+    def = {'7'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     cellMovementThresh=str2double(answer{1});
 end
 
+%%
+%Identify the mother index ... cells that are closest to the center of the
+%trap and most likely to be the cells of interest. The tracking will be
+%more lenient on these cells.
+motherIndex=cTimelapse.findMotherIndex;
 
-
+%%
 if isempty(cTimelapse.timepointsProcessed)
     tempSize=[cTimelapse.cTimepoint.trapInfo];
     cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
@@ -110,7 +115,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                         col=find(noLabel);
                         col=col(1);
                         noLabel(col)=0;
-                        if min(dist2(:,col))<(cellMovementThresh*2/3)
+                        if min(dist2(:,col))<(cellMovementThresh*.9) %reduce thresh slightly for timepoints back in time
                             [val2 loc2]=min(dist2(:,col));
                             [row2 col2]=ind2sub(size(dist2),loc2);
                             dist2(row2,:)=Inf;
@@ -122,8 +127,16 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     end
                 end
                 
-                
-                
+                % Use the motherIndex for to identify mothers that should
+                % have been tracked but weren't
+                if motherIndex(trap,timepoint-1) && motherIndex(trap,timepoint)
+                    if ~trapInfo(trap).cellLabel(motherIndex(trap,timepoint))
+                        newLabel=trapInfom1(trap).cellLabel(motherIndex(trap,timepoint-1));
+                        if ~any(trapInfo(trap).cellLabel==newLabel)
+                            trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
+                        end
+                    end
+                end                
 %                 for all cells that are "new" cells to the image, update them
 %                 and the maxCell value
                 if ~trapInfo(trap).cellsPresent
@@ -164,11 +177,17 @@ if ~isempty(pt1) && ~isempty(pt2)
         dist(:,:,i) = temp;
     end
     temp=dist(:,:,3);
+    temp2=dist(:,:,3);
     if find(temp<0)
+        %If cell shrinks, then penalize a lot
         loc=temp<0;
 %         temp(loc)=temp(loc).^2;
-%         temp(loc)=temp(loc).^2*1.5;
-
+        temp(loc)=temp(loc).^2*1.5;
+    end
+    if find(temp2>0)
+        %if a cell grow a lot, penalize it
+        loc=temp2>0;
+        temp(loc)=temp(loc).^1.3;
     end
     dist(:,:,3)=temp;
     

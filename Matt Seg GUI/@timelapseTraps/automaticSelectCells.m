@@ -1,19 +1,40 @@
 function automaticSelectCells(cTimelapse,params)
-if nargin<2
-    params.fraction=.9; %fraction of timelapse length that cells must be present or
-    params.duration=6; %number of frames cells must be present
-%     params.cellsToCheck=4;
-    params.framesToCheck=350;
-    params.framesToCheckEnd=1;
-
-end
-
-cTimelapse.cellsToPlot(:)=0;
 
 if isempty(cTimelapse.timepointsProcessed)
     tempSize=[cTimelapse.cTimepoint.trapInfo];
     cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
 end
+
+if nargin<2
+    params.fraction=.8; %fraction of timelapse length that cells must be present or
+    params.duration=5; %number of frames cells must be present
+%     params.cellsToCheck=4;
+    params.framesToCheck=length(cTimelapse.timepointsProcessed);
+    params.framesToCheckEnd=1;
+    
+    num_lines=1;clear prompt; clear def;
+    prompt(1) = {'Fraction of whole timelapse a cell must be present'};
+    prompt(2) = {'OR - number of frames a cell must be present'};
+    prompt(3) = {'Cell must appear in the first X frames'};
+    prompt(4) = {'Cell must be present after frame X'};
+
+    dlg_title = 'Tracklet params';    
+    def(1) = {num2str(params.fraction)};
+    def(2) = {num2str(params.duration)};
+    def(3) = {num2str(params.framesToCheck)};
+    def(4) = {num2str(params.framesToCheckEnd)};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    params.fraction=str2double(answer{1});
+    params.duration=str2double(answer{2});
+    params.framesToCheck=str2double(answer{3});
+    params.framesToCheckEnd=str2double(answer{4});
+
+end
+
+cTimelapse.cellsToPlot(:)=0;
+
+
+
 
 cTimepoint=cTimelapse.cTimepoint;
 for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)

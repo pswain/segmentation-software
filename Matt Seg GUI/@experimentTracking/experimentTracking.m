@@ -21,6 +21,8 @@ classdef experimentTracking<handle
         trackTrapsOverwrite
         cellVisionThresh
         
+        lineageInfo %for all of the cell births and stuff that occure during the timelapse
+        
         cCellVision;
     end
     
@@ -30,7 +32,7 @@ classdef experimentTracking<handle
             %% Read filenames from folder
             if nargin<1
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
-                saveFolder=uigetdir(pwd,'Select the folder where data should be saved');
+                saveFolder=uigetdir(folder,'Select the folder where data should be saved');
             end
             
             cExperiment.rootFolder=folder;
