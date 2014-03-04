@@ -124,3 +124,7 @@ if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     HigherTimepointBoundaries = cTimelapse.imSize + TimepointBoundaries + abs(TimepointBoundaries);
     timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2));
 end
+% 
+% if channel==2
+%     timepointIm=flipud(timepointIm);
+% end

@@ -53,7 +53,7 @@ for i=2:length(timepoints)
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
     
-    if rem(i,5)==0
+    if rem(i,80)==0
         regIm=newIm;
         timepointReg=timepoints(i);
         accumCol = 0;
