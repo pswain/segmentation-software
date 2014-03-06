@@ -14,21 +14,22 @@ if nargin<2
 end
 
 num_lines=1;
-prompt = {'Extract all Params?'};
-dlg_title = 'All Params';    def = {'1'};
+prompt = {'What do you want to extract?'};
+dlg_title = 'All Params using max projection (max), std focus (std), mean focus (mean), or basic (basic)';    def = {'max'};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 
-answer=str2num(answer{1});
+type=answer{1};
 
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %
-    if answer
-        cTimelapse.extractCellData();
-    else
-        cTimelapse.extractCellParamsOnly();
+    switch type
+        case {'max','all','std'} 
+            cTimelapse.extractCellData(type);
+        case {'b','basic'}
+            cTimelapse.extractCellParamsOnly();
     end
 
     

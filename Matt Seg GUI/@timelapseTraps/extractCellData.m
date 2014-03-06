@@ -1,4 +1,8 @@
-function extractCellData(cTimelapse)
+function extractCellData(cTimelapse,type)
+
+if nargin<2
+    type='max';
+end
 
 numCells=sum(cTimelapse.cellsToPlot(:));
 [trap cell]=find(cTimelapse.cellsToPlot);
@@ -15,6 +19,16 @@ if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProces
     end
 end
 
+switch type
+    case 'all'
+        numStacks=3;
+    case 'max'
+        numStacks=1;
+    case 'mean'
+        numStacks=1;
+    case 'std'
+        numStacks=1;
+end
 
 for channel=1:length(cTimelapse.channelNames)
 %     extractedData(channel).mean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -31,16 +45,16 @@ for channel=1:length(cTimelapse.channelNames)
 %     extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
 %     extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
 
-    extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).median=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).max5=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).std=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).smallmean=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).smallmedian=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).smallmax5=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).min=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).imBackground=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).area=(zeros(numCells,length(cTimelapse.cTimepoint)));
+    extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).median=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).max5=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).std=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).smallmean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).smallmedian=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).smallmax5=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).min=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).imBackground=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
+    extractedData(channel).area=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).radius=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).xloc=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).yloc=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -57,7 +71,10 @@ for channel=1:length(cTimelapse.channelNames)
             %modify below code to use the cExperiment.searchString rather
             %than just channel=2;
             
-            trapImages=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+%             trapImages=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+            
+            tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel,'stack');
+            
 %             trapImagesStd=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'std');
 %             trapImagesMean=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'mean');
 
@@ -70,14 +87,33 @@ for channel=1:length(cTimelapse.channelNames)
                 temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
                 if temp_loc & sum(trapInfo(currTrap).cell(temp_loc).segmented(:))>5
                     if cTimelapse.trapsPresent
-                        trapImWhole=trapImages(:,:,j);
-%                         trapImWhole(:,:,2)=trapImagesStd(:,:,j);
-%                         trapImWhole(:,:,3)=trapImagesMean(:,:,j);
+                        trapImages=returnTrapStack(cTimelapse,tpStack,currTrap,timepoint);
                     else
-                        trapImWhole=trapImages;
-%                         trapImWhole(:,:,2)=trapImagesStd;
-%                         trapImWhole(:,:,3)=trapImagesMean;
+                        trapImages=tpStack;
                     end
+                    
+                    tStd=[];tMean=[];
+                    for l=1:size(trapImages,3)
+                        tempIm=double(trapImages(:,:,l));
+                        tStd(l)=std(tempIm(:));
+                        tMean(l)=mean(tempIm(:));
+                    end
+                    [b indStd]=max(tStd);
+                    [b indMean]=max(tMean);
+
+                    switch type
+                        case 'all'
+                            trapImWhole(:,:,1)=max(trapImages,[],3);
+                            trapImWhole(:,:,2)=trapImages(:,:,indStd);
+                            trapImWhole(:,:,3)=trapImages(:,:,indMean);
+                        case 'max'
+                            trapImWhole(:,:,1)=max(trapImages,[],3);
+                        case 'std'
+                            trapImWhole(:,:,1)=trapImages(:,:,indStd);
+                        case 'mean'
+                            trapImWhole(:,:,1)=trapImages(:,:,indMean);
+                    end
+                            
                     
                     for k=1:size(trapImWhole,3)
                         
@@ -162,3 +198,23 @@ for channel=1:length(cTimelapse.channelNames)
     end
 end
 cTimelapse.extractedData=extractedData;
+
+
+
+function trapsTimepoint=returnTrapStack(cTimelapse,image,traps,timepoint)
+
+cTrap=cTimelapse.cTrapSize;
+bb=max([cTrap.bb_width cTrap.bb_height])+100;
+bb_image=padarray(image,[bb bb]);
+trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
+for j=1:length(traps)
+    y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
+    x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
+    %             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),2) + bb);
+    %             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),1) + bb);
+    temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
+    temp_im(temp_im==0)=mean(temp_im(:));
+    trapsTimepoint(:,:,j)=temp_im;
+end
+
+

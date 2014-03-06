@@ -44,7 +44,7 @@ classdef timelapseTraps<handle
         %%
         addSecondaryTimelapseChannel(cTimelapse,searchString)
         new=addTimepoints(cTimelapse)
-        extractCellData(cTimelapse);
+        extractCellData(cTimelapse,type);
         extractCellParamsOnly(cTimelapse)
         automaticSelectCells(cTimelapse,params);
         

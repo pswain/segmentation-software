@@ -55,22 +55,8 @@ if sum(loc)>0
         switch type
             case 'max'
                 timepointIm=max(timepointIm,[],3);
-            case 'std'
-                tStd=[];
-                for l=1:size(timepointIm,3)
-                    tempIm=double(timepointIm(:,:,l));
-                    tStd(l)=std(tempIm(:));
-                end
-                [b ind]=max(tStd);
-                timepointIm=timepointIm(:,:,ind);
-            case 'mean'
-                tMean=[];
-                for l=1:size(timepointIm,3)
-                    tempIm=double(timepointIm(:,:,l));
-                    tMean(l)=mean(tempIm(:));
-                end
-                [b ind]=max(tMean);
-                timepointIm=timepointIm(:,:,ind);
+            case 'stack'
+                timepointIm=timepointIm;
         end
         
         
