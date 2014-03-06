@@ -84,8 +84,8 @@ classdef timelapseTraps<handle
         % functions for returning data
         trapTimepoint=returnSingleTrapTimepoint(cTimelapse,trap_num_to_show,timepoint,channel)
         trapTimelapse=returnSingleTrapTimelapse(cTimelapse,trap_num_to_show,channel)
-        timepoint=returnSingleTimepoint(cTimelapse,timepoint,channel)
-        trapTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel)
+        timepoint=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
+        trapTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
         trapsTimelapse=returnTrapsTimelapse(cTimelapse,traps,channel)
 
         timelapse=returnTimelapse(cTimelapse,channel)

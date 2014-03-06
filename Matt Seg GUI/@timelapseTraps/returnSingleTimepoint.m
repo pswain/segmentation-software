@@ -1,4 +1,4 @@
-function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel)
+function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 
 %Channel refers to the channel name. It access the channelNames property of
 %timelapse and uses that to find the appropriate files. If there is more
@@ -8,6 +8,11 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel)
 if nargin<3
     channel=1;
 end
+
+if nargin<4
+    type='max';
+end
+
 tp=timepoint;
 fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
 loc= ~cellfun('isempty',fileNum);
@@ -47,7 +52,27 @@ if sum(loc)>0
         end
         
         %change if want things other than maximum projection
-        timepointIm=max(timepointIm,[],3);
+        switch type
+            case 'max'
+                timepointIm=max(timepointIm,[],3);
+            case 'std'
+                tStd=[];
+                for l=1:size(timepointIm,3)
+                    tempIm=double(timepointIm(:,:,l));
+                    tStd(l)=std(tempIm(:));
+                end
+                [b ind]=max(tStd);
+                timepointIm=timepointIm(:,:,ind);
+            case 'mean'
+                tMean=[];
+                for l=1:size(timepointIm,3)
+                    tempIm=double(timepointIm(:,:,l));
+                    tMean(l)=mean(tempIm(:));
+                end
+                [b ind]=max(tMean);
+                timepointIm=timepointIm(:,:,ind);
+        end
+        
         
     catch
         folder =0;
