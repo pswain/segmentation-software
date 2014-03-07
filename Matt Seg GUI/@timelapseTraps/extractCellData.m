@@ -201,18 +201,18 @@ cTimelapse.extractedData=extractedData;
 
 
 
-function trapsTimepoint=returnTrapStack(cTimelapse,image,traps,timepoint)
+function trapsTimepoint=returnTrapStack(cTimelapse,image,trap,timepoint)
 
 cTrap=cTimelapse.cTrapSize;
 bb=max([cTrap.bb_width cTrap.bb_height])+100;
 bb_image=padarray(image,[bb bb]);
-trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
-for j=1:length(traps)
-    y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
-    x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
+trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,size(image,3),'uint16');
+for j=1:size(image,3)
+    y=round(cTimelapse.cTimepoint(timepoint).trapLocations(trap).ycenter + bb);
+    x=round(cTimelapse.cTimepoint(timepoint).trapLocations(trap).xcenter + bb);
     %             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),2) + bb);
     %             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),1) + bb);
-    temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
+    temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width,j);
     temp_im(temp_im==0)=mean(temp_im(:));
     trapsTimepoint(:,:,j)=temp_im;
 end
