@@ -201,7 +201,7 @@ cTimelapse.extractedData=extractedData;
 
 
 
-function trapsTimepoint=returnTrapStack(cTimelapse,image,traps,timepoint)
+function trapsTimepoint=returnTrapStack(cTimelapse,image,traps,timepoint) %a random comment I added
 
 cTrap=cTimelapse.cTrapSize;
 bb=max([cTrap.bb_width cTrap.bb_height])+100;
