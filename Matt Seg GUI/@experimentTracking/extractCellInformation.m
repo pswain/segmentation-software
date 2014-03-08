@@ -14,8 +14,9 @@ if nargin<2
 end
 
 num_lines=1;
-prompt = {'What do you want to extract?'};
-dlg_title = 'All Params using max projection (max), std focus (std), mean focus (mean), or basic (basic)';    def = {'max'};
+dlg_title = 'What to extract?';
+prompt = {['All Params using max projection (max), std focus (std), mean focus (mean), using all three measures (all), or basic (basic)' ...
+    ' the basic measure only compiles the x, y locations of cells along with the estimated radius so it is much faster, but less informative.']};    def = {'max'};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 
 type=answer{1};

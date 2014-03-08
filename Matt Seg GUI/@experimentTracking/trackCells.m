@@ -11,7 +11,9 @@ if nargin<2
 end
 
 if nargin<3
-    prompt = {'Max change in position and radius before a cell is classified as a new cell'};
+    prompt = {['Max change in position and radius before a cell is classified as a new cell. A larger number is more lenient, and you will be more likely' ...
+        ' to not have interruptions in the tracking for a cell. At the same time though, you will be more likely to identify unrelated cells as the same.' ...
+        ' This is especially true for daughters.']};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
     def = {'8'};
