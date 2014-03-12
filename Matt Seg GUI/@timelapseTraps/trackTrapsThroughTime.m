@@ -30,10 +30,10 @@ for i=2:length(timepoints)
     rowDif=output(3);
     
     %i
-    if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*2/3
+    if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         colDif=accumCol;
     end
-    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*2/3
+    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*1/2
         rowDif=accumRow;
     end
     

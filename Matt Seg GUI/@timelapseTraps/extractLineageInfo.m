@@ -10,6 +10,8 @@ if nargin<2
     params.motherDurCutoff=(.7);
     params.motherDistCutoff=2.6;
     params.budDownThresh=.25;
+    params.birthRadiusThresh=7;
+
 end
 
 %this is the fraction of buds that must be down (btween the trap outlet)

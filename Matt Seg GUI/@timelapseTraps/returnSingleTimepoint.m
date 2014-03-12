@@ -61,11 +61,11 @@ if sum(loc)>0
         
         
     catch
-        folder =0;
+        folder =[];
         h=errordlg('Directory seems to have changed');
         uiwait(h);
         attempts=0;
-        while folder==0 && attempts<3
+        while isempty(folder) && attempts<3
             fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
             folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
             cTimelapse.timelapseDir=folder;
