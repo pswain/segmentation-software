@@ -102,7 +102,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             % store the segmented area
                             edgeSeg= bwmorph(seg,'remove');
                             cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented = edgeSeg>0;
-                            cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).radius=sqrt(sum(seg(:))/pi);
+                            cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadius=sqrt(sum(seg(:))/pi);
                         else
                         end
                     else
