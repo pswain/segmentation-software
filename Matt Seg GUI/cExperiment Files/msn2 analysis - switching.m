@@ -2,7 +2,7 @@
 uiload
 %% Extracts data and plots averages of cell responses
 
-timeStep=2.5;
+timeStep=5;
 % timeStep=2;
 timepoints=0:timeStep/60:(length(cExperiment.cellInf(1).extractedMedian)-1)*timeStep/60;
 

@@ -4,10 +4,14 @@ function extractLineageInfo(cTimelapse,params)
 %motherDistCutoff is the number of motherRadiuses that the daughter can be
 %from the mother and still be considered a daughter.
 
+cTimelapse.correctSkippedFramesInf;
+
 if nargin<2
     params.motherDurCutoff=(.7);
     params.motherDistCutoff=2.6;
     params.budDownThresh=.25;
+    params.birthRadiusThresh=7;
+
 end
 
 %this is the fraction of buds that must be down (btween the trap outlet)
@@ -71,7 +75,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         
         motherLoc=find(cTimelapse.extractedData(1).trapNum==trap & cTimelapse.extractedData(1).cellNum==mother);
         tpCheck=cTimelapse.extractedData(1).xloc(motherLoc,:)>0;
-        if length(trapL)<2 || ~all(size(tpCheck))
+        if length(trapL)<2 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end
         
@@ -104,11 +108,21 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         b1=~isnan(diffB(:,2:end));
         b2=isnan(diffB(:,1:end-1));
         firstDaughterPos=b1&b2;
+        if any(sum(firstDaughterPos,2)>1)
+            for r=1:size(firstDaughterPos,1)
+                b=find(firstDaughterPos(r,:));
+                if ~isempty(b)
+                    firstDaughterPos(r,:)=0;
+                    firstDaughterPos(r,b(1))=1;
+                end
+            end
+        end
         actualDaughterPos=firstDaughterPos & repmat(actualDaughters,1,size(firstDaughterPos,2));
         
-        
-        daughterXLoc=xlocDaughters(actualDaughterPos);
-        daughterYLoc=ylocDaughters(actualDaughterPos);
+        daughterXLoc=zeros(size(actualDaughters));
+        daughterYLoc=zeros(size(actualDaughters));
+        daughterXLoc(actualDaughters)=xlocDaughters(actualDaughterPos);
+        daughterYLoc(actualDaughters)=ylocDaughters(actualDaughterPos);
         
         
         %         daughterXLoc=nanmin(xlocDaughters(actualDaughters,:),[],2);
@@ -130,7 +144,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         
         %then remove any cells that are on top of the mother since we know
         %it is budding out of the bottom.
-        temp=daughterXLoc>median(motherXLoc);
+        temp=daughterXLoc(actualDaughters)>median(motherXLoc);
         b=zeros(size(actualDaughters));
         b(actualDaughters)=temp;
         actualDaughters=b>0;

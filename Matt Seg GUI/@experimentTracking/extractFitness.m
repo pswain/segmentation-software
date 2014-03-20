@@ -2,6 +2,9 @@ function extractFitness(cExperiment, durationCutoff,filtParams)
 % extractLineageInfo must be run before this is called, otherwise all of
 % the relevant information won't have been created.
 
+fitnessType='fit';
+
+
 %durationCutoff  - either a fraction of the timelapse that a cell must be
 %present, or a number of frames the cell must be present
 if nargin<2
@@ -14,6 +17,7 @@ if nargin<3
     filtParams.std=10;
     filtParams.type='Normal';
 end
+
 
 % need to figure out a way to check whether the appropriate information is
 % present in the cExperiment container, and not just that it is present,
@@ -73,40 +77,44 @@ for i=1:size(cExperiment.lineageInfo.motherInfo.birthTime,1)
             t=cellRad;
             locD=find(t>0);
             t(t==0)=[];
-            
+            t=full(t);
             %The below fits a curve to the whole time a daughter is present
             %in a trap. This works well, except that if a cell pauses and
             %the daughter stays for a long time, in doesn't catch the
             %change in behavior
-            %             x=1:length(t);
-            %             fitted=fit(x',t',fitFun);
-            %             locD(1)=max(1,locD(1)-3);
-            %             daughterFitness(j,locD(1):locD(end))=fitted.p1;
-            
-            
-            
-            % This instead calculates the moving difference in the radius of the
-            % daughter. Hopefully this should capture more the dynamic changes in
-            % daughter behavior.
-            dN=1;
-            %             t=smooth(t,2);
-            t=4/3*pi*t.^3;
-            diffRad=diff(t,dN);
-            sN=ones(1,5);
-            tempD=conv(diffRad,sN,'same');
-            movDiff=zeros(size(t))*NaN;
-            movDiff(1:end-dN)=tempD;
-            tempD=fliplr(conv(fliplr(diffRad),sN,'same'));
-            movDiffReverse=zeros(size(t))*NaN;
-            movDiffReverse(1+dN:end)=tempD;
-            
-            movDiff(movDiff==0)=NaN;
-            movDiffReverse(movDiffReverse==0)=NaN;
-            meanRadGradient=nanmean([movDiff; movDiffReverse]);
-            meanRadGradient(isnan(meanRadGradient))=0;
-            daughterFitness(j,locD(1):locD(end))=meanRadGradient;
-            tStart=max(1,locD(1)-2);
-            daughterFitness(j,tStart:locD(1))=meanRadGradient(1);
+            if strcmp(fitnessType,'fit')
+                x=1:length(t);
+                t=4/3*pi*t.^3;
+                fitted=fit(x',t',fitFun);
+                locD(1)=max(1,locD(1)-3);
+                daughterFitness(j,locD(1):locD(end))=fitted.p1;
+            else
+                
+                
+                % This instead calculates the moving difference in the radius of the
+                % daughter. Hopefully this should capture more the dynamic changes in
+                % daughter behavior.
+                dN=1;
+                t=smooth(t,2);
+                %             t=4/3*pi*t.^3;
+                t=full(t);
+                diffRad=diff(t,dN);
+                sN=ones(1,5);
+                tempD=conv(diffRad,sN,'same');
+                movDiff=zeros(size(t))*NaN;
+                movDiff(1:end-dN)=tempD;
+                tempD=fliplr(conv(fliplr(diffRad),sN,'same'));
+                movDiffReverse=zeros(size(t))*NaN;
+                movDiffReverse(1+dN:end)=tempD;
+                
+                movDiff(movDiff==0)=NaN;
+                movDiffReverse(movDiffReverse==0)=NaN;
+                meanRadGradient=nanmean([movDiff; movDiffReverse]);
+                meanRadGradient(isnan(meanRadGradient))=0;
+                daughterFitness(j,locD(1):locD(end))=meanRadGradient;
+                tStart=max(1,locD(1)-2);
+                daughterFitness(j,tStart:locD(1))=meanRadGradient(1);
+            end
             
         end
         daughterGrowthFitness(index,:)=max(daughterFitness);

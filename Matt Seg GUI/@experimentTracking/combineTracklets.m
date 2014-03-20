@@ -17,17 +17,17 @@ if nargin<3
     params.framesToCheckEnd=1;
     params.endThresh=3; %num tp after end of tracklet to look for cells
     params.sameThresh=4; %num tp to use to see if cells are the same
-    params.classThresh=3; %classification threshold
+    params.classThresh=3.5; %classification threshold
 
     
     
     num_lines=1;clear prompt; clear def;
-    prompt(1) = {'Fraction of whole timelapse a cell must be present'};
-    prompt(2) = {'OR - number of frames a cell must be present'};
-    prompt(3) = {'Cell must appear in the first X frames'};
-    prompt(4) = {'Cell must be present after frame X'};
-    prompt(5) = {'New tracklet must appear within X frames'};
-    prompt(6) = {'Number of tracklet frames to compare'};
+    prompt(1) = {'This combines individual tracks into larger tracks. Fraction of whole timelapse a cell must be present'};
+    prompt(2) = {'OR - number of frames a cell must be present (Dec to look at short tracks, Inc to only look at long tracks)'};
+    prompt(3) = {'Cell must appear in the first X frames (Dec if you only want to combine tracks that start early)'};
+    prompt(4) = {'Cell must be present after frame X (Inc if you want to only look at tracks that stay past a certain time '};
+    prompt(5) = {'New tracklet must appear within X frames (Dec to only look at new tracks that begin immediately after the previous track ended. Inc to be more lenient in search criteria)'};
+    prompt(6) = {'Number of tracklet frames to compare (Compares the x,y,radius property of a cell to judge whether it is the same cell. More frames '};
     prompt(7) = {'Tracklet classification threshold'};
     dlg_title = 'Tracklet params';    
     def(1) = {num2str(params.fraction)};def(2) = {num2str(params.duration)};

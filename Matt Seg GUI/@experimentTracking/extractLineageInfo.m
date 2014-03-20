@@ -36,6 +36,7 @@ end
 
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
+    i
     experimentPos=positionsToExtract(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %

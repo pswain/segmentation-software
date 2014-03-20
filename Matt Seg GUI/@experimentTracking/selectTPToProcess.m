@@ -13,9 +13,9 @@ else
 end
 
 num_lines=1;clear prompt; clear def;
-prompt(1) = {'Starting Timepoint'};
+prompt(1) = {'In contrast with cropTP, this keeps the timepoints associated with the timelapse, but just notes that they should not be processed. This is generally prefferable to cropping. Starting Timepoint'};
 prompt(2) = {['Ending Timepoint (max TP ',num2str(length(cTimelapse.cTimepoint)),')']};
-dlg_title = 'Tracklet params';
+dlg_title = 'Tp To Process';
 def(1) = {num2str(params.framesToCheckStart)};
 def(2) = {num2str(params.framesToCheckEnd)};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
