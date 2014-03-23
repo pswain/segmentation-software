@@ -155,64 +155,6 @@ CellInfo(1:CellPreallocationNumber) = InitialisedCellInfo;
 
 EmptyCellEntries = true(1,CellPreallocationNumber);
 
-%% take the first timpoint,load the image, and put all the data into the CellInfo structure
-
-TP = Timepoints(1);
-
-NumberOfCellsUpdated = 0;
-
-fprintf('timepoint %d \n',TP)
-
-for TI = ttacObject.TrapsToCheck(TP)
-    
-    for CI = ttacObject.CellsToCheck(TP,TI)
-        
-        
-        %fprintf('timepoint %d; trap %d ; cell %d \n',TP,TI,CI)
-        
-        CellEntry = find(EmptyCellEntries,1);
-        
-        %If there are no available cell entries left initialise a
-        %whole new tranch of cell entries
-        if isempty(CellEntry)
-            CellEntry = length(CellInfo)+1;
-            CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
-            EmptyCellEntries = [EmptyCellEntries true(1,CellPreallocationNumber)];
-        end
-        
-        EmptyCellEntries(CellEntry) = false;
-        CellInfo(CellEntry).CellNumber = CellEntry;
-        CellInfo(CellEntry).TrapNumber = TI;
-        CellInfo(CellEntry).CellLabel = ttacObject.ReturnLabel(TP,TI,CI);
-        CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
-        CellInfo(CellEntry).(TimePointStrings{end}) = TP;
-        CellInfo(CellEntry).(CellCentreStrings{end}) = ttacObject.ReturnCellCentreAbsolute(TP,TI,CI); %absolute cell position
-        CellInfo(CellEntry).(TrapCentreStrings{end}) = ttacObject.ReturnTrapCentre(TP,TI);
-        
-        CellInfo(CellEntry).(PriorRadiiStrings{end}) = ttacObject.ReturnCellRadii(TP,TI,CI);
-        CellInfo(CellEntry).(PriorAnglesStrings{end}) = ttacObject.ReturnCellAngles(TP,TI,CI);
-        CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
-        CellInfo(CellEntry).UpdatedThisTimepoint = true;
-        NumberOfCellsUpdated = NumberOfCellsUpdated+1;
-        
-    end
-    
-    
-end
-
-%Get Subimages of Cells
-
-CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
-
-ImageStack = ttacObject.ReturnTransformedImagesForSingleCell([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TimePointStrings{end})],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).TrapNumber],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellNumberTimelapseStrings{end})]);
-
-
-
-%redistribute amongst data structure
-
-for CN = 1:NumberOfCellsUpdated
-        CellInfo(CellNumbers(CN)).(TransformedImageStrings{end}) = ImageStack(:,:,CN);
-end
 
 %% set TP at which to start segmenting
 
@@ -232,7 +174,7 @@ end
 
 
 %% loop through the rest of the timepoints
-for TP = Timepoints(2:end)
+for TP = Timepoints
     
 tic;    
 fprintf('timepoint %d \n',TP)
@@ -359,10 +301,29 @@ fprintf('timepoint %d \n',TP)
     
     %% actually do the segmentation function
     
-    CellsToSegment = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]==slice_size) );
+    %being segmented for the first time
+    CellsToSegmentFirstTP = ...
+        find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]==slice_size) );
+    
+    
+    %cells that have been previously segmented and have a previous
+    %timepoint to use
+    CellsToSegmentPreviouslySegmented = ...
+        find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]>slice_size) &(mod([CellInfo(:).TimePointsPresent]-slice_size,keepers)==0) );
+    
+    UsePreviousTimepoint = [false(size(CellsToSegmentFirstTP)) true(size(CellsToSegmentPreviouslySegmented))];
+    
+    CellsToSegment = [CellsToSegmentFirstTP CellsToSegmentPreviouslySegmented];
+    
     RadiiResultsCellArray = cell(size(CellsToSegment));
     AnglesResultsCellArray = cell(size(CellsToSegment));
-     
+    
+    TimePointsToWrite = zeros(keepers*length(CellsToSegment),1);
+    TrapIndicesToWrite = TimePointsToWrite;
+    CellIndicesToWrite = TimePointsToWrite;
+    CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
+    AnglesToWrite = CellRadiiToWrite;
+    
     parfor CNi = 1:length(CellsToSegment)  
         %divided loop into parallel slow part and relatively fast write
         %part.
@@ -370,18 +331,26 @@ fprintf('timepoint %d \n',TP)
         if TP>=TPtoStartSegmenting
             
             
-            %do first timepoint segmentation - so no previous timepoint
             [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CellsToSegment(CNi));
-            [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
-            %fprintf('Segmenting Timepoint %d ;  trap %d ;  cell  %d ;\n',TP,TI,CN)
             
-            %For debugging
-            %         RadiiResult = PriorRadiiStack;
-            %         AnglesResult = repmat(DefaultAngles,slice_size,1);
+            if UsePreviousTimepoint(CNi)
+                %do segmentation of previously segmented cell
+                [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
+                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CN).PreviousTimepointResult);
+        
+            else
+                %do first timepoint segmentation - so no previous timepoint
+                [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
+                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
+            
+            end
             
             %put all radii in the CellInfoarray
         end
     end
+    
+    CellsWritten = 1;
+    
     for CNi = 1:length(CellsToSegment)
         
         CN = CellsToSegment(CNi);
@@ -396,7 +365,17 @@ fprintf('timepoint %d \n',TP)
         for RN = 1:keepers
             
             %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            %ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            
+            TimePointsToWrite(CellsWritten) = CellInfo(CN).(TimePointStrings{RN});
+            TrapIndicesToWrite(CellsWritten) = CellInfo(CN).TrapNumber;
+            CellIndicesToWrite(CellsWritten) = CellInfo(CN).(CellNumberTimelapseStrings{RN});
+            CellRadiiToWrite(CellsWritten,:) = RadiiResultsCellArray{CNi}(RN,:);
+            AnglesToWrite(CellsWritten,:) = AnglesResultsCellArray{CNi}(RN,:);
+            
+            CellsWritten = CellsWritten+1;
+            
+            
             
         end
         
@@ -409,53 +388,15 @@ fprintf('timepoint %d \n',TP)
     end
     end
     
-    CellsToSegment = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]>slice_size) &(mod([CellInfo(:).TimePointsPresent]-slice_size,keepers)==0) );
-    RadiiResultsCellArray = cell(size(CellsToSegment));
-    AnglesResultsCellArray = cell(size(CellsToSegment));
-   
-    
-    parfor CNi = 1:length(CellsToSegment);
-        %do later timepoint segmentations
-        
-        %divided loop into parallel slow part and relatively fast write
-        %part.
-        CN = CellsToSegment(CNi);
-        [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CN);
-        [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CN).PreviousTimepointResult);
-        %fprintf('Segmenting Timepoint %d ;  trap %d ;  cell  %d ;\n',TP,TI,CN)
-        
-        
-        %For debugging
-        %         RadiiResult = PriorRadiiStack;
-        %         AnglesResult = repmat(DefaultAngles,slice_size,1);
-        %
-        %put all radii in the CellInfoarray
+    %write results on mass
+    if TP>=TPtoStartSegmenting && ~isempty(CellsToSegment)
+        ttacObject.WriteACResults(TimePointsToWrite,TrapIndicesToWrite,CellIndicesToWrite,CellRadiiToWrite,AnglesToWrite)
     end
     
-    for CNi = 1:length(CellsToSegment)
-        CN = CellsToSegment(CNi);
-        for RN = 1:slice_size
-            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResultsCellArray{CNi}(RN,:);
-            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResultsCellArray{CNi}(RN,:);
-        end
-        
-        %write results to keep to the timelapse object
-        for RN = 1:keepers
-            %write the results to keep (1:keepers) to the cTimelapse object
-            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
-            
-        end
-        
-        CellInfo(CN).PreviousTimepointResult = RadiiResultsCellArray{CNi}(keepers,:);
-        
-        
-        
-        
-    end
     
     
     TimeOfTimepoint = toc;
-    fprintf('timepoint analysed in %f minutes \n',TimeOfTimepoint/60);
+    fprintf('timepoint analysed in %.2f seconds \n',TimeOfTimepoint);
     
 end
 
@@ -481,6 +422,7 @@ for CN = find([CellInfo(:).UpdatedThisTimepoint])
     EmptyCellEntries(CN) = true;
 end
 
+fprintf('\n      Finished!!      \n')
 
 end
 

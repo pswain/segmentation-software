@@ -238,8 +238,10 @@ classdef timelapseTrapsActiveContour<handle
         end
             
         
-        function WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinary)
-            % WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinary(optional))
+        function WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinaryStack)
+            % WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinaryStack(optional))
+            
+            % all can be column vectors or matriced
             
             %writes the result Radii,Angles,Segmentation Binary to the cell
             %defined by TP,TI,CI. If no Segmentation image is given it will
@@ -247,40 +249,57 @@ classdef timelapseTrapsActiveContour<handle
             %TrapImageSize field.
             
             %debuggery
-            CellArraySize = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell);
-            CellLabelSize = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel);
             
-            if any(CellArraySize~=CellLabelSize)
+            
+            
+            TimePointsToWrite = (unique(TP))';
+            
+            for TPW = TimePointsToWrite;
                 
-                fprintf('Matts code is wierd\n %d %d \n',TP,TI)
+                TemporaryCTimepoint = ttacObject.TimelapseTraps.cTimepoint(TPW);
+                
+                for TPi = (find(TP==TPW))'
+                    
+                    CellArraySize = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
+                    CellLabelSize = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
+                    
+                    if any(CellArraySize~=CellLabelSize)
+                        
+                        fprintf('Matts code is wierd\n %d %d \n',TPW,TI(TPi))
+                    end
+                    
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellRadii = Radii(TPi,:);
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngles = Angles(TPi,:);
+                    
+                    %TemporaryCTimepoint.trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
+                    
+                    
+                    if nargin<7
+                        
+                        
+                        [px,py] = ACBackGroundFunctions.get_full_points_from_radii((Radii(TPi,:))',(Angles(TPi,:))',double(ttacObject.ReturnCellCentreRelative(TPW,TI(TPi),CI(TPi))),ttacObject.TrapImageSize);
+                        
+                        SegmentationBinary = false(ttacObject.TrapImageSize);
+                        SegmentationBinary(py+ttacObject.TrapImageSize(1,1)*(px-1))=true;
+                    else
+                        SegmentationBinary = SegmentationBinaryStack(:,:,TPi);
+                        
+                    end
+                    
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmented = sparse(SegmentationBinary);
+                    
+                    %debuggery
+                    CellArraySizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
+                    CellLabelSizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
+                    if any([CellArraySize~=CellArraySizeAfter CellLabelSizeAfter~=CellLabelSize] )
+                        
+                        fprintf('your code is broken\n %d %d %d \n',TP(TPi),TI(TPi),CI(TPi))
+                    end
+                    
+                end
+                
+                ttacObject.TimelapseTraps.cTimepoint(TPW) = TemporaryCTimepoint;
             end
-            
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellRadii = Radii; 
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles = Angles;
-
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
-            
-            
-            if nargin<7
-                
-                
-                [px,py] = ACBackGroundFunctions.get_full_points_from_radii(Radii',Angles',double(ttacObject.ReturnCellCentreRelative(TP,TI,CI)),ttacObject.TrapImageSize);
-                
-                SegmentationBinary = false(ttacObject.TrapImageSize);
-                SegmentationBinary(py+ttacObject.TrapImageSize(1,1)*(px-1))=true;
-        
-            end
-            
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).segmented = sparse(SegmentationBinary); 
-            
-            %debuggery
-             CellArraySizeAfter = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell);
-             CellLabelSizeAfter = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel);
-           if any([CellArraySize~=CellArraySizeAfter CellLabelSizeAfter~=CellLabelSize] )
-                
-                fprintf('your code is broken\n %d %d %d \n',TP,TI,CI)
-            end
-            
         end
         
         function TrapImage = ReturnImageOfSingleTrap(ttacObject,Timepoint,TrapIndex,channel)
@@ -293,12 +312,12 @@ classdef timelapseTrapsActiveContour<handle
             if ttacObject.TrapPresentBoolean
                 TrapImage = returnTrapsTimepoint(ttacObject.TimelapseTraps,TrapIndex,Timepoint,channel);
             end
-
-        end
             
+        end
+        
         
         %% Do not refer to cTimelapse
-            
+        
         
         function TrapImage = ReturnTrapImage(ttacObject,Timepoint)
             % TrapImage = ReturnTrapImage(ttacObject,Timepoint)
