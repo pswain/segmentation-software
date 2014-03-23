@@ -1,4 +1,4 @@
-function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel)
+function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 
 %Channel refers to the channel name. It access the channelNames property of
 %timelapse and uses that to find the appropriate files. If there is more
@@ -8,6 +8,11 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel)
 if nargin<3
     channel=1;
 end
+
+if nargin<4
+    type='max';
+end
+
 tp=timepoint;
 fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
 loc= ~cellfun('isempty',fileNum);
@@ -47,14 +52,20 @@ if sum(loc)>0
         end
         
         %change if want things other than maximum projection
-        timepointIm=max(timepointIm,[],3);
+        switch type
+            case 'max'
+                timepointIm=max(timepointIm,[],3);
+            case 'stack'
+                timepointIm=timepointIm;
+        end
+        
         
     catch
-        folder =0;
+        folder =[];
         h=errordlg('Directory seems to have changed');
         uiwait(h);
         attempts=0;
-        while folder==0 && attempts<3
+        while isempty(folder) && attempts<3
             fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
             folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
             cTimelapse.timelapseDir=folder;
@@ -115,6 +126,12 @@ if image_rotation~=0
     timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
 end
 
+if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
+    %first part of this statement is to guard against cases where channel
+    %has not been assigned
+    timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+end
+
 if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
@@ -124,3 +141,7 @@ if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     HigherTimepointBoundaries = cTimelapse.imSize + TimepointBoundaries + abs(TimepointBoundaries);
     timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2));
 end
+% 
+% if channel==2
+%     timepointIm=flipud(timepointIm);
+% end

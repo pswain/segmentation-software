@@ -1,11 +1,12 @@
 function cropTimepoints(cExperiment,positionsToCrop)
 
-
-answer1=inputdlg('Starting Timepoint?');
-answer2=inputdlg('Ending Timepoint?');
-
-startTP=str2double(answer1{1});
-endTP=str2double(answer2{1});
+num_lines=1;
+dlg_title = 'Tp to crop?';
+prompt = {['This removes the timepoints from the timelapses completely. If you end up wanting to use the timepoints that you have cropped, you will need to create a new cTimelapse file.' ...
+    'Enter the first timepoint that would like to keep.'], 'And the last timepoint that you would like to keep.'};    
+answer = inputdlg(prompt,dlg_title,num_lines);
+startTP=str2double(answer{1});
+endTP=str2double(answer{2});
 
 if nargin<2
     positionsToCrop=1:length(cExperiment.dirs);

@@ -1,4 +1,4 @@
-function trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel)
+function trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
 %If there are traps in the timelapse, this returns a 3D image containg the set of 
 % traps indicated at the timepoint indicated. If there are no traps in the
 % timelapse however, it return the entire frame in a single 2D image.
@@ -17,6 +17,10 @@ if nargin<4
     channel=1;
 end
 
+if nargin<5
+    type='max';
+end
+
 if cTimelapse.trapsPresent
     if strcmp(channel,'segmented')
         for j=1:length(traps)
@@ -24,7 +28,7 @@ if cTimelapse.trapsPresent
         end
     elseif strcmp(channel,'segDIC')
         cTrap=cTimelapse.cTrapSize;
-        image=cTimelapse.returnSingleTimepoint(timepoint,1);
+        image=cTimelapse.returnSingleTimepoint(timepoint,1,type);
         bb=max([cTrap.bb_width cTrap.bb_height])+10;
         bb_image=padarray(image,[bb bb],median(image(:)));
         
@@ -39,7 +43,7 @@ if cTimelapse.trapsPresent
     elseif strcmp(channel,'circleDIC')
         cTrap=cTimelapse.cTrapSize;
         %     image=cTimelapse.returnSingleTimepoint(timepoint,1);
-        image=cTimelapse.returnSingleTimepoint(timepoint,1);
+        image=cTimelapse.returnSingleTimepoint(timepoint,1,type);
         
         bb=max([cTrap.bb_width cTrap.bb_height])+10;
         bb_image=padarray(image,[bb bb],median(image(:)));
@@ -95,7 +99,7 @@ if cTimelapse.trapsPresent
         end
     else
         cTrap=cTimelapse.cTrapSize;
-        image=cTimelapse.returnSingleTimepoint(timepoint,channel);
+        image=cTimelapse.returnSingleTimepoint(timepoint,channel,type);
         bb=max([cTrap.bb_width cTrap.bb_height])+100;
         bb_image=padarray(image,[bb bb]);
         trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
@@ -110,6 +114,6 @@ if cTimelapse.trapsPresent
         end
     end
 else
-    trapsTimepoint=cTimelapse.returnSingleTimepoint(timepoint,channel);
+    trapsTimepoint=cTimelapse.returnSingleTimepoint(timepoint,channel,type);
 end
 

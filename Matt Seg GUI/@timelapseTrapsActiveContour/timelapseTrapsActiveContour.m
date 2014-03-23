@@ -330,7 +330,7 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel)
+        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
             %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
             
             % ttacObject    -  object of the timelapseTrapsActiveContour class
@@ -340,12 +340,23 @@ classdef timelapseTrapsActiveContour<handle
             % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
 
             % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
+            
+            % channel       -  index of the channel to use
+            
+            % normalise     -  whether to normalise the images (currently
+            %                  only median is used), so if this input is
+            %                  the string 'median' the images are divided
+            %                  by the median of each timepoint
 
             
             if nargin<5
                 channel = 1;
             end
             
+            if nargin<6 || isempty(normalise)
+                normalise = [];
+            end
+                
             
             
             
@@ -356,6 +367,12 @@ classdef timelapseTrapsActiveContour<handle
             for TP =UniqueTimepoints
                 
                 Image = ttacObject.ReturnImage(TP,channel);
+                
+                switch normalise
+                    case 'median'
+                        Image = double(Image);
+                        Image = Image./(median(Image(:)));
+                end
                 
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
                 

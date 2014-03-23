@@ -4,7 +4,7 @@ if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
-    def = {'7'};
+    def = {'8'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     cellMovementThresh=str2double(answer{1});
 end
@@ -25,11 +25,11 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
         
-        if timepoint>1
-            trapInfom1=trapInfo;
-        end
         if timepoint>2
             trapInfom2=trapInfom1;
+        end
+       if timepoint>1
+            trapInfom1=trapInfo;
         end
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         
@@ -89,6 +89,10 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                         [val loc]=min(dist(:));
                         [row col]=ind2sub(size(dist),loc);
                         
+%                         if trap==18 && timepoint==42
+%                             b=1;
+%                         end
+                        
                         if val<cellMovementThresh
                             %cell number update
                             temp_val=trapInfom1(trap).cellLabel(row);
@@ -115,7 +119,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                         col=find(noLabel);
                         col=col(1);
                         noLabel(col)=0;
-                        if min(dist2(:,col))<(cellMovementThresh*.9) %reduce thresh slightly for timepoints back in time
+                        if min(dist2(:,col))<(cellMovementThresh*.8) %reduce thresh slightly for timepoints back in time
                             [val2 loc2]=min(dist2(:,col));
                             [row2 col2]=ind2sub(size(dist2),loc2);
                             dist2(row2,:)=Inf;
@@ -136,7 +140,25 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
                         end
                     end
-                end                
+                elseif timepoint>2 && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint)
+                    newLabel=trapInfom2(trap).cellLabel(motherIndex(trap,timepoint-2));
+                    if ~any(trapInfo(trap).cellLabel==newLabel)
+                        trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
+                    end
+                end
+                
+%                 if timepoint>2
+%                     if motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint) && ~motherIndex(trap,timepoint-1)
+%                         if ~trapInfo(trap).cellLabel(motherIndex(trap,timepoint))
+%                             newLabel=trapInfom2(trap).cellLabel(motherIndex(trap,timepoint-2));
+%                             if ~any(trapInfo(trap).cellLabel==newLabel)
+%                                 trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
+%                             end
+%                         end
+%                     end
+%                 end
+
+                
 %                 for all cells that are "new" cells to the image, update them
 %                 and the maxCell value
                 if ~trapInfo(trap).cellsPresent
@@ -181,13 +203,24 @@ if ~isempty(pt1) && ~isempty(pt2)
     if find(temp<0)
         %If cell shrinks, then penalize a lot
         loc=temp<0;
+        tempFracShrink=(bnew-anew)./bnew;
+        tempFracShrink=(tempFracShrink)*10;
+
 %         temp(loc)=temp(loc).^2;
-        temp(loc)=temp(loc).^2*1.5;
+%         temp(loc)=(temp(loc).^2)*1.5;
+        temp(loc)=(tempFracShrink(loc).^2)*1.5;
+
     end
     if find(temp2>0)
         %if a cell grow a lot, penalize it
+        tempFracGrow=(bnew-anew)./bnew;
+        tempFracGrow=(tempFracGrow)*10;
+
         loc=temp2>0;
-        temp(loc)=temp(loc).^1.3;
+%         temp(loc)=temp(loc).^1.5;
+        
+        temp(loc)=tempFracGrow(loc).^1.1;
+
     end
     dist(:,:,3)=temp;
     

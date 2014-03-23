@@ -34,7 +34,7 @@ for i=1:size(imageStack,3)
 
    MAXimage = max(abs(image(:)));
    %trap points between 0 and 1 scaled as per trapiness
-   image = image+((median(image(:))-image).*mod(trap_px,1));
+   image = image+((median(image(:))-image).*trap_px);
    %trap points greater than 1 (largely certain) set to max)
    image(trap_px>MaxThresh) = 2*MAXimage; 
    

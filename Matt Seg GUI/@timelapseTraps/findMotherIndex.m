@@ -27,12 +27,12 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
     end
 end
 cellPres=xloc>0;
-trapCenterX=mode(xloc(cellPres));
-trapCenterY=mode(yloc(cellPres));
+trapCenterX=median(xloc(cellPres));
+trapCenterY=median(yloc(cellPres));
 
-% if the closest cell is within a 1/4 of the frame from the center of the
+% if the closest cell is within a 1/6 of the frame from the center of the
 % trap, that is the mother
-cutoff=cTimelapse.cTrapSize.bb_height/4;
+cutoff=ceil(cTimelapse.cTrapSize.bb_height/6);
 motherIndex=[];
 pt1=[trapCenterX trapCenterY];
 pt1=double(pt1);

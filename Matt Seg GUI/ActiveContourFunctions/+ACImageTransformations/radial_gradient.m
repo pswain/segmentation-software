@@ -1,8 +1,8 @@
 function imageStack = radial_gradient(imageStack,parameters,varargin)
 %function image = radial_gradient_DICangle_and_radialaddition(imageStack,parameters,varargin)
 
-%parameters.invert    - whether to invert the final cost function image or
-%                       not (before adding trappiness)
+%parameters.postprocessing    - a range of options: 'none','absolute' and
+%                               'invert' being hte most useful
 
 %varargin{1} - image stack of trapiness of each pixel in the corresponding image in imageStack
 
