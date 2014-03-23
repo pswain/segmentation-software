@@ -31,7 +31,9 @@ classdef experimentTracking<handle
         function cExperiment=experimentTracking(folder)
             %% Read filenames from folder
             if nargin<1
+                fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
+                fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(folder,'Select the folder where data should be saved');
             end
             

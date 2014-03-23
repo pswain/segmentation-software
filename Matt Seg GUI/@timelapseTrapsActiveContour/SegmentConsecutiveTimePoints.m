@@ -52,7 +52,8 @@ CellPreallocationNumber = 200;
 
 %protects program from super crashing out by opening and closing a million
 %images.
-if LastTimepoint-FirstTimepoint>50
+if LastTimepoint-FirstTimepoint>50 || (matlabpool('size') ~= 0)
+    
     ACparameters.visualise = 0;
 end
 
@@ -233,7 +234,7 @@ end
 %% loop through the rest of the timepoints
 for TP = Timepoints(2:end)
     
-    
+tic;    
 fprintf('timepoint %d \n',TP)
             
     UpdatedPreviousTimepoint = [CellInfo(:).UpdatedThisTimepoint];
@@ -357,13 +358,21 @@ fprintf('timepoint %d \n',TP)
     end
     
     %% actually do the segmentation function
-    for CN = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]==slice_size) )
+    
+    CellsToSegment = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]==slice_size) );
+    RadiiResultsCellArray = cell(size(CellsToSegment));
+    AnglesResultsCellArray = cell(size(CellsToSegment));
+     
+    parfor CNi = 1:length(CellsToSegment)  
+        %divided loop into parallel slow part and relatively fast write
+        %part.
+        
         if TP>=TPtoStartSegmenting
             
             
             %do first timepoint segmentation - so no previous timepoint
-            [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CN);
-            [RadiiResult,AnglesResult] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
+            [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CellsToSegment(CNi));
+            [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
             %fprintf('Segmenting Timepoint %d ;  trap %d ;  cell  %d ;\n',TP,TI,CN)
             
             %For debugging
@@ -371,34 +380,48 @@ fprintf('timepoint %d \n',TP)
             %         AnglesResult = repmat(DefaultAngles,slice_size,1);
             
             %put all radii in the CellInfoarray
-            for RN = 1:slice_size
-                CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
-                CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
-            end
-            
-            %write results to keep to the timelapse object
-            for RN = 1:keepers
-                
-                %write the results to keep (1:keepers) to the cTimelapse object
-                ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
-                
-            end
-            
-            CellInfo(CN).PreviousTimepointResult = RadiiResult(keepers,:);
-            
-            
-        else
-            
-            CellInfo(CN).PreviousTimepointResult = CellInfo(CN).((PriorRadiiStrings{1}));
+        end
+    end
+    for CNi = 1:length(CellsToSegment)
+        
+        CN = CellsToSegment(CNi);
+        
+    if TP>=TPtoStartSegmenting
+        for RN = 1:slice_size
+            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResultsCellArray{CNi}(RN,:);
+            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResultsCellArray{CNi}(RN,:);
         end
         
+        %write results to keep to the timelapse object
+        for RN = 1:keepers
+            
+            %write the results to keep (1:keepers) to the cTimelapse object
+            ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
+            
+        end
+        
+        CellInfo(CN).PreviousTimepointResult = RadiiResultsCellArray{CNi}(keepers,:);
+        
+        
+    else
+        
+        CellInfo(CN).PreviousTimepointResult = CellInfo(CN).((PriorRadiiStrings{1}));
+    end
     end
     
-    for CN = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]>slice_size) &(mod([CellInfo(:).TimePointsPresent]-slice_size,keepers)==0) )
-        
+    CellsToSegment = find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]>slice_size) &(mod([CellInfo(:).TimePointsPresent]-slice_size,keepers)==0) );
+    RadiiResultsCellArray = cell(size(CellsToSegment));
+    AnglesResultsCellArray = cell(size(CellsToSegment));
+   
+    
+    parfor CNi = 1:length(CellsToSegment);
         %do later timepoint segmentations
+        
+        %divided loop into parallel slow part and relatively fast write
+        %part.
+        CN = CellsToSegment(CNi);
         [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CN);
-        [RadiiResult,AnglesResult] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CN).PreviousTimepointResult);
+        [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CN).PreviousTimepointResult);
         %fprintf('Segmenting Timepoint %d ;  trap %d ;  cell  %d ;\n',TP,TI,CN)
         
         
@@ -407,9 +430,13 @@ fprintf('timepoint %d \n',TP)
         %         AnglesResult = repmat(DefaultAngles,slice_size,1);
         %
         %put all radii in the CellInfoarray
+    end
+    
+    for CNi = 1:length(CellsToSegment)
+        CN = CellsToSegment(CNi);
         for RN = 1:slice_size
-            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResult(RN,:);
-            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResult(RN,:);
+            CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResultsCellArray{CNi}(RN,:);
+            CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResultsCellArray{CNi}(RN,:);
         end
         
         %write results to keep to the timelapse object
@@ -419,7 +446,7 @@ fprintf('timepoint %d \n',TP)
             
         end
         
-        CellInfo(CN).PreviousTimepointResult = RadiiResult(keepers,:);
+        CellInfo(CN).PreviousTimepointResult = RadiiResultsCellArray{CNi}(keepers,:);
         
         
         
@@ -427,7 +454,8 @@ fprintf('timepoint %d \n',TP)
     end
     
     
-    
+    TimeOfTimepoint = toc;
+    fprintf('timepoint analysed in %f minutes \n',TimeOfTimepoint/60);
     
 end
 
