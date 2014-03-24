@@ -86,6 +86,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
             im=double(im);
             im=im/max(im(:));
             rawimg=im*255;
+            %rawimg = im;
             [~, circen, cirrad] = CircularHough_Grd(rawimg, [2 10],1);
             
             for cellIndex=1:length(trapInfo(trapIndex).cell)
@@ -141,7 +142,6 @@ end
 function bwNew = returnSegmentedArea(im,ccenter,circen,cirrad)
 
 bw=im2bw(im,1.1*graythresh(im));
-rawimg=im*255;
 
 bwNew=[];
 if ~isempty(circen)
