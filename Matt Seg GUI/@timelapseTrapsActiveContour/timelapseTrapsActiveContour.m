@@ -21,7 +21,7 @@ classdef timelapseTrapsActiveContour<handle
         Parameters %structure of parameters for trap detection and segmentation
         TrapPresentBoolean = false;%boolean value to indicate if there are traps in the image
         TrapImage =[]; %DIC image of an empty trap
-        TrapPixelImage=[]; %grayscale image of trappiness
+        TrapPixelImage=[]; %grayscale image of trappiness. Consider 1 or larger to be definitely traps.
         TrapGridImage = [];%image of field of view with no traps
         TrapLocation = []; %location of traps in timecourse
         TimelapseTraps = []; %Object of the TimelapseTraps class
@@ -29,16 +29,23 @@ classdef timelapseTrapsActiveContour<handle
         TrapImageSize = []; %Size of the trap images (just as though you had done 'size')
         LengthOfTimelapse = []; %number
         ChannelsToFlip = []; %sometimes channels need flipping. These ones get flipped leftright
+        cCellVision = []; %if data was taken from a cellvision class, that cellvision class is stored here.
         
     end
     
     methods
         
-        function ttacObject= timelapseTrapsActiveContour(in)
-            %constructor. Doesn't do anything really. Needs an input for
-            %some reason.
+        function ttacObject= timelapseTrapsActiveContour(Parameters)
+            %constructor. Doesn't do anything really except take the
+            %parameters or load the default set.
             
-           ttacObject.Parameters = struct('TrapDetection',struct,'ImageTransformation',struct,'ImageSegmentation',struct);
+            if nargin<1 ||isempty(Parameters)
+                ttacObject.Parameters =  ttacObject.LoadDefaultParameters;
+            else
+                ttacObject.Parameters = Parameters;                
+            end
+            
+           
            ttacObject.TrapImage = [];
            ttacObject.TrapPixelImage = [];
            ttacObject.TrapLocation = [];
@@ -59,7 +66,7 @@ classdef timelapseTrapsActiveContour<handle
         % this was done to make the code easier to integrate with Ivan's
         % and to make all interactions with the outside world well
         % defined.
-
+        
         
         function CellIndicesToSegment = CellsToCheck(ttacObject,Timepoint,TrapIndex)
             % CellIndicesToSegment = CellsToCheck(ttacObject,Timepoint,TrapIndex)
@@ -237,8 +244,10 @@ classdef timelapseTrapsActiveContour<handle
         end
             
         
-        function WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinary)
-            % WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinary(optional))
+        function WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinaryStack)
+            % WriteACResults(ttacObject,TP,TI,CI,Radii,Angles,SegmentationBinaryStack(optional))
+            
+            % all can be column vectors or matriced
             
             %writes the result Radii,Angles,Segmentation Binary to the cell
             %defined by TP,TI,CI. If no Segmentation image is given it will
@@ -246,40 +255,57 @@ classdef timelapseTrapsActiveContour<handle
             %TrapImageSize field.
             
             %debuggery
-            CellArraySize = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell);
-            CellLabelSize = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel);
             
-            if any(CellArraySize~=CellLabelSize)
+            
+            
+            TimePointsToWrite = (unique(TP))';
+            
+            for TPW = TimePointsToWrite;
                 
-                fprintf('Matts code is wierd\n %d %d \n',TP,TI)
+                TemporaryCTimepoint = ttacObject.TimelapseTraps.cTimepoint(TPW);
+                
+                for TPi = (find(TP==TPW))'
+                    
+                    CellArraySize = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
+                    CellLabelSize = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
+                    
+                    if any(CellArraySize~=CellLabelSize)
+                        
+                        fprintf('Matts code is wierd\n %d %d \n',TPW,TI(TPi))
+                    end
+                    
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellRadii = Radii(TPi,:);
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngles = Angles(TPi,:);
+                    
+                    %TemporaryCTimepoint.trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
+                    
+                    
+                    if nargin<7
+                        
+                        
+                        [px,py] = ACBackGroundFunctions.get_full_points_from_radii((Radii(TPi,:))',(Angles(TPi,:))',double(ttacObject.ReturnCellCentreRelative(TPW,TI(TPi),CI(TPi))),ttacObject.TrapImageSize);
+                        
+                        SegmentationBinary = false(ttacObject.TrapImageSize);
+                        SegmentationBinary(py+ttacObject.TrapImageSize(1,1)*(px-1))=true;
+                    else
+                        SegmentationBinary = SegmentationBinaryStack(:,:,TPi);
+                        
+                    end
+                    
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmented = sparse(SegmentationBinary);
+                    
+                    %debuggery
+                    CellArraySizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
+                    CellLabelSizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
+                    if any([CellArraySize~=CellArraySizeAfter CellLabelSizeAfter~=CellLabelSize] )
+                        
+                        fprintf('your code is broken\n %d %d %d \n',TP(TPi),TI(TPi),CI(TPi))
+                    end
+                    
+                end
+                
+                ttacObject.TimelapseTraps.cTimepoint(TPW) = TemporaryCTimepoint;
             end
-            
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellRadii = Radii; 
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles = Angles;
-
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
-            
-            
-            if nargin<7
-                
-                
-                [px,py] = ACBackGroundFunctions.get_full_points_from_radii(Radii',Angles',double(ttacObject.ReturnCellCentreRelative(TP,TI,CI)),ttacObject.TrapImageSize);
-                
-                SegmentationBinary = false(ttacObject.TrapImageSize);
-                SegmentationBinary(py+ttacObject.TrapImageSize(1,1)*(px-1))=true;
-        
-            end
-            
-            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).segmented = sparse(SegmentationBinary); 
-            
-            %debuggery
-             CellArraySizeAfter = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell);
-             CellLabelSizeAfter = size(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel);
-           if any([CellArraySize~=CellArraySizeAfter CellLabelSizeAfter~=CellLabelSize] )
-                
-                fprintf('your code is broken\n %d %d %d \n',TP,TI,CI)
-            end
-            
         end
         
         function TrapImage = ReturnImageOfSingleTrap(ttacObject,Timepoint,TrapIndex,channel)
@@ -292,12 +318,12 @@ classdef timelapseTrapsActiveContour<handle
             if ttacObject.TrapPresentBoolean
                 TrapImage = returnTrapsTimepoint(ttacObject.TimelapseTraps,TrapIndex,Timepoint,channel);
             end
-
-        end
             
+        end
+        
         
         %% Do not refer to cTimelapse
-            
+        
         
         function TrapImage = ReturnTrapImage(ttacObject,Timepoint)
             % TrapImage = ReturnTrapImage(ttacObject,Timepoint)
@@ -329,7 +355,7 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel)
+        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
             %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
             
             % ttacObject    -  object of the timelapseTrapsActiveContour class
@@ -339,12 +365,23 @@ classdef timelapseTrapsActiveContour<handle
             % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
 
             % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
+            
+            % channel       -  index of the channel to use
+            
+            % normalise     -  whether to normalise the images (currently
+            %                  only median is used), so if this input is
+            %                  the string 'median' the images are divided
+            %                  by the median of each timepoint
 
             
             if nargin<5
                 channel = 1;
             end
             
+            if nargin<6 || isempty(normalise)
+                normalise = [];
+            end
+                
             
             
             
@@ -355,6 +392,12 @@ classdef timelapseTrapsActiveContour<handle
             for TP =UniqueTimepoints
                 
                 Image = ttacObject.ReturnImage(TP,channel);
+                
+                switch normalise
+                    case 'median'
+                        Image = double(Image);
+                        Image = Image./(median(Image(:)));
+                end
                 
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
                 
@@ -512,6 +555,20 @@ classdef timelapseTrapsActiveContour<handle
         
         
     end %methods
+    
+    methods(Static)
+        
+        function DefaultParameters = LoadDefaultParameters
+            %LoadDefaultParameters(ttacObject) set ttacObject parameters
+            %to be the default parameters saved in the mat file 
+            DefaultParameterMatFileLocation = mfilename('fullpath');
+            FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
+            DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
+            load(DefaultParameterMatFileLocation,'DefaultParameters');
+        end
+
+        
+    end %staticmethods
     
 end %classdef
 

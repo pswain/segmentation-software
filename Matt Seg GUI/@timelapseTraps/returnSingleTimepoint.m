@@ -126,6 +126,12 @@ if image_rotation~=0
     timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
 end
 
+if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
+    %first part of this statement is to guard against cases where channel
+    %has not been assigned
+    timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+end
+
 if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned

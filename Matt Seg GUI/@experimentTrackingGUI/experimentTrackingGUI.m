@@ -26,6 +26,7 @@ classdef experimentTrackingGUI<handle
         selectButton
         extractDataButton
         compileDataButton
+        RunActiveContourButton
         
         currentGUI;
 
@@ -97,6 +98,9 @@ classdef experimentTrackingGUI<handle
 
             cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
                 'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
+            
+            cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
+                'Units','normalized','Position',[.025 .15 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
             
             
         end
