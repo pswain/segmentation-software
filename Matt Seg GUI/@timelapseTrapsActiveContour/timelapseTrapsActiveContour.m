@@ -35,11 +35,17 @@ classdef timelapseTrapsActiveContour<handle
     
     methods
         
-        function ttacObject= timelapseTrapsActiveContour(in)
-            %constructor. Doesn't do anything really. Needs an input for
-            %some reason.
+        function ttacObject= timelapseTrapsActiveContour(Parameters)
+            %constructor. Doesn't do anything really except take the
+            %parameters or load the default set.
             
-           ttacObject.Parameters = struct('TrapDetection',struct,'ImageTransformation',struct,'ImageSegmentation',struct);
+            if nargin<1 ||isempty(Parameters)
+                ttacObject.Parameters =  ttacObject.LoadDefaultParameters;
+            else
+                ttacObject.Parameters = Parameters;                
+            end
+            
+           
            ttacObject.TrapImage = [];
            ttacObject.TrapPixelImage = [];
            ttacObject.TrapLocation = [];
@@ -60,7 +66,7 @@ classdef timelapseTrapsActiveContour<handle
         % this was done to make the code easier to integrate with Ivan's
         % and to make all interactions with the outside world well
         % defined.
-
+        
         
         function CellIndicesToSegment = CellsToCheck(ttacObject,Timepoint,TrapIndex)
             % CellIndicesToSegment = CellsToCheck(ttacObject,Timepoint,TrapIndex)
@@ -549,6 +555,20 @@ classdef timelapseTrapsActiveContour<handle
         
         
     end %methods
+    
+    methods(Static)
+        
+        function DefaultParameters = LoadDefaultParameters
+            %LoadDefaultParameters(ttacObject) set ttacObject parameters
+            %to be the default parameters saved in the mat file 
+            DefaultParameterMatFileLocation = mfilename('fullpath');
+            FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
+            DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
+            load(DefaultParameterMatFileLocation,'DefaultParameters');
+        end
+
+        
+    end %staticmethods
     
 end %classdef
 

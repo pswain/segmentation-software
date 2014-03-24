@@ -19,6 +19,7 @@ classdef timelapseTraps<handle
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/down.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
+        ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
     end
     
     methods
@@ -26,10 +27,11 @@ classdef timelapseTraps<handle
         function cTimelapse=timelapseTraps(folder)
             %% Read filenames from folder
             if nargin<1
-                folder=uigetdir(pwd,'Select the root of a timelapse experiment with multiple positions');
+                folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
+                fprintf('\n    Select the folder containing the images associated with this timelapse\n');
             end
             cTimelapse.timelapseDir=folder;
-            cTimelapse.cellsToPlot=sparse(100,2e3);
+            cTimelapse.cellsToPlot=sparse(100,1e3);
         end
             
         %functions for loading data and then processing to identify and

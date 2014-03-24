@@ -9,6 +9,8 @@ else
     
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% all parameter rubbish - to remove    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 slice_size = 2;%slice of the timestack you look at in one go
 keepers = 1;%number of timpoints from that slice that you will keep (normally slice_size-1)
 SubImageSize = 61;
@@ -40,6 +42,9 @@ ACparameters.spread_factor = 2; %used in particle swarm optimisation. determines
 ACparameters.spread_factor_prior = 0.5; %used in particle swarm optimisation. determines spread of initial particles.
 ACparameters.seeds = 60;
 ACparameters.TerminationEpoch = 150;%number of epochs of one unchanging point being the best before optimisation closes.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 ACparameters = ttacObject.Parameters.ActiveContour;
 ITparameters = ttacObject.Parameters.ImageTransformation;
@@ -324,7 +329,7 @@ fprintf('timepoint %d \n',TP)
     CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
     AnglesToWrite = CellRadiiToWrite;
     
-    parfor CNi = 1:length(CellsToSegment)  
+    for CNi = 1:length(CellsToSegment)  
         %divided loop into parallel slow part and relatively fast write
         %part.
         
@@ -336,7 +341,7 @@ fprintf('timepoint %d \n',TP)
             if UsePreviousTimepoint(CNi)
                 %do segmentation of previously segmented cell
                 [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
-                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CN).PreviousTimepointResult);
+                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CellsToSegment(CNi)).PreviousTimepointResult);
         
             else
                 %do first timepoint segmentation - so no previous timepoint
@@ -421,8 +426,6 @@ for CN = find([CellInfo(:).UpdatedThisTimepoint])
     CellInfo(CN) = InitialisedCellInfo;
     EmptyCellEntries(CN) = true;
 end
-
-fprintf('\n      Finished!!      \n')
 
 end
 

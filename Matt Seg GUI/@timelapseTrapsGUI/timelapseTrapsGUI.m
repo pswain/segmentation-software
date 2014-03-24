@@ -24,12 +24,19 @@ classdef timelapseTrapsGUI<handle
         selectCellsPlotButton
         autoSelectButton
         extractDataButton
+        ActiveContourButton
         
         currentGUI;
 
         cTimelapse=[]
         cCellVision=[];
         channel=1;
+        
+    end
+    
+    properties (SetObservable)
+        ActiveContourButtonState = 1;
+        
     end % properties
     %% Displays timelapse for a single trap
     %This can either dispaly the primary channel (DIC) or a secondary channel
@@ -93,9 +100,20 @@ classdef timelapseTrapsGUI<handle
                 'Units','normalized','Position',[.025 .2 .65 .2],'Callback',@(src,event)selectCellsPlot(cTrapsGUI));
             cTrapsGUI.autoSelectButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
                 'Units','normalized','Position',[.68 .2 .295 .2],'Callback',@(src,event)autoSelect(cTrapsGUI));
+            cTrapsGUI.ActiveContourButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','Inst. Active Cont.',...
+                'Units','normalized','Position',[.68 .0 .295 .2],'Callback',@(src,event)ActiveContourButtonTimelapseTrapsGUI(cTrapsGUI));
+            cTrapsGUI.ActiveContourButtonState = 1;
+            
+            addlistener(cTrapsGUI,'ActiveContourButtonState','PostSet',@(src,event)changeActiveContourButtonState(cTrapsGUI));
+            % this listener watches for changes to the
+            % ActiveContourButtonState. Basically what happens is that the
+            % object is instantiated, this sees, then the button is changed
+            % to 'run'.
+            %This allows you to play with the parameters between
+            %instantiation and running.
 
             cTrapsGUI.extractDataButton = uicontrol(cTrapsGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
-                'Units','normalized','Position',[.025 .0 .95 .2],'Callback',@(src,event)extractData(cTrapsGUI));
+                'Units','normalized','Position',[.025 .0 .65 .2],'Callback',@(src,event)extractData(cTrapsGUI));
             
         end
 

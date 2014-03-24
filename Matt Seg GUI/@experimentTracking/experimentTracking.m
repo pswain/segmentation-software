@@ -24,6 +24,7 @@ classdef experimentTracking<handle
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
         cCellVision;
+        ActiveContourParameters
     end
     
     methods
@@ -53,6 +54,7 @@ classdef experimentTracking<handle
                 end
             end
             cExperiment.cellsToPlot=cell(1);
+            cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
         end
             
         %functions for loading data and then processing to identify and

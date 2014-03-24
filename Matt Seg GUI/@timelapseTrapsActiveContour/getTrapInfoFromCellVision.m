@@ -37,8 +37,11 @@ clear('image');
 %% put 
 
 for TP=1:length(ttacObject.TimelapseTraps.cTimepoint)
-    
-    CentrePixels = imageY*(round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).xcenter]-1)) +  round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).ycenter]);
+    if ~isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations)
+        CentrePixels = imageY*(round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).xcenter]-1)) +  round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).ycenter]);
+    else
+        CentrePixels = [];
+    end
     
     tempTrapCentre(CentrePixels) = true;
     
