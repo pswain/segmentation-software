@@ -5,7 +5,9 @@ if nargin<2 || isempty(positionsToIdentify)
 end
 
 LowestAllowedTimepoint = min(cExperiment.timepointsToProcess(:));
+LowestAllowedTimepoint = max([LowestAllowedTimepoint;1]);
 HighestAllowedTimepoint = max(cExperiment.timepointsToProcess(:));
+HighestAllowedTimepoint = min([HighestAllowedTimepoint;cExperiment.timepointsToLoad]);
 
 if nargin <4 || (isempty(FirstTimepoint) || isempty(LastTimepoint))
     answer = inputdlg(...
@@ -50,7 +52,7 @@ for i=1:length(positionsToIdentify)
         cTimelapse.ActiveContourObject.Parameters = cExperiment.ActiveContourParameters;
     end
     
-    if cTimelapse.ActiveContourObject.TrapPresentBoolean &&( isempty(cTimelapse.ActiveContourObject.TrapLocation{FirstTimepoint}) || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))
+    if cTimelapse.ActiveContourObject.TrapPresentBoolean && (isempty(cTimelapse.ActiveContourObject.TrapLocation) || ( isempty(cTimelapse.ActiveContourObject.TrapLocation{FirstTimepoint}) || isempty(cTimelapse.ActiveContourObject.TrapPixelImage)))
         fprintf('getting trap information from cCellVision of cExperiment object \n')
         cTimelapse.ActiveContourObject.getTrapInfoFromCellVision(cExperiment.cCellVision);
     end
