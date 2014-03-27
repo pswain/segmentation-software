@@ -43,7 +43,7 @@ end
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     load(fullfile(cExperiment.saveFolder,[ cExperiment.dirs{currentPos} 'cTimelapse']),'cTimelapse');
-    
+    cExperiment.cTimelapse=cTimelapse;
     if isempty(cTimelapse.ActiveContourObject)
         cTimelapse.InstantiateActiveContourTimelapseTraps(cExperiment.ActiveContourParameters);
     end
@@ -59,7 +59,7 @@ for i=1:length(positionsToIdentify)
     
     cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint);
     
-    cExperiment.cTimelapse=cTimelapse;
+    
     cExperiment.saveTimelapseExperiment(currentPos);
     
     fprintf('finished position %d of %d \n \n',i,length(positionsToIdentify))
