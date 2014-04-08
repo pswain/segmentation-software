@@ -20,6 +20,8 @@ cExperiment.lineageInfo.motherInfo.daughterLabel=[];
 cExperiment.lineageInfo.motherInfo.daughterTrapNum=[];
 cExperiment.lineageInfo.motherInfo.motherStartEnd=[];
 cExperiment.lineageInfo.motherInfo.motherPosNum=[];
+cExperiment.lineageInfo.motherInfo.motherLabel=[];
+cExperiment.lineageInfo.motherInfo.motherTrap=[];
 
 for i=1:length(positionsToExtract)
     i
@@ -48,6 +50,12 @@ for i=1:length(positionsToExtract)
             
             t=ones(1,size(t,1))*experimentPos;
             cExperiment.lineageInfo.motherInfo.motherPosNum(end+1:end+length(t))=t;
+            
+            t=cTimelapse.lineageInfo.motherInfo.motherTrap;
+            cExperiment.lineageInfo.motherInfo.motherTrap(end+1:end+length(t))=t;
+            
+            t=cTimelapse.lineageInfo.motherInfo.motherLabel;
+            cExperiment.lineageInfo.motherInfo.motherLabel(end+1:end+length(t))=t;
         end
         
     end

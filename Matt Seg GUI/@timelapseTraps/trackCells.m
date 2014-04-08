@@ -4,7 +4,7 @@ if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
-    def = {'8'};
+    def = {'5'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     cellMovementThresh=str2double(answer{1});
 end
@@ -208,7 +208,7 @@ if ~isempty(pt1) && ~isempty(pt2)
 
 %         temp(loc)=temp(loc).^2;
 %         temp(loc)=(temp(loc).^2)*1.5;
-        temp(loc)=(tempFracShrink(loc).^2)*1.5;
+        temp(loc)=(tempFracShrink(loc).^2);%*1.5;
 
     end
     if find(temp2>0)

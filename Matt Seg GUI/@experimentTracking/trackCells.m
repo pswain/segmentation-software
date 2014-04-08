@@ -16,7 +16,7 @@ if nargin<3
         ' This is especially true for daughters.']};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
-    def = {'8'};
+    def = {'5'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     cellMovementThresh=str2double(answer{1});
 end

@@ -1,7 +1,7 @@
 function [state trainingStates]=classifyBirthSingleTrap(cTimelapse,hmmCell,trap)
 
 clear indTrapCells;
-indTrapCells{1}.rad=[];
+indTrapCells.rad=[];
 
 index=1;
 for i=1:length(cTimelapse.extractedData(1).trapNum)

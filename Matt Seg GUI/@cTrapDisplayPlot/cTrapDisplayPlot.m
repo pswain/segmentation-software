@@ -25,7 +25,7 @@ classdef cTrapDisplayPlot<handle
     methods
         function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
             
-            if nargin<3
+            if nargin<3 || isempty(traps)
                 traps=1:length(cTimelapse.cTimepoint(1).trapInfo);
             end
             
