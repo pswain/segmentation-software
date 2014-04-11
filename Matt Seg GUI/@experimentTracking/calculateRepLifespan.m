@@ -14,7 +14,11 @@ end
 lifespan=[];
 duration=diff(cExperiment.lineageInfo.motherInfo.motherStartEnd,1,2);
 
-numBirths=sum(cExperiment.lineageInfo.motherInfo.birthTime>0,2);
+if isfield(cExperiment.lineageInfo.motherInfo,'birthTimeHMM') && ~isempty(cExperiment.lineageInfo.motherInfo.birthTimeHMM)
+    numBirths=sum(cExperiment.lineageInfo.motherInfo.birthTimeHMM>0,2);
+else
+    numBirths=sum(cExperiment.lineageInfo.motherInfo.birthTime>0,2);
+end
 
 if durationCutoffFraction<1
     motherLoc=duration>(max(duration(:))*durationCutoffFraction);

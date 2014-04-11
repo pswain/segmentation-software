@@ -122,7 +122,7 @@ for channel=1:length(cTimelapse.channelNames)
                         segLabel=zeros(size(seg_areas));
                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(temp_loc).cellCenter);
                         if ~isempty(loc)
-                            segLabel=imfill(seg_areas(:,:,1),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
+                            segLabel=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
                         end
                         
                         
@@ -170,7 +170,7 @@ for channel=1:length(cTimelapse.channelNames)
                             %                         seg_areas=imdilate(seg_areas,s1);
                             loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(trap(j)).cell(allCells).cellCenter);
                             if ~isempty(loc)
-                                seg_areas=imfill(seg_areas(:,:,1),sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
+                                seg_areas=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1))loc(2),loc(1)));
                             end
                         end
                         %                     seg_areas=imdilate(seg_areas,s1);
@@ -187,8 +187,8 @@ for channel=1:length(cTimelapse.channelNames)
                         extractedData(channel).imBackground(j,timepoint,k)=median(bkg(:));
                         extractedData(channel).min(j,timepoint,k)=min(cellFL(:));
                         
-                        extractedData(channel).radius(j,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellRadius;
-                        extractedData(channel).xloc(j,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellCenter(1);
+                        extractedData(channel).radius(j,timepoint,k)= sqrt(sum(sum(imfill(full(trapInfo(currTrap).cell(temp_loc).segmented),'holes')))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
+                        extractedData(channel).xloc(j,timepoint,k)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                         extractedData(channel).yloc(j,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
                     end
                     
@@ -198,6 +198,7 @@ for channel=1:length(cTimelapse.channelNames)
     end
 end
 cTimelapse.extractedData=extractedData;
+
 
 
 

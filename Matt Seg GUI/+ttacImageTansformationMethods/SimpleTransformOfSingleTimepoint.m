@@ -27,7 +27,7 @@ function [TransformedImageStack ImageStack] = SimpleTransformOfSingleTimepoint(t
 %                            ImageTransformFunction
 
 
-ImageStack = ttacObject.ReturnImageOfSingleCell(Timepoints,TrapIndices,CellIndices,ttacObject.Parameters.ImageTransformation.channel);
+ImageStack = ttacObject.ReturnImageOfSingleCell(Timepoints,TrapIndices,CellIndices,ttacObject.Parameters.ImageTransformation.channel,ttacObject.Parameters.ImageTransformation.normalisation);
 
 
 ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageTransformation.ImageTransformFunction]);

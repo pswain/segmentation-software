@@ -52,5 +52,13 @@ for i=1:length(cTimelapse.cTimepoint)
     
 end
 
+%add an offset field that can later be edited to offset the new image
+%relative to the DIC image when returning timepoints
 cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
+
+
+%add a background correction entry that can later be set to be the matrix
+%by which you want to multiply the image to correct for uneven
+%illumination. Should come from illumination measurements.
+cTimelapse.BackgroundCorrection{find(strcmp(searchString,cTimelapse.channelNames))} = [];
 

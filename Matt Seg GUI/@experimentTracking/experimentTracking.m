@@ -24,6 +24,7 @@ classdef experimentTracking<handle
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
         cCellVision;
+        ActiveContourParameters
     end
     
     methods
@@ -31,7 +32,9 @@ classdef experimentTracking<handle
         function cExperiment=experimentTracking(folder)
             %% Read filenames from folder
             if nargin<1
+                fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
+                fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(folder,'Select the folder where data should be saved');
             end
             
@@ -51,6 +54,7 @@ classdef experimentTracking<handle
                 end
             end
             cExperiment.cellsToPlot=cell(1);
+            cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
         end
             
         %functions for loading data and then processing to identify and

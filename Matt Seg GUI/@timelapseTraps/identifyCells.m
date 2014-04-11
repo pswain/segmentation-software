@@ -10,7 +10,7 @@ nargin
 % end
 
 if nargin<4
-    method='medfilt2'
+    method='twostage'
 end
 
 % This goes through all images of the traps to determine the min/max

@@ -201,40 +201,46 @@ switch method
     case 'PSO'
         
         P = [0 EVALS seeds 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
+        radial_punishing_factor = alpha*median(forcing_images,3);
+        time_change_punishing_factor = betaElco*median(forcing_images(:));
 
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
         if size(varargin,2)>=2
+            use_previous_timepoint = true;
+            radii_previous_timepoint = varargin{2};
             
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStackwithPT(forcing_images,Centers_stack,angles,radii_stack,alpha,betaElco,[siy six],radii_previous_time_point,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
+            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_timepoint,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
         
     
         else
+            use_previous_timepoint = false;
  
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,alpha,betaElco,[siy six],A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
+            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
         
         end
         radii_stack = optOUT(1:(end-1));
         ResultsF = optOUT(end);
-        
-    case 'fmincon'
-        
-     %% using fmincon
-        
-        options = optimset('Algorithm','interior-point','MaxFunEvals',10*EVALS,'MaxIter',10*EVALS,'Display','off','TolFun',10e-7);
-        
-        %fmincon part
-        ResultsF = Inf;
-        for trials =1:seeds
-        [radii_stack_temp,F] = fmincon(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,alpha,betaElco,[siy six],A,n,breaks,jj,C),PSOseed(trials,:),[],[],[],[],LB(1,:),UB(1,:),[],options);
-        
-        if F<ResultsF
-            radii_stack = radii_stack_temp';
-            ResultsF = F;
-        end
-        
-        end
-        
+
+%%%%%%%%%%%%%%%%%%%% NOT WELL MAINTAINED  -   CHECK DIFFERENCE WITH PSO CASE BEFORE UNCOMMENTING AND USING   %%%%%%%%%%%%%%%%%        
+%     case 'fmincon' 
+%      %% using fmincon
+%         
+%         options = optimset('Algorithm','interior-point','MaxFunEvals',10*EVALS,'MaxIter',10*EVALS,'Display','off','TolFun',10e-7);
+%         
+%         %fmincon part
+%         ResultsF = Inf;
+%         for trials =1:seeds
+%         [radii_stack_temp,F] = fmincon(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,alpha,betaElco,[siy six],A,n,breaks,jj,C),PSOseed(trials,:),[],[],[],[],LB(1,:),UB(1,:),[],options);
+%         
+%         if F<ResultsF
+%             radii_stack = radii_stack_temp';
+%             ResultsF = F;
+%         end
+%         
+%         end
+%    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
 
 

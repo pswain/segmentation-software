@@ -8,7 +8,7 @@ if nargin<3
     load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
     
     params.fraction=.8; %fraction of timelapse length that cells must be present or
-    params.duration=length(cTimelapse.cTimepoint); %number of frames cells must be present
+    params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
     params.framesToCheck=length(cTimelapse.cTimepoint);
     params.framesToCheckEnd=1;
     

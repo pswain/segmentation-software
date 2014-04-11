@@ -4,15 +4,41 @@ function extractLineageInfo(cTimelapse,params)
 %motherDistCutoff is the number of motherRadiuses that the daughter can be
 %from the mother and still be considered a daughter.
 
-cTimelapse.correctSkippedFramesInf;
+% cTimelapse.correctSkippedFramesInf;
 
 if nargin<2
-    params.motherDurCutoff=(.7);
-    params.motherDistCutoff=2.6;
-    params.budDownThresh=.25;
-    params.birthRadiusThresh=7;
+    params.motherDurCutoff=(.5);
+    params.motherDistCutoff=2;
+    params.budDownThresh=0;
+    params.birthRadiusThresh=8;
+    params.daughterGRateThresh=.02;
+    
+    
+    num_lines=1;clear prompt; clear def;
+    prompt(1) = {'Fraction of timelapse a mother must be present'};
+    prompt(2) = {'Multiple of mother radius a daughter can be from the mother'};
+    prompt(3) = {'Fraction of daughters that must be budded through the trap to be considered'};
+    prompt(4) = {'Daughter birth radius cutoff thresh (less than)'};
+        prompt(5) = {'Daughter growth rate (in radius pixels)'};
 
+    
+    dlg_title = 'Tracklet params';
+    def(1) = {num2str(params.motherDurCutoff)};def(2) = {num2str(params.motherDistCutoff)};
+    def(3) = {num2str(params.budDownThresh)};
+    def(4) = {num2str(params.birthRadiusThresh)};
+    def(5) = {num2str(params.daughterGRateThresh)};
+    
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    params.motherDurCutoff=str2double(answer{1});
+    params.motherDistCutoff=str2double(answer{2});
+    params.budDownThresh=str2double(answer{3});
+    params.birthRadiusThresh=str2double(answer{4});
+    params.daughterGRateThresh=str2double(answer{5});
+    
 end
+
+
+onlyUseBottomBuds=false;
 
 %this is the fraction of buds that must be down (btween the trap outlet)
 %for the cell to be classified as downward budding and used.
@@ -63,6 +89,9 @@ cTimelapse.lineageInfo.motherInfo.daughterYLoc=[];
 cTimelapse.lineageInfo.motherInfo.minMothDist=[];
 cTimelapse.lineageInfo.motherInfo.motherStartEnd=[];
 cTimelapse.lineageInfo.motherInfo.daughterDuration=[];
+cTimelapse.lineageInfo.motherInfo.motherLabel=[];
+cTimelapse.lineageInfo.motherInfo.motherTrap=[];
+fitFun=fittype('poly1');
 
 for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
     for mCell=1:2
@@ -70,37 +99,79 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
             break;
         end
         mother=cTimelapse.lineageInfo.motherLabel(trap,mCell);
-        
         trapL=find(cTimelapse.extractedData(1).trapNum==trap);
-        
         motherLoc=find(cTimelapse.extractedData(1).trapNum==trap & cTimelapse.extractedData(1).cellNum==mother);
+
         tpCheck=cTimelapse.extractedData(1).xloc(motherLoc,:)>0;
-        if length(trapL)<2 || ~all(size(tpCheck)) || sum(tpCheck)==0
+        if length(trapL)<1 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end
         
-        trapLDaughters=find(cTimelapse.extractedData(1).trapNum==trap & ~(cTimelapse.extractedData(1).cellNum==mother) );
+        tpBefore=find(diff(smooth(tpCheck,3)>0,1)>0);
+        tpCheckBefore=zeros(size(tpCheck));
+        if ~isempty(tpBefore)
+            tpCheckBefore(:,1:tpBefore)=1;
+        end
+        tpCheckBefore=tpCheckBefore>0;
+        %cells must be pres when the mother is, but not at any other time
+        presDuringMother=max(cTimelapse.extractedData(1).xloc(:,tpCheck)>0,[],2);
+        onlyPresDuringMother=~max(cTimelapse.extractedData(1).xloc(:,tpCheckBefore)>0,[],2);
+        if isempty(onlyPresDuringMother)
+            onlyPresDuringMother=presDuringMother>-1;
+        end
+        trapLDaughters=find(cTimelapse.extractedData(1).trapNum==trap & ~(cTimelapse.extractedData(1).cellNum==mother) & presDuringMother & onlyPresDuringMother );
         
         xlocDaughters=full(cTimelapse.extractedData(1).xloc(trapLDaughters,tpCheck));
         ylocDaughters=full(cTimelapse.extractedData(1).yloc(trapLDaughters,tpCheck));
+        daughterRadius=full(cTimelapse.extractedData(1).radius(trapLDaughters,tpCheck));
+        daughterRSmooth=[];daughterRStart=[];
+        
+        daughterRStart=500;
+        daughterGRate=0;
         if isempty(xlocDaughters)
-            xlocDaughters=zeros(size(tpCheck));
-            ylocDaughters=zeros(size(tpCheck));
+            xlocDaughters=zeros(1,sum(tpCheck));
+            ylocDaughters=zeros(1,sum(tpCheck));
+            daughterGRate=0;
+        else
+            for d=1:size(daughterRadius,1)
+                temp=daughterRadius(d,:)>0;
+                if sum(temp)
+                    tempSmooth=smooth(daughterRadius(d,temp),5,'lowess');
+                    daughterRSmooth(d,temp)=tempSmooth;
+                    len=length(tempSmooth);
+                    len=min([3 len]);
+                    daughterRStart(d)=min(tempSmooth(1:len));
+                    
+                    if len>1
+                        tFit=fit([1:length(tempSmooth)]',tempSmooth,fitFun);
+                        daughterGRate(d)=tFit.p1;
+                    else
+                        daughterGRate(d)=0;
+                    end
+                end
+                
+            end
+            daughterRadius=daughterRSmooth;
         end
         xlocDaughters(xlocDaughters==0)=NaN;
         ylocDaughters(ylocDaughters==0)=NaN;
         
         motherRadius=full(cTimelapse.extractedData(1).radius(motherLoc,tpCheck));
-        motherRadius=smooth(motherRadius,length(motherRadius)/2,'lowess')';
+        motherRadius=smooth(motherRadius,20,'moving')';
         motherXLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
         motherYLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
         
         xDistToMother=xlocDaughters-repmat(motherXLoc,size(xlocDaughters,1),1);
         yDistToMother=ylocDaughters-repmat(motherYLoc,size(ylocDaughters,1),1);
         
+        %throw away cells that are too far from the mother, and are too big
         distToMother=sqrt(xDistToMother.^2 + yDistToMother.^2);
-        daughtersCloseToMother=distToMother < repmat(3+motherDistCutoff*motherRadius,size(distToMother,1),1);
-        actualDaughters=max(daughtersCloseToMother,[],2);
+        daughtersCloseToMother=distToMother < repmat(1+motherDistCutoff*motherRadius,size(distToMother,1),1);
+        daughtersPassRadTest=daughterRStart<params.birthRadiusThresh;
+        daughtersPassGrowthRadTest=daughterGRate>params.daughterGRateThresh;
+
+        actualDaughters=max((daughtersCloseToMother),[],2);
+        actualDaughters=actualDaughters & daughtersPassRadTest' & daughtersPassGrowthRadTest';
         
         %below finds the first location that the daughter cells appear
         b=xlocDaughters;
@@ -135,7 +206,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         temp=double(temp);
         temp(tempLoc==0)=NaN;
         budDown= nanmean(temp);
-       
+        
         budDown=budDown>budDownThresh;
         
         if ~budDown
@@ -144,15 +215,19 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         
         %then remove any cells that are on top of the mother since we know
         %it is budding out of the bottom.
-        temp=daughterXLoc(actualDaughters)>median(motherXLoc);
-        b=zeros(size(actualDaughters));
-        b(actualDaughters)=temp;
-        actualDaughters=b>0;
+        if onlyUseBottomBuds
+            temp=daughterXLoc(actualDaughters)>median(motherXLoc);
+            b=zeros(size(actualDaughters));
+            b(actualDaughters)=temp;
+            actualDaughters=b>0;
+        end
+        
+        
         actualDaughterPos=firstDaughterPos & repmat(actualDaughters,1,size(firstDaughterPos,2));
         daughterXLoc=xlocDaughters(actualDaughterPos);
         daughterYLoc=ylocDaughters(actualDaughterPos);
-
-
+        
+        
         
         daughterRad=full(cTimelapse.extractedData(1).radius(trapLDaughters,:));
         daughterRad(daughterRad==0)=NaN;
@@ -173,7 +248,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         minMothDist=distToMother(actualDaughterPos(actualDaughters,:));
         
         daughterDuration=sum(xlocDaughters(actualDaughters,:)>0,2);
-
+        
         
         %need to make sure only the daughters within the distance cutoff are
         %selected
@@ -190,12 +265,15 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         cTimelapse.lineageInfo.motherInfo.daughterYLoc(end+1,1:length(daughterYLoc))=daughterYLoc;
         cTimelapse.lineageInfo.motherInfo.minMothDist(end+1,1:length(minMothDist))=minMothDist;
         cTimelapse.lineageInfo.motherInfo.daughterDuration(end+1,1:length(daughterDuration))=daughterDuration;
+        cTimelapse.lineageInfo.motherInfo.motherLabel(end+1)=mother;
 
-
+        
         cTimelapse.lineageInfo.motherInfo.birthTime(end+1,1:length(birthTimes))=birthTimes;
         cTimelapse.lineageInfo.motherInfo.birthRadius(end+1,1:length(daughterMinRad))=daughterMinRad;
         cTimelapse.lineageInfo.motherInfo.daughterLabel(end+1,1:length(daughterLabel))=daughterLabel;
         cTimelapse.lineageInfo.motherInfo.daughterTrapNum(end+1,1:length(daughterTrapNum))=daughterTrapNum(:,1);
+        cTimelapse.lineageInfo.motherInfo.motherTrap(end+1)=trap;
+
         cTimelapse.lineageInfo.motherInfo.motherStartEnd(end+1,1:2)=[motherStart motherEnd];
     end
 end

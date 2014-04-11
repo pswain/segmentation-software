@@ -1,4 +1,4 @@
-function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat,alpha,betaElco,image_size,A,n,breaks,jj,C)
+function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat,radial_punishing_factor,time_change_punishing_factor,image_size,first_timepoint_fixed,A,n,breaks,jj,C,varargin)
 %cost function for snakes algorithm written to be used used with the
 %particle optimisation toolbox from the file exchange:
 
@@ -14,18 +14,29 @@ function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat
 %should take the center, and draw length(radii) lines at angles 'angles'
 %Then draws a spline between them and calculate a cost function.
 
-%im - forcing image (edges should be low)
-%center     - proposed center of cell [x y]
-%angles     - vector of angles in radians from the horizontal (horizontal to
-%             the right is 0, horizontal to the left is pi).
-%radii_mat  - vector of distances along radii (evenly spaced and starting at vertical
-%             relative to the image) of the contour
-%alpha      - weight of second derivative (or whatever term keeps the thing
-%             roughly circular)
-%beta       - weight of timepoints sum term (squares of differences in
-%             radii between timepoints)
-%steps      - row vector of radial angles that should be used to give total
-%             coverage of the boundary (normally 0:(1/Rmax):(2*pi) )
+%im_stack                           - stack of forcing images (edges should be low)
+%center_stack                       - stack of proposed center of cell [x y]
+%angles                             - vector of angles in radians from the horizontal (horizontal to
+%                                     the right is 0, horizontal to the left is pi).
+%radii_stack_mat                    - vector of distances along radii (evenly spaced and starting at vertical
+%                                     relative to the image) of the contour
+%radial_punishing_factor            - vector:weight of second derivative (or whatever term keeps the thing
+%                                     roughly circular) each element of
+%                                     vector is for one timepoint. Normally
+%                                     a constant (alpha) * forcing image
+%                                     median for robust parameter
+%                                     selection.
+%time_change_punishing_factor       - weight of timepoints sum term (squares of differences in
+%                                     radii between timepoints). normally a
+%                                     constant (Beta) multiplied by median
+%                                     of image stack to try to get robust
+%                                     parameter selection
+%steps                              - row vector of radial angles that should be used to give total
+%                                     coverage of the boundary (normally 0:(1/Rmax):(2*pi) )
+%first_timepoint_fixed              - boolean. Set to true if the first
+%                                     timepoint is a fixed one to not
+%                                     optimise.
+
 
 %SOME RULES
 %radii_mat must be at least 2 wide
@@ -39,18 +50,21 @@ radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
 
-%multiply betaElco by median of image stack to keep a fairly common scale.
-time_change_punishing_factor = betaElco*abs(median(im_stack(:)));
+if first_timepoint_fixed
 
-for t = 1:timepoints
-    
+    timepoints_to_optimise = 2:timepoints;
+
+else
+    timepoints_to_optimise = 1:timepoints;
+
+end
+
+for ti = 1:length(timepoints_to_optimise)
+    t= timepoints_to_optimise(ti);
     radii_mat = radii_stack_mat(:,(1+(t-1)*radii_length):(t*radii_length));
-    im = im_stack(:,:,t);
-    center = center_stack(t,:);
+    im = im_stack(:,:,ti);
+    center = center_stack(ti,:);
     
-    %multiply alpha by median of image to keep a fairly common scale.
-    radial_punishing_factor = alpha*abs(median(im(:)));
-
     %number of points, length of radii vector
     steps = 0:(1/max(radii_mat(:))):(2*pi);
     
@@ -103,7 +117,7 @@ for t = 1:timepoints
     
     D2radii = ACBackGroundFunctions.second_derivative_snake_horizontal(radii_mat);
     
-    F = F+radial_punishing_factor*((sum((D2radii./radii_mat).^2,2))); %add punishment for very uneven cell outlines
+    F = F+radial_punishing_factor(ti)*((sum((D2radii./radii_mat).^2,2))); %add punishment for very uneven cell outlines
     
     Ftot = Ftot+F;
 end

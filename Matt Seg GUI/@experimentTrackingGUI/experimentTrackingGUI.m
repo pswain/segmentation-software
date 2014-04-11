@@ -16,6 +16,7 @@ classdef experimentTrackingGUI<handle
        	timepointsToProcessButton
         cropTimepointsButton
         identifyCellsButton
+        extractSegAreaFlButton
         processIndTimelapseButton
         editProcessedTimelapseButton
         trackCellsButton
@@ -25,6 +26,7 @@ classdef experimentTrackingGUI<handle
         selectButton
         extractDataButton
         compileDataButton
+        RunActiveContourButton
         
         currentGUI;
 
@@ -75,7 +77,10 @@ classdef experimentTrackingGUI<handle
             cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Traps',...
                 'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
-                'Units','normalized','Position',[.025 .55 .47 .15],'Callback',@(src,event)identifyCells(cExpGUI));
+                'Units','normalized','Position',[.025 .55 .3 .15],'Callback',@(src,event)identifyCells(cExpGUI));
+            cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
+                'Units','normalized','Position',[.325 .55 .175 .15],'Callback',@(src,event)extractSegAreaFl(cExpGUI));
+
             cExpGUI.trackCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Track Cells',...
                 'Units','normalized','Position',[.505 .55 .25 .15],'Callback',@(src,event)trackCells(cExpGUI));
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
@@ -93,6 +98,9 @@ classdef experimentTrackingGUI<handle
 
             cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
                 'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
+            
+            cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
+                'Units','normalized','Position',[.025 .15 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
             
             
         end

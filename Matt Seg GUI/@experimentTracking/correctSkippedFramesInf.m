@@ -1,5 +1,9 @@
 function correctSkippedFramesInf(cExperiment)
 
+%This doesn't seem to work properly ... was causing a bug in the lineage
+%extraction code. Need to double check, could be removing cells by
+%accident;
+
 for nSkip=1:1
     for channel=1:length(cExperiment.cellInf)
         d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
@@ -46,74 +50,74 @@ for nSkip=1:1
     end
 end
 fprintf('Finished skipped frames \n');
-
-for j=1:length(cExperiment.cellInf)
-    channel=j;
-    for nSkip=2:4;
-        d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
-        dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
-        dPost=d;dPost=padarray(dPost,[0 nSkip],0,'pre');
-        
-        locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(channel).mean==0);
-        [row col]=find(locSkipped);
-        
-        
-        for k=1:length(row)
-            k
-            l=k;
-            temp=cExperiment.cellInf(j).mean;
-            x=[1 nSkip*2+1]; xi=1:nSkip*2+1;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).mean=temp;
-            
-            temp=cExperiment.cellInf(j).median;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).median=temp;
-            
-            temp=cExperiment.cellInf(j).max5;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).max5=temp;
-            
-            temp=cExperiment.cellInf(j).std;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).std=temp;
-            
-            temp=cExperiment.cellInf(j).radius;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).radius=temp;
-            
-            
-            temp=cExperiment.cellInf(j).smallmean;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).smallmean=temp;
-            
-            temp=cExperiment.cellInf(j).smallmedian;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).smallmedian=temp;
-            
-            temp=cExperiment.cellInf(j).smallmax5;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).smallmax5=temp;
-            
-            temp=cExperiment.cellInf(j).min;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).min=temp;
-            
-            temp=cExperiment.cellInf(j).imBackground;
-            y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
-            temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
-            cExperiment.cellInf(j).imBackground=temp;
-            
-            
-        end
-    end
-end
+% 
+% for j=1:length(cExperiment.cellInf)
+%     channel=j;
+%     for nSkip=2:4;
+%         d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
+%         dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
+%         dPost=d;dPost=padarray(dPost,[0 nSkip],0,'pre');
+%         
+%         locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(channel).mean==0);
+%         [row col]=find(locSkipped);
+%         
+%         
+%         for k=1:length(row)
+%             k
+%             l=k;
+%             temp=cExperiment.cellInf(j).mean;
+%             x=[1 nSkip*2+1]; xi=1:nSkip*2+1;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).mean=temp;
+%             
+%             temp=cExperiment.cellInf(j).median;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).median=temp;
+%             
+%             temp=cExperiment.cellInf(j).max5;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).max5=temp;
+%             
+%             temp=cExperiment.cellInf(j).std;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).std=temp;
+%             
+%             temp=cExperiment.cellInf(j).radius;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).radius=temp;
+%             
+%             
+%             temp=cExperiment.cellInf(j).smallmean;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).smallmean=temp;
+%             
+%             temp=cExperiment.cellInf(j).smallmedian;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).smallmedian=temp;
+%             
+%             temp=cExperiment.cellInf(j).smallmax5;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).smallmax5=temp;
+%             
+%             temp=cExperiment.cellInf(j).min;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).min=temp;
+%             
+%             temp=cExperiment.cellInf(j).imBackground;
+%             y=[temp(row(k),col(l)-nSkip) temp(row(k),col(l)+nSkip)];
+%             temp(row(k),col(l)-nSkip:col(l)+nSkip)=interp1(x,y,xi);
+%             cExperiment.cellInf(j).imBackground=temp;
+%             
+%             
+%         end
+%     end
+% end
