@@ -15,9 +15,9 @@ if nargin<3
     params.duration=3; %number of frames cells must be present
     params.framesToCheck=length(cTimelapse.timepointsProcessed);
     params.framesToCheckEnd=1;
-    params.endThresh=3; %num tp after end of tracklet to look for cells
+    params.endThresh=2; %num tp after end of tracklet to look for cells
     params.sameThresh=4; %num tp to use to see if cells are the same
-    params.classThresh=3.5; %classification threshold
+    params.classThresh=3.8; %classification threshold
 
     
     
