@@ -6,47 +6,70 @@ function correctSkippedFramesInf(cExperiment)
 
 for nSkip=1:1
     for channel=1:length(cExperiment.cellInf)
+        cellInf=cExperiment.cellInf(channel);
+
         d=abs(diff(cExperiment.cellInf(channel).mean,nSkip,2));
         dPre=d;dPre=padarray(dPre,[0 nSkip],0,'post');
         dPost=d;dPost=padarray(dPost,[0 nSkip],0,'pre');
         locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(channel).mean==0);
-        
-        locSkippedPre=padarray(locSkipped,[0 nSkip],0,'post');
+        locSkipped=full(locSkipped>0);
+        locSkippedPre=padarray(locSkipped,[0 nSkip],0,'post')>0;
         locSkippedPre=locSkippedPre(:,nSkip+1:end);
-        locSkippedPost=padarray(locSkipped,[0 nSkip],0,'pre');
+        locSkippedPost=padarray(locSkipped,[0 nSkip],0,'pre')>0;
         locSkippedPost=locSkippedPost(:,1:end-nSkip);
         
-        temp=(cExperiment.cellInf(channel).mean(locSkippedPre)+cExperiment.cellInf(channel).mean(locSkippedPost))./2;
-        cExperiment.cellInf(channel).mean(locSkipped)=temp;
+        temp=((cExperiment.cellInf(channel).mean(locSkippedPre)+cExperiment.cellInf(channel).mean(locSkippedPost))./2);
+        b=full(cellInf.mean);
+        b(locSkipped)=temp;
+        cellInf.mean=sparse(b);
         
         temp=(cExperiment.cellInf(channel).median(locSkippedPre)+cExperiment.cellInf(channel).median(locSkippedPost))./2;
-        cExperiment.cellInf(channel).median(locSkipped)=temp;
+        b=full(cellInf.median);
+        b(locSkipped)=temp;
+        cellInf.median=sparse(b);
         
         temp=(cExperiment.cellInf(channel).max5(locSkippedPre)+cExperiment.cellInf(channel).max5(locSkippedPost))./2;
-        cExperiment.cellInf(channel).max5(locSkipped)=temp;
+        b=full(cellInf.max5);
+        b(locSkipped)=temp;
+        cellInf.max5=sparse(b);
         
         temp=(cExperiment.cellInf(channel).std(locSkippedPre)+cExperiment.cellInf(channel).std(locSkippedPost))./2;
-        cExperiment.cellInf(channel).std(locSkipped)=temp;
+        b=full(cellInf.std);
+        b(locSkipped)=temp;
+        cellInf.std=sparse(b);
         
         temp=(cExperiment.cellInf(channel).radius(locSkippedPre)+cExperiment.cellInf(channel).radius(locSkippedPost))./2;
-        cExperiment.cellInf(channel).radius(locSkipped)=temp;
+        b=full(cellInf.radius);
+        b(locSkipped)=temp;
+        cellInf.radius=sparse(b);
         
         temp=(cExperiment.cellInf(channel).smallmean(locSkippedPre)+cExperiment.cellInf(channel).smallmean(locSkippedPost))./2;
-        cExperiment.cellInf(channel).smallmean(locSkipped)=temp;
+        b=full(cellInf.smallmean);
+        b(locSkipped)=temp;
+        cellInf.smallmean=sparse(b);
         
         temp=(cExperiment.cellInf(channel).smallmedian(locSkippedPre)+cExperiment.cellInf(channel).smallmedian(locSkippedPost))./2;
-        cExperiment.cellInf(channel).smallmedian(locSkipped)=temp;
+        b=full(cellInf.smallmedian);
+        b(locSkipped)=temp;
+        cellInf.smallmedian=sparse(b);
         
         temp=(cExperiment.cellInf(channel).smallmax5(locSkippedPre)+cExperiment.cellInf(channel).smallmax5(locSkippedPost))./2;
-        cExperiment.cellInf(channel).smallmax5(locSkipped)=temp;
+        b=full(cellInf.smallmax5);
+        b(locSkipped)=temp;
+        cellInf.smallmax5=sparse(b);
         
         temp=(cExperiment.cellInf(channel).min(locSkippedPre)+cExperiment.cellInf(channel).min(locSkippedPost))./2;
-        cExperiment.cellInf(channel).min(locSkipped)=temp;
+        b=full(cellInf.min);
+        b(locSkipped)=temp;
+        cellInf.min=sparse(b);
         
         temp=(cExperiment.cellInf(channel).imBackground(locSkippedPre)+cExperiment.cellInf(channel).imBackground(locSkippedPost))./2;
-        cExperiment.cellInf(channel).imBackground(locSkipped)=temp;
+        b=full(cellInf.imBackground);
+        b(locSkipped)=temp;
+        cellInf.imBackground=sparse(b);
         
-        
+        cExperiment.cellInf(channel)=cellInf;
+
     end
 end
 fprintf('Finished skipped frames \n');

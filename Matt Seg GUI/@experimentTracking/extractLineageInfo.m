@@ -15,7 +15,7 @@ end
 
 
 if nargin<3
-    params.motherDurCutoff=(.5);
+    params.motherDurCutoff=(.6);
     params.motherDistCutoff=2.1;
     params.budDownThresh=0;
     params.birthRadiusThresh=8;

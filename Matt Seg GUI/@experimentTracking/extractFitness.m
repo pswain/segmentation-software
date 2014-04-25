@@ -3,7 +3,7 @@ function extractFitness(cExperiment, durationCutoff,filtParams)
 % the relevant information won't have been created.
 
 fitnessType='fit';
-cExperiment.correctSkippedFramesInf;
+% cExperiment.correctSkippedFramesInf;
 
 %durationCutoff  - either a fraction of the timelapse that a cell must be
 %present, or a number of frames the cell must be present
@@ -48,6 +48,10 @@ for i=1:size(cExperiment.lineageInfo.motherInfo.birthTime,1)
 
         y=zeros(1,cExperiment.lineageInfo.motherInfo.motherStartEnd(i,2));
         loc=cExperiment.lineageInfo.motherInfo.birthTime(i,:);
+        
+        %if want to use HMM births
+        loc=cExperiment.lineageInfo.motherInfo.birthTimeHMM(i,:);
+
         loc=loc(loc>0);
         y(loc)=1;
         y=y(cExperiment.lineageInfo.motherInfo.motherStartEnd(i,1):cExperiment.lineageInfo.motherInfo.motherStartEnd(i,2));

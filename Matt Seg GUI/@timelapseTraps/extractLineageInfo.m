@@ -7,11 +7,11 @@ function extractLineageInfo(cTimelapse,params)
 % cTimelapse.correctSkippedFramesInf;
 
 if nargin<2
-    params.motherDurCutoff=(.5);
-    params.motherDistCutoff=2;
+    params.motherDurCutoff=(.6);
+    params.motherDistCutoff=2.1;
     params.budDownThresh=0;
     params.birthRadiusThresh=8;
-    params.daughterGRateThresh=.02;
+    params.daughterGRateThresh=-1;
     
     
     num_lines=1;clear prompt; clear def;

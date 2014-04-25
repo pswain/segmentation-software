@@ -30,8 +30,14 @@ cellPres=xloc>0;
 trapCenterX=median(xloc(cellPres));
 trapCenterY=median(yloc(cellPres));
 
-% if the closest cell is within a 1/6 of the frame from the center of the
+%debug for old cTimelapses without the cTrapSize parameter
+if isempty(cTimelapse.cTrapSize)
+    cTimelapse.cTrapSize.bb_height=40;
+    cTimelapse.cTrapSize.bb_width=40;
+end
+    % if the closest cell is within a 1/6 of the frame from the center of the
 % trap, that is the mother
+
 cutoff=ceil(cTimelapse.cTrapSize.bb_height/6);
 motherIndex=[];
 pt1=[trapCenterX trapCenterY];

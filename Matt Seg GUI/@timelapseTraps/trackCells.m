@@ -25,13 +25,21 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
         
-        if timepoint>2
+        if timepoint>2 
             trapInfom2=trapInfom1;
         end
        if timepoint>1
             trapInfom1=trapInfo;
         end
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
+        
+        %this is to correct for a bug in some old timelapses that I was
+        %processing, shouldn't be needed generally. For when a timepoint
+        %wasn't processed but the tp before and after was
+        if timepoint>2 && ~cTimelapse.timepointsProcessed(timepoint-1)
+            trapInfom2=trapInfom1;
+        end
+        
         
 %         trapMaxCell=zeros(1,length(cTimelapse.cTimepoint(1).trapInfo));
         for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
@@ -133,14 +141,14 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 
                 % Use the motherIndex for to identify mothers that should
                 % have been tracked but weren't
-                if motherIndex(trap,timepoint-1) && motherIndex(trap,timepoint)
+                if motherIndex(trap,timepoint-1) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-1)
                     if ~trapInfo(trap).cellLabel(motherIndex(trap,timepoint))
                         newLabel=trapInfom1(trap).cellLabel(motherIndex(trap,timepoint-1));
                         if ~any(trapInfo(trap).cellLabel==newLabel)
                             trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
                         end
                     end
-                elseif timepoint>2 && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint)
+                elseif timepoint>2 && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-2)
                     newLabel=trapInfom2(trap).cellLabel(motherIndex(trap,timepoint-2));
                     if ~any(trapInfo(trap).cellLabel==newLabel)
                         trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
