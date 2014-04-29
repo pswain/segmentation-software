@@ -4,16 +4,18 @@
 t=tic;
 cExperiment.trackCells(find(cExperiment.posSegmented),5);
 
-cExperiment.combineTracklets(find(cExperiment.posSegmented));
+% cExperiment.combineTracklets(find(cExperiment.posSegmented));
+%%
+% params.fraction=.8; %fraction of timelapse length that cells must be present or
+% params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
+% params.framesToCheck=length(cTimelapse.cTimepoint);
+% params.framesToCheckEnd=1;
+cExperiment.selectCellsToPlotAutomatic(find(cExperiment.posTracked));
 
-params.fraction=.8; %fraction of timelapse length that cells must be present or
-params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
-params.framesToCheck=length(cTimelapse.cTimepoint);
-params.framesToCheckEnd=1;
-cExperiment.selectCellsToPlotAutomatic(find(cExperiment.posTracked),params);
+% cExperiment.extractCellInformation(find(cExperiment.posTracked),'b');
+% cExperiment.compileCellInformationParamsOnly;
 
 cExperiment.extractCellInformation(find(cExperiment.posTracked),'max');
-
 cExperiment.compileCellInformation;
 
 params.motherDurCutoff=(.6);
