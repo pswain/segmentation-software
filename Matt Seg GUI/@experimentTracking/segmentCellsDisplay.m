@@ -29,7 +29,7 @@ for i=1:length(positionsToSegment)
     
     b=[cTimelapse.cTimepoint.trapLocations];
     if ~isempty(b)
-        cTrapDisplayProcessing(cTimelapse,cCellVision,cExperiment.timepointsToProcess);
+        cTrapDisplayProcessing(cTimelapse,cCellVision,cTimelapse.timepointsToProcess);
     end
     
     cExperiment.posSegmented(currentPos)=1;

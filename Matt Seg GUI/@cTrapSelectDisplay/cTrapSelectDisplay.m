@@ -30,7 +30,7 @@ classdef cTrapSelectDisplay<handle
             end
             
             if nargin<3 || isempty(timepoint)
-                timepoint=1;
+                timepoint=cTimelapse.timepointsToProcess(1);
             end
             cDisplay.timepoint=timepoint;
             
@@ -56,7 +56,7 @@ classdef cTrapSelectDisplay<handle
             
             cDisplay.image=cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
             
-            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations);
+            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations,[],'none');
 
             TrapsToRemove = [];
             for trapi = 1:length(cDisplay.trapLocations)
@@ -84,7 +84,7 @@ classdef cTrapSelectDisplay<handle
                 end
             end
             
-            [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations);
+            [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
                 
             im_mask=cDisplay.image;
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
@@ -112,7 +112,7 @@ classdef cTrapSelectDisplay<handle
                 [minval loc]=min(D);
                 
                 cDisplay.trapLocations(loc)=[];
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations);
+                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
 %                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
@@ -124,7 +124,7 @@ classdef cTrapSelectDisplay<handle
             else
                 cDisplay.trapLocations(end+1).xcenter=Cx;
                 cDisplay.trapLocations(end).ycenter=Cy;
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations);
+                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations));
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
 %                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
