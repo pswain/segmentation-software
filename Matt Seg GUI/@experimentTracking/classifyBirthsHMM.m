@@ -7,6 +7,8 @@ function classifyBirthsHMM(cExperiment)
 if isempty(cExperiment.lineageInfo.motherInfo.daughterLabel)
     errdlg('Must load a HMM or run trainBirthHMM');
 end
+cExperiment.lineageInfo.HMMbirths=[];
+cExperiment.lineageInfo.motherInfo.birthTimeHMM=[];
 
 for i=1:length(cExperiment.lineageInfo.daughterHMMTrainingStates)
 

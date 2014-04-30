@@ -94,7 +94,7 @@ cTimelapse.lineageInfo.motherInfo.motherTrap=[];
 fitFun=fittype('poly1');
 
 for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
-    for mCell=1:2
+    for mCell=1:1
         if motherDuration(trap,mCell)<motherDurCutoff
             break;
         end
@@ -148,6 +148,10 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
                     else
                         daughterGRate(d)=0;
                     end
+                else
+                    daughterRSmooth(d,:)=ones(size(daughterRSmooth(1,:)))*1e3;
+                    daughterRStart(d)=1e3;
+                    daughterGRate(d)=0;
                 end
                 
             end

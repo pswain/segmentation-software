@@ -10,7 +10,7 @@ helpdlg('This is the new root folder containing all images of the timelapse obje
 newRootFolder=uigetdir(pwd,['Select the correct folder for: ',cExperiment.rootFolder]);
 oldRootFolder=cExperiment.rootFolder;
 
-cExperiment.saveFolder=uigetdir(pwd,['Select the folder where you want to save the timelapses: ',cExperiment.rootFolder]);
+% cExperiment.saveFolder=uigetdir(pwd,['Select the folder where you want to save the timelapses: ',cExperiment.rootFolder]);
 
 cExperiment.rootFolder=newRootFolder;
 for i=1:length(dirsToSearch)
