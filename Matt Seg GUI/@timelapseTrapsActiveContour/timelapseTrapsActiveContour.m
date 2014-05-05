@@ -355,18 +355,20 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
+        function CellImage = ReturnSubImages(ttacObject,Timepoints,CentreStack,SubImageSize,channel,normalise)
             %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
             
             % ttacObject    -  object of the timelapseTrapsActiveContour class
 
             % Timepoints    -  1 x n vector of the timepoint of each cell to be transformed 
-
-            % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
-
-            % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
             
-            % channel       -  index of the channel to use
+            % CentreStack   -  stack of [x1 y1 ; x2 y2 ; x3 y3 ;...] (image wise) location of
+            %                  centres of subimages desired 
+            
+            %SubImageSize   -  size of image to get. Should be odd.
+
+            % channel       -  index of the channel to use or string 'trap'
+            %                  for trap pixel images.
             
             % normalise     -  whether to normalise the images (currently
             %                  only median is used), so if this input is
@@ -374,7 +376,7 @@ classdef timelapseTrapsActiveContour<handle
             %                  by the median of each timepoint
 
             
-            if nargin<5
+            if nargin<5 || isempty(channel)
                 channel = 1;
             end
             
@@ -387,29 +389,26 @@ classdef timelapseTrapsActiveContour<handle
             
             UniqueTimepoints = unique(Timepoints);
             
-            CellImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
+            CellImage = zeros(SubImageSize,SubImageSize,length(Timepoints));
             
             for TP =UniqueTimepoints
                 
-                Image = ttacObject.ReturnImage(TP,channel);
-                
-                switch normalise
-                    case 'median'
-                        Image = double(Image);
-                        Image = Image./(median(Image(:)));
+                if ischar(channel) && strcmp(channel,'trap')
+                    Image = ttacObject.ReturnTrapImage(TP);
+                else
+                    Image = ttacObject.ReturnImage(TP,channel);
+                    switch normalise
+                        case 'median'
+                            Image = double(Image);
+                            Image = Image./(median(Image(:)));
+                    end
                 end
                 
-                CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
+                RelevantEntries = Timepoints==TP;
                 
-                RelevantEntries = find(Timepoints==TP);
+                CurrentTPCellCentres = CentreStack(RelevantEntries,:);
                 
-                for TIindex = 1:length(RelevantEntries)
-                    
-                    CurrentTPCellCentres(TIindex,:) = ttacObject.ReturnCellCentreAbsolute(TP,TrapIndices(RelevantEntries(TIindex)),CellIndices(RelevantEntries( TIindex)));
-                    
-                end
-                
-                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres);
+                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,CurrentTPCellCentres);
                 
                 
             end
@@ -417,6 +416,71 @@ classdef timelapseTrapsActiveContour<handle
             
                    
 
+        end
+        
+        
+        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
+            %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
+             
+            % ttacObject    -  object of the timelapseTrapsActiveContour class
+ 
+            % Timepoints    -  1 x n vector of the timepoint of each cell to be transformed 
+ 
+            % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
+ 
+            % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
+             
+            % channel       -  index of the channel to use
+             
+            % normalise     -  whether to normalise the images (currently
+            %                  only median is used), so if this input is
+            %                  the string 'median' the images are divided
+            %                  by the median of each timepoint
+ 
+             
+            if nargin<5
+                channel = 1;
+            end
+             
+            if nargin<6 || isempty(normalise)
+                normalise = [];
+            end
+                 
+             
+             
+             
+            UniqueTimepoints = unique(Timepoints);
+             
+            CellImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
+             
+            for TP =UniqueTimepoints
+                 
+                Image = ttacObject.ReturnImage(TP,channel);
+                 
+                switch normalise
+                    case 'median'
+                        Image = double(Image);
+                        Image = Image./(median(Image(:)));
+                end
+                 
+                CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
+                 
+                RelevantEntries = find(Timepoints==TP);
+                 
+                for TIindex = 1:length(RelevantEntries)
+                     
+                    CurrentTPCellCentres(TIindex,:) = ttacObject.ReturnCellCentreAbsolute(TP,TrapIndices(RelevantEntries(TIindex)),CellIndices(RelevantEntries( TIindex)));
+                     
+                end
+                 
+                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres);
+                 
+                 
+            end
+             
+             
+                    
+ 
         end
         
         function CellTrapImage = ReturnTrapPixelsForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
