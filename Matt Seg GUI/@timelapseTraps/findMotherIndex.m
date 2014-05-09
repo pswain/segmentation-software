@@ -12,10 +12,10 @@ xloc=zeros(1,1e5);
 yloc=zeros(1,1e5);
 ind=1;
 
-for timepoint=1:length(cTimelapse.timepointsProcessed)
+for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
             if trapInfo(trap).cellsPresent
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
@@ -48,7 +48,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
         
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
             if trapInfo(trap).cellsPresent
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';

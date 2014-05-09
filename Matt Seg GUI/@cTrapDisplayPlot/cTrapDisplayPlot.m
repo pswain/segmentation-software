@@ -26,7 +26,7 @@ classdef cTrapDisplayPlot<handle
         function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
             
             if nargin<3 || isempty(traps)
-                traps=1:length(cTimelapse.cTimepoint(1).trapInfo);
+                traps=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
             end
             
             if nargin<4
@@ -36,7 +36,7 @@ classdef cTrapDisplayPlot<handle
                         
             if isempty(cTimelapse.timepointsProcessed)
                 tempSize=[cTimelapse.cTimepoint.trapInfo];
-                cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+                cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo));
             end
             
 %             for dirfind=1:length(cExperiment.dirs)
@@ -57,7 +57,7 @@ classdef cTrapDisplayPlot<handle
                 dis_w=dis_w+1;
             end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,cTimelapse.timepointsToProcess(1),channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -93,12 +93,12 @@ classdef cTrapDisplayPlot<handle
             
             cDisplay.slider=uicontrol('Style','slider',...
                 'Parent',gcf,...
-                'Min',1,...
+                'Min',cTimelapse.timepointsToProcess(1),...
                 'Max',sum(cTimelapse.timepointsProcessed),...
                 'Units','normalized',...
-                'Value',1,...
+                'Value',cTimelapse.timepointsToProcess(1),...
                 'Position',[bb bb+bb*.3 1-bb bb],...
-                'SliderStep',[1/(length(cTimelapse.cTimepoint)-1) 2/(length(cTimelapse.cTimepoint)-1)],...
+                'SliderStep',[1/(length(cTimelapse.timepointsToProcess)-1) 2/(length(cTimelapse.timepointsToProcess)-1)],...
                 'Callback',@(src,event)slider_cb(cDisplay));
             
             
