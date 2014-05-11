@@ -21,6 +21,8 @@ timepoint_index=0;
 folder=[folder '/']
 
 newfiles=cell(1);
+
+largestTimepoint = 0;
 for ss=1:length(searchString)
     timepoint_index=0;
     for n = 1:length(files);
@@ -32,7 +34,10 @@ for ss=1:length(searchString)
             end
         end
     end
+    largestTimepoint = max([timepoint_index;largestTimepoint]);
 end
+
+cTimelapse.timepointsToProcess = 1:largestTimepoint;
 
 if nargin>=6 && ~isempty(timepointsToLoad)
     if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
