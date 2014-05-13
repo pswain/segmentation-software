@@ -276,7 +276,15 @@ for TP = Timepoints
         
         ExpectedCentreStack = reshape([CellInfo(UpdatedPreviousTimepoint).ExpectedCentre],2,[]);
         ExpectedCentreStack = ExpectedCentreStack';
+        
+        ExpectedCentreStack(ExpectedCentreStack<1) = 1;
+        ExpectedCentreStack(ExpectedCentreStack>512) = 512;
+        try
         ProspectiveImageStack = ttacObject.ReturnSubImages([CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{end})] + 1,round(ExpectedCentreStack), ProspectiveImageSize,CrossCorrelationChannel,'median');
+        catch
+            fprintf(debug)
+        end
+        
         ProspectiveTrapImageStack = ttacObject.ReturnSubImages([CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{end})] + 1,round(ExpectedCentreStack), ProspectiveImageSize,'trap','median');
         
         for CN = find(UpdatedPreviousTimepoint)
@@ -359,6 +367,10 @@ for TP = Timepoints
                 end
                 %write new cell info. Need to make good.
                 
+                if isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo)
+                    ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo = ttacObject.TimelapseTraps.cTimepoint(TP-1).trapInfo;
+                end
+                
                 if ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellsPresent
                     if any(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel == CellInfo(celli).CellLabel)
                         NewCellIndex = find(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel == CellInfo(celli).CellLabel);
@@ -372,6 +384,7 @@ for TP = Timepoints
                 
                 ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).cellCenter = [xnewcellRelative ynewcellRelative];
                 ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).cellRadius = 8;
+                ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).crossCorrelationScore = value;
                 ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel(NewCellIndex) = CellInfo(celli).CellLabel;
                 
                 
