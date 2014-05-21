@@ -103,7 +103,7 @@ for t=1:tl.TimePoints
                         oldleftx=leftx;
                         oldbottomy=bottomy;
                         oldrightx=rightx;
-                        if ct.image_rotation==-90
+                        if ct.image_rotation==-95
                            newx=oldy;
                            newy=512-oldx;
                            newtopy=(512-oldleftx-2*ct.cTrapSize.bb_width);
@@ -250,6 +250,6 @@ for t=1:tl.TimePoints
     
 end
     %Track the timelapse
-    tl.RunTrackMethod.run(tl);
+%     tl.RunTrackMethod.run(tl);
 
 

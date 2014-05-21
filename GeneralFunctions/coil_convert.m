@@ -18,6 +18,7 @@ end
 if nargin==0
     output_filename =  inputdlg('please provide an output file identifier.\nThis will be used to construct the names of files produced'...
         ,'shared identifier for all output files',1,{'output_file'});
+    output_filename = output_filename{1};
 end
 
 try
