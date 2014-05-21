@@ -119,9 +119,9 @@ end
 %     warning('There is no data in this channel at this timepoint');
 % end
 %
-% if ~isempty(cTimelapse.magnification)
-%     timepoint=imresize(timepoint,cTimelapse.magnification);
-% end
+if ~isempty(cTimelapse.imScale)
+    timepointIm=imresize(timepointIm,cTimelapse.imScale);
+end
 
 if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
     image_rotation=cTimelapse.cTimepoint(tp).image_rotation;

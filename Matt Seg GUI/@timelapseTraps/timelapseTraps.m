@@ -6,6 +6,7 @@ classdef timelapseTraps<handle
 %         cTrapsLabelled
         cTrapSize
         image_rotation % to ensure that it lines up with the cCellVision Model
+        imScale %used to scale down images if needed
         magnification=60;
         trapsPresent
         pixelSize
