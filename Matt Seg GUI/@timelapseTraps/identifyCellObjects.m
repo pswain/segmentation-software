@@ -3,7 +3,7 @@ function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, met
 allowedOverlap=.15;
 
 if nargin<3
-    timepoint=1;
+    timepoint=cTimelapse.timepointsToProcess(1);
 end
 
 if nargin<4
@@ -49,7 +49,7 @@ else
 end
 image=double(image);
 
-f1=fspecial('gaussian',9,1);
+f1=fspecial('gaussian',9,1.5);
 se1=cCellVision.se.se1;
 
 
@@ -101,7 +101,7 @@ if isempty(bw_mask)
         if cTimelapse.trapsPresent
             temp_im=temp_im-diffIm.*trapG;
         end
-        temp_im=medfilt2(temp_im,[4 4]);
+        temp_im=medfilt2(temp_im,[2 2]);
 %         temp_im=imfilter(temp_im,f2);
 
 

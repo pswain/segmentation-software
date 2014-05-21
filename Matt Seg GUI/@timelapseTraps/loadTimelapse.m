@@ -21,10 +21,12 @@ timepoint_index=0;
 folder=[folder '/']
 
 newfiles=cell(1);
+
+largestTimepoint = 0;
 for ss=1:length(searchString)
     timepoint_index=0;
     for n = 1:length(files);
-        if length(strfind(files{n},'tif'))| length(strfind(files{n},'png'))
+        if isempty(strfind(files{n},'tif'))|| isempty(strfind(files{n},'png')) || isempty(strfind(files{n},'TIF'))
             if length(strfind(files{n},searchString{ss}))
                 cTimelapse.cTimepoint(timepoint_index+1).filename{ss}=[folder files{n}];
                 cTimelapse.cTimepoint(timepoint_index+1).trapLocations=[];
@@ -32,7 +34,10 @@ for ss=1:length(searchString)
             end
         end
     end
+    largestTimepoint = max([timepoint_index;largestTimepoint]);
 end
+
+cTimelapse.timepointsToProcess = 1:largestTimepoint;
 
 if nargin>=6 && ~isempty(timepointsToLoad)
     if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
@@ -42,6 +47,7 @@ if nargin>=6 && ~isempty(timepointsToLoad)
 end
 
 image=imread(cTimelapse.cTimepoint(1).filename{1});
+cTimelapse.imSize=size(image);
 if nargin<3 || isempty(magnfication)
     h=figure;imshow(image,[]);
     prompt = {'Enter the magnification of the objective used'};

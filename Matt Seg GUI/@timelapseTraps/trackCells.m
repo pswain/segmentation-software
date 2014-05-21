@@ -4,7 +4,7 @@ if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
     num_lines = 1;
-    def = {'8'};
+    def = {'5'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     cellMovementThresh=str2double(answer{1});
 end
@@ -21,21 +21,29 @@ if isempty(cTimelapse.timepointsProcessed)
     cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
 end
 
-for timepoint=1:length(cTimelapse.timepointsProcessed)
+for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
         
-        if timepoint>2
+        if timepoint>cTimelapse.timepointsToProcess(2) 
             trapInfom2=trapInfom1;
         end
-       if timepoint>1
+       if timepoint>cTimelapse.timepointsToProcess(1)
             trapInfom1=trapInfo;
         end
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         
+        %this is to correct for a bug in some old timelapses that I was
+        %processing, shouldn't be needed generally. For when a timepoint
+        %wasn't processed but the tp before and after was
+        if timepoint>cTimelapse.timepointsToProcess(2) && ~cTimelapse.timepointsProcessed(timepoint-1)
+            trapInfom2=trapInfom1;
+        end
+        
+        
 %         trapMaxCell=zeros(1,length(cTimelapse.cTimepoint(1).trapInfo));
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
-            if timepoint==1
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
+            if timepoint==cTimelapse.timepointsToProcess(1)
                 if trapInfo(trap).cellsPresent
                     len=length(trapInfo(trap).cell);
                     trapInfo(trap).cellLabel=1:length(trapInfo(trap).cell);
@@ -56,7 +64,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 cirrad=[trapInfom1(trap).cell(:).cellRadius]';
                 pt1=[circen cirrad];
                 
-                if timepoint>2
+                if timepoint>cTimelapse.timepointsToProcess(2)
                     circen=[trapInfom2(trap).cell(:).cellCenter];
                     circen=reshape(circen,2,length(circen)/2)';
                     cirrad=[trapInfom2(trap).cell(:).cellRadius]';
@@ -68,16 +76,16 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 if isempty(pt1)
                     pt1=ones(1,3)*Inf;
                 end
-                if isempty(pt2) && timepoint>1
+                if isempty(pt2) && timepoint>cTimelapse.timepointsToProcess(1)
                     pt2=ones(1,3)*Inf;
                 end
-                if isempty(pt3) && timepoint>2
+                if isempty(pt3) && timepoint>cTimelapse.timepointsToProcess(2)
                     pt3=ones(1,3)*Inf;
                 end
 %                 dist=pdist2(pt1,pt2,'euclidean');
                 dist=alternativeDist(pt1,pt2);
                 
-                if timepoint>2
+                if timepoint>cTimelapse.timepointsToProcess(2)
                     dist2=alternativeDist(pt3,pt2);
                 else
                     dist2=ones(size(dist))*1e6;
@@ -102,7 +110,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             dist2(:,col)=Inf;
                             noLabel(col)=0;
                             
-                            if timepoint>2
+                            if timepoint>cTimelapse.timepointsToProcess(2)
                                 locPrev=find(trapInfom2(trap).cellLabel==temp_val);
                                 if ~isempty(locPrev)
                                     dist2(locPrev,:)=Inf;
@@ -133,14 +141,14 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 
                 % Use the motherIndex for to identify mothers that should
                 % have been tracked but weren't
-                if motherIndex(trap,timepoint-1) && motherIndex(trap,timepoint)
+                if motherIndex(trap,timepoint-1) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-1)
                     if ~trapInfo(trap).cellLabel(motherIndex(trap,timepoint))
                         newLabel=trapInfom1(trap).cellLabel(motherIndex(trap,timepoint-1));
                         if ~any(trapInfo(trap).cellLabel==newLabel)
                             trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
                         end
                     end
-                elseif timepoint>2 && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint)
+                elseif timepoint>cTimelapse.timepointsToProcess(2) && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-2)
                     newLabel=trapInfom2(trap).cellLabel(motherIndex(trap,timepoint-2));
                     if ~any(trapInfo(trap).cellLabel==newLabel)
                         trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
@@ -208,7 +216,7 @@ if ~isempty(pt1) && ~isempty(pt2)
 
 %         temp(loc)=temp(loc).^2;
 %         temp(loc)=(temp(loc).^2)*1.5;
-        temp(loc)=(tempFracShrink(loc).^2)*1.5;
+        temp(loc)=(tempFracShrink(loc).^2);%*1.5;
 
     end
     if find(temp2>0)

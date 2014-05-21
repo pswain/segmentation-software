@@ -18,6 +18,7 @@ fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames
 loc= ~cellfun('isempty',fileNum);
 if sum(loc)>0
     file=[cTimelapse.cTimepoint(timepoint).filename{loc}];
+
     locSlash=strfind(file,'/');
     
     if isempty(locSlash) 
@@ -25,15 +26,15 @@ if sum(loc)>0
     end
     
     if locSlash
-        ind=find(loc);
+        inds=find(loc);
         for i=1:sum(loc)
-            file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
+            file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
             %locSlash=strfind(file,'/');
             file=file(locSlash(end)+1:end);
-            cTimelapse.cTimepoint(timepoint).filename{ind(i)}=file;
+            cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
         end
     end
-    ffile=fullfile(cTimelapse.timelapseDir,file);
+
     try
         
         ind=find(loc);
@@ -41,9 +42,15 @@ if sum(loc)>0
         ffile=fullfile(cTimelapse.timelapseDir,file);
         if ~isempty(cTimelapse.imSize)
             timepointIm=zeros([cTimelapse.imSize sum(loc)]);
-            timepointIm(:,:,1)=imread(ffile);
+            if strfind(ffile,'TIF')
+                timepointIm=imread(ffile,'Index',1);
+                timepointIm=timepointIm(:,:,1);
+            else
+                timepointIm(:,:,1)=imread(ffile);
+            end
         else
             timepointIm=imread(ffile);
+            cTimelapse.imSize=size(timepointIm);
         end
         for i=2:sum(loc)
             file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};

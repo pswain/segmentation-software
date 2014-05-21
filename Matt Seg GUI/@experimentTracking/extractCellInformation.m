@@ -1,4 +1,4 @@
-function extractCellInformation(cExperiment,positionsToExtract)
+function extractCellInformation(cExperiment,positionsToExtract,type)
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved
@@ -13,13 +13,15 @@ if nargin<2
 %     positionsToTrack=1:length(cExperiment.dirs);
 end
 
-num_lines=1;
-dlg_title = 'What to extract?';
-prompt = {['All Params using max projection (max), std focus (std), mean focus (mean), using all three measures (all), or basic (basic)' ...
-    ' the basic measure only compiles the x, y locations of cells along with the estimated radius so it is much faster, but less informative.']};    def = {'max'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-type=answer{1};
+if nargin<3
+    num_lines=1;
+    dlg_title = 'What to extract?';
+    prompt = {['All Params using max projection (max), std focus (std), mean focus (mean), using all three measures (all), or basic (basic)' ...
+        ' the basic measure only compiles the x, y locations of cells along with the estimated radius so it is much faster, but less informative.']};    def = {'max'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    
+    type=answer{1};
+end
 
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
