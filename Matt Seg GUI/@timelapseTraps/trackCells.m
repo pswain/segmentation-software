@@ -1,5 +1,36 @@
 function trackCells(cTimelapse,cellMovementThresh)
-
+%trackCells: Tracks individual cells over multiple images, and finds trapinfo
+%---------------------------------------------------------
+%       Function of timelapseTracks class to assign labels to the cells in
+%       each timepoint, and so track the individual cells between the 
+%       timepoints. Also calculates if cells are present in each trap if
+%       traps are present.
+%
+%       Calculates the distance between all cell centers between one timeframe ant
+%       the next and uses this, weighted for factors like cell size etc.,
+%       to find the most likely candidate for the same cell. Each cell is
+%       then assigned a label.
+%
+%IMPORTANT VARS:    cTimelapse.cTimepoint(i).cellLabel
+%                   1xN double vector
+%                     cellLabel is a vector which contains labels for all
+%                     of the cells being tracked. 
+%                     The label itself will be a number, corresponding to
+%                     the cell's position in the first timepoint. The
+%                     cell's number in the current timepoint i is given by
+%                     the position in the vector. This gives a way to link
+%                     a given cell in all timepoints, by matching the
+%                     labels.
+%
+%INPUT:             cTimelapse
+%                   timelapseTrapsGUI
+%                     TimelapseTrapsGUI with all cells already segmented
+%
+%                   cellMovementThresh
+%                   Double
+%                     Number to indicate how far (in pixels) a cell can
+%                     move before it should be considered a new cell. 
+%                     Optional argument, if left blank defaults to inf.
 if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
@@ -24,7 +55,9 @@ end
 for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
-        
+        %Shuffles data around, trapinfo is data of current timepoint, 
+        %trapinfom1 is data of previous timepoint,
+        %trapinfom2 is data of timepoint before that.
         if timepoint>cTimelapse.timepointsToProcess(2) 
             trapInfom2=trapInfom1;
         end
@@ -195,6 +228,9 @@ trap=1:length(cTimelapse.cTimepoint(1).trapInfo);
 end
 
 function distance= alternativeDist(pt1,pt2)
+%Returns a 2x2 matrix of the distances between all the cells tracked in pt1&pt2
+%Rows denote previous timeframe cells, collumns denote current timeframe
+%cells
 if ~isempty(pt1) && ~isempty(pt2)
     dist=[];
     for i=1:size(pt1,2)
