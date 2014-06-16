@@ -4,6 +4,7 @@ classdef experimentTrackingGUI<handle
         expPanel
         processingPanel
         
+        prepDeltaVisionButton
         createExperimentButton
         loadSavedExperimentButton
         loadCellVisionButton
@@ -51,8 +52,10 @@ classdef experimentTrackingGUI<handle
             cExpGUI.processingPanel = uipanel('Parent',cExpGUI.figure,...
                 'Position',[.515 .02 .47 .95]);
             
-            cExpGUI.createExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Create New Experiment',...
-                'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)createExperiment(cExpGUI));
+             cExpGUI.prepDeltaVisionButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Convert .dv Files',...
+                'Units','normalized','Position',[.025 .85 .47 .15],'Callback',@(src,event)PositionsFromDeltavision());
+            cExpGUI.createExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','New Experiment',...
+                'Units','normalized','Position',[.505 .85 .47 .15],'Callback',@(src,event)createExperiment(cExpGUI));
             cExpGUI.loadSavedExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load Experiment File',...
                 'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)loadSavedExperiment(cExpGUI));
             cExpGUI.loadCellVisionButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load CellVision Model',...
@@ -108,7 +111,7 @@ classdef experimentTrackingGUI<handle
         % Other functions 
         
 
-        
+        PositionsFromDeltaVision()
         createExperiment(cExpGUI)
         loadSavedExperiment(cExpGUI)
         loadCellVision(cExpGUI)
