@@ -6,21 +6,21 @@ end
 
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']);
     cExperiment.currentDir=cExperiment.dirs{currentPos};
     cExperiment.cTimelapse=cTimelapse;
     if cExperiment.trackTrapsOverwrite
         cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
         currentPos=positionsToSegment(i);
-        load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+        load([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']);
     end
 end
 
 
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']);
     cExperiment.currentDir=cExperiment.dirs{currentPos};
     cExperiment.cTimelapse=cTimelapse;
     if isempty(cExperiment.cTimelapse.magnification)
@@ -28,9 +28,9 @@ for i=1:length(positionsToSegment)
     end
     
     b=[cTimelapse.cTimepoint.trapLocations];
-    if ~isempty(b)
+    %if ~isempty(b)
         cTrapDisplayProcessing(cTimelapse,cCellVision,cTimelapse.timepointsToProcess);
-    end
+    %end
     
     cExperiment.posSegmented(currentPos)=1;
     cExperiment.saveTimelapseExperiment(currentPos);
