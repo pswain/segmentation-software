@@ -47,7 +47,7 @@ classdef timelapseTraps<handle
             
         %functions for loading data and then processing to identify and
         %track the traps
-        loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,timepointsToLoad);
+        loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,trapsPresent,timepointsToLoad);
         loadTimelapseScot(cTimelapse,timelapseObj);
         
         %[trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
