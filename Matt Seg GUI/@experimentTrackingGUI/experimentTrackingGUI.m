@@ -1,4 +1,12 @@
 classdef experimentTrackingGUI<handle
+    %ExperimeintTrackingGUI: Track and analyse multiple image sets
+    %--------------------------
+    %Track multiple timelapse images, normally different areas of the same
+    %experiment
+    %Each timelapse should be a series of images (not microscopy films) in
+    %its own folder. The folders for these timelapses should be in a 
+    %folder with NOTHING ELSE. A folder in this superfolder which does not
+    %contain a timelapse will be read as a timelapse and cause a crash.
     properties
         figure = [];
         expPanel
@@ -36,10 +44,7 @@ classdef experimentTrackingGUI<handle
         cCellVision=[];
         channel=1;
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+   
     methods
         function cExpGUI=experimentTrackingGUI()
             

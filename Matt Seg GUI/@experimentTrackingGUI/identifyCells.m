@@ -19,6 +19,7 @@ prompt(2) = {['Track traps again (1=yes, 0=no)? (This goes through all timelapse
 prompt(3) = {['Would you like to segment an experiment as the images are being acquired, or has the acquisition been completed?' ...
     ' (enter completed or continuous). The continuous segmentation must be stopped by a control-c.']};
 dlg_title = 'Cell Segmentation';
+
 def(1) = {num2str(cExpGUI.cCellVision.twoStageThresh)};
 def(2) = {num2str(cExpGUI.cExperiment.trackTrapsOverwrite)};
 def(3) = {'completed'};

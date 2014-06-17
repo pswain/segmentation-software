@@ -18,7 +18,7 @@ files=sort(names);
 % trap correctly aligns with the images
 
 timepoint_index=0;
-folder=[folder '/']
+folder=[folder filesep]
 
 newfiles=cell(1);
 
