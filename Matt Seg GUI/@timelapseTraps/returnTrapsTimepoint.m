@@ -7,10 +7,11 @@ if nargin<3
     timepoint=1;
 end
 
-if nargin<2||isempty(traps)
-    traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
+if cTimelapse.trapsPresent
+    if nargin<2||isempty(traps)
+        traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
+    end
 end
-
 
 
 if nargin<4
