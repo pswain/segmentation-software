@@ -81,9 +81,12 @@ classdef experimentTrackingGUI<handle
 
             %
             cExpGUI.cropTimepointsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Crop Timepoints',...
-                'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)cropTimepoints(cExpGUI));            
+                'Units','normalized','Position',[.025 .7 .235 .15],'Callback',@(src,event)cropTimepoints(cExpGUI));            
             cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Traps',...
-                'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
+                'Units','normalized','Position',[.265 .7 .23 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
+             cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Automatic Processing',...
+                'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)automaticProcessing(cExpGUI));
+            
             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
                 'Units','normalized','Position',[.025 .55 .3 .15],'Callback',@(src,event)identifyCells(cExpGUI));
             cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
@@ -125,6 +128,7 @@ classdef experimentTrackingGUI<handle
         addSecondaryChannel(cExpGUI)
         saveTimelapse(cExpGUI)
         cropTimepoints(cExpGUI)
+        automaticProcessing(cExpGUI)
         
         selectChannel(cExpGUI)
 
@@ -138,6 +142,7 @@ classdef experimentTrackingGUI<handle
         autoSelect(cExpGUI)
         select(cExpGUI)
         extractData(cExpGUI)
+        cellAsicAnalysis(cExpGUI)
         compileData(cExpGUI)
         
         processIndTimelapse(cExpGUI)
