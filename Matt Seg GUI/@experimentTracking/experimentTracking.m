@@ -63,6 +63,7 @@ classdef experimentTracking<handle
         identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify);
         segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
+        editTimelapse(cExperiment, cCellVision, positionsToIdentify)
         trackCells(cExperiment,positionsToTrack,cellMovementThresh)       
         selectTPToProcess(cExperiment,positions);
         combineTracklets(cExperiment,positions);

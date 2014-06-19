@@ -183,6 +183,8 @@ classdef displayCellAsicData < handle
             cData.channelListener=addlistener(cData.channelSelect,'Value','PostSet',@(src,event)setImage(cData));
             %Buttondownfcn listener
             set(cData.subImage,'buttondownfcn',{@mouseClick,cData},'hittest','on','visible','on')
+            
+            set(cData.imageFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event))
         end
         %%
         function sliderChanged(cData)
@@ -270,6 +272,7 @@ classdef displayCellAsicData < handle
         %%Other methods
         setImage(cData)
         updatePlot(cData)
+        cellAsic_ScrollWheel(GUI,src,event)
     end %methods
     
 end %class
