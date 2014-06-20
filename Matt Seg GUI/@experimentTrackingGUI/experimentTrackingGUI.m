@@ -86,15 +86,20 @@ classdef experimentTrackingGUI<handle
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
                 'Units','normalized','Position',[.755 .55 .22 .15],'Callback',@(src,event)combineTracklets(cExpGUI));
 
+             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
+                'Units','normalized','Position',[.025 .45 .47 .10],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
+           
+            
+            
             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
-                'Units','normalized','Position',[.025 .4 .47 .15],'Callback',@(src,event)autoSelect(cExpGUI));
+                'Units','normalized','Position',[.025 .35 .47 .10],'Callback',@(src,event)autoSelect(cExpGUI));
             cExpGUI.selectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Cells',...
-                'Units','normalized','Position',[.505 .4 .47 .15],'Callback',@(src,event)select(cExpGUI));
+                'Units','normalized','Position',[.505 .35 .47 .10],'Callback',@(src,event)select(cExpGUI));
 
             cExpGUI.extractDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
-                'Units','normalized','Position',[.025 .25 .47 .15],'Callback',@(src,event)extractData(cExpGUI));
+                'Units','normalized','Position',[.025 .25 .47 .10],'Callback',@(src,event)extractData(cExpGUI));
             cExpGUI.compileDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Compile Data',...
-                'Units','normalized','Position',[.505 .25 .47 .15],'Callback',@(src,event)compileData(cExpGUI));
+                'Units','normalized','Position',[.505 .25 .47 .10],'Callback',@(src,event)compileData(cExpGUI));
 
             cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
                 'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
