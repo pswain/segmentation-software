@@ -34,8 +34,9 @@ for i=1:length(positionsToLoad)
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
     cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-    cExperiment.timepointsToLoad=length(cExperiment.cTimelapse.cTimepoint);
+    %cExperiment.timepointsToLoad=length(cExperiment.cTimelapse.cTimepoint);
     traps_present = cExperiment.cTimelapse.trapsPresent;
+    cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
 
     cExperiment.saveTimelapseExperiment(currentPos);
 end
