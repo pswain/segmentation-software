@@ -20,12 +20,14 @@ classdef timelapseTraps<handle
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/down.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
+        %stuff Ivan has added
+        omeroDs%The id number of the omero dataset from which the raw data was donwloaded. If the object was created from a folder of images this is zero.
     end
     
     methods
         
         function cTimelapse=timelapseTraps(folder)
-            %% Read filenames from folder
+            %% Read filenames from folder or Omero
             if nargin<1
                 folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
                 fprintf('\n    Select the folder containing the images associated with this timelapse\n');
