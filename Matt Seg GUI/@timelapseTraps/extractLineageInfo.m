@@ -7,11 +7,11 @@ function extractLineageInfo(cTimelapse,params)
 % cTimelapse.correctSkippedFramesInf;
 
 if nargin<2
-    params.motherDurCutoff=(.5);
-    params.motherDistCutoff=2;
+    params.motherDurCutoff=(.6);
+    params.motherDistCutoff=2.1;
     params.budDownThresh=0;
     params.birthRadiusThresh=8;
-    params.daughterGRateThresh=.02;
+    params.daughterGRateThresh=-1;
     
     
     num_lines=1;clear prompt; clear def;
@@ -94,7 +94,7 @@ cTimelapse.lineageInfo.motherInfo.motherTrap=[];
 fitFun=fittype('poly1');
 
 for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
-    for mCell=1:2
+    for mCell=1:1
         if motherDuration(trap,mCell)<motherDurCutoff
             break;
         end
@@ -148,6 +148,10 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
                     else
                         daughterGRate(d)=0;
                     end
+                else
+                    daughterRSmooth(d,:)=ones(size(daughterRSmooth(1,:)))*1e3;
+                    daughterRStart(d)=1e3;
+                    daughterGRate(d)=0;
                 end
                 
             end

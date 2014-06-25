@@ -12,10 +12,10 @@ xloc=zeros(1,1e5);
 yloc=zeros(1,1e5);
 ind=1;
 
-for timepoint=1:length(cTimelapse.timepointsProcessed)
+for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
             if trapInfo(trap).cellsPresent
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';
@@ -30,8 +30,14 @@ cellPres=xloc>0;
 trapCenterX=median(xloc(cellPres));
 trapCenterY=median(yloc(cellPres));
 
-% if the closest cell is within a 1/6 of the frame from the center of the
+%debug for old cTimelapses without the cTrapSize parameter
+if isempty(cTimelapse.cTrapSize)
+    cTimelapse.cTrapSize.bb_height=40;
+    cTimelapse.cTrapSize.bb_width=40;
+end
+    % if the closest cell is within a 1/6 of the frame from the center of the
 % trap, that is the mother
+
 cutoff=ceil(cTimelapse.cTrapSize.bb_height/6);
 motherIndex=[];
 pt1=[trapCenterX trapCenterY];
@@ -42,7 +48,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
         
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
             if trapInfo(trap).cellsPresent
                 circen=[trapInfo(trap).cell(:).cellCenter];
                 circen=reshape(circen,2,length(circen)/2)';

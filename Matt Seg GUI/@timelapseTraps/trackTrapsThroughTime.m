@@ -33,7 +33,7 @@ for i=2:length(timepoints)
     if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         colDif=accumCol;
     end
-    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*1/2
+    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_height*1/2
         rowDif=accumRow;
     end
     
@@ -44,6 +44,11 @@ for i=2:length(timepoints)
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
     yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
     
+    xloc(xloc<1) = 1;
+    xloc(xloc>cTimelapse.imSize(2)) = cTimelapse.imSize(2);
+    yloc(yloc<1) = 1;
+    yloc(yloc>cTimelapse.imSize(1)) = cTimelapse.imSize(1);
+    
     cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
     
     xlocCELL=num2cell(xloc);
@@ -53,7 +58,7 @@ for i=2:length(timepoints)
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
     
-    if rem(i,80)==0
+    if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         regIm=newIm;
         timepointReg=timepoints(i);
         accumCol = 0;

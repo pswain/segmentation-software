@@ -1,4 +1,4 @@
-function [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
+function [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
 
 %% For each timepoint, identify the locations of the traps
 %Go trhough each image in the timepoint object, and extract the locations
@@ -7,9 +7,15 @@ function [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTim
 %pass the trapLocations matrix from t-1 for the calculation of t cc. Uses the mask of
 %the traps to increase the likelihood of finding the same trap again.
 
-if nargin<5
+if nargin<5 || isempty(trapImagesPrevTp)
     trapImagesPrevTp=[];
 end
+
+if nargin<6 || isempty(trapLocationsToCheck)
+    trapLocationsToCheck=1:length(trapLocations); %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
+end
+
+
 
 
 cTrap=cCellVision.cTrap;
@@ -56,7 +62,7 @@ if ~any(size(trapLocations))
 end
 
 % if isempty(trapImagesPrevTp)
-    [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations);
+    [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck);
 % else
 % %     [trapLocations trap_mask trapImages]=updateTrapLocWithPrev(image,cTrap,trapLocations,trapImagesPrevTp);
 % end
@@ -115,7 +121,14 @@ end
 
 
 
-function [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations)
+function [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
+
+if nargin<4 || isempty(trapLocationsToCheck)
+    trapLocations = 1:length(trapLocationsToCheck);
+elseif strcmp(trapLocationsToCheck,'none')
+    trapLocationsToCheck = [];
+end
+
 timepoint_im=double(image);
 timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
 image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],'replicate');%median(timepoint_im(:)));
@@ -142,18 +155,26 @@ for i=1:length(trapLocations)
     xcurrent=trapLocations(i).xcenter+cTrap.bb_width;
     ycurrent=trapLocations(i).ycenter+cTrap.bb_height;
     
-    temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
-    
-    [maxval maxloc]=max(temp_im(:));
-    [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
-    
-    xcenter=(xcurrent+xpeak-cTrap.bb_width/3-1);
-    ycenter=(ycurrent+ypeak-cTrap.bb_height/3-1);
+    if ismember(i,trapLocationsToCheck) %if this is one of the trap locations to check, make it's location the nearest one to the 
+        temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
 
-    trapLocations(i).xcenter=xcenter-cTrap.bb_width;
-    trapLocations(i).ycenter=ycenter-cTrap.bb_height;
+        [maxval maxloc]=max(temp_im(:));
+        [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
+
+        xcenter=(xcurrent+xpeak-cTrap.bb_width/3-1);
+        ycenter=(ycurrent+ypeak-cTrap.bb_height/3-1);
+
+        %commented out by Elco. Didn't want trapLocations to change. 
+
+        trapLocations(i).xcenter=xcenter-cTrap.bb_width;
+        trapLocations(i).ycenter=ycenter-cTrap.bb_height;
+    else
+        xcenter = trapLocations(i).xcenter + cTrap.bb_width;
+        ycenter = trapLocations(i).ycenter + cTrap.bb_height;
+    end
     trap_mask(round(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height),round(xcenter-cTrap.bb_width:xcenter+cTrap.bb_width))=true(size(cTrap.trap1,1),size(cTrap.trap1,2));
-    ycenter=round(ycenter);xcenter=round(xcenter);
+    ycenter=round(ycenter);
+    xcenter=round(xcenter);
     trapImages(:,:,i)=image_temp(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height,xcenter-cTrap.bb_width:xcenter+cTrap.bb_width);
 end
 trap_mask=trap_mask(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);

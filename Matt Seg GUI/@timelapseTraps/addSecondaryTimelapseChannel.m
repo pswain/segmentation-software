@@ -36,22 +36,39 @@ searchResult=regexp(files,searchString,'start');
 timepoint_index=0;
 folder=[folder '/'];
 % cTimelapse=cell(1)
-for i=1:length(cTimelapse.cTimepoint)
-    pattern='\d{5,6}';
-    fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
-    
-    p1=[fileNum{end} '_' searchString{1}];
-    match=regexp(files(:),p1,'match');
-    loc= ~cellfun('isempty',match);
-    if sum(loc)>0
-%         cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
-%         cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr([repmat(folder,sum(loc),1) vertcat(files{loc})]));
-        cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
+if cTimelapse.trapsPresent
+    for i=1:length(cTimelapse.cTimepoint)
+        %Match a pattern to the filename using regex
+        pattern='\d{5,6}';
+        fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
 
+        p1=[fileNum{end} '_' searchString{1}];
+        match=regexp(files(:),p1,'match');
+        loc= ~cellfun('isempty',match);
+        if sum(loc)>0
+    %         cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
+    %         cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr([repmat(folder,sum(loc),1) vertcat(files{loc})]));
+            cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
+
+        end
+
+    end
+else
+    for i=1:length(cTimelapse.cTimepoint)
+        pattern = '_t\d{2}';
+        fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
+       
+        p1=[searchString{1} '_\w{4}' fileNum{end}];        
+        match=regexp(files(:),p1,'match');
+        loc= ~cellfun('isempty',match);
+        if sum(loc)>0
+            cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
+
+        end
+        
     end
     
 end
-
 %add an offset field that can later be edited to offset the new image
 %relative to the DIC image when returning timepoints
 cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];

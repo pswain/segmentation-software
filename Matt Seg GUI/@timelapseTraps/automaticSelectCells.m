@@ -2,7 +2,7 @@ function automaticSelectCells(cTimelapse,params)
 
 if isempty(cTimelapse.timepointsProcessed)
     tempSize=[cTimelapse.cTimepoint.trapInfo];
-    cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
+    cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo));
 end
 
 if nargin<2
@@ -37,13 +37,13 @@ cTimelapse.cellsToPlot(:)=0;
 
 
 cTimepoint=cTimelapse.cTimepoint;
-for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
+for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
     disp(['Trap Number ' int2str(trap)]);
     cellLabels=zeros(1,100*sum(cTimelapse.timepointsProcessed));
     cellLabelsEnd=zeros(1,100*sum(cTimelapse.timepointsProcessed));
     cellsSeen=[];
     index=0;
-    for timepoint=1:length(cTimelapse.timepointsProcessed)
+    for timepoint=cTimelapse.timepointsToProcess
         if cTimelapse.timepointsProcessed(timepoint)
             tempLabels=cTimepoint(timepoint).trapInfo(trap).cellLabel;
             cellLabels(1,index+1:index+length(tempLabels))=tempLabels;

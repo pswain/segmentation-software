@@ -11,6 +11,7 @@ classdef timelapseTraps<handle
         pixelSize
         cellsToPlot %row = trap num, col is cell tracking number
         timepointsProcessed
+        timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
         extractedData
         channelNames
         imSize
@@ -26,22 +27,33 @@ classdef timelapseTraps<handle
     
     methods
         
-        function cTimelapse=timelapseTraps(folder)
+
+        function cTimelapse=timelapseTraps(folder,varargin)
             %% Read filenames from folder or Omero
-            if nargin<1
-                folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
-                fprintf('\n    Select the folder containing the images associated with this timelapse\n');
+            % varargin{1} is a logical that will make the constructor run
+            % nothing if it is true. this was done to be able to write nice
+            % load functions.
+            if size(varargin,2)>=1 && islogical(varargin{1})
+                NoAction = varargin{1};
+            else
+                NoAction = false;
             end
-            cTimelapse.timelapseDir=folder;
-            cTimelapse.cellsToPlot=sparse(100,1e3);
+            if ~NoAction
+                if nargin<1 || isempty(folder)
+                    folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
+                    fprintf('\n    Select the folder containing the images associated with this timelapse\n');
+                end
+                cTimelapse.timelapseDir=folder;
+                cTimelapse.cellsToPlot=sparse(100,1e3);
+            end
         end
             
         %functions for loading data and then processing to identify and
         %track the traps
-        loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,timepointsToLoad);
+        loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,trapsPresent,timepointsToLoad);
         loadTimelapseScot(cTimelapse,timelapseObj);
         
-        [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
+        %[trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
         trackTrapsThroughTime(cTimelapse,cCellVision,timepoints);
         trackCells(cTimelapse,cellMovementThresh);
         [histCellDist bins]=trackCellsHistDist(cTimelapse,cellMovementThresh);
@@ -96,6 +108,30 @@ classdef timelapseTraps<handle
 
         timelapse=returnTimelapse(cTimelapse,channel)
 
+    end
+    
+    methods (Static)
+        function cTimelapse = loadobj(LoadStructure)
+            
+            %% default loading method: DO NOT CHANGE
+            cTimelapse = timelapseTraps([],true);
+            
+            FieldNames = fieldnames(LoadStructure);
+            
+            for i = 1:numel(FieldNames)
+                
+                cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
+                
+            end
+            
+            %% back compatibility checks and what not
+            
+            if isempty(cTimelapse.timepointsToProcess)
+                
+                cTimelapse.timepointsToProcess = 1:length(cTimelapse.cTimepoint);
+                
+            end
+        end
     end
 end
 

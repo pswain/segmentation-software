@@ -147,6 +147,10 @@ end
 for k=1:length(trap)
     j=trap(k);
     if tPresent
+        if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
+            cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image(:,:,j)))>0)), ...
+            'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image(:,:,j)))>0),'trackLabel',sparse(zeros(size(image(:,:,j)))>0));
+        end
         cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image(:,:,j)))>0)), ...
             'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image(:,:,j)))>0),'trackLabel',sparse(zeros(size(image(:,:,j)))>0));
     else
