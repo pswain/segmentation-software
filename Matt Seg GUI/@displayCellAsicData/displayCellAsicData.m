@@ -92,6 +92,7 @@ classdef displayCellAsicData < handle
          
             cData.imageFigure=figure('units','normalized','position',[0.1,0.25,0.4,0.4]);
             cData.subImage=subplot(1,1,1);
+            
             rawImage=imread([cData.cTimelapse.timelapseDir filesep cData.cTimelapse.cTimepoint(1).filename{2}]);
             rawImage=double(rawImage)/double(max(rawImage(:)));
             cData.currentImage=cat(3,rawImage,rawImage,rawImage);
@@ -118,6 +119,8 @@ classdef displayCellAsicData < handle
             
             cData.image=imshow(cData.currentImage,[],'parent',cData.subImage);
             set(cData.image,'hittest','off');
+            set(cData.subImage,'xtick',[]);
+            set(cData.subImage,'ytick',[]);
             
             %Set up plot
             cData.plotFigure=figure('units','normalized','position',[0.5,0.25 0.4 0.4]);
