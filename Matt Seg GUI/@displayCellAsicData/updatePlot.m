@@ -20,10 +20,14 @@ for i=1:length(labels)
     m5=data(2).max5(position,:);
     
     plot(cData.plotAxes,1:numTimepoints,m5./median,'color',full(cData.trackingColors(labels(i),1:3)));
-    
+    x=find(max(m5./median)==(m5./median));
+    y=max(m5./median);
+    text(x,y,int2str(labels(i)),'parent',cData.plotAxes,...
+        'color',full(cData.trackingColors(labels(i),1:3)),...
+        'backgroundColor',[0.7 0.7 0.7]);
 end
 
-cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [0 5]);
+cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [1 2]);
 hold(cData.plotAxes,'off');
 end
 

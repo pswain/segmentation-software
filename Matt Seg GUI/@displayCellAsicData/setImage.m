@@ -18,7 +18,7 @@ function setImage(cData)
         
         %Pick a color for the circle if one is not already there
         %Stored in a sparse matrix, in same location as the data itself
-        if cData.trackingColors(labels(i),1:3)==0
+        if cData.trackingColors(labels(i),1:3)==0 %If no color is allocated
             colorOption=get(cData.colorSelect,'Value');
             switch colorOption
                 case 1 %"Default"
@@ -26,23 +26,26 @@ function setImage(cData)
                     
                 case 2 %"Red"
                     curColor=[1 0 0];
-                case 3 %"Yellow"
+                case 3 %"Green"
                     curColor=[0 0.8 0];
                 case 4 %"Blue"
                     curColor=[0 0 1];
                     
             end
             cData.trackingColors(labels(i),1:3)=curColor;
-        else
+        else % Use the alredy allocated color
             curColor=cData.trackingColors(labels(i),1:3);
         end
         
         if ~isempty(position)
             outlines=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cell(position).segmented;
+            center=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cell(position).cellCenter;
             outlines=cat(3,full(outlines*curColor(1)),full(outlines*curColor(2)),full(outlines*curColor(3)));
             
             cData.currentImage(outlines>0)=0;
             cData.currentImage=imadd(cData.currentImage,outlines);
+            cData.currentImage=insertText(cData.currentImage,center,labels(i),...
+                                            'TextColor',full(curColor),'BoxOpacity',0);
         end
     end
     %Update image

@@ -88,8 +88,9 @@ classdef displayCellAsicData < handle
             [~, cData.cellsWithData]=find(cData.cTimelapse.cellsToPlot);
             
             %Set up image
-            
-            cData.imageFigure=figure('units','normalized');
+            set(0,'units','normalized');
+         
+            cData.imageFigure=figure('units','normalized','position',[0.1,0.25,0.4,0.4]);
             cData.subImage=subplot(1,1,1);
             rawImage=imread([cData.cTimelapse.timelapseDir filesep cData.cTimelapse.cTimepoint(1).filename{2}]);
             rawImage=double(rawImage)/double(max(rawImage(:)));
@@ -119,7 +120,7 @@ classdef displayCellAsicData < handle
             set(cData.image,'hittest','off');
             
             %Set up plot
-            cData.plotFigure=figure;
+            cData.plotFigure=figure('units','normalized','position',[0.5,0.25 0.4 0.4]);
             cData.plotAxes=axes('parent',cData.plotFigure,'color',[0.9,0.9,0.9]);
             timepoint=floor(get(cData.timepointSlider,'value'));
             if isempty(timepoint)
@@ -138,7 +139,7 @@ classdef displayCellAsicData < handle
                 
             end
             
-            cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [0 5]);
+            cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [1 2]);
             hold(cData.plotAxes,'off');
             SliderStep = [1/(length(cTimelapse.cTimepoint)-1) 1/(length(cTimelapse.cTimepoint)-1)];
             %set up UI controls
@@ -165,18 +166,24 @@ classdef displayCellAsicData < handle
                 'Units','normalized',...
                 'position',[0.32,0.00,0.1,0.04],...
                 'parent',cData.imageFigure);
-            clearAll=uicontrol('style','pushbutton',...
-                'string','Print',...
+            printToExcel=uicontrol('style','pushbutton',...
+                'string','Print to Excel',...
                 'units','normalized',...
                 'position',[0.545,0.003,0.1,0.04],...
                 'parent',cData.imageFigure,...
                 'callback',@(src,event)printCAData(cData));
             printAll=uicontrol('style','pushbutton',...
-                'string','Print All',...
+                'string','Print Images',...
                 'units','normalized',...
                 'position',[0.65,0.003,0.1,0.04],...
                 'parent',cData.imageFigure,...
-                'callback',@(src,event)printAllCAData(cData));
+                'callback',@(src,event)printImages(cData));
+            printSingleImage=uicontrol('style','pushbutton',...
+                'string','Print Single Image',...
+                'units','normalized',...
+                'position',[0.755,0.003,0.1,0.04],...
+                'parent',cData.imageFigure,...
+                'callback',@(src,event)printSingle(cData));
             
             cData.slideListener=addlistener(cData.timepointSlider,'Value','PostSet',@(src,event)sliderChanged(cData));
             
@@ -185,6 +192,8 @@ classdef displayCellAsicData < handle
             set(cData.subImage,'buttondownfcn',{@mouseClick,cData},'hittest','on','visible','on')
             
             set(cData.imageFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event))
+            set(cData.plotFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event))
+
         end
         %%
         function sliderChanged(cData)
@@ -230,37 +239,47 @@ classdef displayCellAsicData < handle
         
         function printCAData( cData )
             %This is a lazy function so no comments for you
-            set(cData.timepointSlider,'value',12);
-            cData.setImage()
-            outimage1=cData.currentImage;
-            set(cData.timepointSlider,'value',16);
-            cData.setImage()
-            outimage2=cData.currentImage;
-            printfigure=figure;
-            sub1=subplot(2,2,1,'units','normalized','position',[0,0.5,0.5,0.5]);
-            imshow(outimage1)
-            sub2=subplot(2,2,2,'units','normalized','position',[0.5,0.5,0.5,0.5]);
-            imshow(outimage2)
-            sub3=copyobj(cData.plotAxes,printfigure);
-            set(sub3,'units','normalized','position',[0.05,0.05,0.9,0.4]);
+            [~, labels]=find(cData.cellsToPlot);
+            extractedData=[];
+           for  i=1:length(labels)               
+               intensity=cData.cTimelapse.extractedData(1).max5(labels(i),:)./cData.cTimelapse.extractedData(1).median(labels(i),:);
+               extractedData=[extractedData;labels(i),intensity];
+           end
+           [filename,pathname]=uiputfile('extractedData.xls');
+           xlswrite([pathname filename], extractedData);
         end
         
-        function printAllCAData(cData)
-            outImages=[cData.cTimelapse.timelapseDir filesep cData.cTimelapse.cTimepoint(1).filename{2}(1:end-8)];
+        function printSingle(cData)
+            channelVal=get(cData.channelSelect,'Value');
+            identifier=[cData.cTimelapse.cTimepoint(1).filename{channelVal}(end-21:end-20)  '.tif']
+            [filename,pathname]=uiputfile(identifier);
+            
+            printFigure=figure('visible','off');
+            printImage=imshow(cData.currentImage,[]);
+            saveas(printFigure,[pathname filename],'tif');
+            close(printFigure);
+        end
+        
+        function printImages(cData)
+            channelVal=get(cData.channelSelect,'Value');
+            outImages=[cData.cTimelapse.timelapseDir filesep cData.cTimelapse.cTimepoint(1).filename{channelVal}(1:end-8)];
             mkdir(outImages);
-            printFigure=figure;
+            printFigure=figure('visible','off');
+            printImage=imshow(cData.currentImage,[]);
             for i=1:length(cData.cTimelapse.cTimepoint)
                 set(cData.timepointSlider,'value',i);
-                cData.setImage();
-                imshow(cData.currentImage,[]);
+                set(printImage,'cData',cData.currentImage);
                 saveas(printFigure,[outImages filesep 'timepoint_' int2str(i)],'tif'); 
                 
             end
+            clf(printFigure);
             copyobj(cData.plotAxes,printFigure);
             saveas(printFigure,[outImages filesep 'plot'],'tif');
             close(printFigure);
         end
-
+        
+        
+            
 
         
         

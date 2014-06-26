@@ -1,5 +1,6 @@
 function editTimelapse( cExperiment, cCellVision, positionsToIdentify)
-
+%Calls cTrapDisplay for each timelapse in the cExperiment file. Allows
+%editing of the cells identified through segmentation.
 if nargin<3
     positionsToIdentify=1:length(cExperiment.dirs);
 end
