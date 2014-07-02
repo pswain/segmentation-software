@@ -29,23 +29,13 @@ for i=2:length(timepoints)
     colDif=output(4);
     rowDif=output(3);
     
-<<<<<<< HEAD
     %correction for case of huge (innacurate moves)
-%     if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
-%         colDif=accumCol;
-%     end
-%     if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*1/2
-%         rowDif=accumRow;
-%     end
-=======
-    %i
     if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         colDif=accumCol;
     end
     if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_height*1/2
         rowDif=accumRow;
     end
->>>>>>> 15b4c1e737f0e3eb910772908bd85399cc7acc45
     
     accumCol = colDif;
     accumRow = rowDif;
