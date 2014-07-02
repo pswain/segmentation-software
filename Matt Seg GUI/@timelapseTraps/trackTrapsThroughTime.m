@@ -29,6 +29,7 @@ for i=2:length(timepoints)
     colDif=output(4);
     rowDif=output(3);
     
+<<<<<<< HEAD
     %correction for case of huge (innacurate moves)
 %     if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
 %         colDif=accumCol;
@@ -36,6 +37,15 @@ for i=2:length(timepoints)
 %     if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_width*1/2
 %         rowDif=accumRow;
 %     end
+=======
+    %i
+    if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
+        colDif=accumCol;
+    end
+    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_height*1/2
+        rowDif=accumRow;
+    end
+>>>>>>> 15b4c1e737f0e3eb910772908bd85399cc7acc45
     
     accumCol = colDif;
     accumRow = rowDif;
@@ -43,6 +53,11 @@ for i=2:length(timepoints)
     
     xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
     yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
+    
+    xloc(xloc<1) = 1;
+    xloc(xloc>cTimelapse.imSize(2)) = cTimelapse.imSize(2);
+    yloc(yloc<1) = 1;
+    yloc(yloc>cTimelapse.imSize(1)) = cTimelapse.imSize(1);
     
     cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
     
@@ -53,7 +68,7 @@ for i=2:length(timepoints)
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
     
-    if rem(i,80)==0
+    if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         regIm=newIm;
         timepointReg=timepoints(i);
         accumCol = 0;

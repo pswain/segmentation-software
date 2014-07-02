@@ -3,7 +3,7 @@ function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, met
 allowedOverlap=.15;
 
 if nargin<3
-    timepoint=1;
+    timepoint=cTimelapse.timepointsToProcess(1);
 end
 
 if nargin<4

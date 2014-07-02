@@ -21,12 +21,17 @@ classdef cTrapDisplayProcessing<handle
 %                 method='twostage';
 %             end
             if nargin<3 || isempty(timepoints)
-                timepoints=1:length(cTimelapse.cTimepoint);
+                timepoints=cTimelapse.timepointsToProcess;
             end
             
             if nargin<4 && cTimelapse.trapsPresent
+<<<<<<< HEAD
                 traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif ~nargin<4 && ~cTimelapse.trapsPresent
+=======
+                traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
+            else
+>>>>>>> 15b4c1e737f0e3eb910772908bd85399cc7acc45
                 traps=1;
             end
             

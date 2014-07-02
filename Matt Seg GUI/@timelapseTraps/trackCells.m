@@ -1,5 +1,36 @@
 function trackCells(cTimelapse,cellMovementThresh)
-
+%trackCells: Tracks individual cells over multiple images, and finds trapinfo
+%---------------------------------------------------------
+%       Function of timelapseTracks class to assign labels to the cells in
+%       each timepoint, and so track the individual cells between the 
+%       timepoints. Also calculates if cells are present in each trap if
+%       traps are present.
+%
+%       Calculates the distance between all cell centers between one timeframe ant
+%       the next and uses this, weighted for factors like cell size etc.,
+%       to find the most likely candidate for the same cell. Each cell is
+%       then assigned a label.
+%
+%IMPORTANT VARS:    cTimelapse.cTimepoint(i).cellLabel
+%                   1xN double vector
+%                     cellLabel is a vector which contains labels for all
+%                     of the cells being tracked. 
+%                     The label itself will be a number, corresponding to
+%                     the cell's position in the first timepoint. The
+%                     cell's number in the current timepoint i is given by
+%                     the position in the vector. This gives a way to link
+%                     a given cell in all timepoints, by matching the
+%                     labels.
+%
+%INPUT:             cTimelapse
+%                   timelapseTrapsGUI
+%                     TimelapseTrapsGUI with all cells already segmented
+%
+%                   cellMovementThresh
+%                   Double
+%                     Number to indicate how far (in pixels) a cell can
+%                     move before it should be considered a new cell. 
+%                     Optional argument, if left blank defaults to inf.
 if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
@@ -21,14 +52,16 @@ if isempty(cTimelapse.timepointsProcessed)
     cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
 end
 
-for timepoint=1:length(cTimelapse.timepointsProcessed)
+for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
         disp(['Timepoint ' int2str(timepoint)]);
-        
-        if timepoint>2 
+        %Shuffles data around, trapinfo is data of current timepoint, 
+        %trapinfom1 is data of previous timepoint,
+        %trapinfom2 is data of timepoint before that.
+        if length(cTimelapse.timepointsToProcess)>1 && timepoint>cTimelapse.timepointsToProcess(2) 
             trapInfom2=trapInfom1;
         end
-       if timepoint>1
+        if timepoint>cTimelapse.timepointsToProcess(1)
             trapInfom1=trapInfo;
         end
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
@@ -36,14 +69,14 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
         %this is to correct for a bug in some old timelapses that I was
         %processing, shouldn't be needed generally. For when a timepoint
         %wasn't processed but the tp before and after was
-        if timepoint>2 && ~cTimelapse.timepointsProcessed(timepoint-1)
+        if length(cTimelapse.timepointsToProcess)>1 && timepoint>cTimelapse.timepointsToProcess(2) && ~cTimelapse.timepointsProcessed(timepoint-1)
             trapInfom2=trapInfom1;
         end
         
         
 %         trapMaxCell=zeros(1,length(cTimelapse.cTimepoint(1).trapInfo));
-        for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
-            if timepoint==1
+        for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
+            if timepoint==cTimelapse.timepointsToProcess(1)
                 if trapInfo(trap).cellsPresent
                     len=length(trapInfo(trap).cell);
                     trapInfo(trap).cellLabel=1:length(trapInfo(trap).cell);
@@ -64,7 +97,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 cirrad=[trapInfom1(trap).cell(:).cellRadius]';
                 pt1=[circen cirrad];
                 
-                if timepoint>2
+                if timepoint>cTimelapse.timepointsToProcess(2)
                     circen=[trapInfom2(trap).cell(:).cellCenter];
                     circen=reshape(circen,2,length(circen)/2)';
                     cirrad=[trapInfom2(trap).cell(:).cellRadius]';
@@ -76,16 +109,16 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 if isempty(pt1)
                     pt1=ones(1,3)*Inf;
                 end
-                if isempty(pt2) && timepoint>1
+                if isempty(pt2) && timepoint>cTimelapse.timepointsToProcess(1)
                     pt2=ones(1,3)*Inf;
                 end
-                if isempty(pt3) && timepoint>2
+                if isempty(pt3) && timepoint>cTimelapse.timepointsToProcess(2)
                     pt3=ones(1,3)*Inf;
                 end
 %                 dist=pdist2(pt1,pt2,'euclidean');
                 dist=alternativeDist(pt1,pt2);
                 
-                if timepoint>2
+                if timepoint>cTimelapse.timepointsToProcess(2)
                     dist2=alternativeDist(pt3,pt2);
                 else
                     dist2=ones(size(dist))*1e6;
@@ -110,7 +143,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             dist2(:,col)=Inf;
                             noLabel(col)=0;
                             
-                            if timepoint>2
+                            if timepoint>cTimelapse.timepointsToProcess(2)
                                 locPrev=find(trapInfom2(trap).cellLabel==temp_val);
                                 if ~isempty(locPrev)
                                     dist2(locPrev,:)=Inf;
@@ -148,7 +181,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
                         end
                     end
-                elseif timepoint>2 && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-2)
+                elseif timepoint>cTimelapse.timepointsToProcess(2) && motherIndex(trap,timepoint-2) && motherIndex(trap,timepoint) && cTimelapse.timepointsProcessed(timepoint-2)
                     newLabel=trapInfom2(trap).cellLabel(motherIndex(trap,timepoint-2));
                     if ~any(trapInfo(trap).cellLabel==newLabel)
                         trapInfo(trap).cellLabel(motherIndex(trap,timepoint))=newLabel;
@@ -195,6 +228,9 @@ trap=1:length(cTimelapse.cTimepoint(1).trapInfo);
 end
 
 function distance= alternativeDist(pt1,pt2)
+%Returns a 2x2 matrix of the distances between all the cells tracked in pt1&pt2
+%Rows denote previous timeframe cells, collumns denote current timeframe
+%cells
 if ~isempty(pt1) && ~isempty(pt2)
     dist=[];
     for i=1:size(pt1,2)
