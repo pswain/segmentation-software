@@ -3,8 +3,10 @@ function  [predicted_im decision_im filtered_image]=classifyImageLinear(cCellSVM
 
 if isempty(cCellSVM.cTrap)
     filtered_image=cCellSVM.createImFilterSetCellAsic(image);
-else
+elseif length(cCellSVM.scaling.max)>150
     filtered_image=cCellSVM.createImFilterSetCellTrap(image);
+else
+    filtered_image=cCellSVM.createImFilterSetCellTrap_Reduced(image);
 end
 
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));

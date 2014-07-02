@@ -6,7 +6,7 @@ cExperiment.trackCells(find(cExperiment.posSegmented),5);
 
 % cExperiment.combineTracklets(find(cExperiment.posSegmented));
 
-cTimelapse=cExperiment.returnTimelapse(1);
+cTimelapse=cExperiment.returnTimelapse(2);
 params.fraction=.8; %fraction of timelapse length that cells must be present or
 params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
 params.framesToCheck=length(cTimelapse.cTimepoint);
@@ -17,6 +17,8 @@ cExperiment.selectCellsToPlotAutomatic(find(cExperiment.posTracked),params);
 % cExperiment.compileCellInformationParamsOnly;
 
 cExperiment.extractCellInformation(find(cExperiment.posTracked),'max');
+% cExperiment.extractCellInformation(15:36,'max');
+
 cExperiment.compileCellInformation;
 %%
 params.motherDurCutoff=(.6);

@@ -1,13 +1,20 @@
 function correctSkippedFramesInf(cTimelapse)
 
-d=abs(diff(cTimelapse.extractedData(1).mean,1,2));
-dPre=d;dPre=padarray(dPre,[0 1],0,'post');
-dPost=d;dPost=padarray(dPost,[0 1],0,'pre');
 
-locSkipped=(dPost>0)&(dPre>0)& (cTimelapse.extractedData(1).mean==0);
-[row col]=find(locSkipped);
 
 for j=1:length(cTimelapse.extractedData)
+    d=abs(diff(cTimelapse.extractedData(j).xloc,1,2));
+    dPre=d;dPre=padarray(dPre,[0 1],0,'post');
+    dPost=d;dPost=padarray(dPost,[0 1],0,'pre');
+    
+    dPre=cTimelapse.extractedData(j).xloc(:,1:end-1)>0;
+    dPre=padarray(dPre,[0 1],0,'post');
+    dPost=cTimelapse.extractedData(j).xloc(:,2:end)>0;
+    dPost=padarray(dPost,[0 1],0,'pre');
+
+    
+    locSkipped=(dPost>0)&(dPre>0)& (cTimelapse.extractedData(j).xloc==0);
+    [row col]=find(locSkipped);
     
     for k=1:length(row)
         l=k;

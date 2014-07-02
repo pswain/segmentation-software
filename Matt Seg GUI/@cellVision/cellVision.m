@@ -45,7 +45,7 @@ classdef cellVision<handle
         generateTrainingSet(cCellSVM,cDictionary);
         generateTrainingSet2Stage(cCellSVM,cDictionary,frame_ss);
         generateTrainingSetAll(cCellSVM,cDictionary,frame_ss);
-        generateTrainingSetTimelapse(cCellSVM,cDictionary,frame_ss);
+        generateTrainingSetTimelapse(cCellSVM,cDictionary,frame_ss,type);
         trainSVM(cCellSVM,ss,cmd);
         trainSVM2Stage(cCellSVM,ss,decval,cmd1,cmd2);
         trainSVMLinear(cCellSVM,ss,cmd);

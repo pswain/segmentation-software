@@ -6,8 +6,10 @@ function  [predicted_im decision_im filtered_image]=classifyImage2Stage(cCellSVM
 
 if isempty(cCellSVM.cTrap)
     filtered_image=cCellSVM.createImFilterSetCellAsic(image);
-else
+elseif length(cCellSVM.scaling.max)>150
     filtered_image=cCellSVM.createImFilterSetCellTrap(image);
+else
+    filtered_image=cCellSVM.createImFilterSetCellTrap_Reduced(image);
 end
 
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
@@ -17,8 +19,12 @@ filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.
 [predict_label, ~, dec_values] = predict(ones(size(image,1)*size(image,2),1), sparse(filtered_image), cCellSVM.SVMModelLinear); % test the training data]\
 % [predict_label, accuracy, dec_values] = predict(ones(size(image,1)*size(image,2),1), (filtered_image), cCellSVM.SVMModel); % test the training data]\
 
-[B,IX]=sort(dec_values(:),'ascend');
-l=length(IX)*.037;
+trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se1);
+dec_values(trapOutline(:))=2;
+b=dec_values;
+[B,IX]=sort(b(:),'ascend');
+% [B,IX]=sort(dec_values(:),'ascend');
+l=length(IX)*.035;
 loc=IX(1:(round(l)));
 
 % 

@@ -54,12 +54,12 @@ macro "Time-Lapse Color Coder" {
 	calcslices = slices * totalframes;
 	imgID = getImageID();
 
+	setBatchMode(true);
+
 	newImage("colored", "RGB White", ww, hh, calcslices);
 	run("Stack to Hyperstack...", "order=xyczt(default) channels=1 slices="
 		+ slices + " frames=" + totalframes + " display=Color");
 	newimgID = getImageID();
-
-	setBatchMode(true);
 
 	selectImage(imgID);
 	run("Duplicate...", "duplicate");
@@ -113,9 +113,8 @@ macro "Time-Lapse Color Coder" {
 	selectImage(imgID);
 	close();
 
-	setBatchMode("exit and display");
-
 	selectImage(newimgID);
+
 	run("Stack to Hyperstack...", "order=xyctz channels=1 slices="
 		+ totalframes + " frames=" + slices + " display=Color");
 	op = "start=1 stop=" + Gendf + " projection=[Max Intensity] all";
@@ -123,24 +122,57 @@ macro "Time-Lapse Color Coder" {
 	if (slices > 1)
 		run("Stack to Hyperstack...", "order=xyczt(default) channels=1 slices=" + slices
 			+ " frames=1 display=Color");
+	resultImageID = getImageID();
+
 	selectImage(newimgID);
 	close();
+
+	selectImage(resultImageID);
+	setBatchMode("exit and display");
+
 	if (GFrameColorScaleCheck)
 		CreateScale(Glut, Gstartf, Gendf);
 }
 
+function makeLUTsArray() {
+	eval("script", "importClass(Packages.ij.IJ);\n"
+		+ "\n"
+		+ "result = [];\n"
+		+ "if (IJ.getInstance() != null) {\n"
+		+ "	importClass(Packages.fiji.User_Plugins);\n"
+		+ "	importClass(Packages.ij.Menus);\n"
+		+ "\n"
+		+ "	commands = Menus.getCommands();\n"
+		+ "	lutsMenu = User_Plugins.getMenu('Image>Lookup Tables');\n"
+		+ "	if (lutsMenu != null) {\n"
+		+ "		for (i = 0; i < lutsMenu.getItemCount(); i++) {\n"
+		+ "			menuItem = lutsMenu.getItem(i);\n"
+		+ "			if (menuItem.getActionListeners().length == 0) {\n"
+		+ "				// is a separator\n"
+		+ "				continue;\n"
+		+ "			}\n"
+		+ "			label = menuItem.getLabel();\n"
+		+ "			if (label.equals('Invert LUT') || label.equals('Apply LUT')) {\n"
+		+ "				// no lookup table\n"
+		+ "				continue;\n"
+		+ "			}\n"
+		+ "			command = commands.get(label);\n"
+		+ "			if (command == null || command.startsWith('ij.plugin.LutLoader')) {\n"
+		+ "				result.push(label);\n"
+		+ "			}\n"
+		+ "		}\n"
+		+ "	}\n"
+		+ "}\n"
+		+ "// ImageJ < 1.47n always returned null from eval('script', script)\n"
+		+ "// To work around this, we set a special system property. Hacky, but works.\n"
+		+ "System.setProperty('result', result.join('\\n'));\n"
+		+ "// ImageJ >= 1.47n *does* return the value of the last evaluated statement\n"
+		+ "null;\n");
+	return split(call("java.lang.System.getProperty", "result"), "\n");
+}
+
 function showDialog() {
-	lutA = newArray(10);
-	lutA[0] = "Spectrum";
-	lutA[1] = "Fire";
-	lutA[2] = "Ice";
-	lutA[3] = "3-3-2 RGB";
-	lutA[4] = "brgbcmyw";
-	lutA[5] = "Green Fire Blue";
-	lutA[6] = "royal";
-	lutA[7] = "thal";
-	lutA[8] = "smart";
-	lutA[9] = "unionjack";
+	lutA = makeLUTsArray();
 
  	Dialog.create("Color Code Settings");
 	Dialog.addChoice("LUT", lutA);
