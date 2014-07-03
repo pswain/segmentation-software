@@ -65,7 +65,7 @@ for i=1:length(positionsToIdentify)
     fprintf('finished position %d of %d \n \n',i,length(positionsToIdentify))
 end
 
-fprintf('finished running active contour method on experiment\n \n')
+fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
 
 end
 

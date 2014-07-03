@@ -24,22 +24,26 @@ if sum(loc)>0
     if isempty(locSlash) 
         locSlash=strfind(file,'\'); %in case file was made on a windows machine
     end
-    
-    if locSlash
-        inds=find(loc);
-        for i=1:sum(loc)
-            file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
-            %locSlash=strfind(file,'/');
-            file=file(locSlash(end)+1:end);
-            cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
-        end
-    end
+%     
+%     if locSlash
+%         inds=find(loc);
+%         for i=1:sum(loc)
+%             file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
+%             %locSlash=strfind(file,'/');
+%             file=file(locSlash(end)+1:end);
+%             cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+%         end
+%     end
 
     try
         
         ind=find(loc);
         file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-        ffile=fullfile(cTimelapse.timelapseDir,file);
+        if isempty(cTimelapse.timelapseDir)
+            ffile=file;
+        else
+            ffile=fullfile(cTimelapse.timelapseDir,file);
+        end
         if ~isempty(cTimelapse.imSize)
             timepointIm=zeros([cTimelapse.imSize sum(loc)]);
             if strfind(ffile,'TIF')
@@ -119,9 +123,9 @@ end
 %     warning('There is no data in this channel at this timepoint');
 % end
 %
-% if ~isempty(cTimelapse.magnification)
-%     timepoint=imresize(timepoint,cTimelapse.magnification);
-% end
+if ~isempty(cTimelapse.imScale)
+    timepointIm=imresize(timepointIm,cTimelapse.imScale);
+end
 
 if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
     image_rotation=cTimelapse.cTimepoint(tp).image_rotation;

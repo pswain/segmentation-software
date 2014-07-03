@@ -1,4 +1,4 @@
-function generateTrainingSetTimelapse(cCellVision,cTimelapse,frame_ss)
+function generateTrainingSetTimelapse(cCellVision,cTimelapse,frame_ss,type)
 
 
 % dictionary - contrains the images to be used and x-y coordinates for the synapses
@@ -17,12 +17,19 @@ if nargin<3
     frame_ss=1;
 end
 
+if nargin<4
+    type='full';
+end
 
 
 index=1;
 if isempty(cTimelapse.trapsPresent) ||cTimelapse.trapsPresent
     cTimelapse.trapsPresent=true;
-    features=cCellVision.createImFilterSetCellTrap(cTimelapse.returnSingleTrapTimepoint(1,1,1));
+    if strcmp(type,'full')
+        features=cCellVision.createImFilterSetCellTrap(cTimelapse.returnSingleTrapTimepoint(1,1,1));
+    else
+        features=cCellVision.createImFilterSetCellTrap_Reduced(cTimelapse.returnSingleTrapTimepoint(1,1,1));
+    end
 else
     features=cCellVision.createImFilterSetCellAsic(cTimelapse.returnSingleTrapTimepoint(1,1,1));
 end
@@ -56,6 +63,7 @@ se4 = strel('disk',4);
 se5 = strel('disk',5);
 se6 = strel('disk',6);
 
+insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
 % figure;imshow(cTimelapse.returnSingleTrapTimepoint(1,1,1),[]);
 % fig1=gca;
 for timepoint=1:frame_ss:total_num_timepoints
@@ -69,7 +77,11 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             
             if isempty(cTimelapse.trapsPresent) || cTimelapse.trapsPresent
-                features=cCellVision.createImFilterSetCellTrap(image(:,:,trap));
+                if strcmp(type,'full')
+                    features=cCellVision.createImFilterSetCellTrap(image(:,:,trap));
+                else
+                    features=cCellVision.createImFilterSetCellTrap_Reduced(image(:,:,trap));
+                end
             else
                 features=cCellVision.createImFilterSetCellAsic(image(:,:,trap));
             end
@@ -92,9 +104,9 @@ for timepoint=1:frame_ss:total_num_timepoints
                     class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                     if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius<10
+                    elseif trapInfo.cellRadius<8
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius<15
+                    elseif trapInfo.cellRadius<14
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
                     elseif trapInfo.cellRadius<22
                         class(:,:,num_cells)=imdilate(class(:,:,num_cells),se4);
@@ -119,7 +131,9 @@ for timepoint=1:frame_ss:total_num_timepoints
             edge_im=imdilate(edge_im,se_edge);
             
             num_neg=cCellVision.negativeSamplesPerImage;
-            neg_index=find(class==0 & edge_im);
+            % exclude regions that are inside the traps;
+            neg_index=find(class==0 & edge_im & ~insideTraps);
+%             neg_index=find(class==0 & ~insideTraps);
             if length(neg_index)>num_neg
                 neg_perm=randperm(length(neg_index));
                 class_temp=zeros(1,num_neg);
@@ -160,6 +174,9 @@ cCellVision.trainingData.features(non_entries,:)=[];
 
 cCellVision.scaling.min=min(cCellVision.trainingData.features);
 cCellVision.scaling.max=max(cCellVision.trainingData.features);
+
+loc=find(cCellVision.scaling.max==cCellVision.scaling.min)
+cCellVision.scaling.max(loc)=cCellVision.scaling.max(loc)+1;
 %
 cCellVision.trainingData.features=(cCellVision.trainingData.features - repmat(cCellVision.scaling.min,size(cCellVision.trainingData.features,1),1));
 cCellVision.trainingData.features=cCellVision.trainingData.features*spdiags(1./(cCellVision.scaling.max-cCellVision.scaling.min)',0,size(cCellVision.trainingData.features,2),size(cCellVision.trainingData.features,2));

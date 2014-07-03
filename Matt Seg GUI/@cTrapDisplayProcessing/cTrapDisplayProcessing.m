@@ -25,6 +25,8 @@ classdef cTrapDisplayProcessing<handle
             end
             
             if nargin<4 && cTimelapse.trapsPresent
+                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+            elseif ~nargin<4 && ~cTimelapse.trapsPresent
                 traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
             else
                 traps=1;

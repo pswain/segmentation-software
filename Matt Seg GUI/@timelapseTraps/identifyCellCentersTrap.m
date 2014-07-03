@@ -63,27 +63,27 @@ function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,channel,
 tPresent=cTimelapse.trapsPresent;
 
 parfor k=1:length(trap)
-    j=trap(k);  
-    [p_im d_im]=cCellVision.classifyImageLinear(image(:,:,j));
+    [p_im d_im]=cCellVision.classifyImageLinear(image(:,:,k));
     
     % combined_d_im=d_im+old_d_im/5;
     if cTimelapse.magnification<100
-        t_im=imfilter(d_im,fspecial('gaussian',4,1.1));% +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
+        t_im=imfilter(d_im,fspecial('gaussian',4,1.1),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
             bw=t_im<cCellVision.twoStageThresh; 
             
     else
-        t_im=imfilter(d_im,fspecial('disk',4)); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
+        t_im=imfilter(d_im,fspecial('disk',4),'symmetric'); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
         bw=t_im<cCellVision.twoStageThresh;
         if ~cTimelapse.trapsPresent
             bw=imerode(bw,strel('disk',2));
         end
     end
-    bw=t_im<cCellVision.twoStageThresh; 
+    
+%     bw=d_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
 
 for k=1:length(trap)
-    j=trap(k);
+    j=k;
     if tPresent
         cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image(:,:,j)))>0)), ...
             'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image(:,:,j)))>0),'trackLabel',sparse(zeros(size(image(:,:,j)))>0));
@@ -133,19 +133,21 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,channe
 
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
+
 parfor k=1:length(trap)
-    j=trap(k);  
-    [p_im d_im]=cCellVision.classifyImage2Stage(image(:,:,j));
+    %     j=trap(k);
+    [p_im d_im]=cCellVision.classifyImage2Stage(image(:,:,k));
     
 %     combined_d_im=d_im+old_d_im(:,:,j)/5;
     new_dim(:,:,k)=d_im;
-    t_im=imfilter(d_im,fspecial('gaussian',4,1.2)) +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2))/5; %  
+    t_im=imfilter(d_im,fspecial('gaussian',4,1.2),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
 
 for k=1:length(trap)
-    j=trap(k);
+    %     j=trap(k);
+    j=k;
     if tPresent
         if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
             cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image(:,:,j)))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image(:,:,j)))>0)), ...

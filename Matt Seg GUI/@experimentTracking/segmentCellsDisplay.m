@@ -28,7 +28,7 @@ for i=1:length(positionsToSegment)
     end
     
     b=[cTimelapse.cTimepoint.trapLocations];
-    if ~isempty(b)
+    if ~isempty(b) || ~cTimelapse.trapsPresent
         cTrapDisplayProcessing(cTimelapse,cCellVision,cTimelapse.timepointsToProcess);
     end
     

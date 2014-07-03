@@ -45,11 +45,8 @@ for TP=ttacObject.TimelapseTraps.timepointsToProcess;
         CentrePixels = [];
     end
     
-    try
     tempTrapCentre(CentrePixels) = true;
-    catch
-        fprintf('debug')
-    end
+
     ttacObject.TrapLocation{TP} = sparse(tempTrapCentre);
     
     tempTrapCentre(CentrePixels) = false;

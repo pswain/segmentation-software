@@ -29,7 +29,7 @@ for i=2:length(timepoints)
     colDif=output(4);
     rowDif=output(3);
     
-    %i
+    %correction for case of huge (innacurate moves)
     if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         colDif=accumCol;
     end

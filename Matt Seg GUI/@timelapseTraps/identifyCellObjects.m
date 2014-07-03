@@ -169,7 +169,13 @@ if isempty(bw_mask)
                 cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
                 ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
                 
-                if ~(ratioCellToTrap<allowedOverlap)
+                if abs(x-size(temp_im,2)/2+bb)<bb && abs(y-size(temp_im,1))<bb/2
+                    allowedOverlapTemp=allowedOverlap+.15;
+                else
+                    allowedOverlapTemp=allowedOverlap;
+                end
+                
+                if ~(ratioCellToTrap<allowedOverlapTemp)
                     circen(numCells,:)=[];
                     cirrad(numCells)=[];
                     
