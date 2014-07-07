@@ -1,7 +1,8 @@
 classdef timelapseTraps<handle
     
     properties
-        timelapseDir
+        fileSoure = 'swain-batman' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
+        timelapseDir %set to 'ignore' to use absolute file names
         cTimepoint
 %         cTrapsLabelled
         cTrapSize
@@ -16,6 +17,7 @@ classdef timelapseTraps<handle
         extractedData
         channelNames
         imSize
+        channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         
         lineageInfo
         %stuff Elco has added
@@ -71,7 +73,7 @@ classdef timelapseTraps<handle
         
         %updated processing cell function
         identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
-        d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,channel, method,trap_image,old_d_im)
+        d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
         addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
         identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
         identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
@@ -108,8 +110,22 @@ classdef timelapseTraps<handle
         trapsTimelapse=returnTrapsTimelapse(cTimelapse,traps,channel)
 
         timelapse=returnTimelapse(cTimelapse,channel)
-
+    
+        function cTimelapseOUT = copy(cTimelapseIN)
+            
+            cTimelapseOUT = timelapseTraps([],true);
+            
+            FieldNames = fields(cTimelapseIN);
+            
+            for i = 1:numel(FieldNames)
+                
+                cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
+                
+            end
+            
+        end
     end
+    
     
     methods (Static)
         function cTimelapse = loadobj(LoadStructure)

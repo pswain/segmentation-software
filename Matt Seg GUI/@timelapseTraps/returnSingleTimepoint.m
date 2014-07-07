@@ -5,6 +5,13 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %than DIC/GFP etc frame at the timepoint, it assuems it is a z-stack and
 %returns the maximum projection of the stack.
 
+%To maintain backwards compatability there is a section of the code that
+%checks if a file name has file seperators in it and then changes the
+%filename to not have separators in. Then makes the file from the
+%timelapsedir and the filename. Sometimes this is not desirable, as such if
+%timelapseDir is set to 'ignore' then this is not performed and simply the
+%filename is used.
+
 if nargin<3
     channel=1;
 end
@@ -17,8 +24,10 @@ tp=timepoint;
 fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
 loc= ~cellfun('isempty',fileNum);
 if sum(loc)>0
-    file=[cTimelapse.cTimepoint(timepoint).filename{loc}];
-
+    file=cTimelapse.cTimepoint(timepoint).filename{loc};
+    
+    if ~strcmp(cTimelapse.timelapseDir,'ignore')
+    
     locSlash=strfind(file,'/');
     
     if isempty(locSlash) 
@@ -34,12 +43,17 @@ if sum(loc)>0
             cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
         end
     end
+<<<<<<< HEAD
+=======
+    
+    end
+>>>>>>> 269c62242dbddd341afb767a87b91614afc4f673
 
     try
         
         ind=find(loc);
         file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-        if isempty(cTimelapse.timelapseDir)
+        if strcmp(cTimelapse.timelapseDir,'ignore')
             ffile=file;
         else
             ffile=fullfile(cTimelapse.timelapseDir,file);

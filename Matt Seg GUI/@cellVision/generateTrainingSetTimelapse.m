@@ -1,5 +1,6 @@
 function generateTrainingSetTimelapse(cCellVision,cTimelapse,frame_ss,type)
-
+%type can be a string or a handle to a function. if a handle, expects
+%cCellvision object and then image(or image stack)
 
 % dictionary - contrains the images to be used and x-y coordinates for the synapses
 
@@ -21,18 +22,16 @@ if nargin<4
     type='full';
 end
 
+cCellVision.training_channels = cTimelapse.channelNames(cTimelapse.channelsForSegment);
+
+cCellVision.filterFunction = type;
 
 index=1;
-if isempty(cTimelapse.trapsPresent) ||cTimelapse.trapsPresent
-    cTimelapse.trapsPresent=true;
-    if strcmp(type,'full')
-        features=cCellVision.createImFilterSetCellTrap(cTimelapse.returnSingleTrapTimepoint(1,1,1));
-    else
-        features=cCellVision.createImFilterSetCellTrap_Reduced(cTimelapse.returnSingleTrapTimepoint(1,1,1));
-    end
-else
-    features=cCellVision.createImFilterSetCellAsic(cTimelapse.returnSingleTrapTimepoint(1,1,1));
-end
+
+trap1 = cTimelapse.returnSegmenationTrapsStack(1,cTimelapse.timepointsToProcess(1));
+
+features=getFilteredImage(cCellVision,trap1{1});
+
 n_features=size(features,2);
 total_num_timepoints=length(cTimelapse.cTimepoint);
 num_frames=0;
@@ -50,10 +49,10 @@ cCellVision.trainingData.class=zeros(1,n_points)-100;
 n_points=[];
 tic; time=toc;
 
-if isempty(cCellVision.cTrap)
-    se_edge=strel('disk',20);
-else
+if strcmp(cTimelapse.fileSoure,'swain-batman') && cTimelapse.magnification==60;
     se_edge=strel('disk',9);
+else
+    se_edge=strel('disk',20);
 end
 
 se1 = strel('disk',1);
@@ -63,29 +62,24 @@ se4 = strel('disk',4);
 se5 = strel('disk',5);
 se6 = strel('disk',6);
 
-insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
+if ~isempty(cCellVision.cTrap)
+    insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
+else
+    insideTraps = false([size(trap1{1},1) size(trap1{1},2)]);
+end
 % figure;imshow(cTimelapse.returnSingleTrapTimepoint(1,1,1),[]);
 % fig1=gca;
 for timepoint=1:frame_ss:total_num_timepoints
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
-    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,1);
+    image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint);
     for trap=1:max(traps)
             elapsed_t=toc-time;
             disp(['Trap ', int2str(trap), 'Frame ', int2str(timepoint)])
             disp(['Time ', num2str(elapsed_t)])
             
             
-            
-            if isempty(cTimelapse.trapsPresent) || cTimelapse.trapsPresent
-                if strcmp(type,'full')
-                    features=cCellVision.createImFilterSetCellTrap(image(:,:,trap));
-                else
-                    features=cCellVision.createImFilterSetCellTrap_Reduced(image(:,:,trap));
-                end
-            else
-                features=cCellVision.createImFilterSetCellAsic(image(:,:,trap));
-            end
-            
+            features=getFilteredImage(cCellVision,image{trap});
+
             %used to broaden the lines for more accurate classification
             %             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
             
@@ -98,47 +92,59 @@ for timepoint=1:frame_ss:total_num_timepoints
                 trapInfo.cellCenters=reshape(tempy,[2 length(tempy)/2])';
             end
             
-            class=zeros([size(image(:,:,trap)) length(trapInfo.cellRadius)+1]);
+            
+            training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
             if size(trapInfo.cellRadius,1)>0
                 for num_cells=1:length(trapInfo.cellRadius)
-                    class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
+                    training_class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                     if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se1);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                     elseif trapInfo.cellRadius<8
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se2);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
                     elseif trapInfo.cellRadius<14
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se3);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
                     elseif trapInfo.cellRadius<22
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se4);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
                     elseif trapInfo.cellRadius<27
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se5);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se5);
                     else
-                        class(:,:,num_cells)=imdilate(class(:,:,num_cells),se6);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se6);
                     end      
                 end
             end
-            class=max(class,[],3);
-            class=class>0;
+            training_class=max(training_class,[],3);
+            training_class=training_class>0;
+            
+            %exclude pixels around right next to centre pixels to try and
+            %make classification more robust
+            exclude_from_negs = imdilate(training_class,se1);
 %             tempy=image(:,:,trap);
 %             tempy(class)=tempy(class)*2;
 %             imshow(tempy,[],'Parent',fig1);pause(.01);
 
             
-            [edge_im thresh]=edge(image(:,:,trap),'canny');
             %             se=strel('disk',8);
             %             edge_im=imdilate(edge_im,se);
 %             edge_im=ones(size(image,1),size(image,2));
-            edge_im=imdilate(edge_im,se_edge);
+
+            %this is a bit of a fudge and one should probably do something
+            %more clever to find the pixels to pick from than this
+            
+            edge_im=imdilate(training_class,se_edge);
+            
+            %another option
+            %[edge_im thresh]=edge(max(image{trap},[],3),'canny');
+            
             
             num_neg=cCellVision.negativeSamplesPerImage;
             % exclude regions that are inside the traps;
-            neg_index=find(class==0 & edge_im & ~insideTraps);
+            neg_index=find(exclude_from_negs==0 & edge_im & ~insideTraps);
 %             neg_index=find(class==0 & ~insideTraps);
             if length(neg_index)>num_neg
                 neg_perm=randperm(length(neg_index));
                 class_temp=zeros(1,num_neg);
                 output=features(neg_index(neg_perm(1:num_neg)),:);
-                pos_index=find(class~=0);
+                pos_index=find(training_class~=0);
                 class_temp(1,end+1:end+length(pos_index))=ones(1,length(pos_index));
                 output(end+1:end+length(pos_index),:)=features(pos_index,:);
                 
@@ -151,8 +157,8 @@ for timepoint=1:frame_ss:total_num_timepoints
                 class_temp=zeros(1,length(neg_index));
                 output=features(neg_index,:);
                 
-                pos_index=find(class~=0);
-                class_temp(1,end+1:end+length(pos_index))=class(pos_index);
+                pos_index=find(training_class~=0);
+                class_temp(1,end+1:end+length(pos_index))=training_class(pos_index);
                 output(end+1:end+length(pos_index),:)=features(pos_index,:);
                 
                 n_points=size(output,1);
