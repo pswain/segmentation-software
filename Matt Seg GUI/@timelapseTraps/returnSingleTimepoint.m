@@ -24,16 +24,16 @@ if sum(loc)>0
     if isempty(locSlash) 
         locSlash=strfind(file,'\'); %in case file was made on a windows machine
     end
-%     
-%     if locSlash
-%         inds=find(loc);
-%         for i=1:sum(loc)
-%             file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
-%             %locSlash=strfind(file,'/');
-%             file=file(locSlash(end)+1:end);
-%             cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
-%         end
-%     end
+    
+    if locSlash
+        inds=find(loc);
+        for i=1:sum(loc)
+            file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
+            %locSlash=strfind(file,'/');
+            file=file(locSlash(end)+1:end);
+            cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+        end
+    end
 
     try
         

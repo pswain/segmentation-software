@@ -4,12 +4,12 @@ file='/Users/mcrane2/SkyDrive/timelapses/13-Jun 2014 (robin)/1-Pos_000_000cTimel
 
 load(file);
 %%
+
+file='C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\2-Pos_000_002cTimelapse.mat';
+load(file);
+
 cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:15:end);
 cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:15:end);
-for i=1:length(cTimelapse.cTimepoint)
-    cTimelapse.cTimepoint(i).trapInfo=cTimelapse.cTimepoint(i).trapInfo(1:9:end);
-        cTimelapse.cTimepoint(i).trapLocations=cTimelapse.cTimepoint(i).trapLocations(1:9:end);
-end
 %%
 cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:22);
 cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:22);
@@ -17,12 +17,12 @@ cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:22);
 cTrapDisplay(cTimelapse,cCellVision);
 
 %% Once the ground truth has been created, can just use that
-load('C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014\pos 0 editted 1-22 tp.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:22);
-cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:22);
+load('C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\pos 0 1-24 editted.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:24);
+cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:24);
 
 cTimelapse2=cTimelapse;
-load('C:\Users\mcrane2\OneDrive\timelapses\13-Jun 2014 (robin)\pos 0 editted v2 - cropped.mat')
+load('C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\2-Pos_001_002cTimelapse.mat')
 cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:5);
 
 cTimelapse.cTimepoint(end+1:end+length(cTimelapse2.cTimepoint))=cTimelapse2.cTimepoint;
@@ -41,7 +41,7 @@ cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %%
 cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
-step_size=12;
+step_size=16;
 cCellVision.runGridSearchLinear(step_size,cmd);
 %%
 step_size=1;
@@ -62,7 +62,7 @@ cCellVision.trainingParams.cost=2;
 cCellVision.trainingParams.gamma=2;
 
 %%
-step_size=9;
+step_size=13;
 cmd = ['-t 2 -w0 1 -w1 2 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
 tic
 cCellVision.trainSVM(step_size,cmd);toc
@@ -203,8 +203,8 @@ cDisplay=cTrapDisplay(cTimelapse,traps,1)
 
 
 %%
-image=cTimelapse.returnSingleTrapTimepoint(11,24);
-figure(1);imshow(image,[]);
+image=cTimelapse.returnSingleTrapTimepoint(1,1);
+figure(11);imshow(image,[]);
 %%
 tic
 % image=trap_im;
