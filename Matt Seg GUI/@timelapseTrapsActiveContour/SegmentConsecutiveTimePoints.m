@@ -329,7 +329,8 @@ fprintf('timepoint %d \n',TP)
     CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
     AnglesToWrite = CellRadiiToWrite;
     
-    parfor CNi = 1:length(CellsToSegment)  
+    fprintf('change back to parfor!!!!\n\n')
+    for CNi = 1:length(CellsToSegment)
         %divided loop into parallel slow part and relatively fast write
         %part.
         

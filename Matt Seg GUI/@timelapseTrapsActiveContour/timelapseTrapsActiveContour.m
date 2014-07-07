@@ -349,9 +349,15 @@ classdef timelapseTrapsActiveContour<handle
             % check the timepoints given fall in the appropriate range for
             % the timelapse.
             
-            if ~any(ismember(Timepoints,1:ttacObject.LengthOfTimelapse))
+            if ~any(ismember(Timepoints,ttacObject.TimepointsToCheck))
                 error('timpoints passed to SegmentConsecutiveTimePoints are not valid timepoints\n')
             end
+        end
+        
+        function Timepoints = TimepointsToCheck(ttacObject)
+            
+            Timepoints = ttacObject.TimelapseTraps.timepointsToProcess;
+            
         end
         
         
