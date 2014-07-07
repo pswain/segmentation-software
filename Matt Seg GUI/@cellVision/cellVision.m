@@ -14,6 +14,8 @@ classdef cellVision<handle
         radiusLarge
         pixelSize
         magnification=60;
+        training_channels = {'DIC'} %the names of the channels in the ctimepoint object used to train the SVM.
+        filterFunction = 'full' %either a string or a funciton handle indicating which set of filters was used in training the SVM.
         
         se
         method
@@ -45,7 +47,7 @@ classdef cellVision<handle
         generateTrainingSet(cCellSVM,cDictionary);
         generateTrainingSet2Stage(cCellSVM,cDictionary,frame_ss);
         generateTrainingSetAll(cCellSVM,cDictionary,frame_ss);
-        generateTrainingSetTimelapse(cCellSVM,cDictionary,frame_ss);
+        generateTrainingSetTimelapse(cCellSVM,cDictionary,frame_ss,type);
         trainSVM(cCellSVM,ss,cmd);
         trainSVM2Stage(cCellSVM,ss,decval,cmd1,cmd2);
         trainSVMLinear(cCellSVM,ss,cmd);

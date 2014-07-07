@@ -1,26 +1,24 @@
-function changeRootDirAllTimelapses(cExperiment,dirsToSearch)
+function changeRootDirAllTimelapses(cExperiment,dirsToSearch,newRootFolder)
 
-if nargin<2
+if nargin<2 || isempty(dirsToSearch)
     dirsToSearch=1:length(cExperiment.dirs);
 end
 
+if nargin<3 || isempty(newRootFolder)
+
 fprintf(['Select the correct folder for: \n',cExperiment.rootFolder '\n']);
-helpdlg('This is the new root folder containing all images of the timelapse objects');
+h = helpdlg('This is the new root folder containing all images of the timelapse objects');
+waitfor(h);
 
 newRootFolder=uigetdir(pwd,['Select the correct folder for: ',cExperiment.rootFolder]);
-oldRootFolder=cExperiment.rootFolder;
-
+end
 % cExperiment.saveFolder=uigetdir(pwd,['Select the folder where you want to save the timelapses: ',cExperiment.rootFolder]);
 
 cExperiment.rootFolder=newRootFolder;
 for i=1:length(dirsToSearch)
     posIndex=dirsToSearch(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{posIndex},'cTimelapse']);
-    if i==1
-        oldRootFolder=cTimelapse.timelapseDir;
-    end
-    newDir=strrep(cTimelapse.timelapseDir,oldRootFolder,newRootFolder);
-    newDir=[newRootFolder '/' cExperiment.dirs{posIndex}];
+    load([fullfile(cExperiment.saveFolder , cExperiment.dirs{posIndex}) 'cTimelapse']);
+    newDir=fullfile(newRootFolder , cExperiment.dirs{posIndex});
     cTimelapse.timelapseDir=newDir;
     
         cExperiment.cTimelapse=cTimelapse;

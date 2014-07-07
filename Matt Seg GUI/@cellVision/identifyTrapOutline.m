@@ -22,18 +22,18 @@ if ~isempty(cCellVision.cTrap)
     
     for i=1:2
         
-        NumIter = 100; %iterations
+        NumIter = 200; %iterations
         timestep=0.01; %time step
         mu=0.1/timestep;% level set regularization term, please refer to "Chunming Li and et al. Level Set Evolution Without Re-initialization: A New Variational Formulation, CVPR 2005"
         sigma = 3;%size of kernel
         epsilon = 1.5;
         c0 = 4; % the constant value
         lambda1=1.0;%outer weight, please refer to "Chunming Li and et al,  Minimization of Region-Scalable Fitting Energy for Image Segmentation, IEEE Trans. Image Processing, vol. 17 (10), pp. 1940-1949, 2008"
-        lambda2=1.0;%inner weight
+        lambda2=1.1;%inner weight
         %if lambda1>lambda2; tend to inflate
         %if lambda1<lambda2; tend to deflate
         nu = 0.001*255*255;%length term
-        alf = 20;%data term weight
+        alf = 50;%data term weight
         
         h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal;
         
@@ -51,7 +51,7 @@ if ~isempty(cCellVision.cTrap)
         PntY = loc(2);
         
         if false %use the stuff matt originally wrote
-            phi = (sqrt(((xx - loc(1)).^2 + (yy - loc(2)).^2 )) - 25);
+            phi = (sqrt(((xx - loc(1)).^2 + (yy - loc(2)).^2 )) - 10);
             phi = sign(phi).*c0;
             close;
             
@@ -82,8 +82,8 @@ if ~isempty(cCellVision.cTrap)
             imflat(:,:,i)=tempFlat;
         else %use elco's active contour stuff
             ImageTransformParameters = struct('invert',false);
-             ACparameters = struct('alpha',0.01,'beta','0','R_min',2,'R_max',size(im,1),'opt_points',8,...
-                'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',20,'TerminationEpoch',500);
+             ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',size(im,1)/3,'opt_points',6,...
+                'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500);
             
             ForcingImage = double(cCellVision.cTrap.trap1);
             ForcingImage = ForcingImage/median(ForcingImage(:));
@@ -112,7 +112,7 @@ if ~isempty(cCellVision.cTrap)
     imflat=imfill(imflat,'holes');
     imflat=imerode(imflat,strel('disk',1));
     h=figure;imshow(imflat,[]);title('Final Trap Outline');
-    uiwait();
+%     uiwait();
     cCellVision.cTrap.trapOutline=imflat>0;
     
 else

@@ -11,7 +11,7 @@ for j=1:size(alltraps,3)
     image=repmat(image,[1 1 3]);
     
     segLabel=[];
-    if trapInfo(cDisplay.traps(j)).cellsPresent
+    if ~isempty(trapInfo) && isfield(trapInfo(cDisplay.traps(j)),'cellsPresent') && trapInfo(cDisplay.traps(j)).cellsPresent
         seg_areas=[trapInfo(cDisplay.traps(j)).cell(:).segmented];
         seg_areas=full(seg_areas);
         seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(trapInfo(cDisplay.traps(j)).cell)]);

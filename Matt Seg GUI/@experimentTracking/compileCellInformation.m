@@ -86,6 +86,11 @@ for i=1:length(positionsToExtract)
             
             temp=cTimelapse.extractedData(j).radius;
             cExperiment.cellInf(j).radius(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            temp=cTimelapse.extractedData(j).xloc;
+            cExperiment.cellInf(j).xloc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            temp=cTimelapse.extractedData(j).yloc;
+            cExperiment.cellInf(j).yloc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            
             temp=cTimelapse.extractedData(j).trapNum;
             cExperiment.cellInf(j).trapNum(index+1:index+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).cellNum;

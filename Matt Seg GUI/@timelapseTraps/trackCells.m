@@ -58,10 +58,10 @@ for timepoint=cTimelapse.timepointsToProcess
         %Shuffles data around, trapinfo is data of current timepoint, 
         %trapinfom1 is data of previous timepoint,
         %trapinfom2 is data of timepoint before that.
-        if timepoint>cTimelapse.timepointsToProcess(2) 
+        if length(cTimelapse.timepointsToProcess)>1 && timepoint>cTimelapse.timepointsToProcess(2) 
             trapInfom2=trapInfom1;
         end
-       if timepoint>cTimelapse.timepointsToProcess(1)
+        if timepoint>cTimelapse.timepointsToProcess(1)
             trapInfom1=trapInfo;
         end
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
@@ -69,7 +69,7 @@ for timepoint=cTimelapse.timepointsToProcess
         %this is to correct for a bug in some old timelapses that I was
         %processing, shouldn't be needed generally. For when a timepoint
         %wasn't processed but the tp before and after was
-        if timepoint>cTimelapse.timepointsToProcess(2) && ~cTimelapse.timepointsProcessed(timepoint-1)
+        if length(cTimelapse.timepointsToProcess)>1 && timepoint>cTimelapse.timepointsToProcess(2) && ~cTimelapse.timepointsProcessed(timepoint-1)
             trapInfom2=trapInfom1;
         end
         

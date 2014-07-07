@@ -5,11 +5,13 @@ classdef timelapseTraps<handle
 
 
     properties
-        timelapseDir
+        fileSoure = 'swain-batman' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
+        timelapseDir %set to 'ignore' to use absolute file names
         cTimepoint
 %         cTrapsLabelled
         cTrapSize
         image_rotation % to ensure that it lines up with the cCellVision Model
+        imScale %used to scale down images if needed
         magnification=60;
         trapsPresent
         pixelSize
@@ -19,18 +21,22 @@ classdef timelapseTraps<handle
         extractedData
         channelNames
         imSize
+        channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         
         lineageInfo
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/down.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
+        %stuff Ivan has added
+        omeroDs%The id number of the omero dataset from which the raw data was donwloaded. If the object was created from a folder of images this is zero.
     end
     
     methods
         
+
         function cTimelapse=timelapseTraps(folder,varargin)
-            %% Read filenames from folder
+            %% Read filenames from folder or Omero
             % varargin{1} is a logical that will make the constructor run
             % nothing if it is true. this was done to be able to write nice
             % load functions.
@@ -71,7 +77,7 @@ classdef timelapseTraps<handle
         
         %updated processing cell function
         identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
-        d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,channel, method,trap_image,old_d_im)
+        d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
         addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
         identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
         identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
@@ -108,8 +114,22 @@ classdef timelapseTraps<handle
         trapsTimelapse=returnTrapsTimelapse(cTimelapse,traps,channel)
 
         timelapse=returnTimelapse(cTimelapse,channel)
-
+    
+        function cTimelapseOUT = copy(cTimelapseIN)
+            
+            cTimelapseOUT = timelapseTraps([],true);
+            
+            FieldNames = fields(cTimelapseIN);
+            
+            for i = 1:numel(FieldNames)
+                
+                cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
+                
+            end
+            
+        end
     end
+    
     
     methods (Static)
         function cTimelapse = loadobj(LoadStructure)

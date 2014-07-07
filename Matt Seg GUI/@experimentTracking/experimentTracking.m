@@ -71,7 +71,7 @@ classdef experimentTracking<handle
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
-        correctSkippedFramesInf(cExperiment);
+        correctSkippedFramesInf(cExperiment,type);
         
         extractCellInformation(cExperiment,positionsToExtract,type);
         compileCellInformation(cExperiment,positions);

@@ -10,12 +10,22 @@ w = h = 512;
 cx = w / 2;
 cy = h / 2;
 count1 = 8;
-count2 = 8 * 8;
 factor = 2 * PI / w;
 
-green = blue = (0 << 16) | (190 << 8) | 150;
-pink = (250 << 16) | (20 << 8) | 160;
-orange = (200 << 16) | (200 << 8) | 100;
+useOnlyRedAndGreen = !isKeyDown("alt");
+if (useOnlyRedAndGreen) {
+	count2 = 8 * 16;
+
+	yellow = (150 << 16) | (250 << 8) | 0;
+	red = (240 << 16) | (20 << 8) | 0;
+	green = (70 << 16) | (190 << 8) | 0;
+} else {
+	count2 = 8 * 8;
+
+	yellow = 0x0096be;
+	red = 0xfa14a0;
+	green = 0xc8c864;
+}
 
 function modulo(x, base) {
 	return x - base * floor(x / base);
@@ -36,14 +46,14 @@ for (j = 0; j < h; j++)
 		band2 = getBand(r * factor + angle, count2);
 		if ((band2 % 2) == 0) {
 			if (band == 0)
-				color = green;
+				color = yellow;
 			else
-				color = pink;
+				color = red;
 		} else {
 			if (band == 2)
-				color = blue;
+				color = yellow;
 			else
-				color = orange;
+				color = green;
 		}
 		setPixel(i, j, color);
 	}

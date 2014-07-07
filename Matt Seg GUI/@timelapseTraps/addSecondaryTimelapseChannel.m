@@ -33,7 +33,7 @@ searchResult=regexp(files,searchString,'start');
 timepoint_index=0;
 folder=[folder '/'];
 % cTimelapse=cell(1)
-if cTimelapse.trapsPresent
+if strcmp(cTimelapse.fileSoure,'swain-batman')
     for i=1:length(cTimelapse.cTimepoint)
         %Match a pattern to the filename using regex
         pattern='\d{5,6}';
@@ -50,7 +50,7 @@ if cTimelapse.trapsPresent
         end
 
     end
-else
+elseif strcmp(cTimelapse.fileSoure,'tyers')
     for i=1:length(cTimelapse.cTimepoint)
         pattern = '_t\d{2}';
         fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');

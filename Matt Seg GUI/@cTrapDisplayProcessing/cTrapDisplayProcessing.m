@@ -16,22 +16,28 @@ classdef cTrapDisplayProcessing<handle
     %them. 
     %No additional functions in this class
     methods
-        function cDisplay=cTrapDisplayProcessing(cTimelapse,cCellVision,timepoints,traps,channel)
+        function cDisplay=cTrapDisplayProcessing(cTimelapse,cCellVision,timepoints,traps,channel,gui_name)
             
 
             if nargin<3 || isempty(timepoints)
                 timepoints=cTimelapse.timepointsToProcess;
             end
             
-            if nargin<4 && cTimelapse.trapsPresent
-                traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
-            else
+            if (nargin<4 || isempty(traps)) && cTimelapse.trapsPresent
+                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+            elseif (nargin<4 || isempty(traps)) && ~cTimelapse.trapsPresent
                 traps=1;
             end
             
-            if nargin<5
+            if nargin<5 || isempty(channel)
                 channel=1;
             end
+            
+            if nargin<6 || isempty(gui_name)
+                gui_name='';
+            end
+            
+            
             
             if isempty(cTimelapse.magnification)
                 cTimelapse.magnification=60;
@@ -82,7 +88,7 @@ classdef cTrapDisplayProcessing<handle
 %                     if cTimelapse.trapsPresent 
 %                         [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
 %                     end
-                set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint-1),' of ', num2str(max(timepoints)),' (',timePerTrap, 's /trap']);
+                set(cDisplay.figure,'Name',[gui_name ' Timepoint ' int2str(timepoint-1),' of ', num2str(max(timepoints)),' (',timePerTrap, 's /trap']);
                 drawnow;
                 
                     trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(i),channel);
@@ -102,8 +108,8 @@ classdef cTrapDisplayProcessing<handle
                 end
                 
                 
-                
-                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,channel,trap_images,d_im);%%index j was changed to i
+                identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i));
+                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);%%index j was changed to i
                 cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
                 
                 for j=1:length(traps)

@@ -37,12 +37,12 @@ classdef editActiveContourTimelapseGUI<handle
             end
             
             if nargin<4 && cTimelapse.trapsPresent
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                traps=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations);
             end
             
             
             
-            timepoints=1:length(cTimelapse.cTimepoint);
+            timepoints=cTimelapse.timepointsToProcess;
             
             try
                 isempty(cTimelapse.cTimepoint(1).trapInfo);
@@ -65,7 +65,7 @@ classdef editActiveContourTimelapseGUI<handle
                 %commented by elco to allow display of 1 trap at a time.
                 %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b 
-                image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
+                image=cTimelapse.returnTrapsTimepoint(traps,cTimelapse.timepointsToProcess(1),cDisplay.channel);
 %                 if isempy(
                 for timepoint=timepoints
                     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
@@ -86,7 +86,7 @@ classdef editActiveContourTimelapseGUI<handle
                 dis_w=dis_w+1;
             end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -113,10 +113,10 @@ classdef editActiveContourTimelapseGUI<handle
             
             cDisplay.slider=uicontrol('Style','slider',...
                 'Parent',gcf,...
-                'Min',1,...
-                'Max',length(cTimelapse.cTimepoint),...
+                'Min',timepoints(1),...
+                'Max',length(timepoints),...
                 'Units','normalized',...
-                'Value',1,...
+                'Value',timepoints(1),...
                 'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
                 'SliderStep',[1/(length(cTimelapse.cTimepoint)-1) 1/(length(cTimelapse.cTimepoint)-1)],...
                 'Callback',@(src,event)slider_cb(cDisplay));

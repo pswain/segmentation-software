@@ -102,7 +102,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         trapL=find(cTimelapse.extractedData(1).trapNum==trap);
         motherLoc=find(cTimelapse.extractedData(1).trapNum==trap & cTimelapse.extractedData(1).cellNum==mother);
 
-        tpCheck=cTimelapse.extractedData(1).xloc(motherLoc,:)>0;
+        tpCheck=full(cTimelapse.extractedData(1).xloc(motherLoc,:))>0;
         if length(trapL)<1 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end

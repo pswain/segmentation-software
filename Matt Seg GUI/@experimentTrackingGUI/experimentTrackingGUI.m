@@ -91,18 +91,21 @@ classdef experimentTrackingGUI<handle
                 'Units','normalized','Position',[.025 .55 .3 .15],'Callback',@(src,event)identifyCells(cExpGUI));
 %             cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
 %                 'Units','normalized','Position',[.325 .55 .175 .15],'Callback',@(src,event)extractSegAreaFl(cExpGUI));
-            cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit',...
-                'Units','normalized','Position',[.325 .55 .175 .15],'Callback',@(src,event)editProcessTimelapse(cExpGUI));
 
             cExpGUI.trackCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Track Cells',...
                 'Units','normalized','Position',[.505 .55 .25 .15],'Callback',@(src,event)trackCells(cExpGUI));
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
                 'Units','normalized','Position',[.755 .55 .22 .15],'Callback',@(src,event)combineTracklets(cExpGUI));
 
+             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
+                'Units','normalized','Position',[.325 .55 .175 .15],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
+           
+            
+            
             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
-                'Units','normalized','Position',[.025 .4 .47 .15],'Callback',@(src,event)autoSelect(cExpGUI));
+                'Units','normalized','Position',[.025 .45 .47 .10],'Callback',@(src,event)autoSelect(cExpGUI));
             cExpGUI.selectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Cells',...
-                'Units','normalized','Position',[.505 .4 .47 .15],'Callback',@(src,event)select(cExpGUI));
+                'Units','normalized','Position',[.505 .45 .47 .10],'Callback',@(src,event)select(cExpGUI));
 
             cExpGUI.extractDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
                 'Units','normalized','Position',[.025 .25 .47 .15],'Callback',@(src,event)extractData(cExpGUI));
@@ -110,6 +113,7 @@ classdef experimentTrackingGUI<handle
 %                 'Units','normalized','Position',[.505 .25 .47 .15],'Callback',@(src,event)compileData(cExpGUI));
             cExpGUI.compileDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Display Data',...
                 'Units','normalized','Position',[.505 .25 .47 .15],'Callback',@(src,event)cellAsicAnalysis(cExpGUI));
+
 
             cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
                 'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
