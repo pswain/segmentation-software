@@ -17,6 +17,10 @@ classdef displayCellAsicData < handle
     %   
     %   KEY VARS:       cellsToPlot: 100x100 sparse matrix
     %                     Copy of cData.cTimelapse.cellsToPlot.
+    %                     Cell labels initially allocated when cells are
+    %                     selected. Only cells in this original will have
+    %                     data extracted. Position corresponds to the label
+    %                     of these cells.
     %                     Tracks the labels of cells which should be
     %                     plotted. 1's in the matrix denote a cell which
     %                     is being tracked, while the row number gives its
@@ -43,7 +47,7 @@ classdef displayCellAsicData < handle
     %                     cellsToTrack is an optional argument, which specifies an
     %                     alternate cData.cellsToTrack matrix (usually blank
     %                     to give no initial tracks). Including cells which
-    %                     don't have data will cause a crash, so take care.
+    %                     don't have data will cause a crash(again), so take care.
     %                                                                        
     
     properties
@@ -62,20 +66,33 @@ classdef displayCellAsicData < handle
         plotAxes=[]
         plotVMarker=[]
         trackingColors=[] %Track the colors used to identify the cells
-        cellsToPlot=[]% For automatic detection of whi5 cells
+        cellsToPlot=[] %For automatic detection of whi5 cells
         cellsWithData=[]
+        
+        individualCellFigure=[]
+        contourAxes=[]
+        
+        filepath=[]
+        highlightedCell=[]
+        keypoint=[] %Integer 
+        upslopes=[] %Sparse cellNum x timepointNum logical. 1 where fluorescense begins
+        downslopes=[] %As upslopes, but where fluorescense stops
+        
+        regionsOfInterest=[]%Struct for saving. 
+        
         
     end
     
     methods
-        function cData=displayCellAsicData(cTimelapse,cellsToPlot)
+        function cData=displayCellAsicData(cTimelapse,cellsToPlot,filepath)
             %Class constructor: sets up the various plots, fetches the
             %images, plots the graphs, and sets up the GUI elements
             %2 Figures are used, on for the main image and GUI and one for
             %the plot.
-                        
+            
+            
             if cTimelapse.trapsPresent
-                msgbox('This function wil not work if traps are present');
+                msgbox('This function will not work if traps are present');
                 return
             end
             cData.cTimelapse=cTimelapse;
@@ -84,8 +101,25 @@ classdef displayCellAsicData < handle
             else
                 cData.cellsToPlot=cData.cTimelapse.cellsToPlot;
             end
-            
+           
+            if nargin>2
+                filepath=[filepath '.mat'];
+                cData.filepath=filepath;
+            else
+                filepath=[];
+            end
+                         
             [~, cData.cellsWithData]=find(cData.cTimelapse.cellsToPlot);
+            numTime=length(cData.cTimelapse.cTimepoint);
+            numCell=length(find(cData.cTimelapse.cellsToPlot(1,:)));
+            if ~exist(filepath)
+                cData.upslopes=sparse(numCell,numTime);
+                cData.downslopes=sparse(numCell,numTime);
+            else
+                loadData(cData,filepath);
+            end
+            
+            cData.regionsOfInterest=struct('upslopes',[],'downslopes',[],'keypoint',[]);
             
             %Set up image
             set(0,'units','normalized');
@@ -98,7 +132,7 @@ classdef displayCellAsicData < handle
             cData.currentImage=cat(3,rawImage,rawImage,rawImage);
             
             
-            [a b]=find(cData.cellsToPlot);
+            [~, b]=find(cData.cellsToPlot);
             cData.trackingColors=sparse(zeros(100,100));
             for i= 1:length(b);
                 curColor=rand(1,3);
@@ -187,61 +221,120 @@ classdef displayCellAsicData < handle
                 'position',[0.755,0.003,0.1,0.04],...
                 'parent',cData.imageFigure,...
                 'callback',@(src,event)printSingle(cData));
+            markSingleUp=uicontrol('style','pushbutton',...
+                'string','Mark Upslope',...
+                'units','normalized',...
+                'position',[0.1,0.003,0.15,0.04],...
+                'parent',cData.plotFigure,...
+                'callback',@(src,event)markUpslope(cData));
+            markSingleDown=uicontrol('style','pushbutton',...
+                'string','Mark Downslope',...
+                'units','normalized',...
+                'position',[0.27,0.003,0.15,0.04],...
+                'parent',cData.plotFigure,...
+                'callback',@(src,event)markDownslope(cData));
+%             clearMarks=uicontrol('style','pushbutton',...
+%                 'string','Clear all',...
+%                 'units','normalized',...
+%                 'position',[0.34,0.003,0.15,0.04],...
+%                 'parent',cData.plotFigure,...
+%                 'callback',@(src,event)clearAllMarks(cData));
+            keyPoint=uicontrol('style','pushbutton',...
+                'string','Mark key point',...
+                'units','normalized',...
+                'position',[0.51,0.003,0.15,0.04],...
+                'parent',cData.plotFigure,...
+                'callback',@(src,event)markKeyPoint(cData));
+            viewCell=uicontrol('style','pushbutton',...
+                'string','ViewCellData',...
+                'units','normalized',...
+                'position',[0.68,0.003,0.15,0.04],...
+                'parent',cData.plotFigure,...
+                'callback',@(src,event)getPixels(cData));
             
             cData.slideListener=addlistener(cData.timepointSlider,'Value','PostSet',@(src,event)sliderChanged(cData));
             
             cData.channelListener=addlistener(cData.channelSelect,'Value','PostSet',@(src,event)setImage(cData));
             %Buttondownfcn listener
-            set(cData.subImage,'buttondownfcn',{@mouseClick,cData},'hittest','on','visible','on')
-            
-            set(cData.imageFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event))
-            set(cData.plotFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event))
+            set(cData.subImage,'buttondownfcn',{@mouseClick,cData},'hittest','on','visible','on');
+            set(cData.imageFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event));
+            set(cData.plotFigure,'WindowScrollWheelFcn',@(src,event)cellAsic_ScrollWheel_cb(cData,src,event));
 
         end
         %%
         function sliderChanged(cData)
-            %Callback after 
+
             sliderVal=floor(get(cData.timepointSlider,'value'));
-            %Update label
             set(cData.textbox,'String',int2str(sliderVal));
             
-            %Update image
             setImage(cData)
             
-            %Update plot
-            timepoint=floor(get(cData.timepointSlider,'value'));
+            try
+                [~]=get(cData.individualCellFigure);
+            catch
+                cData.individualCellFigure=[];
+            end
             
+            if ~isempty(cData.individualCellFigure)
+                getPixels(cData);
+            end
+                
+            
+            timepoint=floor(get(cData.timepointSlider,'value'));
             set(cData.plotVMarker,'Xdata',[timepoint timepoint]);
         end %sliderChanged
         
         
         function mouseClick(hObject,event,cData)
-            pos=get(hObject,'currentpoint');
-            h=get(hObject,'parent');
-            select=get(h,'selectiontype');
-            pos=pos(1,1:2);%Returns two sets of identical co-ordinate. Presumably one is for image, and one for axes
-            sliderVal=floor(get(cData.timepointSlider,'value'));
-            disp(pos)
-            nearestCell=cData.cTimelapse.ReturnNearestCellCentre(sliderVal,1,pos);                                                
-            nearestCell=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cellLabel(nearestCell);
-            disp(nearestCell)
-            %make sure the cell selected has data
-            if find(cData.cellsWithData==nearestCell)
-                if strcmpi(select,'normal')
-                    cData.cellsToPlot(1,nearestCell)=1;
-                elseif strcmpi(select,'alt')
-                    cData.cellsToPlot(1,nearestCell)=0;
-                    cData.trackingColors(nearestCell,1:3)=0;
-                end
-            else
-                disp('No data for cell');
-            end
+           selectCell(hObject,cData);
             setImage(cData);
             updatePlot(cData);
         end
         
+                
+        function saveData(cData,filename)
+            if nargin <2
+                [filename pathname]=uigetfile;
+                filename=[pathname filename];
+            end
+            cData.regionsOfInterest.upslopes=cData.upslopes;
+            cData.regionsOfInterest.downslopes=cData.downslopes;
+            cData.regionsOfInterest.keypoint=cData.keypoint;
+            savefile=cData.regionsOfInterest;
+            save(filename,'savefile');
+        end
+        
+        function loadData(cData,filename)
+            if nargin <2
+                [filename pathname]=uigetfile('data.mat');
+                filename=[pathname filename];
+            end
+            load(filename,'savefile');
+            cData.upslopes=savefile.upslopes;
+            cData.downslopes=savefile.downslopes;
+            cData.keypoint=savefile.keypoint;
+        end
+        function markKeyPoint(cData)
+            timepoint=get(cData.timepointSlider,'value');
+            if cData.keypoint==timepoint
+                cData.keypoint=[];
+            else
+                cData.keypoint=timepoint;
+            end
+            updatePlot(cData);
+            saveData(cData, cData.filepath)
+
+        end
+        function clearAllMarks(cData)
+            numTime=length(cData.cTimelapse.cTimepoint);
+            numCell=length(find(cData.cTimelapse.cellsToPlot(1,:)));  
+            
+            cData.upslopes=sparse(numCell,numTime);
+            cData.downslopes=sparse(numCell,numTime);
+        end
+        
+        
         function printCAData( cData )
-            %This is a lazy function so no comments for you
             [~, labels]=find(cData.cellsToPlot);
             extractedData=[];
            for  i=1:length(labels)               
@@ -282,19 +375,17 @@ classdef displayCellAsicData < handle
         end
         
         
-            
-
         
         
-%         function clearButtonPress(src,event,cData)
-%             cData.cellsToPlot=sparse(zeros(100,100));
-%             setImage(cData)
-%             up
-%         end
         %%Other methods
         setImage(cData)
         updatePlot(cData)
         cellAsic_ScrollWheel(GUI,src,event)
+        getNearestPlotLine(src,event)
+        selectCell(hObject,cData)
+        markUpslope(cData)
+        markDownslope(cData)
+        getPixels(src,event,cData)
     end %methods
     
 end %class

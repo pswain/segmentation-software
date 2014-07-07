@@ -18,10 +18,13 @@ classdef cTrapDisplayPlot<handle
         KeyPressed = []; %stores value of key being held down while it is pressed
         
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+    %% Edit which cells to track
+    %   Class to display a full timelapse and select which cells should 
+    %   have data extracted. Cells which will be tracked are highlighted in
+    %   green, cells which will not are highlighted in red. Left clicking
+    %   in a cell outline will add that cell to tracking. Right clicking in 
+    %   a cell outline will remove it from tracking.
+    %   No additional tracks can be added in this method
     methods
         function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
             

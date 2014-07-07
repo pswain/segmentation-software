@@ -1,5 +1,6 @@
 function addRemoveCells(cDisplay,subAx,trap)
-
+%Wrapper for cTimelapse.addRemoveCells
+%Converts 
 key=cDisplay.KeyPressed;
 cDisplay.KeyPressed = [];
 %reset the key value to [] because the key release function will not
@@ -57,6 +58,6 @@ end
 
 
 end
-%
+
 slider_cb(cDisplay);
 

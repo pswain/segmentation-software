@@ -1,8 +1,15 @@
 function addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
 
-%pt = [x y] selection
-%selection = 'add' or 'remove'
+%%SYNOPSIS: addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt,method,channel)
+%           Function which handles cell tracking in editProcessedTimelapse
+%           and 
 %
+%INPUTS: 
+%
+%OUTPUTS:
+%
+%NOTES:     Function to handle adding and removing cells from tracking.
+%           Called by both 
 
 if nargin<7
     method='hough'

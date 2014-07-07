@@ -1,5 +1,9 @@
 classdef timelapseTraps<handle
-    
+%%TimelapseTraps: Functions and analysis used by the timelapseTraspsGUI object
+%-------------------------------------------------------
+%   SYNOPSIS:   
+
+
     properties
         timelapseDir
         cTimepoint

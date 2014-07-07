@@ -1,7 +1,10 @@
 function addSecondaryTimelapseChannel(cTimelapse,searchString)
 
-% pattern='\d{5,6}'
-% regexp(cTimelapse.cTimepoint(1).filename{1},p1,'match')
+%%Search for and add another image channel to the timelapse.
+%---------------------------------------------------------
+%SYNOPSIS:  addSecondaryTimelapseChannel(cTimelapse,searchString)
+%           Search cTimelapse.timelapseDir for images matching a pattern
+%           given by the original files and appended by searchString.
 
 if nargin<2
     searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'GFP'});
@@ -24,12 +27,6 @@ for i=1:length(tempdir)
 end
 
 files=sort(names);
-%% Read images into timelapse class
-% Timelapse is a seletion of images from a file. These images must be
-% loaded in the correct order from low to high numbers to ensure that the
-% cell tracking performs correctly, and they must be rotated to ensure the
-% trap correctly aligns with the images
-
 
 searchResult=regexp(files,searchString,'start');
 

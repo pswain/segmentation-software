@@ -1,10 +1,17 @@
 function new=addTimepoints(cTimelapse)
 
 %% Read images into timelapse class
-% Timelapse is a seletion of images from a file. These images must be
-% loaded in the correct order from low to high numbers to ensure that the
-% cell tracking performs correctly, and they must be rotated to ensure the
-% trap correctly aligns with the images
+%SYNOPSIS:  cTimelapse.addTimepoints(cTimelapse): Cycle through the files in
+%           cTimelapse.timelapseDir and add images to cTimelapse by
+%           using regexp to match the filenames to a given identifier.
+
+%NOTES:     Timelapse is a seletion of images from a file. These images must be
+%           loaded in the correct order from low to high numbers to ensure that the
+%           cell tracking performs correctly, and they must be rotated to ensure the
+%           trap correctly aligns with the images
+%           File locations will be stored in
+%           cTimelapse.cTimepoint(i).filename(1), and loaded from disk when
+%           needed (to allow processing of very large timelapses);
 
 
 folder=cTimelapse.timelapseDir;

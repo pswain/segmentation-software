@@ -16,10 +16,11 @@ classdef cTrapDisplay<handle
         KeyPressed = [];%stores value of key being held down while it is pressed
         
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+    %% Allows editing of the segmented timelapse
+    %   Class to allow editing of segmented timelapse. Left click
+    %   adds the best guess of a cell outline around the current position,
+    %   right click removes the nearest cell outline.
+       
     methods
         function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
             

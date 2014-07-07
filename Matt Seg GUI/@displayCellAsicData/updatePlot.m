@@ -19,15 +19,38 @@ for i=1:length(labels)
     median=data(2).median(position,:);
     m5=data(2).max5(position,:);
     
-    plot(cData.plotAxes,1:numTimepoints,m5./median,'color',full(cData.trackingColors(labels(i),1:3)));
+    a=plot(cData.plotAxes,1:numTimepoints,m5./median,'color',full(cData.trackingColors(labels(i),1:3)));
+    set(a,'buttondownfcn',{@clickLabel,cData,position});
+    if position==cData.highlightedCell
+        set(a,'linewidth',1.5);
+    end
+    %Print the line label at the max value
     x=find(max(m5./median)==(m5./median));
     y=max(m5./median);
     text(x,y,int2str(labels(i)),'parent',cData.plotAxes,...
         'color',full(cData.trackingColors(labels(i),1:3)),...
-        'backgroundColor',[0.7 0.7 0.7]);
+        'backgroundColor',[0.7 0.7 0.7],...
+        'buttondownfcn',{@clickLabel,cData,position});
 end
 
+
+for i=1:length(cData.cTimelapse.cTimepoint)
+    if cData.upslopes(cData.highlightedCell,i)==1
+        plot(cData.plotAxes,[i i], [1 2],'linestyle','--','color',[1 0 0]);
+    end
+    
+    if cData.downslopes(cData.highlightedCell,i)==1
+        plot(cData.plotAxes,[i i], [1 2], 'linestyle','--','color',[0 1 0]);
+    end
+end
 cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [1 2]);
+if ~isempty(cData.keypoint)
+    plot(cData.plotAxes, [cData.keypoint cData.keypoint], [1 2],'linestyle',':','color',[0 0 0]);
+end
 hold(cData.plotAxes,'off');
 end
 
+function clickLabel(~,~,cData,label)
+    cData.highlightedCell=label;
+    updatePlot(cData)
+end

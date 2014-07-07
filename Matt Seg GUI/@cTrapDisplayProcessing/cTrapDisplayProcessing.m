@@ -11,8 +11,10 @@ classdef cTrapDisplayProcessing<handle
         trapNum;
     end % properties
     %% Segments the images in a timelapse
-    % Main function for segmentation. When called for a given timelapse
-    % sets up a display and loops over all timelapse frames to segment.
+    %Display function for segmentation. Loops over all images in a
+    %timelapse and calls identifyCellCenters and identifyCellObjects on
+    %them. 
+    %No additional functions in this class
     methods
         function cDisplay=cTrapDisplayProcessing(cTimelapse,cCellVision,timepoints,traps,channel)
             
@@ -51,7 +53,8 @@ classdef cTrapDisplayProcessing<handle
             for i=1:dis_w
                 for j=1:dis_h
                     if index>length(traps)
-                        break; end
+                        break; 
+                    end
                     
                     %A sub axis for every trap image
                     cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);

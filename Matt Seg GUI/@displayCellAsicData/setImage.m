@@ -14,6 +14,8 @@ function setImage(cData)
     cData.currentImage=cat(3,rawImage,rawImage,rawImage);
     [~, labels]=find(cData.cellsToPlot);
     for i= 1:length(labels);
+        %Find the position of this cell by matching its label to the
+        %cellLabel vector
         [~, position]=find(cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cellLabel==labels(i));
         
         %Pick a color for the circle if one is not already there
