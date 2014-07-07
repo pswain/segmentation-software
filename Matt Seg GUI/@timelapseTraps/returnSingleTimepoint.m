@@ -43,11 +43,8 @@ if sum(loc)>0
             cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
         end
     end
-<<<<<<< HEAD
-=======
     
     end
->>>>>>> 269c62242dbddd341afb767a87b91614afc4f673
 
     try
         
