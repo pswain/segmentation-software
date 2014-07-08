@@ -5,7 +5,7 @@ classdef timelapseTraps<handle
 
 
     properties
-        fileSoure = 'swain-batman' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
+        fileSoure = 'tyers' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
         timelapseDir %set to 'ignore' to use absolute file names
         cTimepoint
 %         cTrapsLabelled

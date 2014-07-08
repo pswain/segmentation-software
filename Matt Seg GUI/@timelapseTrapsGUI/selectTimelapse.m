@@ -3,8 +3,10 @@ source=questdlg('Choose source of images', 'Create Timelapse from Images','Folde
 
 switch source
     case 'Folder'
-    	folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
-    	fprintf('\n    Select the folder containing the images associated with this timelapse\n');
+%     	folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
+%     	fprintf('\n    Select the folder containing the images associated with this timelapse\n');
+%       This may need to be uncomented and fixed. At the moment it seems to
+%       work though
         omeroDs=0;
     case 'Omero dataset'
         %Make sure the download gui is on the path

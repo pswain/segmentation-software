@@ -54,7 +54,9 @@ se4 = strel('disk',4);
 se5 = strel('disk',5);
 
 % fig1=figure(10);
-insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
+if ~isempty(cCellVision.cTrap)
+    insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
+end
 
 for timepoint=cTimelapse.timepointsToProcess(1:frame_ss:total_num_timepoints)
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
@@ -112,9 +114,15 @@ for timepoint=cTimelapse.timepointsToProcess(1:frame_ss:total_num_timepoints)
             
             dif_loc=find(bw_im);
             
-            % exclude regions that are inside the traps;
+            % exclude regions that are inside the traps (if traps are
+            % present)
 %             neg_index=find(class==0 & bw_im);
-            neg_index=find(exclude_from_negs==0 & bw_im & ~insideTraps);
+            if cTimelapse.trapsPresent
+                neg_index=find(exclude_from_negs==0 & bw_im & ~insideTraps);
+            else
+                neg_index=find(exclude_from_negs==0 & bw_im);
+            end
+            
             if length(neg_index)>num_neg
                 neg_perm=randperm(length(neg_index));
                 class_temp=zeros(1,num_neg);
