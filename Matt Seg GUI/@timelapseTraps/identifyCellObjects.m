@@ -131,19 +131,13 @@ if isempty(bw_mask)
         end
         
         cellsIndex=1;
-        nseg=80;
         for numCells=length(cirrad):-1:1
             
             temp_im=zeros(size(temp_im))>0;
             x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
             x=double(x);y=double(y);r=double(r);
-            if r<11
-                theta = 0 : (2 * pi / nseg) : (2 * pi);
-            elseif r<18
-                theta = 0 : (2 * pi / nseg/2) : (2 * pi);
-            else
-                theta = 0 : (2 * pi / nseg/4) : (2 * pi);
-            end
+            theta = 0 : (1 / (1.5*r)) : (2 * pi);%This should work for a good number of points
+
             pline_x = round(r * cos(theta) + x);
             pline_y = round(r * sin(theta) + y);
             loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
