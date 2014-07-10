@@ -3,11 +3,11 @@
 cCellVision.identifyTrapOutline(cTimelapse,7);
 figure(1);imshow(cCellVision.cTrap.trapOutline,[]);
 
-%%
+%% Create the training set
 step_size=3;
 cCellVision.generateTrainingSetAll(cDictionary,step_size);
 
-%%
+%% Guess the cost/gamma parameters
 cCellVision.trainingParams.cost=.25
 cCellVision.trainingParams.gamma=1
 %%

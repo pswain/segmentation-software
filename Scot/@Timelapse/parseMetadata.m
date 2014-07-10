@@ -15,16 +15,25 @@ function metaData=parseMetadata(moviedir)
     
     %get the experiment name
     k=strfind(moviedir,'/');
-    metaData.name=moviedir(k(end)+1:end);
+    if strcmp(moviedir(end),'/')
+        metaData.foldername=moviedir(k(end-1)+1:end-1);
+        moviedir=moviedir(1:end-1);
+    else
+        metaData.foldername=moviedir(k(end)+1:end);
+    end
+    
     metaData.moviedir=moviedir;
     
-
     %Parse the information in the Acq file.
     acqFile=dir(fullfile(moviedir,'*Acq*'));
 
     if length(acqFile)>1
-    %determine which one is the text file and use that
-
+        %determine which one is the real acq file and use that
+        for n=1:length(acqFile)
+            if ~isempty(strmatch(metaData.foldername(1:end-3),acqFile(n).name))
+                acqFilename=[moviedir filesep acqFile(n).name];
+            end
+        end
     else
         acqFilename=[moviedir filesep acqFile.name];
     end
@@ -36,7 +45,7 @@ function metaData=parseMetadata(moviedir)
     metaData.name=name(k(end)+1:end);
     
     acqFile=fopen(acqFilename);
-    rawdataAcq=textscan(acqFile,'%s');
+    rawdataAcq=textscan(acqFile,'%s','BufSize',20000);
     rawdataAcq=rawdataAcq{:};
     %Now have access to the information in the Acq file
     
@@ -113,11 +122,16 @@ function metaData=parseMetadata(moviedir)
     logFile=dir(fullfile(moviedir,'*log*'));
 
     if length(logFile)>1
-    %determine which one is the text file and use that
-
+        %determine which one is the real acq file and use that
+        for n=1:length(logFile)
+            if ~isempty(strmatch(metaData.foldername(1:end-3),logFile(n).name))
+                logFilename=[moviedir filesep logFile(n).name];
+            end
+        end
     else
         logFilename=[moviedir filesep logFile.name];
     end
+    
     
     metaData.logfilename=logFilename;
     logFile=fopen(logFilename);
