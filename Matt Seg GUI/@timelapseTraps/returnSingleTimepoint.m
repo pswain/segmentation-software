@@ -136,6 +136,7 @@ end
 %
 if ~isempty(cTimelapse.imScale)
     timepointIm=imresize(timepointIm,cTimelapse.imScale);
+    timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
 end
 
 if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)

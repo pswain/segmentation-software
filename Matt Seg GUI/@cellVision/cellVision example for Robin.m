@@ -3,50 +3,45 @@ file='C:\Users\Matt\SkyDrive\timelapses\13-Jun 2014 (robin)\1-Pos_000_000cTimela
 file='/Users/mcrane2/SkyDrive/timelapses/13-Jun 2014 (robin)/1-Pos_000_000cTimelapse.mat';
 
 load(file);
-%%
-
-file='C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\2-Pos_000_002cTimelapse.mat';
-load(file);
-
 cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:15:end);
 cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:15:end);
+
 %%
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:22);
-cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:22);
+
+load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\04-Jul 2014\pois 0 for training.mat')
+
+
+% cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:40);
+cTimelapse.channelsForSegment=[1 2 3]
+cTimelapse = fuseTimlapses({cTimelapse});
+
 %%
 cTrapDisplay(cTimelapse,cCellVision);
-
-%% Once the ground truth has been created, can just use that
-load('C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\pos 0 1-24 editted.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:24);
-cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:24);
-
-cTimelapse2=cTimelapse;
-load('C:\Users\mcrane2\OneDrive\timelapses\23-Jun 2014 (robin)\2-Pos_001_002cTimelapse.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:5);
-
-cTimelapse.cTimepoint(end+1:end+length(cTimelapse2.cTimepoint))=cTimelapse2.cTimepoint;
 %%
-load('/Users/mcrane2/SkyDrive/timelapses/13-Jun 2014 (robin)/robin cCellVision w-data.mat')
+cTrapDisplayProcessing(cTimelapse,cCellVision);
+
+%%
+load('cCellVision default Robin reduced.mat')
 %% Create the training set
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=600;
+cCellVision.negativeSamplesPerImage=600; %set to 750 ish for traps
 step_size=1;
-type='Reduced';
-cCellVision.generateTrainingSetTimelapse(cTimelapse,step_size,type);
+
+cCellVision.generateTrainingSetTimelapse(cTimelapse,step_size,@(CSVM,image) createImFilterSetCellTrapStackDIC(CSVM,image));
 
 %% Guess the cost/gamma parameters
 cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %%
 cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
-step_size=16;
+step_size=20;
 cCellVision.runGridSearchLinear(step_size,cmd);
 %%
 step_size=1;
-cCellVision.trainingParams.cost=1;
-cmd = ['-s 1 -w0 1 -w1 2 -c ', num2str(cCellVision.trainingParams.cost)];
+cCellVision.trainingParams.cost=2;
+cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
 cCellVision.trainSVMLinear(step_size,cmd);toc
 %%
@@ -87,6 +82,7 @@ cTimelapse.trackTrapsThroughTime();
 
 
 %%
+
 trap_im=cTimelapse.returnSingleTrapTimepoint(3,3,1);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
@@ -203,12 +199,12 @@ cDisplay=cTrapDisplay(cTimelapse,traps,1)
 
 
 %%
-image=cTimelapse.returnSingleTrapTimepoint(1,1);
-figure(11);imshow(image,[]);
+trap1 = cTimelapse.returnSegmenationTrapsStack(17,cTimelapse.timepointsToProcess(1));
 %%
 tic
 % image=trap_im;
-features=cCellVision.createImFilterSetCellTrap(image);
+features=cCellVision.createImFilterSetCellTrapStackDIC(trap1{1});
+image=trap1{1};
 toc
 im_feat=reshape(features,size(image,1),size(image,2),size(features,2));
     
@@ -217,14 +213,18 @@ for i=1:size(im_feat,3)
     pause(.5);
 end
 
-figure(2);imshow(image,[])
+figure(12);imshow(image(:,:,3),[]);impixelinfo
 %%
-i=1
+image = cTimelapse.returnSingleTimepoint(17);
+figure(12);imshow(image,[]);impixelinfo
+
+%%
+i=2
 figure(1);imshow(im_feat(:,:,i),[],'InitialMagnification',100);title(int2str(i));
 i=i+(5-i)+(i-1)*5+0;
 figure(2);imshow(im_feat(:,:,i),[],'InitialMagnification',100);title(int2str(i));
 %%
-i=10
+i=54
 figure(4);imshow(im_feat(:,:,i),[],'InitialMagnification',400);title(int2str(i));
 %%
 image=cTimelapse.returnSingleTrapTimepoint(1,38);

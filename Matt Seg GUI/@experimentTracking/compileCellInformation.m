@@ -56,8 +56,8 @@ index=0;
 for i=1:length(positionsToExtract)
     i
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
-    
+%     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse=cExperiment.returnTimelapse(experimentPos);
     dim=1;
     if max(cTimelapse.timepointsProcessed)>0
         for j=1:length(cTimelapse.channelNames)
@@ -98,7 +98,7 @@ for i=1:length(positionsToExtract)
             
             cExperiment.cellInf(j).posNum(index+1:index+size(temp,1),1:size(temp,2))=experimentPos;
         end
-        index=index+size(temp,1);
+        index=index+size(cTimelapse.extractedData(j).xloc,1);
     end
     cExperiment.cTimelapse=[];
 end
