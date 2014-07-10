@@ -31,12 +31,12 @@ files=sort(names);
 searchResult=regexp(files,searchString,'start');
 
 timepoint_index=0;
-folder=[folder '/'];
+folder=[folder filesep];
 % cTimelapse=cell(1)
 if strcmp(cTimelapse.fileSoure,'swain-batman')
     for i=1:length(cTimelapse.cTimepoint)
         %Match a pattern to the filename using regex
-        pattern='\d{5,6}';
+        pattern='_t\d{5,6}';
         fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
 
         p1=[fileNum{end} '_' searchString{1}];
@@ -68,7 +68,7 @@ elseif strcmp(cTimelapse.fileSoure,'tyers')
 end
 %add an offset field that can later be edited to offset the new image
 %relative to the DIC image when returning timepoints
-cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
+%cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
 
 
 %add a background correction entry that can later be set to be the matrix

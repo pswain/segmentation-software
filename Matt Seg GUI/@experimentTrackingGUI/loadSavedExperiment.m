@@ -1,6 +1,8 @@
-function loadSavedExperiment(cExpGUI)
+function loadSavedExperiment(cExpGUI,PathName,FileName)
 
-[FileName,PathName,FilterIndex] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+if nargin <3
+    [FileName,PathName,FilterIndex] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+end
 load(fullfile(PathName,FileName),'cExperiment');
 cExpGUI.cExperiment=cExperiment;
 

@@ -129,14 +129,14 @@ classdef experimentTrackingGUI<handle
 
         PositionsFromDeltaVision()
         createExperiment(cExpGUI)
-        loadSavedExperiment(cExpGUI)
-        loadCellVision(cExpGUI)
+        loadSavedExperiment(cExpGUI,fileName,pathName)
+        loadCellVision(cExpGUI,filename,pathname)
         
         
         addSecondaryChannel(cExpGUI)
         saveTimelapse(cExpGUI)
         cropTimepoints(cExpGUI)
-        automaticProcessing(cExpGUI)
+        automaticProcessing(cExpGUI,usedefaults,posVals)
         
         selectChannel(cExpGUI)
 
