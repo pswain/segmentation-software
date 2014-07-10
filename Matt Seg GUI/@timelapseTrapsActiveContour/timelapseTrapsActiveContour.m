@@ -385,7 +385,7 @@ classdef timelapseTrapsActiveContour<handle
             end
             
             if nargin<6 || isempty(normalise)
-                normalise = [];
+                normalise = 'none';
             end
                 
             
@@ -403,6 +403,7 @@ classdef timelapseTrapsActiveContour<handle
                     case 'median'
                         Image = double(Image);
                         Image = Image./(median(Image(:)));
+                    case 'none'
                 end
                 
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
