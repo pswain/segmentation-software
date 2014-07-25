@@ -102,7 +102,7 @@ classdef timelapseTraps<handle
         
         % functions for saving the timelapse
         savecTimelapse(cTimelapse)
-        savecTimelapseVision(cTimelapse,cCellVision)
+        savecTimelapseVision(cTimelapse,cCellVision,PathName,FileName)
         loadcTimelapse(cTimelapse)
         setMagnification(cTimelapse,cCellVision);
         

@@ -1,4 +1,4 @@
-function savecTimelapse(cTimelapse)
+function savecTimelapse(cTimelapse,PathName,FileName)
 
 oldFolder=cd(cTimelapse.timelapseDir);
 [FileName,PathName,FilterIndex] = uiputfile('cTimelapse','Name of current timelapse') ;

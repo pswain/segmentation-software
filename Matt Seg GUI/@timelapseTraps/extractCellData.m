@@ -115,6 +115,19 @@ for channel=1:length(cTimelapse.channelNames)
                         segLabel=zeros(size(seg_areas));
                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(temp_loc).cellCenter);
                         if ~isempty(loc)
+                            %Generate second (outer) circle to ensure there are no gaps in the cell
+                            rad=cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(temp_loc).cellRadius;
+                            center=cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(temp_loc).cellCenter;
+                            theta=0:0.01:2*pi;
+                            coords=[double(center(2))+double(rad+1)*cos(theta); double(center(1))+double(rad+1)*sin(theta)];
+                            innerline=zeros(512,512);
+                            coords(coords<0)=1;
+                            for i=1:length(coords(1,:))
+                                innerline(ceil(coords(1,i)),ceil(coords(2,i)))=1;
+                            end
+                            innerline=innerline(1:512,1:512); %snip off the ends
+                            seg_areas=seg_areas+innerline;
+
                             segLabel=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
                         end
                         %                 temp_im=trapInfo(currTrap).trackLabel==currCell;

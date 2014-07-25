@@ -86,8 +86,8 @@ if nargin<2 || ~useDefaults
     cExpGUI.cExperiment.trackTrapsOverwrite=str2double(identifyPrompt{2})>0;
     compOrCont=identifyPrompt{3};
 else
-    cExpGUI.cCellVision.twoStageThresh=0;
-    cExpGUI.cExperiment.cellVisionThresh=0;
+    cExpGUI.cCellVision.twoStageThresh=1;
+    cExpGUI.cExperiment.cellVisionThresh=1;
     cExpGUI.cExperiment.trackTrapsOverwrite=0;
     compOrCont='completed';
     

@@ -21,12 +21,12 @@ outlines=cTimelapse.cTimepoint(timepoint).trapInfo.cell(cellNum).segmented;
 % theta=0:0.01:2*pi;
 % coords=[double(center(2))+(rad+1)*cos(theta); double(center(1))+(rad+1)*sin(theta)];
 % innerline=zeros(512,512);
-
+% 
 % for i=1:length(coords(1,:))
 %     innerline(floor(coords(1,i)),floor(coords(2,i)))=1;
 % end
 % innerline=innerline(1:512,1:512); %snip off the ends
-%outlines=outlines+innerline;
+% outlines=outlines+innerline;
 outlinefilled=imfill(full(outlines),'holes');
 [ypos,xpos]=find(full(outlines));
 

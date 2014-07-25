@@ -7,10 +7,10 @@ h=get(hObject,'parent');
 select=get(h,'selectiontype');
 pos=pos(1,1:2);%Returns two sets of identical co-ordinate. Presumably one is for image, and one for axes
 sliderVal=floor(get(cData.timepointSlider,'value'));
-disp(pos)
+%disp(pos)
 nearestCell=cData.cTimelapse.ReturnNearestCellCentre(sliderVal,1,pos);
 nearestCell=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cellLabel(nearestCell);
-disp(nearestCell)
+%disp(nearestCell)
 %make sure the cell selected has data
 if find(cData.cellsWithData==nearestCell)
     if strcmpi(select,'normal')

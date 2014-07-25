@@ -7,7 +7,7 @@ end
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']);
     cTrapDisplay(cTimelapse,cCellVision);
     
     uiwait();

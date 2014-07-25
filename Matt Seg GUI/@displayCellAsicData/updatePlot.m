@@ -6,31 +6,31 @@ function updatePlot( cData )
 %   Extracted data is stored seperately from cell data, in order of
 %   original arrangement. Need to find index of current cell in original
 %   plot
-[~,originalCells]=find(cData.cTimelapse.cellsToPlot);
-[~, labels]=find(cData.cellsToPlot);
+[~,allCellIDs]=find(cData.cTimelapse.cellsToPlot); %Cells which have data
+[~, selectedCellIDs]=find(cData.cellsToPlot); %Cells to be plotted in the cData window
 timepoint=get(cData.timepointSlider,'value');
 data = cData.cTimelapse.extractedData;
 cla(cData.plotAxes);
 hold(cData.plotAxes,'on');
-for i=1:length(labels)
-    [position,~]=find(originalCells==labels(i));
+for i=1:length(selectedCellIDs)
+    [extractedDataCell,~]=find(allCellIDs==selectedCellIDs(i));
     numTimepoints=length(cData.cTimelapse.cTimepoint);
 
-    median=data(2).median(position,:);
-    m5=data(2).max5(position,:);
+    median=data(2).median(extractedDataCell,:);
+    m5=data(2).max5(extractedDataCell,:);
     
-    a=plot(cData.plotAxes,1:numTimepoints,m5./median,'color',full(cData.trackingColors(labels(i),1:3)));
-    set(a,'buttondownfcn',{@clickLabel,cData,position});
-    if position==cData.highlightedCell
+    a=plot(cData.plotAxes,1:numTimepoints,m5./median,'color',full(cData.trackingColors(selectedCellIDs(i),1:3)));
+    set(a,'buttondownfcn',{@clickLabel,cData,extractedDataCell});
+    if extractedDataCell==cData.highlightedCell
         set(a,'linewidth',1.5);
     end
     %Print the line label at the max value
     x=find(max(m5./median)==(m5./median));
     y=max(m5./median);
-    text(x,y,int2str(labels(i)),'parent',cData.plotAxes,...
-        'color',full(cData.trackingColors(labels(i),1:3)),...
+    text(x,y,int2str(selectedCellIDs(i)),'parent',cData.plotAxes,...
+        'color',full(cData.trackingColors(selectedCellIDs(i),1:3)),...
         'backgroundColor',[0.7 0.7 0.7],...
-        'buttondownfcn',{@clickLabel,cData,position});
+        'buttondownfcn',{@clickLabel,cData,extractedDataCell});
 end
 
 

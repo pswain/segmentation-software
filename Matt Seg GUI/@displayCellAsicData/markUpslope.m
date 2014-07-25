@@ -6,7 +6,7 @@ function markUpslope( cData )
 %   remove it
 %Reccomend using the first frame with intensity significantly above
 %background level
-timepoint=get(cData.timepointSlider,'value');
+timepoint=ceil(get(cData.timepointSlider,'value'));
 if isempty(cData.highlightedCell)
     return
 end

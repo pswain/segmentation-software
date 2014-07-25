@@ -96,7 +96,7 @@ classdef displayCellAsicData < handle
                 return
             end
             cData.cTimelapse=cTimelapse;
-            if nargin>1
+            if nargin>1 || ~isempty(cellsToPlot)
                 cData.cellsToPlot = cellsToPlot;
             else
                 cData.cellsToPlot=cData.cTimelapse.cellsToPlot;
@@ -119,7 +119,7 @@ classdef displayCellAsicData < handle
                 loadData(cData,filepath);
             end
             
-            cData.regionsOfInterest=struct('upslopes',[],'downslopes',[],'keypoint',[]);
+            cData.regionsOfInterest=struct('upslopes',[],'downslopes',[],'keypoint',[],'extractedData',[],'cellLabels',[]);
             
             %Set up image
             set(0,'units','normalized');
@@ -300,6 +300,10 @@ classdef displayCellAsicData < handle
             cData.regionsOfInterest.upslopes=cData.upslopes;
             cData.regionsOfInterest.downslopes=cData.downslopes;
             cData.regionsOfInterest.keypoint=cData.keypoint;
+            %Needed for data analysis
+            cData.regionsOfInterest.extractedData=cData.cTimelapse.extractedData;
+            [~, cellLabels]=find(cData.cTimelapse.cellsToPlot);%We really dont need the full matrix for anything here
+            cData.regionsOfInterest.cellLabels=cellLabels;
             savefile=cData.regionsOfInterest;
             save(filename,'savefile');
         end

@@ -12,6 +12,7 @@ function filt_feat=createImFilterSetNoTrap(cCellSVM,image)
 % cPCATrap.pc_trap2= the second principle component trap
 
 %image= an image containing the trap and ideally some cells
+%filt_feat= the images after filters have been applied
 
  
 %% Normalize the image and traps
