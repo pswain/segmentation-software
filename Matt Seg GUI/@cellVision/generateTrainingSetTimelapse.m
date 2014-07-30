@@ -129,11 +129,15 @@ for timepoint=1:frame_ss:total_num_timepoints
             %this is a bit of a fudge and one should probably do something
             %more clever to find the pixels to pick from than this
             
-            edge_im=imdilate(training_class,se_edge);
+            %edge_im=imdilate(training_class,se_edge);
             
             %another option
-%             [edge_im thresh]=edge(max(image{trap},[],3),'canny');
-%             edge_im=imdilate(edge_im,se_edge);
+            edge_im_all = false(size(image{1},1), size(image{1},2));
+            for i=1:size(image{trap},3)
+                [edge_im thresh]=edge(max(image{trap}(:,:,i),[],3),'canny');
+                edge_im=imdilate(edge_im,se_edge);
+                edge_im_all = edge_im | edge_im_all;
+            end
 
             %or just make everything an option
 %             edge_im=ones(size(image,1),size(image,2));

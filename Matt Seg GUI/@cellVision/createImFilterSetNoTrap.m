@@ -51,7 +51,7 @@ for slicei = 1:size(image,3)
     tempim = tempim./medfilt2nearest(tempim,[31 31]);
     tempim=tempim*imScale;
     tempim=medfilt2(tempim,[3 3]);
-    im(:,:,1)=tempim;
+    im(:,:,slicei)=tempim;
     
     
     diffIm=(tempim-imScale);

@@ -19,11 +19,11 @@ if ~isempty(timelapse_cell)
    
     for tli = 1:length(timelapse_cell)
         
-        current_timelapse = timelapse_cell{tli};
+        current_timelapse = timelapse_cell{tli}.copy;
         if tli ==1
             
-            current_timelapse.makeFileNamesAbsolute;
-            cTimelapseOUT = current_timelapse.copy;
+            cTimelapseOUT = current_timelapse;
+            cTimelapseOUT.makeFileNamesAbsolute;
             
         else
             
