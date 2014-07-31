@@ -150,7 +150,7 @@ classdef editActiveContourCellGUI<handle
             
             
             if nargin<2
-                Timepoints = 1:CellACDisplay.ttacObject.LengthOfTimelapse;
+                Timepoints = CellACDisplay.ttacObject.TimepointsToCheck;
             end
             
             
@@ -234,7 +234,7 @@ classdef editActiveContourCellGUI<handle
             
             
             if nargin<2
-                Timepoints = 1:CellACDisplay.ttacObject.LengthOfTimelapse;
+                Timepoints = CellACDisplay.ttacObject.TimepointsToCheck;
             end
             
             

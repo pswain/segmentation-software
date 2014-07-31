@@ -45,6 +45,8 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).radius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
         extractedData(channel).median=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -59,6 +61,8 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).radius=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).xloc=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).yloc=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        extractedData(channel).membraneMax5=zeros(numCells,length(cTimelapse.timepointsProcessed));
+        extractedData(channel).membraneMedian=zeros(numCells,length(cTimelapse.timepointsProcessed));
     end
     
     
@@ -119,6 +123,10 @@ for channel=1:length(cTimelapse.channelNames)
                         %                 temp_im=trapInfo(currTrap).trackLabel==currCell;
                         cellLoc=segLabel>0;
                         
+                        membraneLoc = seg_areas >0; 
+                        
+                        
+                        
                         tStd=[];tMean=[];
                         for l=1:size(trapImages,3)
                             tempIm=double(trapImages(:,:,l));
@@ -146,12 +154,16 @@ for channel=1:length(cTimelapse.channelNames)
                             trapIm=trapImWhole(:,:,k);
                             cellFL=trapIm(cellLoc);
                             
+                            membraneFL = trapIm(membraneLoc); 
+                            
                             %This is a silly debug to catch cells too small for
                             %a max5 calculation
                             if sum(cellLoc(:))>5
                                 %below is the function to extract the fluorescence information
                                 %from the cells. Change to mean/median FL etc
                                 flsorted=sort(cellFL(:),'descend');
+                                mflsorted=sort(membraneFL(:),'descend');
+                                
                                 convMatrix=zeros(3,3);
                                 convMatrix(2,:)=1;convMatrix(:,2)=1;
                                 %                 flPeak=conv2(single(trapIm),convMatrix);
@@ -161,12 +173,9 @@ for channel=1:length(cTimelapse.channelNames)
                                     extractedData(channel).max5(dataInd,timepoint)=mean(flsorted(1:5));
                                     extractedData(channel).mean(dataInd,timepoint)=mean(cellFL(:));
                                     extractedData(channel).median(dataInd,timepoint)=median(cellFL(:));
-                                    extractedData(channel).max5(dataInd,timepoint)=mean(flsorted(1:5));
-                                    extractedData(channel).mean(dataInd,timepoint)=mean(cellFL(:));
-                                    extractedData(channel).median(dataInd,timepoint)=median(cellFL(:));
-                                    extractedData(channel).max5(dataInd,timepoint)=mean(flsorted(1:5));
-                                    extractedData(channel).mean(dataInd,timepoint)=mean(cellFL(:));
-                                    extractedData(channel).median(dataInd,timepoint)=median(cellFL(:));
+                                  
+                                    extractedData(channel).membraneMedian(dataInd, timepoint)=median(membraneFL(:));
+                                    extractedData(channel).membraneMax5(dataInd, timepoint)=mean(mflsorted(1:5));
                                     
                                     cellLocSmall=imerode(cellLoc,s1);
                                     if sum(cellLocSmall)<1
@@ -212,14 +221,9 @@ for channel=1:length(cTimelapse.channelNames)
                                     extractedData(channel).mean(dataInd,timepoint,k)=mean(cellFL(:));
                                     extractedData(channel).median(dataInd,timepoint,k)=median(cellFL(:));
                                     
-                                    extractedData(channel).max5(dataInd,timepoint,k)=mean(flsorted(1:5));
-                                    extractedData(channel).mean(dataInd,timepoint,k)=mean(cellFL(:));
-                                    extractedData(channel).median(dataInd,timepoint,k)=median(cellFL(:));
                                     
-                                    extractedData(channel).max5(dataInd,timepoint,k)=mean(flsorted(1:5));
-                                    extractedData(channel).mean(dataInd,timepoint,k)=mean(cellFL(:));
-                                    extractedData(channel).median(dataInd,timepoint,k)=median(cellFL(:));
-                                    
+                                    extractedData(channel).membraneMedian(dataInd, timepoint)=median(membraneFL(:));
+                                    extractedData(channel).membraneMax5(dataInd, timepoint)=mean(mflsorted(1:5));
                                     
                                     cellLocSmall=imerode(cellLoc,s1);
                                     if sum(cellLocSmall)<1

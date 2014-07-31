@@ -1,13 +1,9 @@
 function  [predicted_im decision_im filtered_image]=classifyImageLinear(cCellSVM,image)
+%cCellSVM is a cellVision model
+%image is a cell array of image stacks of the right depth (number of
+%channels/depths) for the cCellVision model
 
-
-if isempty(cCellSVM.cTrap)
-    filtered_image=cCellSVM.createImFilterSetCellAsic(image);
-elseif length(cCellSVM.scaling.max)>150
-    filtered_image=cCellSVM.createImFilterSetCellTrap(image);
-else
-    filtered_image=cCellSVM.createImFilterSetCellTrap_Reduced(image);
-end
+filtered_image=getFilteredImage(cCellSVM,image);
 
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
 filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));

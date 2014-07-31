@@ -349,9 +349,15 @@ classdef timelapseTrapsActiveContour<handle
             % check the timepoints given fall in the appropriate range for
             % the timelapse.
             
-            if ~any(ismember(Timepoints,1:ttacObject.LengthOfTimelapse))
+            if ~any(ismember(Timepoints,ttacObject.TimepointsToCheck))
                 error('timpoints passed to SegmentConsecutiveTimePoints are not valid timepoints\n')
             end
+        end
+        
+        function Timepoints = TimepointsToCheck(ttacObject)
+            
+            Timepoints = ttacObject.TimelapseTraps.timepointsToProcess;
+            
         end
         
         
@@ -381,7 +387,7 @@ classdef timelapseTrapsActiveContour<handle
             end
             
             if nargin<6 || isempty(normalise)
-                normalise = [];
+                normalise = 'none';
             end
                 
             
@@ -461,6 +467,7 @@ classdef timelapseTrapsActiveContour<handle
                     case 'median'
                         Image = double(Image);
                         Image = Image./(median(Image(:)));
+                    case 'none'
                 end
                  
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
