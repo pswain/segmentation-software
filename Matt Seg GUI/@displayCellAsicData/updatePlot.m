@@ -36,11 +36,13 @@ end
 
 for i=1:length(cData.cTimelapse.cTimepoint)
     if cData.upslopes(cData.highlightedCell,i)==1
-        plot(cData.plotAxes,[i i], [1 2],'linestyle','--','color',[1 0 0]);
+        up=plot(cData.plotAxes,[i i], [1 2],'linestyle','--','color',[1 0 0]);
+        set(up,'buttondownfcn',{@clickUpslopes,cData,i});
     end
     
     if cData.downslopes(cData.highlightedCell,i)==1
-        plot(cData.plotAxes,[i i], [1 2], 'linestyle','--','color',[0 1 0]);
+        down=plot(cData.plotAxes,[i i], [1 2], 'linestyle','--','color',[0 1 0]);
+        set(down,'buttondownfcn',{@clickDownslopes,cData,i});
     end
 end
 cData.plotVMarker=plot(cData.plotAxes, [timepoint timepoint], [1 2]);
@@ -53,4 +55,15 @@ end
 function clickLabel(~,~,cData,label)
     cData.highlightedCell=label;
     updatePlot(cData)
+end
+
+function clickUpslopes(~,~,cData,timepoint)
+    cData.upslopes(cData.highlightedCell,timepoint)=0;
+    updatePlot(cData);
+end
+
+function clickDownslopes(~,~,cData,timepoint)
+    cData.downslopes(cData.highlightedCell,timepoint)=0;
+    updatePlot(cData);
+    saveData(cData, cData.filepath);
 end

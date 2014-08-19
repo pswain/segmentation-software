@@ -91,10 +91,10 @@ classdef displayCellAsicData < handle
             %the plot.
             
             
-            if cTimelapse.trapsPresent
-                msgbox('This function will not work if traps are present');
-                return
-            end
+%             if cTimelapse.trapsPresent
+%                 msgbox('This function will not work if traps are present');
+%                 return
+%             end
             cData.cTimelapse=cTimelapse;
             if nargin>1 || ~isempty(cellsToPlot)
                 cData.cellsToPlot = cellsToPlot;
