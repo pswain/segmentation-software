@@ -50,7 +50,7 @@ n_points=[];
 tic; time=toc;
 
 if strcmp(cTimelapse.fileSoure,'swain-batman') && cTimelapse.magnification==60;
-    se_edge=strel('disk',9);
+    se_edge=strel('disk',11);
 else
     se_edge=strel('disk',20);
 end
@@ -124,7 +124,6 @@ for timepoint=1:frame_ss:total_num_timepoints
 
             
             %             se=strel('disk',8);
-            %             edge_im=imdilate(edge_im,se);
 %             edge_im=ones(size(image,1),size(image,2));
 
             %this is a bit of a fudge and one should probably do something
@@ -133,8 +132,11 @@ for timepoint=1:frame_ss:total_num_timepoints
             edge_im=imdilate(training_class,se_edge);
             
             %another option
-            %[edge_im thresh]=edge(max(image{trap},[],3),'canny');
-            
+%             [edge_im thresh]=edge(max(image{trap},[],3),'canny');
+%             edge_im=imdilate(edge_im,se_edge);
+
+            %or just make everything an option
+%             edge_im=ones(size(image,1),size(image,2));
             
             num_neg=cCellVision.negativeSamplesPerImage;
             % exclude regions that are inside the traps;

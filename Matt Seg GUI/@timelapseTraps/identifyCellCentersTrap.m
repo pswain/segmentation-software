@@ -52,8 +52,8 @@ end
 
 function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
-% This preallocates the segmented images to speed up execution
 tPresent=cTimelapse.trapsPresent;
+new_dim=zeros(size(old_d_im));
 
 parfor k=1:length(trap)
     [p_im d_im]=cCellVision.classifyImageLinear(image{k});
@@ -62,7 +62,8 @@ parfor k=1:length(trap)
     if cTimelapse.magnification<100
         t_im=imfilter(d_im,fspecial('gaussian',4,1.1),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
             bw=t_im<cCellVision.twoStageThresh; 
-            
+                new_dim(:,:,k)=d_im;
+
     else
         t_im=imfilter(d_im,fspecial('disk',4),'symmetric'); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
         bw=t_im<cCellVision.twoStageThresh;
@@ -91,7 +92,7 @@ for k=1:length(trap)
     cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=segCenters{k};
 end
 
-d_im=1;
+d_im=new_dim;
 bw=1;
 
 end

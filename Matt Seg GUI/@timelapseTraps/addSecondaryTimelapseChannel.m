@@ -36,12 +36,21 @@ folder=[folder filesep];
 if strcmp(cTimelapse.fileSoure,'swain-batman')
     for i=1:length(cTimelapse.cTimepoint)
         %Match a pattern to the filename using regex
-        pattern='_t\d{5,6}';
+        if cTimelapse.trapsPresent%Sorry..
+            pattern='_t\d{5,6}';
+        end
+        pattern='\d{5,9}';
         fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
 
-        p1=[fileNum{end} '_' searchString{1}];
-        match=regexp(files(:),p1,'match');
-        loc= ~cellfun('isempty',match);
+%         p1=[fileNum{end} '_' searchString{1}];
+%         match=regexp(files(:),p1,'match');
+%         loc= ~cellfun('isempty',match);
+        
+        match1=regexp(files(:),fileNum{end},'match');
+        match2=regexp(files(:),searchString{1},'match');
+        loc1= ~cellfun('isempty',match1);
+        loc2= ~cellfun('isempty',match2);
+        loc=loc1&loc2;
         if sum(loc)>0
     %         cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
     %         cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr([repmat(folder,sum(loc),1) vertcat(files{loc})]));
