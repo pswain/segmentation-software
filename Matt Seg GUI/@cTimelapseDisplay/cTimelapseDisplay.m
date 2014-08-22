@@ -13,10 +13,11 @@ classdef cTimelapseDisplay<handle
         tracksDisplayBox=[];
         trapNum;
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+    %% Displays timelapse for a single channel
+    %This can either display the primary channel (DIC) or a secondary channel
+    %that has been loaded for all points in the timelapse. It does not show
+    %traps at all.
+    
     methods
         function cDisplay=cTimelapseDisplay(cTimelapse,channel)
                         

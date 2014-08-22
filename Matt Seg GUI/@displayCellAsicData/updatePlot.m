@@ -6,12 +6,19 @@ function updatePlot( cData )
 %   Extracted data is stored seperately from cell data, in order of
 %   original arrangement. Need to find index of current cell in original
 %   plot
-[~,allCellIDs]=find(cData.cTimelapse.cellsToPlot); %Cells which have data
-[~, selectedCellIDs]=find(cData.cellsToPlot); %Cells to be plotted in the cData window
+[allTrapIDs,allCellIDs]=find(cData.cTimelapse.cellsToPlot); %Cells which have data
+[selectedTrapIDs, selectedCellIDs]=find(cData.cellsToPlot); %Cells to be plotted in the cData window
 timepoint=get(cData.timepointSlider,'value');
 data = cData.cTimelapse.extractedData;
 cla(cData.plotAxes);
 hold(cData.plotAxes,'on');
+%================================
+%Needs new logic
+%1. CellsToPlot Row gives cell ID, column gives trap number
+%2. extractedData.trapNum is the trap number of the trap for each cell &
+%cellNum is the cell ID of that cell. This is much easier than the nonsense
+%I had to go through and on the whole I prefer it.
+%=================================
 for i=1:length(selectedCellIDs)
     [extractedDataCell,~]=find(allCellIDs==selectedCellIDs(i));
     numTimepoints=length(cData.cTimelapse.cTimepoint);

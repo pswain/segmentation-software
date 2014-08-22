@@ -12,12 +12,15 @@ function setImage(cData)
     %Scale and convert to RGB
     rawImage=double(rawImage)/double(max(rawImage(:)));
     cData.currentImage=cat(3,rawImage,rawImage,rawImage);
-    [~, labels]=find(cData.cellsToPlot);
+    [traps, labels]=find(cData.cellsToPlot);
     for i= 1:length(labels);
         %Find the position of this cell by matching its label to the
         %cellLabel vector
-        [~, position]=find(cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cellLabel==labels(i));
-        
+        if cData.cTimelapse.trapsPresent
+            [~, position]=find(cData.cTimelapse.cTimepoint(sliderVal).trapInfo(1).cellLabel==labels(i));
+        else
+            %Do something
+        end
         %Pick a color for the circle if one is not already there
         %Stored in a sparse matrix, in same location as the data itself
         if cData.trackingColors(labels(i),1:3)==0 %If no color is allocated
@@ -40,8 +43,14 @@ function setImage(cData)
         end
         
         if ~isempty(position)
-            outlines=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cell(position).segmented;
-            center=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cell(position).cellCenter;
+            outlines=cData.cTimelapse.cTimepoint(sliderVal).trapInfo(traps(i)).cell(position).segmented;
+            
+            trapXPos=cData.cTimelapse.cTimepoint(sliderVal).trapLocations(traps(i)).xcenter-ceil(0.5*length(outlines(1,:)));
+            trapYPos=cData.cTimelapse.cTimepoint(sliderVal).trapLocations(traps(i)).ycenter-ceil(0.5*length(outlines(1,:)));
+            tempImage=zeros(size(cData.currentImage));
+            tempImage(outlines>0)=1;
+            outlines=imtranslate(tempImage,[trapYPos trapXPos]);
+            center=cData.cTimelapse.cTimepoint(sliderVal).trapInfo(traps(i)).cell(position).cellCenter;
             outlines=cat(3,full(outlines*curColor(1)),full(outlines*curColor(2)),full(outlines*curColor(3)));
             
             cData.currentImage(outlines>0)=0;

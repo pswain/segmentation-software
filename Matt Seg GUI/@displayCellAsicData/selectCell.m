@@ -1,5 +1,5 @@
 function selectCell( hObject, cData )
-%UNTITLED Track a chosen cell
+%selectCell Track a chosen cell
 %   Add a cell to be tracked by clicking on the image
 %   Select the cell closest to point clicked and add it to the tracking
 pos=get(hObject,'currentpoint');
@@ -8,10 +8,18 @@ select=get(h,'selectiontype');
 pos=pos(1,1:2);%Returns two sets of identical co-ordinate. Presumably one is for image, and one for axes
 sliderVal=floor(get(cData.timepointSlider,'value'));
 %disp(pos)
-nearestCell=cData.cTimelapse.ReturnNearestCellCentre(sliderVal,1,pos);
-nearestCell=cData.cTimelapse.cTimepoint(sliderVal).trapInfo.cellLabel(nearestCell);
+%=====================
+%Check if it lies within a trap& get appropriate trap
+%Check if this works, or if you need to have the position *in* the trap
+%=====================
+
+trapNum=getNearestTrapNumber(cData,sliderVal,pos);
+nearestCell=cData.cTimelapse.ReturnNearestCellCentre(sliderVal,trapNum,pos);
+nearestCell=cData.cTimelapse.cTimepoint(sliderVal).trapInfo(trapNum).cellLabel(nearestCell);
 %disp(nearestCell)
 %make sure the cell selected has data
+
+%Check if it lies within a trap& get appropriate trap
 if find(cData.cellsWithData==nearestCell)
     if strcmpi(select,'normal')
         cData.cellsToPlot(1,nearestCell)=1;

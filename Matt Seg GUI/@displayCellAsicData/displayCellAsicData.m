@@ -1,55 +1,57 @@
 classdef displayCellAsicData < handle
-    
-    %displayCellAsicData Open two windows; one with a timelapse, and one with a plot of the intensity of fluorescense in varioius cells.
-    %--------------------------------------------------------------
-    %   Class to track the concentration of GFP in the nucleus of a
-    %   cell. Designed to be a sub-class of experimentTrackingGUI, and expects
-    %   data in the form that the timelapseTraps functions produce.
-    %   
-    %   Concentration of GFP is defined by max5/median pixel brightnes,
-    %   where max5 is the mean brightnes of the 5 brightest pixels.
-    %
-    %   Print currently prints the 12th frame, 16th frame, and plot of
-    %   intensity to a single image. Print all button will print each frame
-    %   and the plot to a folder, in the same sub-folder the timelapse was
-    %   made from.
-    %   NOTE: Does not currently support traps
-    %   
-    %   KEY VARS:       cellsToPlot: 100x100 sparse matrix
-    %                     Copy of cData.cTimelapse.cellsToPlot.
-    %                     Cell labels initially allocated when cells are
-    %                     selected. Only cells in this original will have
-    %                     data extracted. Position corresponds to the label
-    %                     of these cells.
-    %                     Tracks the labels of cells which should be
-    %                     plotted. 1's in the matrix denote a cell which
-    %                     is being tracked, while the row number gives its
-    %                     label.
-    %                     cellsToPlot is edited to track which cells are
-    %                     currently selected in the GUI.
-    %
-    %                   trackingColors
-    %                     Tracks the RGB color of individual cells in the
-    %                     GUI. As with the previous, the row of a value
-    %                     denotes the cell to which is applies, and the
-    %                     three columns denote the RGB value in double
-    %                     format.
-    %
-    %                   cellsWithData
-    %                     Lists the cell labels which had data extracted
-    %                     from them. Used to make sure that a cell with no
-    %                     data cannot be selected (because that would crash
-    %                     the thing)
-    %
-    %   SYNTAX:         displayCellAsicData(timelapseTrapsGUI)
-    %                   displayCellAsicData(timelapseTrapsGUI, cellsTotrack)
-    %           
-    %                     cellsToTrack is an optional argument, which specifies an
-    %                     alternate cData.cellsToTrack matrix (usually blank
-    %                     to give no initial tracks). Including cells which
-    %                     don't have data will cause a crash(again), so take care.
-    %                                                                        
-    
+%     
+%     displayCellAsicData Open two windows; one with a timelapse, and one with a plot of the intensity of fluorescense in varioius cells.
+%     --------------------------------------------------------------
+%       Class to track the concentration of GFP in the nucleus of a
+%       cell. Designed to be a sub-class of experimentTrackingGUI, and expects
+%       data in the form that the timelapseTraps functions produce.
+%       
+%       Concentration of GFP is defined by max5/median pixel brightnes,
+%       where max5 is the mean brightnes of the 5 brightest pixels.
+%     
+%       Areas which do not support traps:
+%           Image displays as a single large image, not series of smaller
+%           images
+%           Cells are tracked using find(), rather than this where cellNum
+%           is included in extracted data.
+%     
+%       NOTE: Does not currently support traps
+%       
+%       KEY VARS:       cellsToPlot: 100x100 sparse matrix
+%                         Copy of cData.cTimelapse.cellsToPlot.
+%                         Cell labels initially allocated when cells are
+%                         selected. Only cells in this original will have
+%                         data extracted. Position corresponds to the label
+%                         of these cells.
+%                         Tracks the labels of cells which should be
+%                         plotted. 1's in the matrix denote a cell which
+%                         is being tracked, while the row number gives its
+%                         label.
+%                         cellsToPlot is edited to track which cells are
+%                         currently selected in the GUI.
+%     
+%                       trackingColors
+%                         Tracks the RGB color of individual cells in the
+%                         GUI. As with the previous, the row of a value
+%                         denotes the cell to which is applies, and the
+%                         three columns denote the RGB value in double
+%                         format.
+%     
+%                       cellsWithData
+%                         Lists the cell labels which had data extracted
+%                         from them. Used to make sure that a cell with no
+%                         data cannot be selected (because that would crash
+%                         the thing)
+%     
+%       SYNTAX:         displayCellAsicData(timelapseTrapsGUI)
+%                       displayCellAsicData(timelapseTrapsGUI, cellsTotrack)
+%               
+%                         cellsToTrack is an optional argument, which specifies an
+%                         alternate cData.cellsToTrack matrix (usually blank
+%                         to give no initial tracks). Including cells which
+%                         don't have data will cause a crash(again), so take care.
+%                                                                            
+%     
     properties
         cTimelapse=[]
         imageFigure=[]
@@ -129,8 +131,20 @@ classdef displayCellAsicData < handle
             
             rawImage=imread([cData.cTimelapse.timelapseDir filesep cData.cTimelapse.cTimepoint(1).filename{2}]);
             rawImage=double(rawImage)/double(max(rawImage(:)));
-            cData.currentImage=cat(3,rawImage,rawImage,rawImage);
-            
+            if ~cData.cTimelapse.trapsPresent
+                cData.currentImage=cat(3,rawImage,rawImage,rawImage);
+            else
+                cData.currentImage=cell(1);
+                for i=1:length(cData.cTimelapse.cTimepoint(1).trapInfo)
+                    xpos=cData.cTimelapse.cTimepoint(1).trapLocations(i).xcenter;
+                    ypos=cData.cTimelapse.cTimepoint(1).trapLocations(i).xcenter;
+                    bb_height=cData.cTimelapse.cTrapSize.bb_height;
+                    bb_width=cData.cTimelapse.cTrapSize.bb_width;
+                    rawImage=rawImage(ypos-bb_height:ypos+bb_height,xpos-bb_width:xpos+bb_width);
+                    figure;imshow(rawImage,[]);
+                    cData.currentImage(i)=cat(3,rawImage,rawImage,rawImage);
+                end
+            end
             
             [~, b]=find(cData.cellsToPlot);
             cData.trackingColors=sparse(zeros(100,100));
@@ -233,12 +247,7 @@ classdef displayCellAsicData < handle
                 'position',[0.27,0.003,0.15,0.04],...
                 'parent',cData.plotFigure,...
                 'callback',@(src,event)markDownslope(cData));
-%             clearMarks=uicontrol('style','pushbutton',...
-%                 'string','Clear all',...
-%                 'units','normalized',...
-%                 'position',[0.34,0.003,0.15,0.04],...
-%                 'parent',cData.plotFigure,...
-%                 'callback',@(src,event)clearAllMarks(cData));
+
             keyPoint=uicontrol('style','pushbutton',...
                 'string','Mark key point',...
                 'units','normalized',...
