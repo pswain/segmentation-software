@@ -1,42 +1,41 @@
-function SegmentConsecutiveTimepointsCrossCorrelation(ttacObject,FirstTimepoint,LastTimepoint,varargin)
-%plan to find consecutve cell locations by cross correlation.
+function SegmentConsecutiveTimepointsCrossCorrelation(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean)
+%SegmentConsecutiveTimepointsCrossCorrelation(ttacObject,FirstTimepoint,LastTimepoint,varargin)
+%Complete segmentation function that uses the cCellVision and cross correlation to find images of
+%cells and performs the active contour to get the edges.
+%
+%not yet parallelised
+%
+%   INPUTS
+% FirstTimepoint    - time point at which to start
+% LastTimepoint     - and to end
+% FixFirstTimePoint - optional : if this is true the software will not alter the first timepoint
+%                     but will still use the information in finding cells.
+%
+%
+%outline
+%
+% loop timepoints:
+%     loop traps:
+%         cross correlate all cells in trap at previous timepoint
+%         loop:
+%             get max above threshold
+%             make that centre of that cell at the new timepoint
+%             do active contour
+%             set those pixels to -Inf in cross correlation
+%         get d_im
+%         set all cell and trap pixels to Inf
+%         loop:
+%             find max below two stage threshold
+%             Set as centre
+%             give new cell label and do active contour
+%
+% has cTimelapse referecences - remove later if necessary
 
 
 
 
-
-%% given cell number and trap numbers of cell (s) to investigate.
-
-%% fit active contour for that cell at timepoint 1
-
-
-%% Loop for all cells
-%% get image of around expected location of cell at next time point
-
-%% do cross correlation of sub cell image with this image
-%% end loop
-
-
-%% Loop for all cells
-
-%% set trap and other cell pixels to be zero in cross correlation
-
-%% pick cell with highest cross correlation score
-
-%% decide that is centre at next time point and do cross active contour
-
-%% add result to cell pixels to remove from other cross correlations
-
-%% end loop
-
-
-
-
-
-if size(varargin,2)>0
+if nargin<3
     
-    FixFirstTimePointBoolean = varargin{1};
-else
     FixFirstTimePointBoolean = false;
     
 end
@@ -49,15 +48,32 @@ keepers = 1;%number of timpoints from that slice that you will keep (normally sl
 SubImageSize = ttacObject.Parameters.ImageSegmentation.SubImageSize;%61;
 OptPoints = ttacObject.Parameters.ImageSegmentation.OptPoints;%6;
 
-ProspectiveImageSize = 121; %image which will be searched for next cell
-CrossCorrelationChannel = ttacObject.Parameters.ImageTransformation.channel;
+ProspectiveImageSize = 81; %image which will be searched for next cell
+CrossCorrelationChannel = 1;%ttacObject.Parameters.ImageTransformation.channel;
 CrossCorrelationTrapThreshold = 0.1;
-CrossCorrelationValueThreshold = 0;
-CrossCorrelationPrior = fspecial('gaussian',ProspectiveImageSize,5); %filter with which prospective image is multiplied to weigh centres close to expected stronger.
+CrossCorrelationValueThreshold = 0.001;
+
+TwoStageThreshold = 0; %negative is stricter, positive more lenient
+
+TrapPixExcludeThresh = 1;
+CellPixExcludeThresh = 0.8;
+
+CrossCorrelationPrior = fspecial('gaussian',ProspectiveImageSize,10); %filter with which prospective image is multiplied to weigh centres close to expected stronger.
 CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
+ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageTransformation.ImageTransformFunction]);
 
-CellPreallocationNumber = 200;
+TrapWidth = ttacObject.TimelapseTraps.cTrapSize.bb_width;
+TrapHeight = ttacObject.TimelapseTraps.cTrapSize.bb_height;
+
+NewCellStruct = struct('cellCenter',[],...
+                       'cellRadius',[],...
+                       'segmented',sparse(false(ttacObject.TrapImageSize)),...
+                       'crossCorrelationScore',[],...
+                       'decisionImageScore',[],...
+                       'cellRadii',[],...
+                       'cellAngle',[]);
+
 
 %protects program from super crashing out by opening and closing a million
 %images.
@@ -72,77 +88,9 @@ end
 %Better to assign it here than every time in the loop.
 FauxCentersStack = round(SubImageSize/2)*ones(slice_size,2);
 
-%size of trap image stored in Timelapse. If there are no traps, this is the
-%size of the image.
-
-
 Timepoints = FirstTimepoint:LastTimepoint;
 
-
-
 ttacObject.CheckTimepointsValid(Timepoints)
-
-%% create structure in which to store cell data
-%it might seem the construction is strange, but it turned out to be fairly
-%efficient to make a field for each slice of the final stack and then pass
-%images backwards through the fields using 'deal'.
-
-%The data structure is organised such that the most recent timepoint is the
-%highest number, so that data are entered in the field 'fieldname_n', and
-%then cycled back to 'fieldname_n-1',fielname_n-2' as other later data
-%comes in to push them back. They are finally deposited in 'fieldname_1'
-CellInfo = struct;
-CellInfo.CellNumber = 0;
-CellInfo.TrapNumber = 0;
-CellInfo.CellLabel = 0;
-CellInfo.PreviousTimepointResult = zeros(1,OptPoints);
-CellInfo.TimePointsPresent = 0;
-CellInfo.TimePointsAbsent = 0;
-CellInfo.UpdatedThisTimepoint = false;
-CellInfo.ProspectiveImage = zeros(ProspectiveImageSize);
-CellInfo.ProspectiveTrapImage = zeros(ProspectiveImageSize);
-CellInfo.CellCore = [];
-CellInfo.ExpectedCentre = [0 0];
-
-CellCentreStrings = cell(1,slice_size);
-TrapCentreStrings = cell(1,slice_size);
-TransformedImageStrings = cell(1,slice_size);
-PriorRadiiStrings = cell(1,slice_size);
-PriorAnglesStrings = cell(1,slice_size);
-CellNumberTimelapseStrings = cell(1,slice_size);
-TimePointStrings = cell(1,slice_size);
-CellOultineStrings = cell(1,slice_size);
-CellImageStrings = cell(1,slice_size);
-
-for i=1:slice_size
-    CellCentreStrings{i} = ['CellCentre' int2str(i)];
-    CellInfo.(CellCentreStrings{i}) = zeros(1,2);
-    TrapCentreStrings{i} =['TrapCentre' int2str(i)];
-    CellInfo.(TrapCentreStrings{i})= zeros(1,2);
-    TransformedImageStrings{i} = ['TransformedImage' int2str(i)];
-    CellInfo.(TransformedImageStrings{i})= zeros(SubImageSize,SubImageSize);
-    PriorRadiiStrings{i} = ['PriorRadii' int2str(i)];
-    CellInfo.(PriorRadiiStrings{i}) = zeros(1,OptPoints);
-    PriorAnglesStrings{i} = ['PriorAngles' int2str(i)];
-    CellInfo.(PriorAnglesStrings{i}) = zeros(1,OptPoints);
-    CellNumberTimelapseStrings{i} = ['CellNumberTimelapse' int2str(i)];
-    CellInfo.(CellNumberTimelapseStrings{i}) = 0;
-    TimePointStrings{i} = ['Timepoint' int2str(i)];
-    CellInfo.(TimePointStrings{i}) = 0;
-    CellOultineStrings{i} = ['CellOutline' int2str(i)];
-    CellInfo.(CellOultineStrings{i}) = false(SubImageSize,SubImageSize);
-    CellImageStrings{i} = ['CellImage' int2str(i)];
-    CellInfo.(CellImageStrings{i}) = zeros(SubImageSize,SubImageSize);
-    
-end
-
-
-
-InitialisedCellInfo = CellInfo;
-
-CellInfo(1:CellPreallocationNumber) = InitialisedCellInfo;
-
-EmptyCellEntries = true(1,CellPreallocationNumber);
 
 
 %% set TP at which to start segmenting
@@ -159,9 +107,19 @@ else
     
 end
 
-
-
 FirstDisplay = true;
+
+PreviousWholeImage = [];
+PreviousTrapLocations = [];
+PreviousTrapInfo = [];
+
+%visualising trackin
+if ttacObject.Parameters.ActiveContour.visualise>0;
+    dec_im_handle = figure;
+    cc_im_handle = figure;
+    outline_im_handle = figure;
+end
+
 
 %% loop through the rest of the timepoints
 for TP = Timepoints
@@ -169,407 +127,420 @@ for TP = Timepoints
     tic;
     fprintf('timepoint %d \n',TP)
     
-    UpdatedPreviousTimepoint = [CellInfo(:).UpdatedThisTimepoint];
+        
+    WholeImage = ttacObject.ReturnImage(TP,CrossCorrelationChannel);
+    WholeImage = IMnormalise(WholeImage);
     
-    % not sure this chunk will be necessary in this function
-    %     for CN = find((~UpdatedPreviousTimepoint) & (~EmptyCellEntries))
-    %         %the indexing here is difficult to follow but the idea is that if
-    %         %no cell is present at the previous timepoint but there is data in
-    %         %the array we need to save the 'priors' since these will be our
-    %         %best guess at the contour since we can't do anymore searches since
-    %         %our data for this cell has run out. So we take the slices that
-    %         %have not been segmented and saved but have been segmented as part
-    %         %of the segmentation of earlier cells (RN's) and save them to the
-    %         %appropriate timepoints (TP + RN -slice_size -1).
-    %
-    %
-    %         %take cells which for which no cell was present at the previous
-    %         %timepoint and makes the segmentation result the prior result for
-    %         %all cells.
-    %         for RN = setdiff((1:slice_size-1),1:(mod(CellInfo(CN).TimePointsPresent+1-slice_size,keepers)))
-    %             %this is set_diff(all entries with priors, those already written to data structure by segmentation )
-    %
-    %             %write the results to keep to the cTimelapse object
-    %             ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
-    %         end
-    %
-    %
-    %     CellInfo(CN) = InitialisedCellInfo;
-    %     EmptyCellEntries(CN) = true;
-    %     end
-    %move data 'back in time' and update update info
-    [CellInfo(UpdatedPreviousTimepoint).UpdatedThisTimepoint] = deal(false);
-%     for SN = 1:(slice_size-1)
-%         
-%         [CellInfo(UpdatedPreviousTimepoint).(CellCentreStrings{SN})] =deal(CellInfo(UpdatedPreviousTimepoint).(CellCentreStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(TrapCentreStrings{SN})] =deal(CellInfo(UpdatedPreviousTimepoint).(TrapCentreStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(TransformedImageStrings{SN})] =deal(CellInfo(UpdatedPreviousTimepoint).(TransformedImageStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(PriorRadiiStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(PriorRadiiStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(CellOultineStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(CellOultineStrings{SN+1}));
-%         [CellInfo(UpdatedPreviousTimepoint).(CellImageStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(CellImageStrings{SN+1}));
-%         
-%     end
+    if ttacObject.TrapPresentBoolean
+        WholeTrapImage = ttacObject.ReturnTrapImage(TP);
+    else
+        WholeTrapImage = zeros(size(WholeImage));
+    end
+    
+    if ITparameters.channel ~= CrossCorrelationChannel;
+        ACImage = ttacObject.ReturnImage(TP);
+        ACImage = IMnormalise(ACImage);
+        
+    else
+        ACImage = WholeImage;
+    end
+    
+    TrapLocations = ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations;
+    TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
+    
+        %array to hold the maximum label used in each trap
+        
+    
+    if TP == ttacObject.TimelapseTraps.timepointsToProcess(1)
+        TrapMaxCell = zeros(1,length(TrapInfo));
+    else
+        TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TP-1).trapMaxCellUTP;
+    end
     
     
-    
-    NumberOfCellsUpdated = 0;
-    %checksum =0;
-    
-    if TP == FirstTimepoint;
+    if TP>= TPtoStartSegmenting;
+        
+        %get decision image for each cell from SVM
+        DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
+        
         for TI = ttacObject.TrapsToCheck(TP)
-            for CI = ttacObject.CellsToCheck(TP,TI);
-                
-                
-                %fprintf('timepoint %d; trap %d ; cell %d \n',TP,TI,CI)
-                
-                %if the cell was previously recorded, put it
-                %there.Otherwise, put in an empty place
-                CellEntry = find(EmptyCellEntries,1);
-                
-                %If there are no available cell entries left initialise a
-                %whole new tranch of cell entries
-                if isempty(CellEntry)
-                    CellEntry = length(CellInfo)+1;
-                    CellInfo((end+1):(end+CellPreallocationNumber)) = InitialisedCellInfo;
-                    EmptyCellEntries = [EmptyCellEntries true(1,CellPreallocationNumber)];
-                end
-                
-                % Properties only updated on the first occurrence of a cell
-                
-                CellInfo(CellEntry).CellNumber = CellEntry;
-                CellInfo(CellEntry).TrapNumber = TI;
-                CellInfo(CellEntry).CellLabel = ttacObject.ReturnLabel(TP,TI,CI);
-                CellInfo(CellEntry).(PriorRadiiStrings{end}) = ttacObject.ReturnCellRadii(TP,TI,CI);%set prior to be the radus found by matt's hough transform
-                CellInfo(CellEntry).(PriorAnglesStrings{end}) = ttacObject.ReturnCellAngles(TP,TI,CI);%set prior angles to be evenly spaced
-                %it may seem strange that both these are only taken for the
-                %first occurence of a cell. This is because the prior is
-                %set to the segmentation result once the cells are
-                %segmented and 'left behind' to be the prior for future
-                %cells. May want to change this to be more sophisticated at
-                %some point.
-                
-                EmptyCellEntries(CellEntry) = false;
-                
-                
-                
-                % Properties updated on ever occurrence of a cell
-                
-                CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
-                CellInfo(CellEntry).(TimePointStrings{end}) = TP;
-                CellInfo(CellEntry).(CellCentreStrings{end}) = ttacObject.ReturnCellCentreAbsolute(TP,TI,CI);
-                CellInfo(CellEntry).(TrapCentreStrings{end}) = ttacObject.ReturnTrapCentre(TP,TI);
-                CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
-                CellInfo(CellEntry).UpdatedThisTimepoint = true;
-                CellInfo(CellEntry).(CellOultineStrings{end}) = ttacObject.ReturnCellOutlinesForSingleCell(TP,TI,CI);
-                CellInfo(CellEntry).ExpectedCentre = CellInfo(CellEntry).(CellCentreStrings{end});
-                NumberOfCellsUpdated = NumberOfCellsUpdated+1;
-                
+            
+            NewCells = [];
+            OldCells = [];
+            NewCrossCorrelatedCells = [];
+            CurrentTrapInfo = TrapInfo(TI);
+            TrapDecisionImage = DecisionImageStack(:,:,TI);
+            
+            %             %might need to do something about this
+            %             if isempty(CurrentTrapInfo)
+            %             end
+            if TP>FirstTimepoint
+                PreviousCurrentTrapInfo = PreviousTrapInfo(TI);
             end
             
-            
-        end
-        
-    else %not the first timepoint
-        
-        ExpectedCentreStack = reshape([CellInfo(UpdatedPreviousTimepoint).ExpectedCentre],2,[]);
-        ExpectedCentreStack = ExpectedCentreStack';
-        
-        ExpectedCentreStack(ExpectedCentreStack<1) = 1;
-        ExpectedCentreStack(ExpectedCentreStack>512) = 512;
-        try
-        ProspectiveImageStack = ttacObject.ReturnSubImages([CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{end})] + 1,round(ExpectedCentreStack), ProspectiveImageSize,CrossCorrelationChannel,'median');
-        catch
-            fprintf(debug)
-        end
-        
-        ProspectiveTrapImageStack = ttacObject.ReturnSubImages([CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{end})] + 1,round(ExpectedCentreStack), ProspectiveImageSize,'trap','median');
-        
-        for CN = find(UpdatedPreviousTimepoint)
-            CellInfo(CN).ProspectiveImage = ProspectiveImageStack(:,:,CN);
-            CellInfo(CN).ProspectiveTrapImage = ProspectiveTrapImageStack(:,:,CN);
-            
-            CellInfo(CN).(TimePointStrings{end}) = TP;
-            CellInfo(CN).(TrapCentreStrings{end}) = ttacObject.ReturnTrapCentre(TP,CellInfo(CN).TrapNumber);
-            
-            
-            
-        end
-        
-        for celli = find(UpdatedPreviousTimepoint)
-            
-            %make template
-            
-            CellImage = CellInfo(celli).(CellImageStrings{end});
-            CellOutline = imfill(CellInfo(celli).(CellOultineStrings{end}),'holes');
-            CellOutline = bwmorph(CellOutline,'erode');
-            ProspectiveImage = CellInfo(celli).ProspectiveImage;
-            TrapImageOfPredictedCellLocation = CellInfo(celli).ProspectiveTrapImage;
-            
-            CellMean = mean(CellImage(CellOutline));
-            CellImage(~CellOutline) = CellMean;
-            
-            %do cross correlation
-            PredictedCellLocation = normxcorr2(CellImage,ProspectiveImage);
-            PredictedCellLocation = (PredictedCellLocation(ceil(SubImageSize/2):(end-floor(SubImageSize/2)),ceil(SubImageSize/2):(end-floor(SubImageSize/2))));
-            PredictedCellLocation = CrossCorrelationPrior.*PredictedCellLocation;
-            
-            %remove trap cells. expand to remove other cells;
-            TrapImageOfPredictedCellLocation = TrapImageOfPredictedCellLocation>CrossCorrelationTrapThreshold;
-            TrapImageOfPredictedCellLocation = bwmorph(TrapImageOfPredictedCellLocation,'dilate');
-            PredictedCellLocation(TrapImageOfPredictedCellLocation) = 0;
-            [value,Index] = max(PredictedCellLocation(:));
-            
-            [ynewcell,xnewcell] = ind2sub(size(PredictedCellLocation),Index);
+            if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && ~isinf(CrossCorrelationValueThreshold)
+                %cross correlation loop
+                PreviousCellCentresAbsolute = ttacObject.ReturnCellCentreAbsolute(TP-1,TI);
+                PreviousCellImages = ACBackGroundFunctions.get_cell_image(PreviousWholeImage,ttacObject.Parameters.ImageSegmentation.SubImageSize,PreviousCellCentresAbsolute);
                 
-            if value>CrossCorrelationValueThreshold
+                PredictedCellLocationsAllCells = zeros(ttacObject.TrapImageSize(1),ttacObject.TrapImageSize(2),length(PreviousCurrentTrapInfo.cell));
                 
-                %visualising trackin
-                if ttacObject.Parameters.ActiveContour.visualise>0;
-                    if FirstDisplay == true;
-                        pimhandle = figure;
-                        ccimhandle = figure;
-                        FirstDisplay = false;
-                    end
+                %loop over old cells and do cross correlation
+                for CI = 1:length(PreviousCurrentTrapInfo.cell)
                     
-                    figure(pimhandle);
-                    imshow(ProspectiveImage,[])
-                    hold on
-                    plot(xnewcell,ProspectiveImageSize-ynewcell+1,'or')
-                    hold off
-                    title(sprintf('timepoint %d',TP))
+                    %make template
                     
-                    figure(ccimhandle);
-                    imshow(PredictedCellLocation,[]);
-                    title(sprintf('max value %d',value));
+                    %get absolute centres
                     
-                    if ttacObject.Parameters.ActiveContour.visualise>2;
-                        pause;
+                    %get cell images from centres
+                    
+                    CellImage = PreviousCellImages(:,:,CI);
+                    CellOutline = ACBackGroundFunctions.get_cell_image(full(PreviousCurrentTrapInfo.cell(CI).segmented),...
+                        ttacObject.Parameters.ImageSegmentation.SubImageSize,...
+                        PreviousCurrentTrapInfo.cell(CI).cellCenter );
+                    
+                    CellOutline = imfill(CellOutline,'holes');
+                    %remove erode and instead dilate trap image
+                    %CellOutline = bwmorph(CellOutline,'erode');
+                    
+                    %make expected centre absolute
+                    %done in this way (relative to trap centre) so as not
+                    %to be affected by drift
+                    if isfield(PreviousCurrentTrapInfo.cell(CI),'ExpectedCentre')
+                        LocalExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).ExpectedCentre;
                     else
-                        pause(1)
+                        LocalExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).cellCenter;
                     end
- 
-                end
-                
-                ynewcell = ynewcell - ceil(ProspectiveImageSize/2) + CellInfo(celli).ExpectedCentre(2);
-                xnewcell = xnewcell - ceil(ProspectiveImageSize/2) + CellInfo(celli).ExpectedCentre(1);
-                
-                if ttacObject.TrapPresentBoolean
-                    ynewcellRelative = round(ynewcell - CellInfo(celli).(TrapCentreStrings{end})(2) +...
-                                                            ceil(ttacObject.TrapImageSize(1)/2));
-                    xnewcellRelative = round(xnewcell - CellInfo(celli).(TrapCentreStrings{end})(1) +...
-                                                            ceil(ttacObject.TrapImageSize(2)/2));
-                else
-                    ynewcellRelative = round(ynewcell);
-                    xnewcellRelative = round(xnewcell);
-                end
-                %write new cell info. Need to make good.
-                
-                if isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo)
-                    ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo = ttacObject.TimelapseTraps.cTimepoint(TP-1).trapInfo;
-                end
-                
-                if ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellsPresent
-                    if any(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel == CellInfo(celli).CellLabel)
-                        NewCellIndex = find(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel == CellInfo(celli).CellLabel);
-                    else
-                        NewCellIndex = length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell) +1;
+                        
+                    ExpectedCellCentre = LocalExpectedCellCentre + [TrapLocations(TI).xcenter TrapLocations(TI).ycenter] - ([TrapWidth TrapHeight] + 1) ;
+                    
+                    if ExpectedCellCentre(1)>ttacObject.ImageSize(1)
+                        ExpectedCellCentre(1) = ttacObject.ImageSize(1);
                     end
-                else
-                    ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellsPresent = true;
-                    NewCellIndex = 1;
-                end
-                
-                ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).cellCenter = [xnewcellRelative ynewcellRelative];
-                ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).cellRadius = 8;
-                ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cell(NewCellIndex).crossCorrelationScore = value;
-                ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(CellInfo(celli).TrapNumber).cellLabel(NewCellIndex) = CellInfo(celli).CellLabel;
-                
-                
-                
-                CellInfo(celli).TimePointsPresent = CellInfo(celli).TimePointsPresent+1;
-                CellInfo(celli).UpdatedThisTimepoint = true;
-                CellInfo(celli).(CellNumberTimelapseStrings{end}) = NewCellIndex;
-                CellInfo(celli).(CellCentreStrings{end}) = [xnewcell ynewcell];
-                NumberOfCellsUpdated = NumberOfCellsUpdated+1;
-            end
-            
-            
-        end
-        
-        %get cell outline from previous timepoint
-        %make template for cross correlation
-        %do special cross correlation
-        
-    end
-    
-    %Get Subimages of Cells
-    
-    CellNumbers = find([CellInfo(:).UpdatedThisTimepoint]);
-    
-    [AllCellTransformedImageStack,CellImageStack] = ttacObject.ReturnTransformedImagesForSingleCell([CellInfo([CellInfo(:).UpdatedThisTimepoint]).(TimePointStrings{end})],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).TrapNumber],[CellInfo([CellInfo(:).UpdatedThisTimepoint]).(CellNumberTimelapseStrings{end})]);
-    
-    
-    
-    %redistribute amongst data structure
-    
-    for CN = 1:NumberOfCellsUpdated
-        CellInfo(CellNumbers(CN)).(TransformedImageStrings{end}) = AllCellTransformedImageStack(:,:,CN);
-        CellInfo(CellNumbers(CN)).(CellImageStrings{end}) = CellImageStack(:,:,CN);
-        
-    end
-    
-    
-    
-    %% actually do the segmentation function
-    
-    %being segmented for the first time
-    CellsToSegmentFirstTP = ...
-        find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]==slice_size) );
-    
-    
-    %cells that have been previously segmented and have a previous
-    %timepoint to use
-    CellsToSegmentPreviouslySegmented = ...
-        find([CellInfo(:).UpdatedThisTimepoint] & ([CellInfo(:).TimePointsPresent]>slice_size) &(mod([CellInfo(:).TimePointsPresent]-slice_size,keepers)==0) );
-    
-    UsePreviousTimepoint = [false(size(CellsToSegmentFirstTP)) true(size(CellsToSegmentPreviouslySegmented))];
-    
-    CellsToSegment = [CellsToSegmentFirstTP CellsToSegmentPreviouslySegmented];
-    
-    RadiiResultsCellArray = cell(size(CellsToSegment));
-    AnglesResultsCellArray = cell(size(CellsToSegment));
-    
-    TimePointsToWrite = zeros(keepers*length(CellsToSegment),1);
-    TrapIndicesToWrite = TimePointsToWrite;
-    CellIndicesToWrite = TimePointsToWrite;
-    CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
-    AnglesToWrite = CellRadiiToWrite;
-    
-    parfor CNi = 1:length(CellsToSegment)
-        %divided loop into parallel slow part and relatively fast write
-        %part.
-        
-        if TP>=TPtoStartSegmenting
-            
-            
-            [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CellsToSegment(CNi));
-            
-            if UsePreviousTimepoint(CNi)
-                %do segmentation of previously segmented cell
-                [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
-                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CellsToSegment(CNi)).PreviousTimepointResult);
-                
-            else
-                %do first timepoint segmentation - so no previous timepoint
-                [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
-                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
-                
-            end
-            
-            %put all radii in the CellInfoarray
-        end
-    end
-    
-    CellsWritten = 1;
-    
-    for CNi = 1:length(CellsToSegment)
-        
-        CN = CellsToSegment(CNi);
-        
-        if TP>=TPtoStartSegmenting
-            for RN = 1:slice_size
-                CellInfo(CN).(PriorRadiiStrings{RN}) = RadiiResultsCellArray{CNi}(RN,:);
-                CellInfo(CN).(PriorAnglesStrings{RN}) = AnglesResultsCellArray{CNi}(RN,:);
-            end
-            
-            %write results to keep to the timelapse object
-            for RN = 1:keepers
-                
-                %write the results to keep (1:keepers) to the cTimelapse object
-                %ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
-                
-                TimePointsToWrite(CellsWritten) = CellInfo(CN).(TimePointStrings{RN});
-                TrapIndicesToWrite(CellsWritten) = CellInfo(CN).TrapNumber;
-                CellIndicesToWrite(CellsWritten) = CellInfo(CN).(CellNumberTimelapseStrings{RN});
-                CellRadiiToWrite(CellsWritten,:) = RadiiResultsCellArray{CNi}(RN,:);
-                AnglesToWrite(CellsWritten,:) = AnglesResultsCellArray{CNi}(RN,:);
-                
-                CellsWritten = CellsWritten+1;
-                
-                
-                
-            end
-            
-            CellInfo(CN).PreviousTimepointResult = RadiiResultsCellArray{CNi}(keepers,:);
-            
-            
-        else
-            
-            CellInfo(CN).PreviousTimepointResult = CellInfo(CN).((PriorRadiiStrings{1}));
-        end
-    end
-    
-    %write results on mass
-    if TP>=TPtoStartSegmenting && ~isempty(CellsToSegment)
-        ttacObject.WriteACResults(TimePointsToWrite,TrapIndicesToWrite,CellIndicesToWrite,CellRadiiToWrite,AnglesToWrite)
-    end
-    
-    
-    for celli = CellsToSegmentPreviouslySegmented
-                    CellInfo(celli).(CellOultineStrings{end}) = ttacObject.ReturnCellOutlinesForSingleCell(TP,CellInfo(celli).TrapNumber,CellInfo(celli).(CellNumberTimelapseStrings{end}));
-                    CellInfo(celli).ExpectedCentre = CellInfo(celli).(CellCentreStrings{end});
+                    
+                    if ExpectedCellCentre(1)<1;
+                        ExpectedCellCentre(1) = 1;
+                    end
+                    
+                    if ExpectedCellCentre(2)>ttacObject.ImageSize(2)
+                        ExpectedCellCentre(2) = ttacObject.ImageSize(2);
+                    end
+                    
+                    if ExpectedCellCentre(2)<1;
+                        ExpectedCellCentre(2) = 1;
+                    end
+                    
+                    ProspectiveImage = ACBackGroundFunctions.get_cell_image(WholeImage,...
+                        ProspectiveImageSize,...
+                        ExpectedCellCentre );
+                    if ttacObject.TrapPresentBoolean
+                        TrapImageOfPredictedCellLocation = ACBackGroundFunctions.get_cell_image(WholeTrapImage,...
+                            ProspectiveImageSize,...
+                            ExpectedCellCentre );
+                    end
+                    
+                    %adjust images to get zero contribution from non
+                    %template pixels
+                    CellMean = mean(CellImage(CellOutline));
+                    CellImage(~CellOutline) = CellMean;
+                    
+                    %might not be necessary
+                    if ttacObject.TrapPresentBoolean
+                        TrapImageOfPredictedCellLocation = TrapImageOfPredictedCellLocation>CrossCorrelationTrapThreshold;
+                        TrapImageOfPredictedCellLocation = bwmorph(TrapImageOfPredictedCellLocation,'dilate',1);
+                        ProspectiveImageMean = mean(ProspectiveImage(~TrapImageOfPredictedCellLocation));
+                        ProspectiveImage(TrapImageOfPredictedCellLocation) = ProspectiveImageMean;
+                    end
+                    %do cross correlation
+                    PredictedCellLocation = normxcorr2(CellImage,ProspectiveImage);
+                    PredictedCellLocation = (PredictedCellLocation(ceil(SubImageSize/2):(end-floor(SubImageSize/2)),ceil(SubImageSize/2):(end-floor(SubImageSize/2))));
+                    PredictedCellLocation = CrossCorrelationPrior.*PredictedCellLocation;
+                    
+                    PredictedCellLocationsAllCells(:,:,CI) = ACBackGroundFunctions.get_cell_image(PredictedCellLocation,...
+                        ttacObject.TrapImageSize,...
+                        (ceil(ProspectiveImageSize/2)*[1 1] + ceil(fliplr(ttacObject.TrapImageSize)/2)) - LocalExpectedCellCentre,...
+                        -2*abs(CrossCorrelationTrapThreshold) ).*(TrapDecisionImage<0).*(-TrapDecisionImage)/sum(CellOutline(:));
 
+                end %end cell loop to find cross correlation matrix
+                
+                %store image for visualisation
+                if ttacObject.Parameters.ActiveContour.visualise > 0
+                    PredictedCellLocationsAllCellsToView = PredictedCellLocationsAllCells;
+                    
+                end
+                
+                
+                CrossCorrelating = true;
+            else
+                CrossCorrelating = false;
+                
+            end %if timepoint> FirstTimepoint
+            
+            if ttacObject.TrapPresentBoolean
+                TrapTrapImage = ACBackGroundFunctions.get_cell_image(WholeTrapImage,...
+                    ttacObject.TrapImageSize,...
+                    [TrapLocations(TI).xcenter TrapLocations(TI).ycenter],...
+                    0 ) ;
+                TrapTrapLogical = TrapTrapImage > CrossCorrelationTrapThreshold;
+                if CrossCorrelating
+                    PredictedCellLocationsAllCells(repmat(TrapTrapLogical,[1,1,size(PredictedCellLocationsAllCells,3)])) = -2*abs(CrossCorrelationValueThreshold);
+                end
+                TrapDecisionImage(TrapTrapLogical) = 2*abs(TwoStageThreshold);
+            else
+                TrapTrapLogical = false(ttacObject.TrapImageSize);
+                TrapTrapImage = zeros(ttacObject.TrapImageSize);
+                
+            end
+            
+            NotCells = TrapTrapLogical;
+            AllCellPixels = zeros(ttacObject.TrapImageSize);
+            
+            CellSearch = true;
+            ProceedWithCell = false;
+            NCI = 0;
+            %look for new cells
+            while CellSearch
+                
+                if CrossCorrelating
+                    %look for cells based on cross correlation with
+                    %previous timepoint
+                    value = max(PredictedCellLocationsAllCells(:));
+                    [Index] = find(PredictedCellLocationsAllCells==value,1);
+                    if value>CrossCorrelationValueThreshold
+                        [ynewcell,xnewcell,CI] = ind2sub(size(PredictedCellLocationsAllCells),Index);
+                        ProceedWithCell = true;
+                    else
+                        ProceedWithCell = false;
+                        CrossCorrelating = false;
+                    end
+                end
+                
+                if ~CrossCorrelating
+                    %look for cells based based on SVM decisions matrix
+                    value = min(TrapDecisionImage(:));
+                    [Index] = find(TrapDecisionImage==value,1);
+                    if value<TwoStageThreshold
+                        [ynewcell,xnewcell] = ind2sub(size(TrapDecisionImage),Index);
+                        ProceedWithCell = true;
+                    else
+                        CellSearch = false;
+                        ProceedWithCell = false;
+                    end
+                    
+                    
+                end
+                
+                if ProceedWithCell
+                    
+                    NCI = NCI+1;
+                    
+                    %write new cell info
+                    
+                    %lazy first bit to stop crashing
+                    if NCI==1
+                        CurrentTrapInfo.cell = NewCellStruct;
+                    else
+                        CurrentTrapInfo.cell(NCI) = NewCellStruct;
+                    end
+                    if CrossCorrelating
+                        CurrentTrapInfo.cellLabel(NCI) = PreviousCurrentTrapInfo.cellLabel(CI);
+                        OldCells = [OldCells CI];
+                        NewCrossCorrelatedCells = [NewCrossCorrelatedCells NCI];
+                        CurrentTrapInfo.cell(NCI).crossCorrelationScore = value;
+                        CurrentTrapInfo.cell(NCI).decisionImageScore = NaN;
+                    else
+                        NewCells = [NewCells NCI];
+                        CurrentTrapInfo.cellLabel(NCI) = TrapMaxCell(TI)+1;
+                        TrapMaxCell(TI) = TrapMaxCell(TI)+1;
+                        CurrentTrapInfo.cell(NCI).crossCorrelationScore = NaN;
+                        CurrentTrapInfo.cell(NCI).decisionImageScore = value;
+                    end
+                    CurrentTrapInfo.cell(NCI).cellCenter = [xnewcell ynewcell];
+                    CurrentTrapInfo.cellsPresent = true;
+                    
+                    
+                    %do active contour
+                    
+                    NewCellCentre = [xnewcell ynewcell] + [TrapLocations(TI).xcenter TrapLocations(TI).ycenter] - ( [TrapWidth TrapHeight] + 1 );
+                    
+                    if NewCellCentre(1)>ttacObject.ImageSize(1)
+                        NewCellCentre(1) = ttacObject.ImageSize(1);
+                    end
+                    
+                    if NewCellCentre(1)<1;
+                        NewCellCentre(1) = 1;
+                    end
+                    
+                    if NewCellCentre(2)>ttacObject.ImageSize(2)
+                        NewCellCentre(2) = ttacObject.ImageSize(2);
+                    end
+                    
+                    if NewCellCentre(2)<1;
+                        NewCellCentre(2) = 1;
+                    end
+                    
+                    CellImage = ACBackGroundFunctions.get_cell_image(ACImage,...
+                        SubImageSize,...
+                        NewCellCentre );
+                    
+                    NotCellsCell = ACBackGroundFunctions.get_cell_image(AllCellPixels,...
+                        SubImageSize,...
+                        [xnewcell ynewcell],...
+                        false);
+                    
+                    
+                    if ttacObject.TrapPresentBoolean
+                        CellTrapImage = ACBackGroundFunctions.get_cell_image(WholeTrapImage,...
+                            SubImageSize,...
+                            NewCellCentre );
+                        TransformedCellImage = ImageTransformFunction(CellImage,ttacObject.Parameters.ImageTransformation.TransformParameters,CellTrapImage+NotCellsCell);
+                        
+                    else
+                        TransformedCellImage = ImageTransformFunction(CellImage,ttacObject.Parameters.ImageTransformation.TransformParameters,NotCellsCell);
+                    end
+                    
+                    if ttacObject.TrapPresentBoolean
+                        ExcludeLogical = (CellTrapImage>=TrapPixExcludeThresh) | (NotCellsCell>=CellPixExcludeThresh);
+                    else
+                        ExcludeLogical = NotCellsCell>=CellPixExcludeThresh;
+                    end
+                    
+                    if ~any(ExcludeLogical(:))
+                        ExcludeLogical = [];
+                    end
+                    
+                    if CrossCorrelating
+                        PreviousTimepointRadii = PreviousCurrentTrapInfo.cell(CI).cellRadii;
+                    
+                    [RadiiResult,AnglesResult] = ...
+                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparameters,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
+                    else
+                        [RadiiResult,AnglesResult] = ...
+                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparameters,FauxCentersStack,[],[],ExcludeLogical);
+                    
+                    end
+                    %write active contour result and change cross
+                    %correlation matrix and decision image.
+                    
+                    CurrentTrapInfo.cell(NCI).cellRadii = RadiiResult;
+                    CurrentTrapInfo.cell(NCI).cellAngle = AnglesResult;
+                    CurrentTrapInfo.cell(NCI).cellRadius = mean(RadiiResult);
+                    
+                    [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',double(CurrentTrapInfo.cell(NCI).cellCenter),ttacObject.TrapImageSize);
+                    
+                    SegmentationBinary = false(ttacObject.TrapImageSize);
+                    SegmentationBinary(py+ttacObject.TrapImageSize(1,1)*(px-1))=true;
+                    
+                    
+                    CurrentTrapInfo.cell(NCI).segmented = sparse(SegmentationBinary);
+                    SegmentationBinary = imfill(SegmentationBinary,'holes');
+                    
+                     if CrossCorrelating
+                         %remove cell that has been successfully cross
+                         %correlated from cross correlation matrix
+                         PredictedCellLocationsAllCells(:,:,CI) = -2*abs(CrossCorrelationValueThreshold);
+                         %ensure no cells are found overlapping identified cell
+                         PredictedCellLocationsAllCells(repmat(SegmentationBinary,[1,1,size(PredictedCellLocationsAllCells,3)])) = -2*abs(CrossCorrelationValueThreshold);
+                     end
+                     %remove pixels identified as cell pixels from
+                     %decision image
+                     TrapDecisionImage(SegmentationBinary) = 2*abs(TwoStageThreshold);
+                     
+
+                    %update trap image so that it includes all
+                    %segmented cells
+                    NotCells = NotCells | SegmentationBinary;
+                    EdgeConfidenceImage = bwdist(~SegmentationBinary);
+                    EdgeConfidenceImage = EdgeConfidenceImage./max(EdgeConfidenceImage(:));
+                    AllCellPixels = AllCellPixels + EdgeConfidenceImage;
+                    
+                    if ACparameters.visualise>0;
+                        TrapIm = double(ttacObject.TimelapseTraps.returnSingleTrapTimepoint(TI,TP,ACparameters.ShowChannel));
+                        if CrossCorrelating
+                            fprintf('cell found by cross correlation. CC value  =  %f ;\n',value)
+                            figure(cc_im_handle);
+                            imshow(OverlapGreyRed(TrapIm,PredictedCellLocationsAllCellsToView(:,:,CI),true,(TrapTrapImage>=TrapPixExcludeThresh) |(AllCellPixels>=CellPixExcludeThresh)),[]);
+                            title('cross correlation image')
+                        else
+                            fprintf('cell found by deicison image. DI value  =  %f ;\n',value)
+                        end
+                        figure(dec_im_handle);
+                        imshow(OverlapGreyRed(TrapIm,TrapDecisionImage,true),[]);
+                        title('decision image')
+                        figure(outline_im_handle);
+                        imshow(OverlapGreyRed(TrapIm,xor(NotCells,SegmentationBinary),false,SegmentationBinary),[])
+                        title('new cell outline')
+                        
+                        pause(1)
+                        if ACparameters.visualise >=1
+                            pause
+                        end
+                        
+                    end
+                    
+                end %if ProceedWithCell
+                
+            end %while cell search
+            
+            %write results to cTimelapse
+            ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI) = CurrentTrapInfo;
+            ttacObject.TimelapseTraps.cTimepoint(ttacObject.TimelapseTraps.timepointsToProcess(1)).trapMaxCell = TrapMaxCell;
+            ttacObject.TimelapseTraps.cTimepoint(TP).trapMaxCellUTP = TrapMaxCell;
+            
+            
+            %calculated expected CellCentre as the simple sum of current
+            %location and distance moved in previous timepoint.
+            %for new cells it is simply their current location
+            for CI = 1:length(NewCrossCorrelatedCells);
+                CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre = (2*CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).cellCenter) - PreviousCurrentTrapInfo.cell(OldCells(CI)).cellCenter;
+                if CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(1) > ttacObject.TrapImageSize(2);
+                    CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(1) = ttacObject.TrapImageSize(2);
+                elseif CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(1) < 1;
+                    CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(1) = 1;
+                end
+                
+                if CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) > ttacObject.TrapImageSize(1);
+                    CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) = ttacObject.TrapImageSize(1);
+                elseif CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) < 1;
+                    CurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) = 1;
+                end
+                
+            end
+            
+            for CI = 1:length(NewCells);
+                CurrentTrapInfo.cell(NewCells(CI)).ExpectedCentre = CurrentTrapInfo.cell(NewCells(CI)).cellCenter;
+            end
+            
+            %write results to internal variables
+            TrapInfo(TI) = CurrentTrapInfo;
+           
+            
+            
+            
+        end %end traps loop
+        
     end
     
+    PreviousWholeImage = WholeImage;
+    PreviousTrapLocations = TrapLocations;
+    PreviousTrapInfo = TrapInfo;
     
     TimeOfTimepoint = toc;
     fprintf('timepoint analysed in %.2f seconds \n',TimeOfTimepoint);
     
+end %end TP loop
+ 
+ 
 end
 
-%end of the timeperiod to be segmented.write remaining priors to the
-%segmentation results.
+function WholeImage = IMnormalise(WholeImage)
 
-
-for CN = find([CellInfo(:).UpdatedThisTimepoint])
-    
-    %take cells which for which no cell was present at the previous
-    %timepoint and makes the segmentation result the prior result for
-    %all cells.
-    for RN = setdiff((1:slice_size),1:(mod(CellInfo(CN).TimePointsPresent-slice_size,keepers+1)))
+WholeImage = double(WholeImage);
+        WholeImage = WholeImage - median(WholeImage(:));
+        IQ = iqr(WholeImage(:));
+        if IQ>0
+            WholeImage = WholeImage./iqr(WholeImage(:));
+        end
         
-        %write the results to keep (1:keepers) to the cTimelapse object
-        
-        ttacObject.WriteACResults(CellInfo(CN).(TimePointStrings{RN}),CellInfo(CN).TrapNumber,CellInfo(CN).(CellNumberTimelapseStrings{RN}),CellInfo(CN).(PriorRadiiStrings{RN}),CellInfo(CN).(PriorAnglesStrings{RN}))
-        
-    end
-    
-    
-    CellInfo(CN) = InitialisedCellInfo;
-    EmptyCellEntries(CN) = true;
 end
-
-end
-
-function [TranformedImageStack,priorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CN)
-%function [TranformedImageStack,priorRadiiStack] = getStacksFromCellInfo(cellInfo,PriorRadiiStrings,TransformedImageStrings,CN);
-
-%small function to get the info out of CellInfo and into a stack as the
-%optimiser wants it.
-L = size(PriorRadiiStrings,2);
-
-TranformedImageStack = zeros([size(CellInfo(CN).(TransformedImageStrings{1})) L]);
-priorRadiiStack = zeros([L,size(CellInfo(CN).(PriorRadiiStrings{1}),2)]);
-for i=1:L
-    TranformedImageStack(:,:,i) = CellInfo(CN).(TransformedImageStrings{i});
-    priorRadiiStack(i,:) = CellInfo(CN).(PriorRadiiStrings{i});
-end
-
-
-end
-
-
 
