@@ -47,6 +47,7 @@ switch selection
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);
+                    cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
                 end
                 %                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellRadius(loc)=[];
                 %                 if size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented,3)>1
@@ -59,6 +60,7 @@ switch selection
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);
+                cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
             end
 %         catch
 %             cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented(:,:,1)))>1;

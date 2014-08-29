@@ -22,7 +22,7 @@ classdef cTrapDisplay<handle
     %image to display either the primary or secondary information.
     methods
         function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
-            
+            %function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
             if nargin<3 || isempty(overlay)
                 cDisplay.trackOverlay=false;
             else

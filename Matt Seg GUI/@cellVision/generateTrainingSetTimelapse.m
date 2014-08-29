@@ -143,10 +143,14 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cell)+1]);
             exclude_from_negs = training_class;
+            if trapInfo.cellsPresent && ~isempty(trapInfo.cell) %shouldn't be necessary in future
                     for num_cells=1:length(trapInfo.cell)
-                        training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
-                        exclude_from_negs(:,:,num_cells) = imerode(imfill(full(trapInfo.cell(num_cells).segmented),'holes'),se2);
+                        if ~isempty(trapInfo.cell(num_cells).cellCenter)
+                            training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
+                            exclude_from_negs(:,:,num_cells) = imerode(imfill(full(trapInfo.cell(num_cells).segmented),'holes'),se2);
+                        end
                     end
+            end
                 training_class=max(training_class,[],3);
                 training_class=training_class>0;
                 exclude_from_negs=max(exclude_from_negs,[],3);

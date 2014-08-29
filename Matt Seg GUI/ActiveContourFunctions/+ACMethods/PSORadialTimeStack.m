@@ -308,9 +308,10 @@ if visualise>=3
         LogicalPoints = false(([2 2]*sub_image_size)+1);
         LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
         OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
-        figure;
+        figure_handle_2 = figure;
         imshow(OutlineImage,[]);
         pause
+        close(figure_handle_2)
     end
 else
     pause(0.1)
@@ -322,6 +323,7 @@ if visualise>=1
     close(fig_handle);
    
 end
+
 
 angles = repmat(angles',Timepoints,1);
 

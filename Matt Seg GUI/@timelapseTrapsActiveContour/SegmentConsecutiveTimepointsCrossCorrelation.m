@@ -49,16 +49,17 @@ SubImageSize = ttacObject.Parameters.ImageSegmentation.SubImageSize;%61;
 OptPoints = ttacObject.Parameters.ImageSegmentation.OptPoints;%6;
 
 ProspectiveImageSize = 81; %image which will be searched for next cell
-CrossCorrelationChannel = 1;%ttacObject.Parameters.ImageTransformation.channel;
-CrossCorrelationTrapThreshold = 0.1;
-CrossCorrelationValueThreshold = 0.001;
+CrossCorrelationChannel = 2;%ttacObject.Parameters.ImageTransformation.channel;
+CrossCorrelationTrapThreshold = 0.1; %value of trap pixels above which they are excluded from cross correlation image and therefore do not contribute
+CrossCorrelationValueThreshold = 0.001; % value normalised cross correlation must be above to consitute continuation of cell from previous timepoint
+CrossCorrelationDIMthreshold = -0.2; %decision image threshold above which cross correlated cells are not considered to be possible cells
 
-TwoStageThreshold = 0; %negative is stricter, positive more lenient
+TwoStageThreshold = ttacObject.cCellVision.twoStageThresh; % boundary in decision image for new cells negative is stricter, positive more lenient
 
 TrapPixExcludeThresh = 1;
 CellPixExcludeThresh = 0.8;
 
-CrossCorrelationPrior = fspecial('gaussian',ProspectiveImageSize,10); %filter with which prospective image is multiplied to weigh centres close to expected stronger.
+CrossCorrelationPrior = fspecial('gaussian',ProspectiveImageSize,4); %filter with which prospective image is multiplied to weigh centres close to expected stronger.
 CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
 ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageTransformation.ImageTransformFunction]);
@@ -120,6 +121,9 @@ if ttacObject.Parameters.ActiveContour.visualise>0;
     outline_im_handle = figure;
 end
 
+if ttacObject.Parameters.ActiveContour.visualise>2;
+    cc_gui = GenericStackViewingGUI;
+end
 
 %% loop through the rest of the timepoints
 for TP = Timepoints
@@ -259,7 +263,7 @@ for TP = Timepoints
                     PredictedCellLocationsAllCells(:,:,CI) = ACBackGroundFunctions.get_cell_image(PredictedCellLocation,...
                         ttacObject.TrapImageSize,...
                         (ceil(ProspectiveImageSize/2)*[1 1] + ceil(fliplr(ttacObject.TrapImageSize)/2)) - LocalExpectedCellCentre,...
-                        -2*abs(CrossCorrelationTrapThreshold) ).*(TrapDecisionImage<0).*(-TrapDecisionImage)/sum(CellOutline(:));
+                        -2*abs(CrossCorrelationValueThreshold) ).*(TrapDecisionImage<CrossCorrelationDIMthreshold)/sum(CellOutline(:));
 
                 end %end cell loop to find cross correlation matrix
                 
@@ -267,6 +271,12 @@ for TP = Timepoints
                 if ttacObject.Parameters.ActiveContour.visualise > 0
                     PredictedCellLocationsAllCellsToView = PredictedCellLocationsAllCells;
                     
+                end
+                
+                if ttacObject.Parameters.ActiveContour.visualise>2;
+                    cc_gui.stack = cat(3,PredictedCellLocationsAllCellsToView,TrapDecisionImage);
+                    cc_gui.LaunchGUI;
+                    pause
                 end
                 
                 

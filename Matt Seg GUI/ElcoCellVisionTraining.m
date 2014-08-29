@@ -9,7 +9,93 @@ cTimelapse.timelapseDir = [];
 load('~/Documents/microscope_files_swain_microscope/microscope characterisation/SuperTrainingTimelapse.mat')
 load('~/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellVision-plates-zstacks(for_trainin).mat')
 
-%% setsegmentation method
+%% use cExperiment to make a training set - WARNING, generally will load a cCellVision
+
+num_timepoints = 30;
+
+[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
+load(fullfile(path,file));
+
+fprintf('\n\n choose a new location in which to save the training cExperiment \n \n');
+[NewExpLocation] = uigetdir(path);
+
+OldExpLocation = cExperiment.saveFolder;
+
+DirToUse = 1:length(cExperiment.dirs);
+TPtoUse = ones(size(DirToUse));
+
+if length(cExperiment.dirs)>num_timepoints
+    
+    DirToUse = randperm(length(cExperiment.dirs));
+    DirToUse = DirToUse(1:num_timepoints);
+    TPtoUse = ones(size(DirToUse));
+    
+end
+
+if length(cExperiment.dirs)<num_timepoints
+    
+    TPtoUse = floor(num_timepoints/length(cExperiment.dirs))*ones(size(DirToUse));
+    remainder = mod(num_timepoints,length(cExperiment.dirs));
+    if remainder>0
+        
+        assign_remainders = randperm(length(cExperiment.dirs));
+        assign_remainders = assign_remainders(1:remainder);
+        TPtoUse(assign_remainders) = TPtoUse(assign_remainders)+1; 
+        
+    end
+
+end
+
+cExperiment.dirs = cExperiment.dirs(DirToUse);
+
+for di = 1:length(cExperiment.dirs)
+
+    load(fullfile(OldExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse');
+    TPs = randperm(length(cTimelapse.timepointsToProcess));
+    TPs = cTimelapse.timepointsToProcess(TPs(1:TPtoUse(di)));
+    cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
+    cTimelapse.timepointsProcessed = cTimelapse.timepointsProcessed(TPs);
+    cTimelapse.timepointsToProcess = 1:TPtoUse(di);
+    save(fullfile(NewExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse')
+    
+end
+
+cExperiment.saveFolder = NewExpLocation;
+cExperiment.cCellVision = cCellVision;
+cExperiment.saveExperiment;
+
+%% open a GUI to edit the experiment
+
+
+expGUI = experimentTrackingGUI;
+
+%% make training timelapse from cExperiment - WARNING, generally will load a cCellVision
+%  Needs to already be segmented and curated (can't do it afterwards unless non trap timelapse)
+
+[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
+load(fullfile(path,file));
+
+
+for di = 1:length(cExperiment.dirs)
+    
+    load(fullfile(cExperiment.saveFolder , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse');
+        if di==1
+            cTimelapseAll = fuseTimlapses({cTimelapse});
+        else
+    cTimelapseAll = fuseTimlapses({cTimelapseAll,cTimelapse});
+        end
+    clear cTimelapse
+    
+end
+
+cTimelapse = cTimelapseAll;
+clear cTimelapseAll
+
+cTimelapseDisplay(cTimelapse)
+
+%%
+clear cExperiment currentPos di file path
+%% set segmentation method
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
@@ -47,10 +133,16 @@ end
 %% look at single image from cCellVision
 
 gui = GenericStackViewingGUI;
-A =cTimelapse.returnSegmenationTrapsStack(1,1);
+A =cTimelapse.returnSegmenationTrapsStack(3,1);
 A = A{1};
+figure(4);imshow(A(:,:,2),[])
+gui.stack = A;
+gui.LaunchGUI
+
+%%
+
 tic;B = SegMethod(cCellVision,A);toc;
-gui.stack = reshape(B,512,512,[]);
+gui.stack = reshape(B,size(A,1),size(A,2),[]);
 gui.LaunchGUI;
 
 
@@ -59,7 +151,7 @@ gui.LaunchGUI;
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps
+cCellVision.negativeSamplesPerImage=1000; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -72,17 +164,31 @@ debug_outputs  =  cCellVision.generateTrainingSetTimelapse(cTimelapse,step_size,
 
 %% show debug outputs
 
-for i=1:length(cTimelapse.cTimepoint)
-    image_to_show = cTimelapse.returnSegmenationTrapsStack(1,i);
-    image_to_show = image_to_show{1}(:,:,2);
-    image_to_show = repmat(image_to_show,[1,1,3]);
-    image_to_show = image_to_show.*(1 + ...
-        cat(3,debug_outputs{1}(:,:,i),debug_outputs{2}(:,:,i),debug_outputs{3}(:,:,i)));
-    image_to_show = (image_to_show - min(image_to_show(:)))./(max(image_to_show(:)) - min(image_to_show(:)));
-    imshow(image_to_show,[]);
-    pause;
-end
+numTraps = size(debug_outputs{1},3);
+debugStack = zeros(size(debug_outputs{1},1),size(debug_outputs{1},2),numTraps*3);
+nT = 1;
+nTr = 1;
+nTrT = 1;
+while nTrT<=numTraps
+    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,1);
+    for iT = 1:size(TrapIm,3)
+        image_to_show = repmat(double(TrapIm(:,:,iT)),[1,1,3]);
+        image_to_show = image_to_show.*(1 + ...
+        cat(3,debug_outputs{1}(:,:,nTrT),debug_outputs{2}(:,:,nTrT),debug_outputs{3}(:,:,nTrT)));
+        image_to_show = (image_to_show - min(image_to_show(:)))./(max(image_to_show(:)) - min(image_to_show(:)));
+        debugStack(:,:,3*nTrT + [-2 -1 0]) = image_to_show;
+        nTrT = nTrT + 1;
+    end
+    fprintf('timepoint nT of some\n')
+    nT = nT +1;
     
+    
+end
+
+gui.stack = debugStack;
+gui.type = 'tri-stack';
+gui.LaunchGUI;
+
 
 %% Guess the cost/gamma parameters
 cCellVision.trainingParams.cost=2
