@@ -120,7 +120,8 @@ classdef cTrapDisplay<handle
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
                     set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
                     if cDisplay.trackOverlay
-                        set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
+                        %set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
+                        set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     else
                         set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     end

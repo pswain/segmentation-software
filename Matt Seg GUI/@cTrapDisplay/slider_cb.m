@@ -15,16 +15,29 @@ for j=1:size(alltraps,3)
         seg_areas=[trapInfo(cDisplay.traps(j)).cell(:).segmented];
         seg_areas=full(seg_areas);
         seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(trapInfo(cDisplay.traps(j)).cell)]);
+        cell_label = trapInfo(cDisplay.traps(j)).cellLabel;
+        
+        if isempty(cell_label) && trackOverlay
+            
+            fprintf('\n\n WARNING!! Cells not tracked \n\n')
+            trackOverlay = false;
+            
+        end
                 
     else
         seg_areas=zeros([size(image,1) size(image,2)])>0;
         segLabel=zeros([size(image,1) size(image,2)])>0;
+        trackOverlay = false;
     end
-    if cDisplay.trackOverlay
-        if isempty(segLabel)
-            segLabel=full(trapInfo(cDisplay.traps(j)).trackLabel);
+    if trackOverlay
+        segLabel = zeros(size(seg_areas));
+        for i=1:size(seg_areas,3)
+            
+            segLabel(:,:,i) = cell_label(i)*imfill(seg_areas(:,:,i),'holes');
+            
         end
-        segLabel(1)=cDisplay.cTimelapse.cTimepoint(1).trapMaxCell(j);
+        segLabel = max(segLabel,[],3);
+        segLabel(1)=cDisplay.cTimelapse.cTimepoint(cDisplay.cTimelapse.timepointsToProcess(1)).trapMaxCell(cDisplay.traps(j));
         trackLabel=label2rgb(segLabel,'jet','w','shuffle');
         trackLabel=double(trackLabel);
         trackLabel=trackLabel/255;
@@ -39,7 +52,8 @@ for j=1:size(alltraps,3)
 %     set(cDisplay.subAxes(j),'CLimMode','manual');
 %     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
     if cDisplay.trackOverlay
-        set(cDisplay.subImage(j),'HitTest','off'); %now image button function will work
+        %set(cDisplay.subImage(j),'HitTest','off'); %now image button function will work
+        set(cDisplay.subImage(j),'HitTest','on'); %now image button function will work
     else
         set(cDisplay.subImage(j),'HitTest','on'); %now image button function will work
     end

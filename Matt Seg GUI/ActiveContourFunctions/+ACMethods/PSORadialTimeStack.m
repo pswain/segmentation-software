@@ -43,6 +43,10 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 % Notes:
 
 forcing_images = double(forcing_images);
+
+%this is done to try and stop average pixels contributing to outline so that no average of pixel
+%values need be taken.
+forcing_images = forcing_images - median(forcing_images(:));
 Timepoints = size(forcing_images,3);%number of time points being considered
 
 %parameters set by user
@@ -190,8 +194,8 @@ if prior_provided %prior given
     PSOseed2 = [radii_init_score_all;PSOseed2];
     
     %seed values are a distribution around the prior given (if given)
-    PSOseed3 = repmat(prior,ceil(seeds/3)-1,1);
-    PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,ceil(seeds/3)-1,1);
+    PSOseed3 = repmat(prior,seeds-2*floor(seeds/3)-1,1);
+    PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,size(PSOseed3,1),1);
     PSOseed3 = [prior;PSOseed3];
     
     PSOseed = [PSOseed1;PSOseed2;PSOseed3];
@@ -232,8 +236,10 @@ switch method
     case 'PSO'
         
         P = [0 EVALS seeds 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
-        radial_punishing_factor = alpha*median(forcing_images,3);
-        time_change_punishing_factor = betaElco*median(forcing_images(:));
+        
+        %not sure multiplying by the interquartile range is sensible. 
+        radial_punishing_factor = alpha*iqr(forcing_images(:))*ones(opt_points,1);
+        time_change_punishing_factor = betaElco*iqr(forcing_images(:));
 
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
@@ -307,7 +313,8 @@ if visualise>=3
         [pxFULL,pyFULL] = ACBackGroundFunctions.get_full_points_from_radii(radii_res(1,:)',angles,Centers_stack(1,:),([2 2]*sub_image_size)+1);
         LogicalPoints = false(([2 2]*sub_image_size)+1);
         LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
-        OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
+        %OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
+        OutlineImage = OverlapGreyRed(forcing_images(:,:,1),LogicalPoints,false,[],true);
         figure_handle_2 = figure;
         imshow(OutlineImage,[]);
         pause

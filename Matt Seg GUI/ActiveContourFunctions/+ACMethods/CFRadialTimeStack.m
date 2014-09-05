@@ -20,12 +20,10 @@ function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat
 %                                     the right is 0, horizontal to the left is pi).
 %radii_stack_mat                    - vector of distances along radii (evenly spaced and starting at vertical
 %                                     relative to the image) of the contour
-%radial_punishing_factor            - vector:weight of second derivative (or whatever term keeps the thing
-%                                     roughly circular) each element of
-%                                     vector is for one timepoint. Normally
-%                                     a constant (alpha) * forcing image
-%                                     median for robust parameter
-%                                     selection.
+%radial_punishing_factor            - column vector:weight of second derivative (or whatever term keeps the thing
+%                                     roughly circular). each element of the column is for a single radii
+%                                     (so should be same length as angles) so that shape can be
+%                                     weighted differently at different angles.
 %time_change_punishing_factor       - weight of timepoints sum term (squares of differences in
 %                                     radii between timepoints). normally a
 %                                     constant (Beta) multiplied by median
@@ -45,10 +43,30 @@ function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat
 %[angles,indices] = sort(angles,1);
 %radii_mat = radii_mat(:,indices))
 
+all_outputs = false;
+
+prior_radii_range = [5 14];
+area_punishing_term = 100000;
+
 Ftot = 0;
 radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
+
+
+prior_radii_range = (prior_radii_range.^2)*radii_length;
+area_punishing_term = area_punishing_term/radii_length;
+
+
+if all_outputs
+    
+    F_image = zeros(points,timepoints);
+    F_circular = zeros(points,timepoints);
+    F_time = zeros(points,timepoints);
+    F_size = zeros(points,timepoints);
+
+    
+end
 
 if first_timepoint_fixed
 
@@ -109,17 +127,59 @@ for ti = 1:length(timepoints_to_optimise)
         I = (diff(cordx_full(p,:))|diff(cordy_full(p,:)));
 
         %sums pixel values
-        F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2))/sum(I,2);
+        
+        if all_outputs
+            
+            %F_image(p,timepoints_to_optimise(ti)) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2))/sum(I,2);
+            
+            %try not taking an average score but subtracting median from forcing image first
+            F_image(p,timepoints_to_optimise(ti)) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2));
+            F(p) = F_image(p,timepoints_to_optimise(ti));
+            
+        else
+            F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2));
+            %F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2))/sum(I,2);
+        
+        end
 
         
     end
     
-    
+    %add radial punishing term
     D2radii = ACBackGroundFunctions.second_derivative_snake_horizontal(radii_mat);
     
-    F = F+radial_punishing_factor(ti)*((sum((D2radii./radii_mat).^2,2))); %add punishment for very uneven cell outlines
+    if all_outputs
+        
+        F_circular(:,timepoints_to_optimise(ti)) = (((D2radii./radii_mat).^2))*radial_punishing_factor;
+        F = F + F_circular(:,timepoints_to_optimise(ti));
+        
+    else
     
+        F = F+(((D2radii./radii_mat).^2))*radial_punishing_factor; %add punishment for very uneven cell outlines
+    
+    end
+    %add 'area punishing term'
+    
+    average_area = sum(radii_mat.^2,2);
+    
+    area_punishment = zeros(size(average_area));
+    
+    too_small = average_area<prior_radii_range(1);
+    
+    area_punishment(too_small) = (area_punishing_term/prior_radii_range(1))*(abs(average_area(too_small)-prior_radii_range(1)));
+    
+    too_large = average_area>prior_radii_range(2);
+    
+    area_punishment(too_large) = (area_punishing_term/prior_radii_range(2))*(abs(average_area(too_large)-prior_radii_range(2)));
+    
+    if all_outputs
+        F_size(:,timepoints_to_optimise(ti)) = area_punishment;
+        F = F+area_punishment;
+    else
+        F = F+area_punishment;
+    end
     Ftot = Ftot+F;
+    
 end
 
 %Ftot = Ftot+ betaElco*sum((radii_stack_mat - [radii_stack_mat(:,(end+1-radii_length):end) radii_stack_mat(:,1:(end-radii_length))]).^2,2);
@@ -133,7 +193,18 @@ timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_ma
                         (radii_stack_mat(:,1:(end-radii_length)))).^2;
                     
 
-Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat,2);%sum(timepoint_diff_mat.*timepoint_diff_mat>0.01,2);
+if all_outputs
+    
+    F_time = time_change_punishing_factor*timepoint_diff_mat;
+    Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat,2);
+    F_summary = [Ftot sum(F_image,2) sum(F_circular,2) sum(F_time,2) sum(F_size,2)];
+    
+else
+                    
+    Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat,2);%sum(timepoint_diff_mat.*timepoint_diff_mat>0.01,2);
+
+end
+
 
 end
 
