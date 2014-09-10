@@ -6,7 +6,9 @@ if nargin<3 || isempty(timepoints)
 end
 
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-bb=30;
+%bb=30
+%bb was increased in order to allow more movement of the traps
+bb=50;
 accumCol=0;
 accumRow=0;
 regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
@@ -53,7 +55,7 @@ for i=2:length(timepoints)
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
     
-    if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
+    if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2 %play with these two conditions if newest version doesn't work
         regIm=newIm;
         timepointReg=timepoints(i);
         accumCol = 0;
