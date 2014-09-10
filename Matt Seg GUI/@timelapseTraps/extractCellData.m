@@ -10,6 +10,9 @@ numCells=sum(cTimelapse.cellsToPlot(:));
 s1=strel('disk',2);
 % convMatrix2=single(getnhood(strel('disk',2)));
 
+%nuclear tag extraction
+channelTag=3; 
+channelNuclear=2; 
 
 if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProcessed)==1
     tempSize=[cTimelapse.cTimepoint.trapInfo];
@@ -46,7 +49,10 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-        extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));              
+        extractedData(channel).nuclearTagLoc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+     
+        
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
         extractedData(channel).median=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -63,6 +69,10 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).yloc=(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).membraneMax5=zeros(numCells,length(cTimelapse.timepointsProcessed));
         extractedData(channel).membraneMedian=zeros(numCells,length(cTimelapse.timepointsProcessed));
+        
+        
+        extractedData(channel).nuclearTagLoc=zeros(numCells,length(cTimelapse.timepointsProcessed));
+       
     end
     
     
@@ -78,6 +88,22 @@ for channel=1:length(cTimelapse.channelNames)
             
             tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel,'stack');
             
+            if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+                
+                tpStack_3=cTimelapse.returnSingleTimepoint(timepoint,channelTag,'stack'); %% Extract from mCherry channel. 
+            
+            
+                   
+                if size(size(tpStack_3),2)==3
+                    areStacks=1; 
+                else
+                    areStacks=0; 
+                end
+            
+            
+            end
+         
+
             %             trapImagesStd=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'std');
             %             trapImagesMean=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'mean');
             
@@ -102,8 +128,19 @@ for channel=1:length(cTimelapse.channelNames)
                 
                 if cTimelapse.trapsPresent
                     trapImages=returnTrapStack(cTimelapse,tpStack,currTrap,timepoint);
+                    
+                    %for nuclear tag extraction. Getting FL info from mCh
+                    if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+                       trapImages2= returnTrapStack(cTimelapse,tpStack_3,currTrap,timepoint);
+                    end
+                    
                 else
                     trapImages=tpStack;
+                    %for nuclear tag extraction. Getting FL info from mCh:
+                    if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+                       trapImages2=tpStack_3;
+                    end
+                    
                 end
                 
                 for cellIndex=1:length(cellsCurrTrap)
@@ -133,6 +170,20 @@ for channel=1:length(cTimelapse.channelNames)
                             tempIm=tempIm(cellLoc);
                             tStd(l)=std(tempIm(:));
                             tMean(l)=mean(tempIm(:));
+                            
+                            %for nuclear tag extraction. Getting FL info from mCh:
+                             if(channel==channelNuclear && length(cTimelapse.channelNames)>2 )
+                                if( areStacks==1)
+                                    tempIm2=double(trapImages2(:,:,l));
+                                    tempIm2=tempIm2(cellLoc);
+                             
+                                else
+                                    
+                                    tempIm2=tempIm;
+                                end
+                             end
+                             
+                            
                         end
                         [b indStd]=max(tStd);
                         [b indMean]=max(tMean);
@@ -144,6 +195,15 @@ for channel=1:length(cTimelapse.channelNames)
                             %                             trapImWhole(:,:,3)=trapImages(:,:,indMean);
                             case 'max'
                                 trapImWhole(:,:,1)=max(trapImages,[],3);
+                                
+                                 %for nuclear tag extraction. Getting FL info from mCh:
+                                 if(channel==channelNuclear && length(cTimelapse.channelNames)>2)                                    
+                                    trapImWhole2(:,:,1)=max(trapImages2,[],3);
+                                 else 
+                                     trapImWhole2(:,:,1) =trapImWhole; 
+                                 end
+                                 
+                                
                             case 'std'
                                 trapImWhole(:,:,1)=trapImages(:,:,indStd);
                             case 'mean'
@@ -154,6 +214,15 @@ for channel=1:length(cTimelapse.channelNames)
                             trapIm=trapImWhole(:,:,k);
                             cellFL=trapIm(cellLoc);
                             
+                             %for nuclear tag extraction. Getting FL info from mCh:
+                                 if(channel==channelNuclear && length(cTimelapse.channelNames)>2)                                    
+                                    trapIm2=trapImWhole2(:,:,k);
+                                    cellFL2=trapIm2(cellLoc);
+                                 else
+                                    trapIm2=trapIm; 
+                                    cellFL2=cellFL; 
+                                 end
+                            
                             membraneFL = trapIm(membraneLoc); 
                             
                             %This is a silly debug to catch cells too small for
@@ -163,6 +232,35 @@ for channel=1:length(cTimelapse.channelNames)
                                 %from the cells. Change to mean/median FL etc
                                 flsorted=sort(cellFL(:),'descend');
                                 mflsorted=sort(membraneFL(:),'descend');
+                                
+                                
+                                %NUCLEAR EXTRACTION
+                                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                flsorted2=sort(cellFL2(:),'descend'); 
+                                
+                                maxPixGFP=25; 
+                                maxPixOverlap=5; 
+                            
+                                [max5_ indmax5_]=sort(cellFL2(:),'descend'); %nuclear tag pixels sorted
+                                
+                                c=zeros(size(cellFL2));
+                                
+                                if length(indmax5_)>maxPixGFP
+                                    c(indmax5_(1:maxPixGFP))=1; 
+                                    nucleusValHOG=sort(cellFL(indmax5_(1:maxPixGFP)),'descend');% max values in HOG channel inside nucleus area.
+                                    nuclocalization2 = double( mean( nucleusValHOG(1:maxPixOverlap) ) )./double(median(cellFL(:)));
+                                else
+                                    c(indmax5_(1:5))=1; %limit for very small cells. 
+                                    nucleusValHOG=sort(cellFL(indmax5_(1:5)),'descend');% max values in HOG channel inside nucleus area.
+                                    nuclocalization2 = double( mean( nucleusValHOG(1:5) ) )./double(median(cellFL(:)));
+                                end
+                                
+                               
+                                
+                                
+                                
+                                %END NUCLEAR
+                                %EXTRACTION%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                 
                                 convMatrix=zeros(3,3);
                                 convMatrix(2,:)=1;convMatrix(:,2)=1;
@@ -176,6 +274,8 @@ for channel=1:length(cTimelapse.channelNames)
                                   
                                     extractedData(channel).membraneMedian(dataInd, timepoint)=median(membraneFL(:));
                                     extractedData(channel).membraneMax5(dataInd, timepoint)=mean(mflsorted(1:5));
+                                    
+                                    extractedData(channel).nuclearTagLoc(dataInd,timepoint)=nuclocalization2 ; 
                                     
                                     cellLocSmall=imerode(cellLoc,s1);
                                     if sum(cellLocSmall)<1
@@ -224,6 +324,8 @@ for channel=1:length(cTimelapse.channelNames)
                                     
                                     extractedData(channel).membraneMedian(dataInd, timepoint)=median(membraneFL(:));
                                     extractedData(channel).membraneMax5(dataInd, timepoint)=mean(mflsorted(1:5));
+                                    
+                                    extractedData(channel).nuclearTagLoc(dataInd,timepoint)=nuclocalization2 ; 
                                     
                                     cellLocSmall=imerode(cellLoc,s1);
                                     if sum(cellLocSmall)<1

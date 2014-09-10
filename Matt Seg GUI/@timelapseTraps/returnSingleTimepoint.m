@@ -158,7 +158,7 @@ end
 if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
-    tempIm=zeros(size(timepointIm));
+    tempIm=[];%zeros(size(timepointIm));
     for sliceNum=1:size(timepointIm,3)
         TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
         timepointIm = padarray(timepointIm,abs(TimepointBoundaries));

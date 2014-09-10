@@ -38,7 +38,9 @@ for i=1:length(cExperiment.cellInf)
     
     cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
     cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
-
+    cExperiment.cellInf(i).nuclearTagLoc= sparse(tempLen,size(cExperiment.cellInf(i).nuclearTagLoc,2)); 
+    
+    
 % 
 %     cExperiment.cellInf(i).mean=zeros(tempLen,size(cExperiment.cellInf(i).mean,2),size(cExperiment.cellInf(i).mean,3));
 %     cExperiment.cellInf(i).median=zeros(tempLen,size(cExperiment.cellInf(i).median,2),size(cExperiment.cellInf(i).median,3));
@@ -87,6 +89,10 @@ for i=1:length(positionsToExtract)
             temp=cTimelapse.extractedData(j).membraneMax5; 
             cExperiment.cellInf(j).membraneMax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
+            temp=cTimelapse.extractedData(j).nuclearTagLoc; 
+            cExperiment.cellInf(j).nuclearTagLoc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            
+            
             temp=cTimelapse.extractedData(j).imBackground;
             cExperiment.cellInf(j).imBackground(index+1:index+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).min;
@@ -127,6 +133,7 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).membraneMedian(index+1:end,:)=[];
     cExperiment.cellInf(i).membraneMax5(index+1:end,:)=[];
 
+    cExperiment.cellInf(i).nuclearTagLoc(index+1:end,:)=[];
     
     cExperiment.cellInf(i).radius(index+1:end,:)=[];
     cExperiment.cellInf(i).xloc(index+1:end,:)=[];
