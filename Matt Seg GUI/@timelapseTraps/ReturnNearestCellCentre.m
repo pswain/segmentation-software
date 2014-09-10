@@ -1,22 +1,30 @@
 function CellNumNearestCell = ReturnNearestCellCentre(cTimelapse,timepoint,trap,pt,thresh)
-% function CellNumNearestCell = ReturnNearestCellCentre(cTimelapse,timepoint,trap,pt,thresh(optional))
 
-
+%ReturnNearestCellCentre: Get nearest cell to a point on the image
+%--------------------------------------------------------------
+%Method written by Elco to find the nearest cell in a trap to a given pt
+%(i.e. the cell with the center nearest the point pt) and return its cell
+%number (its index in the trapinfo(trap).cell array.
+%
+%SYNTAX: 
+%
+%  CellNumNearestCell = ReturnNearestCellCentre(cTimelapse,timepoint,trap,pt,thresh)
+%
 %INPUT
-
-% cTimelapse    -       object of cTimelape class
-% timepoint     -       integer indicating timepoint of interest
-% trap          -       integer indicating trap of interest
-% pt            -       1 by 2 double of the form [x y] indicating the
+%
+%  cTimelapse    -       object of cTimelape class
+%  timepoint     -       integer indicating timepoint of interest
+%  trap          -       integer indicating trap of interest
+%  pt            -       1 by 2 double of the form [x y] indicating the
 %                       point of reference to which to find the closest
 %                       cell
-% thresh        -       (optional) a maximum allowed distance for a cell to
+%  thresh        -       (optional) a maximum allowed distance for a cell to
 %                       be returned.
-
-
-% OUTPUT
-
-% CellNumNearestCell        -       index of cell closest to the point pt.
+%
+%
+%OUTPUT
+%
+%  CellNumNearestCell        -       index of cell closest to the point pt.
 %                                   Empty if there are no cells in the trap
 %                                   or of no cells are closer than thresh.
 
@@ -26,9 +34,6 @@ if nargin<5
 end
 
 
-%method written by Elco to find the nearest cell in a trap to a given pt
-%(i.e. the cell with the center nearest the point pt) and return its cell
-%number (it's index in the trapinfo(trap).cell array.
 
 CellNumNearestCell = [];
 

@@ -1,4 +1,4 @@
-function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad)
+function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad,imScale)
 
 folder=cTimelapse.timelapseDir;
 tempdir=dir(folder);
@@ -87,9 +87,19 @@ if (nargin<4 || isempty(image_rotation))
         answer = inputdlg(prompt,dlg_title,num_lines,def);
         cTimelapse.image_rotation=str2num(answer{1});
         close(h);
+        
+        
+        prompt = {'Enter desired image rescaling value'};
+        dlg_title = 'Scaling';
+        num_lines = 1;
+        def = {''};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+        cTimelapse.imScale=str2num(answer{1});
     else
         cTimelapse.image_rotation=0;
     end
 else
     cTimelapse.image_rotation=image_rotation;
+    cTimelapse.imScale=imScale;
 end
+

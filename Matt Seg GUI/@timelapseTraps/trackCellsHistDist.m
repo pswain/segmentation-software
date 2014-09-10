@@ -44,7 +44,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                 pt1=[circen cirrad];
 
                 pt1=double(pt1);pt2=double(pt2);
-                dist=alternativeDist(pt1,pt2);
+                dist=cTimelapse.alternativeDist(pt1,pt2);
                 distance=min(dist);
                 if ~isempty(distance)
                     tempHist=hist(distance,bins);
@@ -61,47 +61,3 @@ end
 % bins=d;
 end
 
-
-function distance= alternativeDist(pt1,pt2)
-if ~isempty(pt1) && ~isempty(pt2)
-    dist=[];
-    for i=1:size(pt1,2)
-        b=pt2(:,i);
-        a=pt1(:,i);
-        b=b';
-        anew= repmat(a,1,size(b,2));
-        bnew= repmat(b,size(a,1),1);
-        temp=(((bnew-anew)));
-        dist(:,:,i) = temp;
-    end
-    temp=dist(:,:,3);
-    temp2=dist(:,:,3);
-    if find(temp<0)
-        %If cell shrinks, then penalize a lot
-        loc=temp<0;
-        tempFracShrink=(bnew-anew)./bnew;
-        tempFracShrink=(tempFracShrink)*10;
-
-%         temp(loc)=temp(loc).^2;
-%         temp(loc)=(temp(loc).^2)*1.5;
-        temp(loc)=(tempFracShrink(loc).^2);%*1.5;
-
-    end
-    if find(temp2>0)
-        %if a cell grow a lot, penalize it
-        tempFracGrow=(bnew-anew)./bnew;
-        tempFracGrow=(tempFracGrow)*10;
-
-        loc=temp2>0;
-%         temp(loc)=temp(loc).^1.5;
-        
-        temp(loc)=tempFracGrow(loc).^1.1;
-
-    end
-    dist(:,:,3)=temp;
-    
-    distance=sqrt(sum(dist.^2,3));
-else
-    distance=[];
-end
-end

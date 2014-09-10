@@ -1,6 +1,6 @@
 function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
 
-allowedOverlap=.15;
+allowedOverlap=.4;
 
 if nargin<3
     timepoint=cTimelapse.timepointsToProcess(1);
@@ -49,15 +49,16 @@ else
 end
 image=double(image);
 
-f1=fspecial('gaussian',9,1.5);
+f1=fspecial('gaussian',7,2);
 se1=cCellVision.se.se1;
 
 
 if cTimelapse.trapsPresent
     %blur/reduce the edges of the traps so they don't impact the hough
     %transform as much
-    trapEdge=cCellVision.cTrap.contour;
-    trapEdge=imdilate(trapEdge,se1);
+    %     trapEdge=cCellVision.cTrap.contour;
+    %     trapEdge=imdilate(trapEdge,se1);
+    trapEdge=double(cCellVision.cTrap.trapOutline);
     trapG=imfilter(trapEdge,f1);
     trapG=trapG/max(trapG(:));
     
@@ -70,7 +71,6 @@ searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse
 searchRadius(1)=searchRadius(1)-1;
 % searchRadius(2)=searchRadius(2)+1;
 
-se1=cCellVision.se.se1;
 
 if cTimelapse.magnification<100
 %     f1=fspecial('gaussian',5,1);
@@ -88,7 +88,9 @@ if isempty(bw_mask)
         temp_im=image(:,:,j);
         k=traps(j);
         bw_mask=full(trapInfo(k).segCenters);
-        
+        if sum(bw_mask(:))<9
+            bw_mask=imdilate(bw_mask,se1);
+        end
         %blur/reduce the edges of the traps so they don't impact the hough
         %transform as much
         diffIm=temp_im-median(temp_im(:));
@@ -169,7 +171,13 @@ if isempty(bw_mask)
                 cellOverlapTrap=max(sum(cellOverlapTrap1(:)),sum(cellOverlapTrap2(:)));
                 ratioCellToTrap=cellOverlapTrap/sum(temp_im(:));
                 
-                if ~(ratioCellToTrap<allowedOverlap)
+                if abs(x-size(temp_im,2)/2+bb)<bb && abs(y-size(temp_im,1))<bb/2
+                    allowedOverlapTemp=allowedOverlap+.15;
+                else
+                    allowedOverlapTemp=allowedOverlap;
+                end
+                
+                if ~(ratioCellToTrap<allowedOverlapTemp)
                     circen(numCells,:)=[];
                     cirrad(numCells)=[];
                     

@@ -43,7 +43,11 @@ onlyUseBottomBuds=false;
 %this is the fraction of buds that must be down (btween the trap outlet)
 %for the cell to be classified as downward budding and used.
 
-motherDurCutoff=length(cTimelapse.timepointsProcessed)*params.motherDurCutoff;
+if params.motherDurCutoff<1
+    motherDurCutoff=length(cTimelapse.timepointsProcessed)*params.motherDurCutoff;
+else
+    motherDurCutoff=params.motherDurCutoff;
+end
 motherDistCutoff=params.motherDistCutoff;
 budDownThresh=params.budDownThresh;
 
@@ -53,7 +57,7 @@ budDownThresh=params.budDownThresh;
 
 histLabels=zeros(length(cTimelapse.cTimepoint(1).trapInfo),1e5);
 
-for timepoint=1:length(cTimelapse.timepointsProcessed)
+for timepoint=1:length(cTimelapse.timepointsToProcess)
     if cTimelapse.timepointsProcessed(timepoint)
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
@@ -94,7 +98,7 @@ cTimelapse.lineageInfo.motherInfo.motherTrap=[];
 fitFun=fittype('poly1');
 
 for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
-    for mCell=1:1
+    for mCell=1:2
         if motherDuration(trap,mCell)<motherDurCutoff
             break;
         end
@@ -102,7 +106,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         trapL=find(cTimelapse.extractedData(1).trapNum==trap);
         motherLoc=find(cTimelapse.extractedData(1).trapNum==trap & cTimelapse.extractedData(1).cellNum==mother);
 
-        tpCheck=cTimelapse.extractedData(1).xloc(motherLoc,:)>0;
+        tpCheck=full(cTimelapse.extractedData(1).xloc(motherLoc,:))>0;
         if length(trapL)<1 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end
@@ -114,8 +118,16 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         end
         tpCheckBefore=tpCheckBefore>0;
         %cells must be pres when the mother is, but not at any other time
-        presDuringMother=max(cTimelapse.extractedData(1).xloc(:,tpCheck)>0,[],2);
-        onlyPresDuringMother=~max(cTimelapse.extractedData(1).xloc(:,tpCheckBefore)>0,[],2);
+        presDuringMother=full(max(cTimelapse.extractedData(1).xloc(:,tpCheck)>0,[],2));
+        if ~isempty(presDuringMother) & size(presDuringMother,1)~=size(cTimelapse.extractedData(1).trapNum,1)
+%             presDuringMother=presDuringMother';
+            presDuringMother=reshape(presDuringMother,size(cTimelapse.extractedData(1).trapNum));
+        end
+
+        onlyPresDuringMother=full(~max(cTimelapse.extractedData(1).xloc(:,tpCheckBefore)>0,[],2));
+        if ~isempty(onlyPresDuringMother) & size(onlyPresDuringMother,1)~=size(cTimelapse.extractedData(1).trapNum,1)
+            onlyPresDuringMother=reshape(onlyPresDuringMother,size(cTimelapse.extractedData(1).trapNum));
+        end
         if isempty(onlyPresDuringMother)
             onlyPresDuringMother=presDuringMother>-1;
         end
@@ -161,6 +173,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         ylocDaughters(ylocDaughters==0)=NaN;
         
         motherRadius=full(cTimelapse.extractedData(1).radius(motherLoc,tpCheck));
+        motherRadius(motherRadius<8)=8;
         motherRadius=smooth(motherRadius,20,'moving')';
         motherXLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
         motherYLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
@@ -257,9 +270,9 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         %need to make sure only the daughters within the distance cutoff are
         %selected
         daughterMinRad=daughterMinRad(actualDaughters);
-        daughterLabel=cTimelapse.extractedData(1).cellNum(trapLDaughters,:);
+        daughterLabel=cTimelapse.extractedData(1).cellNum(trapLDaughters);
         daughterLabel=daughterLabel(actualDaughters);
-        daughterTrapNum=cTimelapse.extractedData(1).trapNum(trapLDaughters,:);
+        daughterTrapNum=cTimelapse.extractedData(1).trapNum(trapLDaughters);
         daughterTrapNum=daughterTrapNum(actualDaughters);
         t=find(tpCheck);
         motherStart=t(1);

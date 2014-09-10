@@ -20,6 +20,7 @@ classdef experimentTracking<handle
         timepointsToProcess
         trackTrapsOverwrite
         cellVisionThresh
+        imScale
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
@@ -70,7 +71,7 @@ classdef experimentTracking<handle
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
-        correctSkippedFramesInf(cExperiment);
+        correctSkippedFramesInf(cExperiment,type);
         
         extractCellInformation(cExperiment,positionsToExtract,type);
         compileCellInformation(cExperiment,positions);

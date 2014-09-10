@@ -25,15 +25,21 @@ cExperiment.searchString=searchString;
 cExperiment.pixelSize=pixelSize;
 cExperiment.image_rotation=image_rotation;
 cExperiment.timepointsToLoad=timepointsToLoad;
+
+traps_present = [];
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);
     cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder '/' cExperiment.dirs{currentPos}]);
-    cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.timepointsToLoad);
+    cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,traps_present,cExperiment.timepointsToLoad,cExperiment.imScale);
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
+    cExperiment.imScale=cExperiment.cTimelapse.imScale;
+
     cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
     cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-    cExperiment.timepointsToLoad=length(cExperiment.cTimelapse.cTimepoint);
+    %cExperiment.timepointsToLoad=length(cExperiment.cTimelapse.cTimepoint);
+    traps_present = cExperiment.cTimelapse.trapsPresent;
+    cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
 
     cExperiment.saveTimelapseExperiment(currentPos);
 end

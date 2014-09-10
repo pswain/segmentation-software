@@ -5,6 +5,13 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %than DIC/GFP etc frame at the timepoint, it assuems it is a z-stack and
 %returns the maximum projection of the stack.
 
+%To maintain backwards compatability there is a section of the code that
+%checks if a file name has file seperators in it and then changes the
+%filename to not have separators in. Then makes the file from the
+%timelapsedir and the filename. Sometimes this is not desirable, as such if
+%timelapseDir is set to 'ignore' then this is not performed and simply the
+%filename is used.
+
 if nargin<3
     channel=1;
 end
@@ -17,29 +24,37 @@ tp=timepoint;
 fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
 loc= ~cellfun('isempty',fileNum);
 if sum(loc)>0
-    file=[cTimelapse.cTimepoint(timepoint).filename{loc}];
-
-    locSlash=strfind(file,'/');
+    file=cTimelapse.cTimepoint(timepoint).filename{loc};
     
-    if isempty(locSlash) 
-        locSlash=strfind(file,'\'); %in case file was made on a windows machine
-    end
-    
-    if locSlash
-        inds=find(loc);
-        for i=1:sum(loc)
-            file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
-            %locSlash=strfind(file,'/');
-            file=file(locSlash(end)+1:end);
-            cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+    if ~strcmp(cTimelapse.timelapseDir,'ignore')
+        
+        locSlash=strfind(file,'/');
+        
+        if isempty(locSlash)
+            locSlash=strfind(file,'\'); %in case file was made on a windows machine
         end
+        
+        if locSlash
+            inds=find(loc);
+            for i=1:sum(loc)
+                file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
+                %locSlash=strfind(file,'/');
+                file=file(locSlash(end)+1:end);
+                cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+            end
+        end
+        
     end
-
+    
     try
         
         ind=find(loc);
         file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-        ffile=fullfile(cTimelapse.timelapseDir,file);
+        if strcmp(cTimelapse.timelapseDir,'ignore')
+            ffile=file;
+        else
+            ffile=fullfile(cTimelapse.timelapseDir,file);
+        end
         if ~isempty(cTimelapse.imSize)
             timepointIm=zeros([cTimelapse.imSize sum(loc)]);
             if strfind(ffile,'TIF')
@@ -98,7 +113,7 @@ else
     if cTimelapse.imSize
         timepointIm=zeros(cTimelapse.imSize);
     else
-                file=cTimelapse.cTimepoint(timepoint).filename{1};
+        file=cTimelapse.cTimepoint(timepoint).filename{1};
         ffile=fullfile(cTimelapse.timelapseDir,file);
         timepointIm=imread(ffile);
         timepointIm(:,:)=0;
@@ -108,9 +123,9 @@ else
 end
 
 if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
-            cTimelapse.imSize = size(timepointIm);
+    cTimelapse.imSize = size(timepointIm);
 end
-        
+
 % try
 %     timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});
 % catch
@@ -119,9 +134,10 @@ end
 %     warning('There is no data in this channel at this timepoint');
 % end
 %
-% if ~isempty(cTimelapse.magnification)
-%     timepoint=imresize(timepoint,cTimelapse.magnification);
-% end
+if ~isempty(cTimelapse.imScale)
+    timepointIm=imresize(timepointIm,cTimelapse.imScale);
+    timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
+end
 
 if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
     image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
@@ -142,7 +158,7 @@ end
 if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
-    tempIm=zeros(size(timepointIm));
+    tempIm=[];%zeros(size(timepointIm));
     for sliceNum=1:size(timepointIm,3)
         TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
         timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
@@ -152,7 +168,7 @@ if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     end
     timepointIm=tempIm;
 end
-% 
+%
 % if channel==2
 %     timepointIm=flipud(timepointIm);
 % end

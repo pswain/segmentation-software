@@ -28,7 +28,7 @@ ttacObject.TrapImageSize= size(cCellVision.cTrap.trapOutline);
 
 image = ttacObject.ReturnImage(1,1);
 
-[imageY,~] = size(image);
+[imageY,imageX] = size(image);
 
 tempTrapCentre = false(size(image));
 
@@ -36,15 +36,17 @@ clear('image');
 
 %% put 
 
-for TP=1:length(ttacObject.TimelapseTraps.cTimepoint)
+for TP=ttacObject.TimelapseTraps.timepointsToProcess;
     if ~isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations)
         CentrePixels = imageY*(round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).xcenter]-1)) +  round([ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations(:).ycenter]);
+        CentrePixels(CentrePixels<1) = 1;
+        CentrePixels(CentrePixels>(imageX*imageY)) = (imageX*imageY);
     else
         CentrePixels = [];
     end
     
     tempTrapCentre(CentrePixels) = true;
-    
+
     ttacObject.TrapLocation{TP} = sparse(tempTrapCentre);
     
     tempTrapCentre(CentrePixels) = false;

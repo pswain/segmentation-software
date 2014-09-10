@@ -1,4 +1,4 @@
-function generateTrainingSet2Stage(cCellVision,cTimelapse,frame_ss)
+function generateTrainingSet2Stage(cCellVision,cTimelapse,frame_ss,num_neg)
 
 %% This is for the two stage classifier, first 
 % dictionary - contrains the images to be used and x-y coordinates for the synapses
@@ -18,22 +18,23 @@ if nargin<3
 end
 
 s_strel = strel('disk',1);
-num_neg=300;
 
+if nargin<4 || isempty(num_neg)
+    num_neg=300;
+end
 
 index=1;
-if isempty(cTimelapse.trapsPresent) ||cTimelapse.trapsPresent
-    cTimelapse.trapsPresent=true;
-    features=cCellVision.createImFilterSetCellTrap(cTimelapse.returnSingleTrapTimepoint(1,1,1));
-else
-    features=cCellVision.createImFilterSetCellAsic(cTimelapse.returnSingleTrapTimepoint(1,1,1));
-end
+trap1 = cTimelapse.returnSegmenationTrapsStack(1,cTimelapse.timepointsToProcess(1));
+
+features=getFilteredImage(cCellVision,trap1{1});
+
 n_features=size(features,2);
-total_num_timepoints=length(cTimelapse.cTimepoint);
+total_num_timepoints=length(cTimelapse.timepointsToProcess);
 num_frames=0;
 for i=1:total_num_timepoints
     num_frames=num_frames+length(cTimelapse.cTimepoint(i).trapInfo);
 end
+
 
 
 n_pos=num_frames*100;
@@ -53,17 +54,18 @@ se4 = strel('disk',4);
 se5 = strel('disk',5);
 
 % fig1=figure(10);
+insideTraps=imerode(cCellVision.cTrap.trapOutline,se2);
 
-for timepoint=1:frame_ss:total_num_timepoints
+for timepoint=cTimelapse.timepointsToProcess(1:frame_ss:total_num_timepoints)
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
-    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,1);
+    image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint);
     for trap=1:max(traps)
             elapsed_t=toc-time;
             fprintf('Trap %d Frame %d : ', trap, timepoint)
             fprintf('Time %d\n', elapsed_t)
             
             
-            [p_im d_im features]=cCellVision.classifyImageLinear(image(:,:,trap));
+            [p_im d_im features]=cCellVision.classifyImageLinear(image{trap});
             
             
             %used to broaden the lines for more accurate classification
@@ -76,7 +78,7 @@ for timepoint=1:frame_ss:total_num_timepoints
                 tempy=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellCenter];
                 trapInfo.cellCenters=reshape(tempy,[2 length(tempy)/2])';
             end
-            class=zeros([size(image(:,:,trap)) length(trapInfo.cellRadius)+1]);
+            class=zeros([size(image{trap}) length(trapInfo.cellRadius)+1]);
             
             if size(trapInfo.cellRadius,1)>0
                 for num_cells=1:length(trapInfo.cellRadius)
@@ -97,7 +99,9 @@ for timepoint=1:frame_ss:total_num_timepoints
 %             tempy=image(:,:,trap);
 %             tempy(class)=tempy(class)*2;
 %             imshow(tempy,[],'Parent',fig1);
-            
+            %exclude pixels around right next to centre pixels to try and
+            %make classification more robust
+            exclude_from_negs = imdilate(class,se1);
             
             bw_im=d_im<cCellVision.twoStageThresh;
             if cTimelapse.trapsPresent
@@ -108,7 +112,9 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             dif_loc=find(bw_im);
             
-            neg_index=find(class==0 & bw_im);
+            % exclude regions that are inside the traps;
+%             neg_index=find(class==0 & bw_im);
+            neg_index=find(exclude_from_negs==0 & bw_im & ~insideTraps);
             if length(neg_index)>num_neg
                 neg_perm=randperm(length(neg_index));
                 class_temp=zeros(1,num_neg);

@@ -25,6 +25,7 @@ switch type
         numStacks=1;
     case 'mean'
         numStacks=1;
+        
     case 'std'
         numStacks=1;
 end

@@ -1,4 +1,4 @@
-function displayWholeTimelapse(cCellVisionGUI)
+function displayWholeTimelapse(cCellVisionGUI) 
 
 cCellVisionGUI.currentGUI=cTimelapseDisplay(cCellVisionGUI.cTimelapse);
 cCellVisionGUI.currentGUI.channel=cCellVisionGUI.channel;
