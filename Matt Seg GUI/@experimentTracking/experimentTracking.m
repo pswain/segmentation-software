@@ -20,6 +20,7 @@ classdef experimentTracking<handle
         timepointsToProcess
         trackTrapsOverwrite
         cellVisionThresh
+        imScale
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         

@@ -50,7 +50,7 @@ n_points=[];
 tic; time=toc;
 
 if strcmp(cTimelapse.fileSoure,'swain-batman') && cTimelapse.magnification==60;
-    se_edge=strel('disk',11);
+    se_edge=strel('disk',9);
 else
     se_edge=strel('disk',20);
 end
@@ -94,30 +94,42 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
+            nearCenterTraining=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
             if size(trapInfo.cellRadius,1)>0
                 for num_cells=1:length(trapInfo.cellRadius)
                     training_class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
+                    nearCenterTraining(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                     if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                     elseif trapInfo.cellRadius<8
                         training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                     elseif trapInfo.cellRadius<14
                         training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                     elseif trapInfo.cellRadius<22
                         training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
                     elseif trapInfo.cellRadius<27
                         training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se5);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
                     else
                         training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se6);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
                     end      
                 end
             end
             training_class=max(training_class,[],3);
             training_class=training_class>0;
-            
+            nearCenterTraining=max(nearCenterTraining,[],3);
+            nearCenterTraining=nearCenterTraining>0;
+
             %exclude pixels around right next to centre pixels to try and
             %make classification more robust
-            exclude_from_negs = imdilate(training_class,se1);
+%             exclude_from_negs = imdilate(training_class,se1);
+            exclude_from_negs = nearCenterTraining;
+
 %             tempy=image(:,:,trap);
 %             tempy(class)=tempy(class)*2;
 %             imshow(tempy,[],'Parent',fig1);pause(.01);
@@ -129,11 +141,11 @@ for timepoint=1:frame_ss:total_num_timepoints
             %this is a bit of a fudge and one should probably do something
             %more clever to find the pixels to pick from than this
             
-            edge_im=imdilate(training_class,se_edge);
+%             edge_im=imdilate(training_class,se_edge);
             
             %another option
-%             [edge_im thresh]=edge(max(image{trap},[],3),'canny');
-%             edge_im=imdilate(edge_im,se_edge);
+            [edge_im thresh]=edge(max(image{trap},[],3),'canny');
+            edge_im=imdilate(edge_im,se_edge);
 
             %or just make everything an option
 %             edge_im=ones(size(image,1),size(image,2));

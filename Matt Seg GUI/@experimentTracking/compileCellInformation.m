@@ -20,7 +20,7 @@ cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
 
-tempLen=10e3;
+tempLen=50e3;
 for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).mean=sparse(tempLen,size(cExperiment.cellInf(i).mean,2));
     cExperiment.cellInf(i).median=sparse(tempLen,size(cExperiment.cellInf(i).median,2));
@@ -92,8 +92,6 @@ for i=1:length(positionsToExtract)
             temp=cTimelapse.extractedData(j).min;
             cExperiment.cellInf(j).min(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
-            
-            
             temp=cTimelapse.extractedData(j).radius;
             cExperiment.cellInf(j).radius(index+1:index+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).xloc;
@@ -102,11 +100,11 @@ for i=1:length(positionsToExtract)
             cExperiment.cellInf(j).yloc(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
             temp=cTimelapse.extractedData(j).trapNum;
-            cExperiment.cellInf(j).trapNum(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            cExperiment.cellInf(j).trapNum(index+1:index+length(temp))=temp;
             temp=cTimelapse.extractedData(j).cellNum;
-            cExperiment.cellInf(j).cellNum(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            cExperiment.cellInf(j).cellNum(index+1:index+length(temp))=temp;
             
-            cExperiment.cellInf(j).posNum(index+1:index+size(temp,1),1:size(temp,2))=experimentPos;
+            cExperiment.cellInf(j).posNum(index+1:index+length(temp))=experimentPos;
         end
         index=index+size(cTimelapse.extractedData(j).xloc,1);
     end
