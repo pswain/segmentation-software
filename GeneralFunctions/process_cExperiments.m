@@ -4,7 +4,6 @@
 t=tic;
 cExperiment.trackCells(find(cExperiment.posSegmented),5);
 
-<<<<<<< HEAD
 params.fraction=.1; %fraction of timelapse length that cells must be present or
 params.duration=3; %number of frames cells must be present
 params.framesToCheck=length(cTimelapse.timepointsProcessed);
@@ -13,9 +12,7 @@ params.endThresh=2; %num tp after end of tracklet to look for cells
 params.sameThresh=4; %num tp to use to see if cells are the same
 params.classThresh=3.8; %classification threshold
 cExperiment.combineTracklets(find(cExperiment.posSegmented),params);
-=======
 % cExperiment.combineTracklets(find(cExperiment.posSegmented));
->>>>>>> refs/remotes/origin/master
 
 cTimelapse=cExperiment.returnTimelapse(2);
 params.fraction=.8; %fraction of timelapse length that cells must be present or
@@ -27,7 +24,7 @@ cExperiment.selectCellsToPlotAutomatic(find(cExperiment.posTracked),params);
 % cExperiment.extractCellInformation(find(cExperiment.posTracked),'b');
 % cExperiment.compileCellInformationParamsOnly;
 
-cExperiment.extractCellInformation(find(cExperiment.posTracked),'max');
+cExperiment.extractCellInformation(find(cExperiment.posTracked),'basic');
 % cExperiment.extractCellInformation(15:36,'max');
 
 cExperiment.compileCellInformation;

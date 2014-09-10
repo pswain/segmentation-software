@@ -137,7 +137,7 @@ parfor k=1:length(trap)
     
 %     combined_d_im=d_im+old_d_im(:,:,j)/5;
     new_dim(:,:,k)=d_im;
-    t_im=imfilter(d_im,fspecial('gaussian',4,1.2),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %  
+    t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end

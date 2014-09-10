@@ -22,7 +22,7 @@ cExperiment.cellInf=struct(cTimelapse.extractedData);
 for i=2:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
-    
+    i
     if max(cTimelapse.timepointsProcessed)>0
         if ~isempty(cTimelapse.extractedData(1).radius)
             j=1;
@@ -30,9 +30,9 @@ for i=2:length(positionsToExtract)
                 temp=cTimelapse.extractedData(j).radius;
                 cExperiment.cellInf(j).radius(end+1:end+size(temp,1),:)=temp;
                 temp=cTimelapse.extractedData(j).trapNum;
-                cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1),:)=temp;
+                cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1))=temp;
                 temp=cTimelapse.extractedData(j).cellNum;
-                cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1),:)=temp;
+                cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1))=temp;
                 
                 temp=cTimelapse.extractedData(j).xloc;
                 cExperiment.cellInf(j).xloc(end+1:end+size(temp,1),:)=temp;
@@ -40,7 +40,7 @@ for i=2:length(positionsToExtract)
                 cExperiment.cellInf(j).yloc(end+1:end+size(temp,1),:)=temp;
                 
                 
-                cExperiment.cellInf(j).posNum(end+1:end+size(temp,1),:)=experimentPos;
+                cExperiment.cellInf(j).posNum(end+1:end+size(temp,1))=experimentPos;
         end
     end
     cExperiment.cTimelapse=[];

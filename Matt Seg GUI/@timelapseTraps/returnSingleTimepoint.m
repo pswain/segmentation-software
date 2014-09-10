@@ -27,25 +27,25 @@ if sum(loc)>0
     file=cTimelapse.cTimepoint(timepoint).filename{loc};
     
     if ~strcmp(cTimelapse.timelapseDir,'ignore')
-    
-    locSlash=strfind(file,'/');
-    
-    if isempty(locSlash) 
-        locSlash=strfind(file,'\'); %in case file was made on a windows machine
-    end
-    
-    if locSlash
-        inds=find(loc);
-        for i=1:sum(loc)
-            file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
-            %locSlash=strfind(file,'/');
-            file=file(locSlash(end)+1:end);
-            cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+        
+        locSlash=strfind(file,'/');
+        
+        if isempty(locSlash)
+            locSlash=strfind(file,'\'); %in case file was made on a windows machine
         end
+        
+        if locSlash
+            inds=find(loc);
+            for i=1:sum(loc)
+                file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
+                %locSlash=strfind(file,'/');
+                file=file(locSlash(end)+1:end);
+                cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
+            end
+        end
+        
     end
     
-    end
-
     try
         
         ind=find(loc);
@@ -113,7 +113,7 @@ else
     if cTimelapse.imSize
         timepointIm=zeros(cTimelapse.imSize);
     else
-                file=cTimelapse.cTimepoint(timepoint).filename{1};
+        file=cTimelapse.cTimepoint(timepoint).filename{1};
         ffile=fullfile(cTimelapse.timelapseDir,file);
         timepointIm=imread(ffile);
         timepointIm(:,:)=0;
@@ -123,9 +123,9 @@ else
 end
 
 if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
-            cTimelapse.imSize = size(timepointIm);
+    cTimelapse.imSize = size(timepointIm);
 end
-        
+
 % try
 %     timepoint=imread(cTimelapse.cTimepoint(timepoint).filename{channel});
 % catch
@@ -168,7 +168,7 @@ if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     end
     timepointIm=tempIm;
 end
-% 
+%
 % if channel==2
 %     timepointIm=flipud(timepointIm);
 % end
