@@ -5,8 +5,19 @@ alltraps=cDisplay.cTimelapse.returnTrapsTimepoint(cDisplay.traps,timepoint,cDisp
 
 trapInfo=cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo;
 for j=1:size(alltraps,3)
+    trackOverlay = cDisplay.trackOverlay;
     image=alltraps(:,:,j);
     image=double(image);
+    %%%%REMOVE
+    %whatever you want to do to the image to see it here
+     %image = 1*edge(image,'canny',0.01);
+     %image = imdilate(image,strel('disk',1));
+%     
+%     upper = prctile(image(:),95);
+%     lower = prctile(image(:),5);
+%     image(image>upper) = upper;
+%     image(image<lower) = lower;
+%     %%%%%
     image=image/max(image(:))*.95;
     image=repmat(image,[1 1 3]);
     

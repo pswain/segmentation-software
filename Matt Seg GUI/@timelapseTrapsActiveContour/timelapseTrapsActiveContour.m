@@ -245,6 +245,7 @@ classdef timelapseTrapsActiveContour<handle
             % timepoint TrapIndicesToSegment
             
             TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo,2);
+            %fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
             
         end
             
