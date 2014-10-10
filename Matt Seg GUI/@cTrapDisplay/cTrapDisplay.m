@@ -34,10 +34,12 @@ classdef cTrapDisplay<handle
             else
                 cDisplay.channel=channel;
             end
-            if (nargin<5 || isempty(traps) ) && cTimelapse.trapsPresent 
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
-            elseif ~cTimelapse.trapsPresent
-                traps=1;
+            if nargin<5 || isempty(traps)  
+                if cTimelapse.trapsPresent 
+                    traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                elseif ~cTimelapse.trapsPresent
+                    traps=1;
+                end
             end
             
             if nargin<6 || isempty(trackThroughTime)

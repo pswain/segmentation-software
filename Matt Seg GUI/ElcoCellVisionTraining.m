@@ -52,10 +52,10 @@ for di = 1:length(cExperiment.dirs)
 
     load(fullfile(OldExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse');
     TPs = randperm(length(cTimelapse.timepointsToProcess));
-    TPs = cTimelapse.timepointsToProcess(TPs(1:TPtoUse(di)));
+    TPs = cTimelapse.timepointsToProcess(TPs(1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess))));
     cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
-    cTimelapse.timepointsProcessed = cTimelapse.timepointsProcessed(TPs);
-    cTimelapse.timepointsToProcess = 1:TPtoUse(di);
+    %cTimelapse.timepointsProcessed = cTimelapse.timepointsProcessed(TPs);
+    cTimelapse.timepointsToProcess = 1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess));
     save(fullfile(NewExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse')
     
 end
@@ -95,6 +95,28 @@ cTimelapseDisplay(cTimelapse)
 
 %%
 clear cExperiment currentPos di file path
+
+figure;imshow(OverlapGreyRed(double(cCellVision.cTrap.trap1),cCellVision.cTrap.trapOutline,[],[],true),[]);
+%% improve cCellvision trap outline
+
+    which_cell_to_use = 2;
+
+%this file should only have the cCellVision variable
+
+ttacObject.cCellVision = cCellVision;
+
+if which_cell_to_use==1
+
+    TrapIM = double(cCellVision.cTrap.trap1);
+else
+    TrapIM = double(cCellVision.cTrap.trap2);
+end
+
+
+TrapPixelImage = ACTrapFunctions.make_trap_pixels_from_image(TrapIM);
+cCellVision.cTrap.trapOutline = TrapPixelImage;
+
+
 %% set segmentation method
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
@@ -133,7 +155,7 @@ end
 %% look at single image from cCellVision
 
 gui = GenericStackViewingGUI;
-A =cTimelapse.returnSegmenationTrapsStack(3,1);
+A =cTimelapse.returnSegmenationTrapsStack(1,1);
 A = A{1};
 figure(4);imshow(A(:,:,2),[])
 gui.stack = A;
@@ -151,10 +173,10 @@ gui.LaunchGUI;
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=1000; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=10000; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
-debugging = true; %set to false to not get debug outputs
+debugging = false; %set to false to not get debug outputs
 %debugging = false;
 
 debug_outputs  =  cCellVision.generateTrainingSetTimelapse(cTimelapse,step_size,SegMethod,debugging);

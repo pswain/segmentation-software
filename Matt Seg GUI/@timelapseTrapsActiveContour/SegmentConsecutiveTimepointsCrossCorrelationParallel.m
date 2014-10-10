@@ -61,7 +61,7 @@ CrossCorrelationUseCanny = ttacObject.Parameters.CrossCorrelation.CrossCorrelati
 RadMeans = (ttacObject.Parameters.ActiveContour.R_min:ttacObject.Parameters.ActiveContour.R_max)';%(2:15)';
 RadRanges = [RadMeans-0.5 RadMeans+0.5];
 
-TwoStageThreshold = ttacObject.cCellVision.twoStageThresh; % boundary in decision image for new cells negative is stricter, positive more lenient
+TwoStageThreshold = ttacObject.Parameters.CrossCorrelation.twoStageThresh; % boundary in decision image for new cells negative is stricter, positive more lenient
 
 TrapPixExcludeThreshCentre = ttacObject.Parameters.CrossCorrelation.TrapPixExcludeThreshCentre;%0.5; %pixels which cannot be classified as centres
 TrapPixExcludeThreshAC = ttacObject.Parameters.ActiveContour.TrapPixExcludeThreshAC;% 1; %trap pixels which will not be allowed within active contour areas
@@ -161,7 +161,7 @@ end
  if TPtoStartSegmenting == ttacObject.TimelapseTraps.timepointsToProcess(1)
      TrapMaxCell = zeros(1,length(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapInfo));
  else
-     TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapMaxCellUTP;
+     TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
  end
 
 %% loop through the rest of the timepoints
@@ -173,16 +173,6 @@ for TP = Timepoints
         
     WholeImage = ttacObject.ReturnImage(TP,CrossCorrelationChannel);
     WholeImage = IMnormalise(WholeImage);
-    
-    %WholeImage = 1*edge(WholeImage,'canny',0.01);
-%     upper = prctile(WholeImage(:),95);
-%     lower = prctile(WholeImage(:),5);
-%     WholeImage(WholeImage>upper) = upper;
-%     WholeImage(WholeImage<lower) = lower;
-%     
-
-    
-    
     
     if ttacObject.TrapPresentBoolean
         WholeTrapImage = ttacObject.ReturnTrapImage(TP);
@@ -200,8 +190,10 @@ for TP = Timepoints
     if TP>= TPtoStartSegmenting;
         
         %get decision image for each cell from SVM
+        %If the traps have not been previously segmented this also initialises the trapInfo field
         DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
-        
+        TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
+    
         if ttacObject.TrapPresentBoolean
             [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false,CrossCorrelationUseCanny);
         else
@@ -322,6 +314,7 @@ for TP = Timepoints
                     
                 end
                 TrapDecisionImage(TrapTrapLogical) = 2*abs(TwoStageThreshold);
+                DecisionImageStack(:,:,TI) = TrapDecisionImage;
             else
                 TrapTrapLogical = false(ttacObject.TrapImageSize);
                 TrapTrapImage = zeros(ttacObject.TrapImageSize);
@@ -343,9 +336,16 @@ for TP = Timepoints
         
         SliceableTrapLocations = TrapLocations(TrapsToCheck);
         SliceableTrapMaxCell = TrapMaxCell(TrapsToCheck);
+        
+        ACTrapImageStack = ACBackGroundFunctions.get_cell_image(ACImage,...
+                                                                TrapImageSize,...
+                                                                [[SliceableTrapLocations(:).xcenter]' [SliceableTrapLocations(:).ycenter]']);
+        
+        
         %parfor actually looking for cells
         parfor TI = 1:length(TrapsToCheck)
         %for TI = 1:length(TrapsToCheck)
+        %fprintf('make parallel again')
             
             TrapLocation = SliceableTrapLocations(TI);
             
@@ -359,6 +359,8 @@ for TP = Timepoints
             
             NotCells = TrapTrapLogical;
             AllCellPixels = zeros(size(NotCells));
+            
+            ACTrapImage = ACTrapImageStack(:,:,TI);
             
             CellSearch = true;
             ProceedWithCell = false;
@@ -432,25 +434,10 @@ for TP = Timepoints
                     
                     %do active contour
                     
-                    NewCellCentre = [xnewcell ynewcell] + [TrapLocation.xcenter TrapLocation.ycenter] - ( [TrapWidth TrapHeight] + 1 );
+                    NewCellCentre = [xnewcell ynewcell];
                     
-                    if NewCellCentre(1)>ImageSize(1)
-                        NewCellCentre(1) = ImageSize(1);
-                    end
                     
-                    if NewCellCentre(1)<1;
-                        NewCellCentre(1) = 1;
-                    end
-                    
-                    if NewCellCentre(2)>ImageSize(2)
-                        NewCellCentre(2) = ImageSize(2);
-                    end
-                    
-                    if NewCellCentre(2)<1;
-                        NewCellCentre(2) = 1;
-                    end
-                    
-                    CellImage = ACBackGroundFunctions.get_cell_image(ACImage,...
+                    CellImage = ACBackGroundFunctions.get_cell_image(ACTrapImage,...
                         SubImageSize,...
                         NewCellCentre );
                     
@@ -461,7 +448,7 @@ for TP = Timepoints
                     
                     
                     if TrapPresentBoolean
-                        CellTrapImage = ACBackGroundFunctions.get_cell_image(WholeTrapImage,...
+                        CellTrapImage = ACBackGroundFunctions.get_cell_image(TrapTrapImage,...
                             SubImageSize,...
                             NewCellCentre );
                         TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);

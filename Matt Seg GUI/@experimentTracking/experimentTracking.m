@@ -60,7 +60,7 @@ classdef experimentTracking<handle
         %functions for loading data and then processing to identify and
         %track the traps
         createTimelapsePositions(cExperiment,searchString,positionsToLoad,magnification,image_rotation,trapsPresent,timepointsToLoad);
-        identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify);
+        identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo);
         segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
         trackCells(cExperiment,positionsToTrack,cellMovementThresh)       

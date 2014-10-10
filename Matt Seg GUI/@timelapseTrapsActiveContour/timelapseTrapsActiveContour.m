@@ -33,6 +33,10 @@ classdef timelapseTrapsActiveContour<handle
         
     end
     
+    properties(Constant)
+        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres'}
+    end
+    
     methods
         
         function ttacObject= timelapseTrapsActiveContour(Parameters)
@@ -237,14 +241,15 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        
         function TrapIndicesToSegment = TrapsToCheck(ttacObject,Timepoint)
             % TrapIndicesToSegment = TrapsToCheck(ttacObject,Timepoint)
             
             % currently just returns the numbers of all the traps at the
             % timepoint TrapIndicesToSegment
             
-            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo,2);
+            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
+            
+            %TrapIndicesToSegment = [3 9 13 17];
             %fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
             
         end
@@ -629,6 +634,72 @@ classdef timelapseTrapsActiveContour<handle
             
         end
         
+        function [ACmethod, answer_value] = SelectACMethod(ttacObject,ACmethod)
+            %[ACmethod, answer_value] = SelectACMethod(ttacObject,method) method to check submitted ACmethod (either
+            %number or string) and run dialog if it is not preset or inappropriate. returns string
+            %for use by wrapper function below.
+            %answer_value is 1 if selected ok and 0 if selected cance;.
+            
+            
+            if nargin<2 || isempty(ACmethod)
+                run_select_dialog = true;
+                ACmethod = [];
+            else
+                if ischar(ACmethod)
+                    ACindex = strcmp(ACmethod,ttacObject.ACmethods);
+                    if any(ACindex)
+                        ACmethod = ttacObject.ACmethods{ACindex};
+                        run_select_dialog = false;
+                    else
+                        run_select_dialog = true;
+                        ACmethod = [];
+                    end
+                else 
+                    ACmethod = ttacObject.ACmethods(ACmethod);
+                    ACmethod = ACmethod{1};
+                    run_select_dialog = false;
+                end
+            end
+            
+            
+            
+            if run_select_dialog
+            widths = cellfun(@length,ttacObject.ACmethods);
+        
+            [ACmethod,answer_value] = listdlg('PromptString','select an active contour method',...
+                                          'SelectionMode','single',...
+                                          'ListSize',[max(widths,[],2) + 10, 1.5*size(ttacObject.ACmethods,1)+2]*8 + [10 40],...
+                                          'ListString',ttacObject.ACmethods);
+                                      ACmethod = ttacObject.ACmethods{ACmethod};
+            else
+                answer_value = true;
+            end
+        end
+        
+        function  RunActiveContourMethod(ttacObject,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod)
+            if nargin<5 || isempty(ACmethod)
+                ACmethod = [];
+            end
+            
+            [ACmethod,answer_value] = SelectACMethod(ttacObject,ACmethod);
+            
+            if answer_value == false
+                fprintf('\n\n    active contour method cancelled   \n\n')
+                return
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{1}) %active contour and cross correlation
+                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallel(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{2}) %active contour on identified and tracked cells
+                ttacObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+            end
+            
+            
+        end
+        
         
         
     end %methods
@@ -641,7 +712,8 @@ classdef timelapseTrapsActiveContour<handle
             DefaultParameterMatFileLocation = mfilename('fullpath');
             FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
             DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
-            load(DefaultParameterMatFileLocation,'DefaultParameters');
+            load(DefaultParameterMatFileLocation,'Parameters');
+            DefaultParameters = Parameters;
         end
 
         

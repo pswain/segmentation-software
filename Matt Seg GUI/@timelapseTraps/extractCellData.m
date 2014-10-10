@@ -15,7 +15,7 @@ if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProces
     tempSize=[cTimelapse.cTimepoint.trapInfo];
     cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(1).trapInfo));
     if length(cTimelapse.timepointsProcessed)==1
-        cTimelapse.timepointsProcessed=0;
+        %cTimelapse.timepointsProcessed=0; Elco commented out this line, don't know why it was there
     end
 end
 

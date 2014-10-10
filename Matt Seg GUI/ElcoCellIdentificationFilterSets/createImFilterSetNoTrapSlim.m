@@ -52,9 +52,11 @@ for slicei = 1:size(image,3)
     im(:,:,slicei)=temp_im;
     
 end
-
+%intended for DIC z stacks where the highest - the lowest is quite informative
+if size(im,3)>1
 im = cat(3,im,im(:,:,1)-im(:,:,end));
- 
+end
+
 filt_feat=zeros(size(im,1)*size(im,2),size(im,3) + (size(im,3)*n_filt) + (size(im,3))*nHough  + nElco*size(im,3),'double');
 
 %filt_im=cat(3,im,zeros(size(im,1),size(im,2),(size(im,3)*n_filt),'double'));
@@ -86,7 +88,7 @@ fltr4accum=imresize(fltr4accum,2);
 
 for i=1:size(im,3)
 
-    [accum] =  CircularHough_Grd(im(:,:,i), [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(im(:,:,i)))*.01,6,fltr4accum);
+    [accum] =  CircularHough_Grd(im(:,:,i), [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(abs(im(:,:,i))))*.01,6,fltr4accum);
  
     temp_im=accum;
     temp_index=temp_index+1;

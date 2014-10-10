@@ -139,15 +139,33 @@ end
 
 if use_canny
     
-    IMcanny = edge(IMin,'canny');
+%     IMcanny = edge(IMin,'canny');
+%     
+%     grdxPOS = 1*(grdxPOS>0 & IMcanny);
+%     
+%     grdxNEG = 1*(grdxNEG>0 & IMcanny);
+%     
+%     grdyPOS = 1*(grdyPOS>0 & IMcanny);
+%     
+%     grdyNEG = 1*(grdyNEG>0 & IMcanny);
+%     
     
-    grdxPOS = 1*(grdxPOS>0 & IMcanny);
+%     grdxPOS = 1*bwmorph(grdxPOS>0,'thin',Inf);
+%     
+%     grdxNEG = 1*bwmorph(grdxNEG>0,'thin',Inf);
+%     
+%     grdyPOS = 1*bwmorph(grdyPOS>0,'thin',Inf);
+%     
+%     grdyNEG = 1*bwmorph(grdyNEG>0,'thin',Inf);
+%     
+
+    grdxPOS = 1*grdxPOS>0;
     
-    grdxNEG = 1*(grdxNEG>0 & IMcanny);
+    grdxNEG = 1*grdxNEG>0;
     
-    grdyPOS = 1*(grdyPOS>0 & IMcanny);
+    grdyPOS = 1*grdyPOS>0;
     
-    grdyNEG = 1*(grdyNEG>0 & IMcanny);
+    grdyNEG = 1*grdyNEG>0;
     
 end
 

@@ -21,7 +21,7 @@ classdef timelapseTraps<handle
         
         lineageInfo
         %stuff Elco has added
-        offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/down.
+        offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
         %stuff Ivan has added
