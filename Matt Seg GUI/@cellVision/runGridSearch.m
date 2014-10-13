@@ -5,7 +5,7 @@ if nargin<2
 end
 
 if nargin<3
-    cmdin='-t 2 -w0 1 -w1 3';
+    cmdin='-t 2 -w0 1 -w1 2';
 else
     cmdin=cmd;
 end

@@ -60,7 +60,7 @@ gui.LaunchGUI;
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
 cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps
-step_size=1;
+step_size=15;
 
 debugging = true; %set to false to not get debug outputs
 %debugging = false;

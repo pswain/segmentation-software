@@ -22,6 +22,7 @@ while (~finishedSeg)
             if isempty(cExperiment.cTimelapse.magnification)
                 cExperiment.cTimelapse.magnification=60;
             end
+            cExperiment.cTimelapse.timepointsToProcess=tp;
             tp=1:length(cExperiment.cTimelapse.cTimepoint);
             tp(cExperiment.cTimelapse.timepointsProcessed>0)=[];
             cTrapDisplayProcessing(cTimelapse,cCellVision,tp);

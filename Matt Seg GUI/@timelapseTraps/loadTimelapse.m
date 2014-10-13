@@ -1,4 +1,4 @@
-function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad)
+function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad,imScale)
 
 folder=cTimelapse.timelapseDir;
 tempdir=dir(folder);
@@ -100,6 +100,6 @@ if (nargin<4 || isempty(image_rotation))
     end
 else
     cTimelapse.image_rotation=image_rotation;
+    cTimelapse.imScale=imScale;
 end
-
 

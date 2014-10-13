@@ -16,6 +16,9 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 
 %debug_outputs is for debugging:
 %     debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
+
+ElcoWay = true; %boolean on whether to find training set Elco's way or Matt's way
+
 debug_outputs = {};
 if nargin<3
     frame_ss=1;
@@ -66,7 +69,7 @@ n_points=[];
 tic; time=toc;
 
 if strcmp(cTimelapse.fileSoure,'swain-batman') && cTimelapse.magnification==60;
-    se_edge=strel('disk',11);
+    se_edge=strel('disk',9);
 else
     se_edge=strel('disk',20);
 end
@@ -98,7 +101,7 @@ for timepoint=1:frame_ss:total_num_timepoints
 
             
             
-            if false %Matt's way of getting cell centres. Elco is trying something different
+            if ~ElcoWay %Matt's way of getting cell centres. Elco is trying something different
                 
                 %used to broaden the lines for more accurate classification
             %             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
@@ -113,47 +116,61 @@ for timepoint=1:frame_ss:total_num_timepoints
             end
                 
                 training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
+            nearCenterTraining=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
                 if size(trapInfo.cellRadius,1)>0
                     for num_cells=1:length(trapInfo.cellRadius)
                         training_class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
+                    nearCenterTraining(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
                         if trapInfo.cellRadius>4 & trapInfo.cellRadius<7
-                            training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
+                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                         elseif trapInfo.cellRadius<8
                             training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                         elseif trapInfo.cellRadius<14
                             training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
                         elseif trapInfo.cellRadius<22
                             training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
                         elseif trapInfo.cellRadius<27
                             training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se5);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
                         else
                             training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se6);
+                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
                         end
                     end
                 end
                 training_class=max(training_class,[],3);
                 training_class=training_class>0;
-                
+                nearCenterTraining=max(nearCenterTraining,[],3);
+                nearCenterTraining=nearCenterTraining>0;
+                exclude_from_negs = nearCenterTraining;
+
                 %exclude pixels around right next to centre pixels to try and
                 %make classification more robust
-                exclude_from_negs = imdilate(training_class,se1);
+%             exclude_from_negs = imdilate(training_class,se1);
             end
             
+            if ElcoWay
             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
             
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cell)+1]);
             exclude_from_negs = training_class;
+            if trapInfo.cellsPresent
                     for num_cells=1:length(trapInfo.cell)
                         training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
                         exclude_from_negs(:,:,num_cells) = imerode(imfill(full(trapInfo.cell(num_cells).segmented),'holes'),se2);
                     end
+            end
                 training_class=max(training_class,[],3);
                 training_class=training_class>0;
                 exclude_from_negs=max(exclude_from_negs,[],3);
                 exclude_from_negs=exclude_from_negs>0; 
                 %exclude pixels around right next to centre pixels to try and
                 %make classification more robust
-            
+            end
             
 %             tempy=image(:,:,trap);
 %             tempy(class)=tempy(class)*2;
@@ -232,6 +249,7 @@ if debugging
     debug_outputs{1} = negatives_stack;
     debug_outputs{2} = positive_stack;
     debug_outputs{3} = neg_exclude_stack;
+    debug_outputs{4} = entry_index;
 else
     debug_outputs{1} = [];
 end

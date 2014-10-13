@@ -16,7 +16,7 @@ function filt_feat=createImFilterSetCellTrapStackDIC(cCellSVM,image)
  
 %% Normalize the image and traps
 n_filt=3;
-nHough=3*1;
+nHough=2*1;
 nHoughIm=0;
 nBW=1;
 nSym=4;
@@ -61,6 +61,14 @@ imScale=1000;
 %  
 % imageTemp=image-(image-imScale).*trapG;
 % im(:,:,2)=imageTemp;
+for slicei = 1:size(image,3)
+    
+    tempim = image(:,:,slicei);
+    tempim=tempim*imScale/median(tempim(:));
+    
+    image(:,:,slicei)=tempim;
+end
+
 
 minim = min(image,[],3);
 maxim = max(image,[],3);
@@ -151,27 +159,31 @@ fltr4accum2=imresize(fltr4accum,1.5);
 
 dogIm=[];
 for i=1:size(filt_im,3)
-
-     
-    [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.005,10,fltr4accum);
-%         [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall ceil((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.005,10,fltr4accum);
-     temp_index=temp_index+1;
-     temp_im=accum;
+    
+    
+    %     [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.005,10,fltr4accum);
+    [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.5)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.01,6,fltr4accum);
+    temp_index=temp_index+1;
+    temp_im=accum;
     filt_im2(:,:,(i-1)*nHough+1)=temp_im;
     filt_feat(:,temp_index)=temp_im(:);
-     
+    
+    
+    
+    
+    [accum] =  CircularHough_Grd(filt_im(:,:,i), [ceil((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.01,11,fltr4accum2);
     temp_im = imfilter((accum),f2,'replicate');
     temp_index=temp_index+1;
     filt_feat(:,temp_index)=temp_im(:);
+    filt_im2(:,:,(i-1)*nHough+2)=temp_im;
 
     
-    for index=1:size(h,3)
-        dogIm(:,:,index)=imfilter(temp_im,h(:,:,index),'replicate');
-    end
-    temp_im=diff(dogIm,1,3);
-    temp_index=temp_index+1;
-    filt_feat(:,temp_index)=temp_im(:);
-    filt_im2(:,:,(i-1)*nHough+2)=temp_im;
+%     for index=1:size(h,3)
+%         dogIm(:,:,index)=imfilter(temp_im,h(:,:,index),'replicate');
+%     end
+%     temp_im=diff(dogIm,1,3);
+%     temp_index=temp_index+1;
+%     filt_feat(:,temp_index)=temp_im(:);
     
 end
  
