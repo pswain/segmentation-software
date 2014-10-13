@@ -13,13 +13,18 @@ function cTimelapseOUT = fuseTimlapses(timelapse_cell)
 %example.
 
 
-
+standard_cTimelapse_fields = {'filename','trapLocations','trapInfo','trapMaxCell'};
 
 if ~isempty(timelapse_cell)
    
     for tli = 1:length(timelapse_cell)
         
         current_timelapse = timelapse_cell{tli}.copy;
+        for fi = 1:length(standard_cTimelapse_fields) 
+            if ~isfield(current_timelapse.cTimepoint,standard_cTimelapse_fields{fi})
+                [current_timelapse.cTimepoint(:).(standard_cTimelapse_fields{fi})] = deal([]);
+            end
+        end
         if tli ==1
             
             cTimelapseOUT = current_timelapse;

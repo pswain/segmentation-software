@@ -1,9 +1,13 @@
-function identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify)
+function identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo)
 
 
-if nargin<3
+if nargin<3 ||isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
 end
+
+if nargin<4 || isempty(TrackFirstTimepoint)
+
+
 
 Message=(['Each position of the experiment will be displayed one by one. The program will guess where the traps are present at first, but you will need to add (left-click) or remove' ...
     ' (right-click) traps to make sure that the trap selection is properly performed. It is generally advisable to look at the timelapse for a single position to make sure the stage ' ...
@@ -24,9 +28,18 @@ TrackFirstTimpointDlgOut = questdlg(...
 
 TrackFirstTimepoint = strcmp(TrackFirstTimpointDlgOut,Positive);
 
+end
+
+if nargin<5 || isempty(ClearTrapInfo)
+    ClearTrapInfo = false;
+end
+
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    if ClearTrapInfo
+        cTimelapse.clearTrapInfo;
+    end
     if TrackFirstTimepoint
         if i==1
             cTrapSelectDisplay(cTimelapse,cCellVision,cExperiment.timepointsToProcess(i));

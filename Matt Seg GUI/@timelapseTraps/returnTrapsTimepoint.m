@@ -1,4 +1,5 @@
 function trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
+%trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
 %If there are traps in the timelapse, this returns a 3D image containg the set of 
 % traps indicated at the timepoint indicated. If there are no traps in the
 % timelapse however, it return the entire frame in a single 2D image.

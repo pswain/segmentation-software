@@ -6,6 +6,7 @@ function ActiveContourButtonTimelapseTrapsGUI( cTrapsGUI )
 if cTrapsGUI.ActiveContourButtonState == 1
     cTrapsGUI.cTimelapse.InstantiateActiveContourTimelapseTraps;
     cTrapsGUI.cTimelapse.ActiveContourObject.getTrapInfoFromCellVision(cTrapsGUI.cCellVision);
+    cTrapsGUI.cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
     cTrapsGUI.ActiveContourButtonState = 2;
 elseif cTrapsGUI.ActiveContourButtonState == 2
     cTrapsGUI.cTimelapse.RunActiveContourTimelapseTraps;

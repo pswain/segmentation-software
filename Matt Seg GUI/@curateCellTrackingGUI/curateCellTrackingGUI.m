@@ -367,6 +367,8 @@ classdef curateCellTrackingGUI<handle
                             
                     set(TrackingCurator.subImage(TrackingCurator.subAxesIndex(heighti,widthi)),'CData',tempImage);
                     
+                    
+                    
                 end
             end
             
@@ -395,9 +397,24 @@ classdef curateCellTrackingGUI<handle
                 
             end
             
-            set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ]);
-            
-            
+             CI = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cellLabel == TrackingCurator.CellLabel;
+             
+             if any(CI) && isfield(TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI), 'crossCorrelationScore');
+                 CC = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI).crossCorrelationScore;
+                 DI = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI).decisionImageScore;
+                 
+                 if isnan(CC)
+                     set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ' Decision Image Score = ' sprintf('%f',DI)]);
+                 else
+                     set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ' Cross Correlation Score = ' sprintf('%f',CC)]);
+                 end
+                 
+             else
+                 
+                 set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ]);
+                 
+             end
+             
             
             
         end

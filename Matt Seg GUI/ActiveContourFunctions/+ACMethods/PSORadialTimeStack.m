@@ -1,10 +1,9 @@
-function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,varargin)
-%function [radii_res,angles,ResultsX,ResultsY] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,varargin)
-
+function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
+%function [radii_res,angles,ResultsX,ResultsY] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
 
 % Segment_elco_fmc_radial ---
 %
-% Synopsis:        [radii_res,ResultsX,ResultsY] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,varargin)
+% Synopsis:        [radii_res,ResultsX,ResultsY] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
 
 % Input:           
 % forcing_images - stack of forcing images of a single cell at consecutive
@@ -22,9 +21,16 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 %     seeds                 default = 100 number of seeds used for Particle Swarm Optimisation
 %     TerminationEpoch      default = 500 number of epochs to run for sure before terminating
 % Centers_stack  - [x y] matix of centers of cell at each image in stack
-% varargin{1}    - priors of radii for the timepoints to be segmented
-% varargin{2}    - fixed contour (in terms of radii) for the time point prior
-%                  to the stack given
+
+%
+% optional
+%
+% prior                        - priors of radii for the timepoints to be segmented
+% radii_previous_time_point    - fixed contour (in terms of radii) for the time point prior
+%                                to the stack given
+% exclude_logical_stack        - A stack of logical images corresponding to the image stack of
+%                                pixels which should not be inside the cell (eg pillars and other
+%                                cells). Currently crudely used to set Rmin and Rmax for each radii.
 
 
 % Output:
@@ -37,6 +43,10 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 % Notes:
 
 forcing_images = double(forcing_images);
+
+%this is done to try and stop average pixels contributing to outline so that no average of pixel
+%values need be taken.
+forcing_images = forcing_images - median(forcing_images(:));
 Timepoints = size(forcing_images,3);%number of time points being considered
 
 %parameters set by user
@@ -63,8 +73,10 @@ epochs_to_terminate = ACparameters.TerminationEpoch;%500;
 
 sub_image_size = (size(forcing_images,1)-1)/2; %subimage is a size 2*sub_image_size +1 square.
 
-if size(varargin,2)>=1
-    prior = varargin{1};
+if nargin<4 || isempty(prior)
+    prior_provided = false;
+else
+    prior_provided = true;
     prior = reshape(prior',1,[]);
     D2radii_prior = [];
     for TP = 1:Timepoints
@@ -74,9 +86,18 @@ if size(varargin,2)>=1
     
 end
 
-if size(varargin,2)>=2
-    radii_previous_time_point = varargin{2};
+if nargin<5 || isempty(radii_previous_time_point)
+    use_previous_timepoint = false;
+else
+    use_previous_timepoint = true;
 end
+
+if nargin<6 || isempty(exclude_logical_stack)
+    use_exclude_stack = false;
+else
+    use_exclude_stack = true;
+end
+
 
 if visualise>=1
     fig_handle = figure;
@@ -86,22 +107,27 @@ if visualise>=1
 end
 
 
-
-%set lower bounds to be centre -  starting contour radius s_R
-LB = R_min*ones(opt_points*Timepoints,1);
-%set lower bounds to be centre +  starting contour radius s_R
-UB = R_max*ones(size(LB));
-
 radii_init_score_all = [];
 D2radii_all = [];
 
 siy = size(forcing_images,2);
 six = size(forcing_images,1);
 
+%set lower bounds to be centre -  starting contour radius s_R
+LB = R_min*ones(opt_points*Timepoints,1);
+%set lower bounds to be centre +  starting contour radius s_R
+UB = R_max*ones(size(LB));
+
 for iP=1:Timepoints
     %fprintf('cell %d \n',iP)
-    
-    [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max);
+    if use_exclude_stack
+        [radii_init_score,angles,RminTP,RmaxTP] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max,exclude_logical_stack(:,:,iP));
+        LB((iP-1)*opt_points + (1:opt_points)) = RminTP(:);
+        UB((iP-1)*opt_points + (1:opt_points)) = RmaxTP(:);
+    else
+        [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max);
+        
+    end
     radii_init_score_all = [radii_init_score_all radii_init_score'];
     [D2radii] = ACBackGroundFunctions.second_derivative_snake(radii_init_score);
     D2radii_all = [D2radii_all D2radii'];
@@ -111,13 +137,17 @@ for iP=1:Timepoints
  if visualise>=1
     figure(fig_handle);
     subplot(1,Timepoints,iP);
-    imshow(forcing_images(:,:,iP),[])
+    if use_exclude_stack
+        imshow(OverlapGreyRed(forcing_images(:,:,iP),exclude_logical_stack(:,:,iP),[],[],true),[])
+    else
+        imshow(forcing_images(:,:,iP),[])
+    end
     [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_init_score,angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
     hold on
     plot(px,py,'b');
     title(['timepoint ' num2str(iP)])
     
-    if size(varargin,2)>=2 && iP==1
+    if use_previous_timepoint && iP==1
         
         [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_previous_time_point',angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
         plot(px,py,'g');
@@ -150,12 +180,12 @@ end
 %defaults parameter values
 %Pdef = [100 2000 24 2 2 0.9 0.4 1500 1e-25 250 NaN 0 0];
 
-if size(varargin,2)>=1 %prior given
+if prior_provided %prior given
     
     
     %seeds are evenly distributed cicles between Rmin and Rmax.
-    radii_init_all = linspace(R_min,R_max,floor(seeds/3));
-    PSOseed1 = repmat(radii_init_all',1,opt_points*Timepoints);
+    radii_init_all = linspace(0,1,floor(seeds/3));
+    PSOseed1 = (repmat(radii_init_all',1,opt_points*Timepoints).*repmat((UB-LB)',floor(seeds/3),1)) + repmat(LB',floor(seeds/3),1);
     
     %seed values are a distribution around the usual starting function
     %given by 'initialise_snake_radial'
@@ -164,8 +194,8 @@ if size(varargin,2)>=1 %prior given
     PSOseed2 = [radii_init_score_all;PSOseed2];
     
     %seed values are a distribution around the prior given (if given)
-    PSOseed3 = repmat(prior,ceil(seeds/3)-1,1);
-    PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,ceil(seeds/3)-1,1);
+    PSOseed3 = repmat(prior,seeds-2*floor(seeds/3)-1,1);
+    PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,size(PSOseed3,1),1);
     PSOseed3 = [prior;PSOseed3];
     
     PSOseed = [PSOseed1;PSOseed2;PSOseed3];
@@ -173,12 +203,12 @@ if size(varargin,2)>=1 %prior given
 else
     
     %seeds are evenly distributed cicles between Rmin and Rmax.
-    radii_init_all = linspace(R_min,R_max,floor(seeds/2));
-    PSOseed1 = repmat(radii_init_all',1,opt_points*Timepoints);
+    radii_init_all = linspace(0,1,floor(seeds/2));
+    PSOseed1 = (repmat(radii_init_all',1,opt_points*Timepoints).*repmat((UB-LB)',floor(seeds/2),1)) + repmat(LB',floor(seeds/2),1);
     
     %seed values are a distribution around the usual starting function
     %given by 'initialise_snake_radial'
-    PSOseed2 = repmat(radii_init_score_all,floor(seeds/2)-1,1);
+    PSOseed2 = repmat(radii_init_score_all,ceil(seeds/2)-1,1);
     PSOseed2 = PSOseed2+spread_factor*randn(size(PSOseed2)).*repmat(D2radii_all,ceil(seeds/2)-1,1);
     PSOseed2 = [radii_init_score_all;PSOseed2];
     
@@ -188,8 +218,13 @@ else
     
 end
 
-PSOseed(PSOseed<R_min) = R_min;
-PSOseed(PSOseed>R_max) = R_max;
+SuperLB = repmat(LB',seeds,1);
+I =PSOseed<SuperLB;
+PSOseed(I) = SuperLB(I);
+
+SuperUB = repmat(UB',seeds,1);
+I =PSOseed>SuperUB;
+PSOseed(I) = SuperUB(I);
 
 %%particle swarm optimisation
 
@@ -201,21 +236,19 @@ switch method
     case 'PSO'
         
         P = [0 EVALS seeds 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
-        radial_punishing_factor = alpha*median(forcing_images,3);
-        time_change_punishing_factor = betaElco*median(forcing_images(:));
+        
+        %not sure multiplying by the interquartile range is sensible. 
+        radial_punishing_factor = alpha*iqr(forcing_images(:))*ones(opt_points,1);
+        time_change_punishing_factor = betaElco*iqr(forcing_images(:));
 
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
-        if size(varargin,2)>=2
-            use_previous_timepoint = true;
-            radii_previous_timepoint = varargin{2};
+        if use_previous_timepoint
             
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_timepoint,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
+            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
         
-    
         else
-            use_previous_timepoint = false;
- 
+            
             [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
         
         end
@@ -280,10 +313,12 @@ if visualise>=3
         [pxFULL,pyFULL] = ACBackGroundFunctions.get_full_points_from_radii(radii_res(1,:)',angles,Centers_stack(1,:),([2 2]*sub_image_size)+1);
         LogicalPoints = false(([2 2]*sub_image_size)+1);
         LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
-        OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
-        figure;
+        %OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
+        OutlineImage = OverlapGreyRed(forcing_images(:,:,1),LogicalPoints,false,[],true);
+        figure_handle_2 = figure;
         imshow(OutlineImage,[]);
         pause
+        close(figure_handle_2)
     end
 else
     pause(0.1)
@@ -295,6 +330,7 @@ if visualise>=1
     close(fig_handle);
    
 end
+
 
 angles = repmat(angles',Timepoints,1);
 
