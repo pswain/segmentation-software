@@ -670,7 +670,7 @@ classdef timelapseTrapsActiveContour<handle
                                           'SelectionMode','single',...
                                           'ListSize',[max(widths,[],2) + 10, 1.5*size(ttacObject.ACmethods,1)+2]*8 + [10 40],...
                                           'ListString',ttacObject.ACmethods);
-                                      ACmethod = ttacObject.ACmethods{ACmethod};
+                                      %[ACmethod,answer_value] = ttacObject.ACmethods{ACmethod};
             else
                 answer_value = true;
             end
