@@ -20,6 +20,8 @@ nHough=4*1;
 nHoughIm=2;
 nBW=2*1;
 nSym=0;
+nElco = 4; %number of Elco special transforms generated from each image.
+           %currently 4 (2 normal, 2 smoothed versions of those)
 if isempty(cCellSVM.se)
     cCellSVM.se.se3=strel('disk',3);
     cCellSVM.se.se2=strel('disk',2);
@@ -51,7 +53,7 @@ for slicei = 1:size(image,3)
     tempim = tempim./medfilt2nearest(tempim,[31 31]);
     tempim=tempim*imScale;
     tempim=medfilt2(tempim,[3 3]);
-    im(:,:,1)=tempim;
+    im(:,:,slicei)=tempim;
     
     
     diffIm=(tempim-imScale);
@@ -64,7 +66,7 @@ for slicei = 1:size(image,3)
     im(:,:,size(image,3)+slicei)=tim;
 end
  
-filt_feat=zeros(size(im,1)*size(im,2),size(im,3) + (size(im,3)*n_filt)*nHough + (nHoughIm+1)*(size(im,3)*n_filt)*nBW + size(im,3)*n_filt + nSym,'double');
+filt_feat=zeros(size(im,1)*size(im,2),size(im,3) + (size(im,3)*n_filt)*nHough + (nHoughIm+1)*(size(im,3)*n_filt)*nBW + size(im,3)*n_filt + nSym + nElco*size(im,3),'double');
 filt_im=zeros(size(im,1),size(im,2),(size(im,3)*n_filt),'double');
 filt_im2=zeros(size(im,1),size(im,2),(size(im,3)*n_filt*nHoughIm),'double');
  
@@ -250,6 +252,36 @@ for i = 1:size(im,3)
     temp_index = temp_index+1;
     temp_im = im(:,:,i);
     filt_feat(:,temp_index) = temp_im(:);
+    
+end
+
+%% Elco's special transforms
+
+%a collection of filters that work in a similar way to circular hough but
+%try to be directional - so that the contributions of different gradients
+%are applied separately.
+
+elco_grd_thresh = 0;
+
+for i = 1:size(im,3)
+    
+    [IMoutPOS,IMoutNEG] = ElcoImageFilter(im(:,:,i),[cCellSVM.radiusSmall cCellSVM.radiusLarge],elco_grd_thresh);
+    
+    temp_index = temp_index+1;
+    filt_feat(:,temp_index) = IMoutPOS(:);
+    
+    temp_index = temp_index+1;
+    temp_im=imfilter(IMoutPOS,fspecial('gaussian',8,2),'replicate');
+    filt_feat(:,temp_index) = temp_im(:);
+    
+    temp_index = temp_index+1;
+    filt_feat(:,temp_index) = IMoutNEG(:);
+    
+    temp_index = temp_index+1;
+    temp_im=imfilter(IMoutNEG,fspecial('gaussian',8,2),'replicate');
+    filt_feat(:,temp_index) = temp_im(:);
+    
+    
     
 end
  

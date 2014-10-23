@@ -14,6 +14,16 @@ regIm=double(regIm);
 regIm=regIm(bb:end-bb,bb:end-bb);
 regImFft=fft2(regIm);
 timepointReg=timepoints(1);
+
+%for initialising trapInfo
+data_template = sparse(false(size(cCellVision.cTrap.trap1)));
+
+trapInfo_struct=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
+'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
+
+trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
+
+
 for i=2:length(timepoints)
     
     timepoint=timepoints(i);
@@ -58,6 +68,8 @@ for i=2:length(timepoints)
 
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
+    
+    cTimelapse.cTimepoint(timepoint).trapInfo = trapInfo_struct;
     
     if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         regIm=newIm;

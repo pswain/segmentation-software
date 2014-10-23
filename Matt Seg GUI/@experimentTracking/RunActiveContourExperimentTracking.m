@@ -1,4 +1,10 @@
-function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters)
+function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime)
+%RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod)
+%runs one of a variety of active contour methods on the positions selected. Parameters must be
+%changed before execution if non standard parameters are desired.
+%OverwriteTimelapseParameters controls if experiment or timelapse parameters are used
+%ACmethods specifies which particular method to use.
+
 
 if nargin<2 || isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
@@ -30,12 +36,48 @@ if LastTimepoint>HighestAllowedTimepoint
 end
 
 
-if nargin<5 || ~isempty(OverwriteTimelapseParameters)
-    OverwriteTimelapseParameters = false;
+if nargin<5 || isempty(OverwriteTimelapseParameters)
+    options = {'overwrite' 'keep individiual parameter sets'};
+    cancel_option = 'cancel';
+   button_answer = questdlg('Would you like to overwrite the individual timelapse parameters with the cExperiment active contour parameters? Unless you know a reason why, you probably want to choose ''overwrite'' ', ...
+                         'overwrite:', ...
+                         options{1},options{2},cancel_option,options{1});
+                     
+     if strcmp(button_answer,cancel_option)
+         fprintf('\n\n    active contour method cancelled    \n\n')
+         return
+     elseif strcmp(button_answer,options{1})
+         OverwriteTimelapseParameters = true;
+     elseif strcmp(button_answer,options{2})
+         OverwriteTimelapseParameters = false;
+     end
+                     
+                     
+                     
 end
+
 
 if isempty(cExperiment.ActiveContourParameters)
     cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
+end
+
+if nargin<7 ||isempty(TrackTrapsInTime)
+    
+    options = {'track traps in time' 'don''t'};
+    cancel_option = 'cancel';
+   button_answer = questdlg('Would you like to track the traps through time - necessary if not done already', ...
+                         'track in time:', ...
+                         options{1},options{2},cancel_option,options{1});
+                     
+     if strcmp(button_answer,cancel_option)
+         fprintf('\n\n    active contour method cancelled    \n\n')
+         return
+     elseif strcmp(button_answer,options{1})
+         TrackTrapsInTime = true;
+     elseif strcmp(button_answer,options{2})
+         TrackTrapsInTime = false;
+     end
+    
 end
 
     
@@ -44,25 +86,60 @@ for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     load(fullfile(cExperiment.saveFolder,[ cExperiment.dirs{currentPos} 'cTimelapse']),'cTimelapse');
     cExperiment.cTimelapse=cTimelapse;
+    
     if isempty(cTimelapse.ActiveContourObject)
         cTimelapse.InstantiateActiveContourTimelapseTraps(cExperiment.ActiveContourParameters);
+    else
+        cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
+        %necessary to make sure that a loaded cTimelapse in the ActiveContourObject points to the
+        %right place.
+    end
+    
+    if i==1
+        
+        if nargin<6 || isempty(ACmethod)
+            [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod;
+        else
+            [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod(ACmethod);
+        end
+    end
+    
+    
+    
+    if method_dialog_answer_value == false;
+        fprintf('\n\n   Active contour method cancelled\n\n')
+        return
+    end
+    
+    if TrackTrapsInTime
+        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.cCellVision,cExperiment.timepointsToProcess);
+        cExperiment.saveTimelapseExperiment(currentPos);
+        cExperiment.cTimelapse = cTimelapse;
+        
     end
     
     if OverwriteTimelapseParameters
         cTimelapse.ActiveContourObject.Parameters = cExperiment.ActiveContourParameters;
     end
     
-    if cTimelapse.ActiveContourObject.TrapPresentBoolean && (isempty(cTimelapse.ActiveContourObject.TrapLocation) || ( isempty(cTimelapse.ActiveContourObject.TrapLocation{FirstTimepoint}) || isempty(cTimelapse.ActiveContourObject.TrapPixelImage)))
-        fprintf('getting trap information from cCellVision of cExperiment object \n')
-        cTimelapse.ActiveContourObject.getTrapInfoFromCellVision(cExperiment.cCellVision);
+    %on the first position find the trap images and then just assign all the relevant fields for
+    %other positions.
+    if  cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))
+            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cExperiment.cCellVision);
     end
     
-    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint);
+    if isempty(cTimelapse.ActiveContourObject.TrapLocation) || OverwriteTimelapseParameters
+        cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
+    end
     
+    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,false,ACmethod);
     
     cExperiment.saveTimelapseExperiment(currentPos);
     
     fprintf('finished position %d of %d \n \n',i,length(positionsToIdentify))
+    
+    disp.cExperiment.posSegmented(currentPos) = true;
+    disp.cExperiment.posTracked(currentPos) = true;
 end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])

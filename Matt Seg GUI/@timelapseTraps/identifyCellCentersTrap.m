@@ -19,8 +19,13 @@ if cCellVision.magnification/cTimelapse.magnification ~= 1
 image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
 end
 
+<<<<<<< HEAD
 if nargin<6
     old_d_im=zeros(size(image{1}));
+=======
+if nargin<6 || isempty(old_d_im)
+    old_d_im=zeros(size(image{1},1),size(image{1},2),size(image,1));
+>>>>>>> 6da5e3507624514716dfb292bb834235379712db
 end    
 
 
@@ -55,7 +60,7 @@ function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,ima
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
-parfor k=1:length(trap)
+for k=1:length(trap) %CHANGE BACK to PARFOR
     [p_im d_im]=cCellVision.classifyImageLinear(image{k});
     
     % combined_d_im=d_im+old_d_im/5;
@@ -131,7 +136,7 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,i
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
-parfor k=1:length(trap)
+for k=1:length(trap) %CHANGE BACK TO parfor
     %     j=trap(k);
     [p_im d_im]=cCellVision.classifyImage2Stage(image{k});
     

@@ -1,4 +1,4 @@
-function RunActiveContourTimelapseTraps( cTimelapse,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged )
+function RunActiveContourTimelapseTraps( cTimelapse,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod )
 %RUNACTIVECONTOURTIMELAPSE( cTimelapse,FirstTimepoint,LastTimepoint )
 %basically a straightforward way to run the active contour methods
 %developed by me (Elco) on the cTimelapse object. 
@@ -27,8 +27,19 @@ if nargin<4 || isempty(LeaveFirstTimepointUnchanged)
     LeaveFirstTimepointUnchanged = false;
 end
 
+if (nargin<5 || isempty(ACmethod))
+    [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod;
+else
+    [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod(ACmethod);
+end
 
-cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+if method_dialog_answer_value == false;
+    fprintf('\n\n   Active contour method cancelled\n\n')
+    return
+end
+
+
+cTimelapse.ActiveContourObject.RunActiveContourMethod(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod)
 
 fprintf('finished running active contour methods on timelapse \n')
 end
