@@ -19,13 +19,8 @@ if cCellVision.magnification/cTimelapse.magnification ~= 1
 image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
 end
 
-<<<<<<< HEAD
-if nargin<6
-    old_d_im=zeros(size(image{1}));
-=======
 if nargin<6 || isempty(old_d_im)
     old_d_im=zeros(size(image{1},1),size(image{1},2),size(image,1));
->>>>>>> 6da5e3507624514716dfb292bb834235379712db
 end    
 
 
