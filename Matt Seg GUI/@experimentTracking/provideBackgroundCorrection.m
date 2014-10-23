@@ -1,4 +1,5 @@
 function provideBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToIdentify)
+   %provideBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToIdentify)
    
 if nargin<4 || isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
