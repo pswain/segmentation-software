@@ -8,20 +8,20 @@ function new=addTimepoints(cTimelapse)
 
 tooSoon=true;
 while tooSoon
-folder=cTimelapse.timelapseDir;
-tempdir=dir(folder);
-names=cell(1);
-timeDif=[];
-for i=1:length(tempdir)
-    names{i}=tempdir(i).name;
-    timeDif(i)=now-tempdir(i).datenum;
-end
-if min(timeDif)>.0005
-    tooSoon=false;
-else
-    tooSoon=true;
-end
-pause(5);
+    folder=cTimelapse.timelapseDir;
+    tempdir=dir(folder);
+    names=cell(1);
+    timeDif=[];
+    for i=1:length(tempdir)
+        names{i}=tempdir(i).name;
+        timeDif(i)=now-tempdir(i).datenum;
+    end
+    if min(timeDif)>.0005
+        tooSoon=false;
+    else
+        tooSoon=true;
+    end
+    pause(5);
 end
 
 files=sort(names);

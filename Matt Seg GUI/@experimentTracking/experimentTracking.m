@@ -48,10 +48,11 @@ classdef experimentTracking<handle
             index=1;
             for i=1:length(tempdir)
                 if tempdir(i).isdir
-                    if index>2
-                        cExperiment.dirs{index-2}=tempdir(i).name;
+                    if ~strcmp(tempdir(i).name(1),'.')
+                        cExperiment.dirs{index}=tempdir(i).name;
+                        index=index+1;
                     end
-                    index=index+1;
+                    
                 end
             end
             cExperiment.cellsToPlot=cell(1);

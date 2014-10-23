@@ -4,7 +4,7 @@ function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints)
 if nargin<3 || isempty(timepoints)
     timepoints=1:length(cTimelapse.cTimepoint);
 end
-
+tic
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
 bb=30;
 accumCol=0;
@@ -12,18 +12,19 @@ accumRow=0;
 regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
 regIm=double(regIm);
 regIm=regIm(bb:end-bb,bb:end-bb);
+regImFft=fft2(regIm);
 timepointReg=timepoints(1);
 for i=2:length(timepoints)
     
-
-    
-        timepoint=timepoints(i);
+    timepoint=timepoints(i);
     newIm=cTimelapse.returnSingleTimepoint(timepoint);
     newIm=double(newIm);
     newIm=newIm/median(newIm(:))*median(regIm(:));
     newIm=newIm(bb:end-bb,bb:end-bb);
 %     newIm=padarray(newIm,[bb bb],median(newIm(:)));
-    [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
+    [output ~] = dftregistration(regImFft,fft2(newIm),1);
+%     [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
+
 
     
     colDif=output(4);
@@ -60,6 +61,7 @@ for i=2:length(timepoints)
     
     if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
         regIm=newIm;
+        regImFft=fft2(regIm);
         timepointReg=timepoints(i);
         accumCol = 0;
         accumRow = 0;
@@ -75,6 +77,7 @@ for i=2:length(timepoints)
 %     end
 end
 close(h)
+toc
 end
 
 function old2()

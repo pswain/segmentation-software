@@ -26,9 +26,9 @@ if ~isempty(timelapse_cell)
             cTimelapseOUT = current_timelapse.copy;
             
         else
-            if isfield(current_timelapse.cTimepoint,'trapMaxCell')
-                current_timelapse.cTimepoint=rmfield(current_timelapse.cTimepoint,'trapMaxCell');
-            end
+%             if isfield(current_timelapse.cTimepoint,'trapMaxCell')
+%                 current_timelapse.cTimepoint=rmfield(current_timelapse.cTimepoint,'trapMaxCell');
+%             end
             
             current_timelapse.makeFileNamesAbsolute;
             cTimelapseOUT.timepointsProcessed = [cTimelapseOUT.timepointsProcessed (current_timelapse.timepointsProcessed+length(cTimelapseOUT.cTimepoint))];

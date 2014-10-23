@@ -21,6 +21,10 @@ cExperiment.cellInf=struct(cTimelapse.extractedData);
 [cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
 
 tempLen=50e3;
+membraneData=isfield(cExperiment.cellInf(1),'membraneMedian');
+radiusFLData=isfield(cExperiment.cellInf(1),'radiusFL');
+segmentedRadiusData=isfield(cExperiment.cellInf(1),'segmentedRadius');
+
 for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).mean=sparse(tempLen,size(cExperiment.cellInf(i).mean,2));
     cExperiment.cellInf(i).median=sparse(tempLen,size(cExperiment.cellInf(i).median,2));
@@ -36,10 +40,20 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
     cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));
     
-    cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
-    cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
-    cExperiment.cellInf(i).nuclearTagLoc= sparse(tempLen,size(cExperiment.cellInf(i).nuclearTagLoc,2)); 
+    if membraneData
+        cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
+        cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
+        cExperiment.cellInf(i).nuclearTagLoc= sparse(tempLen,size(cExperiment.cellInf(i).nuclearTagLoc,2));
+    end
     
+    if radiusFLData
+        cExperiment.cellInf(i).radiusFL= sparse(tempLen,size(cExperiment.cellInf(i).radiusFL,2));
+    end
+    
+    
+    if segmentedRadiusData
+        cExperiment.cellInf(i).segmentedRadius= sparse(tempLen,size(cExperiment.cellInf(i).segmentedRadius,2));
+    end
     
 % 
 %     cExperiment.cellInf(i).mean=zeros(tempLen,size(cExperiment.cellInf(i).mean,2),size(cExperiment.cellInf(i).mean,3));
@@ -83,15 +97,28 @@ for i=1:length(positionsToExtract)
             temp=cTimelapse.extractedData(j).smallmax5;
             cExperiment.cellInf(j).smallmax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
-            temp=cTimelapse.extractedData(j).membraneMedian; 
-            cExperiment.cellInf(j).membraneMedian(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            if membraneData
+                temp=cTimelapse.extractedData(j).membraneMedian;
+                cExperiment.cellInf(j).membraneMedian(index+1:index+size(temp,1),1:size(temp,2))=temp;
                 
-            temp=cTimelapse.extractedData(j).membraneMax5; 
-            cExperiment.cellInf(j).membraneMax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                temp=cTimelapse.extractedData(j).membraneMax5;
+                cExperiment.cellInf(j).membraneMax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                
+                temp=cTimelapse.extractedData(j).nuclearTagLoc;
+                cExperiment.cellInf(j).nuclearTagLoc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
             
-            temp=cTimelapse.extractedData(j).nuclearTagLoc; 
-            cExperiment.cellInf(j).nuclearTagLoc(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
+            if radiusFLData
+                temp=cTimelapse.extractedData(j).radiusFL;
+                cExperiment.cellInf(j).radiusFL(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+            
+            if segmentedRadiusData
+                temp=cTimelapse.extractedData(j).segmentedRadius;
+                cExperiment.cellInf(j).segmentedRadius(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+
             
             temp=cTimelapse.extractedData(j).imBackground;
             cExperiment.cellInf(j).imBackground(index+1:index+size(temp,1),1:size(temp,2))=temp;
@@ -128,10 +155,19 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).min(index+1:end,:)=[];
     cExperiment.cellInf(i).imBackground(index+1:end,:)=[];
     
-    cExperiment.cellInf(i).membraneMedian(index+1:end,:)=[];
-    cExperiment.cellInf(i).membraneMax5(index+1:end,:)=[];
-
-    cExperiment.cellInf(i).nuclearTagLoc(index+1:end,:)=[];
+    if membraneData
+        cExperiment.cellInf(i).membraneMedian(index+1:end,:)=[];
+        cExperiment.cellInf(i).membraneMax5(index+1:end,:)=[];
+        cExperiment.cellInf(i).nuclearTagLoc(index+1:end,:)=[];
+    end
+    
+    if radiusFLData
+        cExperiment.cellInf(i).radiusFL(index+1:end,:)=[];
+    end
+    
+    if segmentedRadiusData
+        cExperiment.cellInf(i).segmentedRadius(index+1:end,:)=[];
+    end
     
     cExperiment.cellInf(i).radius(index+1:end,:)=[];
     cExperiment.cellInf(i).xloc(index+1:end,:)=[];

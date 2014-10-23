@@ -43,6 +43,7 @@ else
 end
 
 motherLoc=motherLoc & mothersToUse;
+nValue=sum(motherLoc);
 
 if isfield(cExperiment.lineageInfo.motherInfo,'birthTimeHMM') && ~isempty(cExperiment.lineageInfo.motherInfo.birthTimeHMM)
     numBirths=sum(cExperiment.lineageInfo.motherInfo.birthTimeHMM>0,2);
@@ -66,8 +67,8 @@ if isfield(cExperiment.lineageInfo.motherInfo,'birthTimeHMM') && ~isempty(cExper
     df=[0 df'];
     kmMeanRLS=sum(df.*x')/sum(df);
     
-    medianLife=find((f)<.51);
-    try medianLife=medianLife(1);
+    medianLife=find((f)<=.501);
+    try medianLife=x(medianLife(1));
     catch medianLife=NaN;end
     pd = fitdist(maxBirths,'wbl','Censoring',censorMother);
     survivalCurve=1-cdf('wbl',0:max(maxBirths)+2,pd.a,pd.b);
@@ -101,9 +102,9 @@ end
 numBirths=sum(birthTimesRemovedDuplicates>0,2);
 
 maxBirths=numBirths(motherLoc);
-for i=1:max(maxBirths)
-    lifespan(i)=sum(maxBirths>i);
-end
+x=1:max(maxBirths);
+lifespan=sum(repmat(maxBirths,[1 length(x)]) > repmat(x,[length(maxBirths) 1]));
+% stats = bootstrp(100,@(x)[mean(x) std(x)],y);
 
 %Below calculates the states for the non-HMM lifespan curves
 repTime=diff(birthTimesRemovedDuplicates,1,2);
@@ -118,9 +119,19 @@ df=abs(diff(f));
 df=[0 df'];
 kmMeanRLS=sum(df.*x')/sum(df);
 
+flo(isnan(flo))=1;fup(isnan(fup))=1;
+df=abs(diff(fup));
+df=[0 df'];
+kmMeanRLSup=sum(df.*x')/sum(df);
 
-medianLife=find((f)<.51);
-try medianLife=medianLife(1);
+df=abs(diff(flo));
+df=[0 df'];
+kmMeanRLSlo=sum(df.*x')/sum(df);
+
+kmMeansCI=abs(kmMeanRLSup-kmMeanRLSlo)/2;
+
+medianLife=find((f)<.501);
+try medianLife=x(medianLife(1));
 catch medianLife=NaN;end
 pd = fitdist(maxBirths,'wbl','Censoring',censorMother);
 survivalCurve=1-cdf('wbl',0:max(maxBirths)+2,pd.a,pd.b);
@@ -132,9 +143,12 @@ cExperiment.lineageInfo.lifespanStats.meanRLS=mean(maxBirths);
 cExperiment.lineageInfo.lifespanStats.medianRLSkm=medianLife;
 cExperiment.lineageInfo.lifespanStats.meanRLSwbl=meanRLSwbl;
 cExperiment.lineageInfo.lifespanStats.meanRLSkm=kmMeanRLS;
+cExperiment.lineageInfo.lifespanStats.meanRLSkmCI=kmMeansCI;
+
 cExperiment.lineageInfo.lifespanStats.lifespanCurve=lifespan;
 cExperiment.lineageInfo.lifespanStats.lifespanCurvekm=f;
 cExperiment.lineageInfo.lifespanStats.lifespanCurvekm_x=x;
+cExperiment.lineageInfo.lifespanStats.nValue=nValue;
 
 
 
