@@ -33,7 +33,7 @@ switch type
         numStacks=1;
 end
 
-radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'radiusFL');
+radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'cellRadiusFL');
 
 
 
@@ -55,6 +55,8 @@ for channel=1:length(cTimelapse.channelNames)
 
         extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+%         extractedData(channel).trapNum=sparse(zeros(1,numCells));
+
         extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));              
         extractedData(channel).nuclearTagLoc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -120,18 +122,8 @@ for channel=1:length(cTimelapse.channelNames)
             dataInd=0;
             for j=1:length(uniqueTraps)%j=1:length(extractedData(channel).cellNum)
                 currTrap=uniqueTraps(j);% extractedData(channel).trapNum(j);
-                
-                %                 cellsCurrTrap=find(trap==currTrap);
-                %                 cellsCurrTrap=cell(trap==currTrap);
                 cellsCurrTrap=cell(trap==currTrap);
-                %                 tempCells=[];
-                %                 for tpCellInd=1:length(cellsCurrTrap)
-                %                     cPresTp=find(cellsCurrTrap(tpCellInd)==trapInfo(currTrap).cellLabel, 1);
-                %                     if ~isempty(cPresTp)
-                %                         tempCells(end+1)=cellsCurrTrap(tpCellInd);
-                %                     end
-                %                 end
-                %                 cellsCurrTrap=tempCells;
+
                 
                 if cTimelapse.trapsPresent
                     trapImages=returnTrapStack(cTimelapse,tpStack,currTrap,timepoint);
@@ -164,12 +156,9 @@ for channel=1:length(cTimelapse.channelNames)
                         if ~isempty(loc)
                             segLabel=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1)),loc(2),loc(1)));
                         end
-                        %                 temp_im=trapInfo(currTrap).trackLabel==currCell;
                         cellLoc=segLabel>0;
                         
                         membraneLoc = seg_areas >0; 
-                        
-                        
                         
                         tStd=[];tMean=[];
                         for l=1:size(trapImages,3)
@@ -190,7 +179,6 @@ for channel=1:length(cTimelapse.channelNames)
                                 end
                              end
                              
-                            
                         end
                         [b indStd]=max(tStd);
                         [b indMean]=max(tMean);
@@ -209,8 +197,6 @@ for channel=1:length(cTimelapse.channelNames)
                                  else 
                                      trapImWhole2(:,:,1) =trapImWhole; 
                                  end
-                                 
-                                
                             case 'std'
                                 trapImWhole(:,:,1)=trapImages(:,:,indStd);
                             case 'mean'
@@ -261,11 +247,6 @@ for channel=1:length(cTimelapse.channelNames)
                                     nucleusValHOG=sort(cellFL(indmax5_(1:5)),'descend');% max values in HOG channel inside nucleus area.
                                     nuclocalization2 = double( mean( nucleusValHOG(1:5) ) )./double(median(cellFL(:)));
                                 end
-                                
-                               
-                                
-                                
-                                
                                 %END NUCLEAR
                                 %EXTRACTION%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                 
@@ -316,7 +297,10 @@ for channel=1:length(cTimelapse.channelNames)
                                     extractedData(channel).imBackground(dataInd,timepoint)=median(bkg(:));
                                     extractedData(channel).min(dataInd,timepoint)=min(cellFL(:));
                                     extractedData(channel).radius(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellRadius;
-                                    extractedData(channel).radiusFL(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellRadiusFL;%trapInfo(currTrap).cell(temp_loc).cellRadius;
+                                    
+                                    if radiusFLData
+                                        extractedData(channel).radiusFL(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellRadiusFL;%trapInfo(currTrap).cell(temp_loc).cellRadius;
+                                    end
                                     extractedData(channel).segmentedRadius(dataInd,timepoint)= sqrt(sum(cellLoc(:))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
 
                                     extractedData(channel).xloc(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
@@ -370,7 +354,10 @@ for channel=1:length(cTimelapse.channelNames)
                                     extractedData(channel).imBackground(dataInd,timepoint,k)=median(bkg(:));
                                     extractedData(channel).min(dataInd,timepoint,k)=min(cellFL(:));
                                     extractedData(channel).radius(dataInd,timepoint,k)= trapInfo(currTrap).cell(temp_loc).cellRadius;
+                                    
+                                    if radiusFLData
                                     extractedData(channel).radiusFL(dataInd,timepoint)= trapInfo(currTrap).cellRadiusFL;%trapInfo(currTrap).cell(temp_loc).cellRadius;
+                                    end
                                     extractedData(channel).segmentedRadius(dataInd,timepoint,k)= sqrt(sum(cellLoc(:))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
                                     extractedData(channel).xloc(dataInd,timepoint,k)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                                     extractedData(channel).yloc(dataInd,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);

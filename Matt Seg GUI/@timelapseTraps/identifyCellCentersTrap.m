@@ -131,6 +131,7 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,i
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
+
 for k=1:length(trap) %CHANGE BACK TO parfor
     %     j=trap(k);
     [p_im d_im]=cCellVision.classifyImage2Stage(image{k});
@@ -141,6 +142,7 @@ for k=1:length(trap) %CHANGE BACK TO parfor
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
+
 
 for k=1:length(trap)
     %     j=trap(k);

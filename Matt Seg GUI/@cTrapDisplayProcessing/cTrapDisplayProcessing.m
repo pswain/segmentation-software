@@ -115,7 +115,8 @@ classdef cTrapDisplayProcessing<handle
                 
                 %                 cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
                 if length(cTimelapse.channelsForSegment)>1
-                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough2',[],identification_image_stacks);
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
+%                     cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough2',[],identification_image_stacks,d_im);
                 else
                     cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
                 end

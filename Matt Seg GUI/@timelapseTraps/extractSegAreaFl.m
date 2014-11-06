@@ -122,6 +122,12 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                                 if replaceOldSegmented
                                     edgeSeg= bwmorph(seg,'remove');
                                     cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented = edgeSeg>0;
+                                    
+                                    % overwrite the offset so that you
+                                    % don't accidentally offset the image
+                                    % that was segmented with the
+                                    % fluorescence
+                                    cTimelapse.offset=zeros(size(cTimelapse.offset));
                                 end
                                 cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=sqrt(sum(seg(:))/pi);
                                 
@@ -211,7 +217,8 @@ if ~isempty(circen)
     %to calculate the original segmentation in case active contour was used
         cirrad=cirrad-2;
             x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
-    temp_im=zeros(size(im))>0;  
+    temp_im=zeros(size(im))>0;
+    r=double(r);
     if r<11
         theta = 0 : (2 * pi / nseg) : (2 * pi);
     elseif r<18

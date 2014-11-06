@@ -200,7 +200,7 @@ for i=1:size(filt_im,3)%+(size(filt_im2,3)))
         es_im=filt_im2(:,:,i-size(filt_im,3));
     end
     es_im=es_im/max(es_im(:));
-    r=size(es_im,2)/2;c=size(es_im,1)/2;
+    r=size(es_im,2)/4;c=size(es_im,1)/4;
     for j=1:1
         temp_im=es_im(:,:,j);
         %         temp_im(cCellSVM.cTrap.trapOutline>0)=median(temp_im(:));

@@ -22,7 +22,7 @@ cExperiment.lineageInfo.motherInfo.birthTimeHMM=[];
 for i=1:length(cExperiment.lineageInfo.daughterHMMTrainingStates)
 
 state=hmmdecode(cExperiment.lineageInfo.daughterHMMTrainingStates{i},birthHMM.estTrans,birthHMM.estEmis);
-cExperiment.lineageInfo.HMMbirths(i,:)=state(2,:);
+cExperiment.lineageInfo.HMMbirths(i,1:length(state(2,:)))=state(2,:);
 end
 
 cExperiment.lineageInfo.motherInfo.birthTimeHMM=[];

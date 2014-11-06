@@ -20,6 +20,7 @@ classdef cellVision<handle
         TrainData = []; %date on which cCellVision was trained.
         se
         method
+        radiusKeepTracking
     end
     
     methods
