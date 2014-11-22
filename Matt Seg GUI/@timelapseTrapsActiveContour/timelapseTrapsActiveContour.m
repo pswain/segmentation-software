@@ -247,11 +247,12 @@ classdef timelapseTrapsActiveContour<handle
             % currently just returns the numbers of all the traps at the
             % timepoint TrapIndicesToSegment
             
-            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
+            %TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
+            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo,2);
             
-            %TrapIndicesToSegment = [3 9 13 17];
-            %fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
-            
+%             TrapIndicesToSegment = [3];
+%             fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
+%             
         end
             
         

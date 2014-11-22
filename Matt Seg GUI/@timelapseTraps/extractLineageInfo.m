@@ -52,6 +52,10 @@ motherDistCutoff=params.motherDistCutoff;
 budDownThresh=params.budDownThresh;
 
 
+if ~isfield(cTimelapse.lineageInfo,'motherIndex')
+    fprintf('finding mother index \n')
+    cTimelapse.findMotherIndex;
+end
 
 %the trackCells function must be run prior to this
 

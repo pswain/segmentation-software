@@ -345,7 +345,7 @@ for TP = Timepoints
         %parfor actually looking for cells
         parfor TI = 1:length(TrapsToCheck)
         %for TI = 1:length(TrapsToCheck)
-        %fprintf('make parallel again')
+        %fprintf('lin 348 SegmentConsecutive....: make parallel again\n')
             
             TrapLocation = SliceableTrapLocations(TI);
             

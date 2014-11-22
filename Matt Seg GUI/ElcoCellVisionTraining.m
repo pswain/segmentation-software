@@ -121,6 +121,8 @@ cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
+%SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
+
 
 %% check histrogram of images
 
@@ -153,11 +155,14 @@ for slicei = 1:size(imS,3)
 
 end
 %% look at single image from cCellVision
+TI = 3;
+TP =10;
+
 
 gui = GenericStackViewingGUI;
-A =cTimelapse.returnSegmenationTrapsStack(1,1);
+A =cTimelapse.returnSegmenationTrapsStack(TI,TP);
 A = A{1};
-figure(4);imshow(A(:,:,2),[])
+figure(4);imshow(A(:,:,1),[])
 gui.stack = A;
 gui.LaunchGUI
 
@@ -168,7 +173,12 @@ gui.stack = reshape(B,size(A,1),size(A,2),[]);
 gui.LaunchGUI;
 
 
+%% classify image A and show result
 
+decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
+%[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
+gui.stack = cat(3,A,decision_im);
+gui.LaunchGUI
 %% generate training set
 
 cCellVision.trainingParams.cost=4;

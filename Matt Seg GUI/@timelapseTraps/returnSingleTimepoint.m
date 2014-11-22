@@ -145,28 +145,27 @@ else
     image_rotation=cTimelapse.image_rotation;
 end
 
-if image_rotation~=0
-    timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
-end
-
 if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
     %first part of this statement is to guard against cases where channel
     %has not been assigned
     timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
 end
 
+if image_rotation~=0
+    timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
+end
+
+
 if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
-    tempIm=[];%zeros(size(timepointIm));
-    for sliceNum=1:size(timepointIm,3)
-        TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
-        timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
-        LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
-        HigherTimepointBoundaries = cTimelapse.imSize + TimepointBoundaries + abs(TimepointBoundaries);
-        tempIm(:,:,sliceNum) = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),sliceNum);
-    end
-    timepointIm=tempIm;
+    
+    TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
+    LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
+    HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
+    timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
+    timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
+    
 end
 %
 % if channel==2

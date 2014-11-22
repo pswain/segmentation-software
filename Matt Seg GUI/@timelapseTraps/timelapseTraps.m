@@ -24,6 +24,7 @@ classdef timelapseTraps<handle
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
+        ErrorModel = {[]};
         %stuff Ivan has added
         omeroDs%The id number of the omero dataset from which the raw data was donwloaded. If the object was created from a folder of images this is zero.
     end
@@ -65,7 +66,7 @@ classdef timelapseTraps<handle
         %%
         addSecondaryTimelapseChannel(cTimelapse,searchString)
         new=addTimepoints(cTimelapse)
-        extractCellData(cTimelapse,type);
+        extractCellData(cTimelapse,type,channels);
         extractCellParamsOnly(cTimelapse)
         automaticSelectCells(cTimelapse,params);
         
@@ -124,6 +125,8 @@ classdef timelapseTraps<handle
             end
             
         end
+        
+        
     end
     
     
@@ -147,6 +150,26 @@ classdef timelapseTraps<handle
                 
                 cTimelapse.timepointsToProcess = 1:length(cTimelapse.cTimepoint);
                 
+            end
+            
+            if length(cTimelapse.BackgroundCorrection)==1 && isempty(cTimelapse.BackgroundCorrection{1})
+                cTimelapse.BackgroundCorrection = {};
+                cTimelapse.BackgroundCorrection(1:length(cTimelapse.channelNames)) = {[]};
+            end
+            
+            if length(cTimelapse.ErrorModel)==1 && isempty(cTimelapse.ErrorModel{1})
+                cTimelapse.ErrorModel = {};
+                cTimelapse.ErrorModel(1:length(cTimelapse.channelNames)) = {[]};
+            end
+            
+            if size(cTimelapse.offset,1)<length(cTimelapse.channelNames)
+                cTimelapse.offset(end+1:length(cTimelapse.channelNames)) = 0;
+            end
+            
+            if ~isempty(cTimelapse.ActiveContourObject)
+                if ~isempty(cTimelapse.ActiveContourObject.TimelapseTraps)
+                    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
+                end
             end
         end
     end
