@@ -1,0 +1,42 @@
+------------------------------  USEFUL NOTES FOR EDITING THE SWAIN LAB SEGMENTATION SOFTWARE FOR YOUR OWN PUROPSES------------------------
+
+This file is intended as a quick introduction in how to use the swain lab software and where you will need to edit it to work with your own images. The software is object orientated and was written on macs with little testing on windows machines, so you may find a lot of file separator type errors.
+
+I will begin by a brief outline of how the program is suppose to work before talk about the specific implementation. 
+
+The program is suppose to organise timelapse experiments into 'positions' (different fields of view), which are in turn subdivided into 'traps' (if features are present) and then segmented through time by applying a machine learning algorithm (generally either a linear SVM or a two stage RBF SVM which works pixel by pixel trying to classify each centre as either as a cell centre pixel or a non cell centre pixel. When this is done the software proceeds in one of two ways: it either uses a hough transform to identify likely cell edges as circles around these centre pixels (which I will call the 'hough method') or it uses a spline based active contour algorithm (AC method) to identify cells with a broader range of shapes.In the hough method, the cells are tracked after identification by a simple minimum distance between cells at different timepoints method (with radius of the cell included as part of the distance metric), while the active contour method tracks as part of the segmentation. The hough method is most widely used in the lab, the active contour method being quite new and still somewhat slow, and produces good results if the cells are roughly circular. The software can be run while the images are being acquired, but currently only if using hte hough method. Otherwise images must be segmented after aquisition. After the cells have been segmented and tracked cells of interest can be selected in an automated fashion based on the duration of time they are present in the experiment and various GUI's can be used to inspect and correct the tracking and segmentation. Once the  The classifier (SVM or two stage RBF SVM) has to be trained on a collection of ground truth images that have to be compiled by the user, but provided the images look fairly similar from one experiment to the next the trained classifier can be reused from experiment to experiment without retraining.
+
+This being the general outline I will now talk about the specifics. I'll try and address the data structures that are important, and how you need to use them/change them to segment your images.
+
+The core of the software is the experimentTracking object, which is usually loaded and manipulated using the experimentTrackingGUI. This makes the experimentTrackingGUI button call backs a good place to look for the standard functions used to run any operation. If you run the line:
+
+disp = experimentTrackingGUI
+
+then the field:
+
+disp.cExperiment
+(or something like that)
+
+is the experimentTracking object that holds the information about the experiment. The experimentTracking object is actually just and organisational object that loads timelapseTraps objects (an object for saving and manipulating information about a single position) and calls their methods to actually do the segmentation. The methods of this timelapseTraps object (and the associated timelapseTrapsActiveContour object) are the methods used to actually do everything useful like load images from the experiment, find cell centres, find cell edges and track cells through time. A useful way to look at a particular timelapseTraps object is to select that position in the experimentTrackingGUI, select 'process timelapse individually' and the cTimelapse object can then be found in the:
+
+disp.currentGUI.cTimelapse
+
+field.
+
+I'll now talk about creating a new experimentTracking  object using the GUI as this will help to show where data gets stored within the object. 
+
+The procedure for creating a new experiment is to click the create new experiment button and follow the instructions which ask you to select a directory in which to save the segmentation data (normally a folder somwhere near the data itself), select a folder in which to find the 'positions' (I'll come back to this) and a string that identifies a set of images for each position, usually a string occuring in each timepoint of the image and unique to that channel. To further understand it maybe helps to know the way our microscope saves images. Each position is stored in its own directory names 'pos1','pos2' etc. within each of these directories all the images for all the channels at all the timepoints are stored, and are named: 
+
+[experiment_name]_[timepoint_number]_[channel_identifier]_[slice_number].png
+
+so the software, in asking for an identifier, is usually given the channel_identifier, with the slice_number if a particular slice is desired, and it then goes through all the directories looking for files with the channel_identifier in their name and storing these filenames in timepoint order as determined by the timepoint_number occuring in their name. A new timelapseTraps object is created for each position, and for a given position,each of the filenamess found is used to create a new structure array element (one array element for each timepoint). This structure array is stored in the cTimepoint property of the timelapseTraps class, so that:
+
+timelapseTrapsObj.cTimepoint(11)
+
+will refer to a structure that holds all the information about timepoint 11 of that particular position. The filenames are stored here in this cTimpoint structure, while the root directory in which all the files are found is stored as a field of the timelapseTraps object (I think it's called rootDirectory).
+
+The finding of these first filenames and population if the data structure is done in cTimelapse.loadTimelapse and is the first possible error. If your image files aren't organised in this way, or aren't .tif or .png files, you will either have to edit the function, reorganise files  or write new functions to do this initial populating of the cTimelapse.filename fields. The way the filenames are used to load images can be seen in timelapseTraps.returnSingleTimepoint, from which you can see that absolute filenames are allowed - so any arbitrary file organisation can be put into the data structure but custom functions will have to be written to to so. There is also a file called coil convert which may help in converting your files into our style of filename using bioformats, but this will probably have to be modified for your files too. 
+
+Adding other channels, other than this primary one, is done using the 'add secondary channel', this employs the addSecondaryTimelapseChannel method of the tmelapseTraps object. This changes the timelapseTraps object in two ways, adding a channel name entry to the cell timelaspeTraps.channelNames and adding entries to all the timelapseTraps.cTimepoint.filename cell. This, again, uses similar string comparing functions that make some assumptions about the way filenames are organised and may need to be rewritten or other functions written to populate the channelName and cTimepoint.filename fields. When it comes to load the image files for a particular timepoint, a string comparison is made between the channelNames entry for a particular channel the filenames for a particular timepoint, and so care must be taken if populating these fields with your own functions not to allow the channel identifying string in the channelNames field to occur in any filenames other than those to which they are meant to refer. (to heap confusion upon confusion, a single channelName entry can have numerous filename entries associated with it. This is a particular way in which the software can treat z stacks, and can be better understood by looking at the timelapsTraps.returnSingleTimepoint method)
+
+This covers the major ways in which the software can fail to find your images. I will now try and lay out how the machine learning works and can be trained and modified. 

@@ -34,7 +34,7 @@ function SegmentConsecutiveTimepointsCrossCorrelationParallel(ttacObject,FirstTi
 
 
 
-if nargin<3
+if nargin<4
     
     FixFirstTimePointBoolean = false;
     
@@ -94,8 +94,10 @@ TrapImageSize = ttacObject.TrapImageSize;
 
 ImageTransformFunction = str2func(['ACImageTransformations.' ttacObject.Parameters.ImageTransformation.ImageTransformFunction]);
 
-TrapWidth = ttacObject.TimelapseTraps.cTrapSize.bb_width;
-TrapHeight = ttacObject.TimelapseTraps.cTrapSize.bb_height;
+if ttacObject.TrapPresentBoolean
+    TrapWidth = ttacObject.TimelapseTraps.cTrapSize.bb_width;
+    TrapHeight = ttacObject.TimelapseTraps.cTrapSize.bb_height;
+end
 
 NewCellStruct = struct('cellCenter',[],...
                        'cellRadius',[],...
@@ -108,7 +110,7 @@ NewCellStruct = struct('cellCenter',[],...
 
 %protects program from super crashing out by opening and closing a million
 %images.
-if LastTimepoint-FirstTimepoint>50 || (matlabpool('size') ~= 0)
+if LastTimepoint-FirstTimepoint>50 || ~isempty(gcp('nocreate'))%(matlabpool('size') ~= 0)
     
     ACparameters.visualise = 0;
 end
@@ -159,7 +161,7 @@ end
 
  %array to hold the maximum label used in each trap
  if TPtoStartSegmenting == ttacObject.TimelapseTraps.timepointsToProcess(1)
-     TrapMaxCell = zeros(1,length(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapInfo));
+     TrapMaxCell = zeros(1,length(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapLocations));
  else
      TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
  end
@@ -185,11 +187,10 @@ for TP = Timepoints
 
     
     TrapLocations = ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations;
-    TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
     
     if TP>= TPtoStartSegmenting;
         
-        %get decision image for each cell from SVM
+        %get decision image for each trap from SVM
         %If the traps have not been previously segmented this also initialises the trapInfo field
         DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
         TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
@@ -231,13 +232,32 @@ for TP = Timepoints
                 
                 for CI = 1:length(PreviousCurrentTrapInfo.cell)
                     
+                    %ugly piece of code. If a cells is added by hand (not
+                    %by this program) it has no cell label. This if
+                    %statement is suppose to give it a cellLabel and
+                    %thereby prevent errors down the line. Hasto adjust the
+                    %trapMaxTP fields, which may cause problems.
+                    if CI>length(PreviousCurrentTrapInfo.cellLabel)
+                        ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cellLabel(CI) = ttacObject.TimelapseTraps.cTimepoint(1).trapMaxCell(TI)+1;
+                        ttacObject.TimelapseTraps.cTimepoint(ttacObject.TimelapseTraps.timepointsToProcess(1)).trapMaxCell(TI) = ttacObject.TimelapseTraps.cTimepoint(ttacObject.TimelapseTraps.timepointsToProcess(1)).trapMaxCell(TI)+1;
+                        for TPtemp = TP:ttacObject.TimelapseTraps.timepointsToProcess(end)
+                            if isfield(ttacObject.TimelapseTraps.cTimepoint(TPtemp),'trapMaxCellUTP')
+                            ttacObject.TimelapseTraps.cTimepoint(TPtemp).trapMaxCellUTP(TI) = ttacObject.TimelapseTraps.cTimepoint(ttacObject.TimelapseTraps.timepointsToProcess(1)).trapMaxCell(TI);
+                            end
+                        end
+                    end
+                    
                     if isfield(PreviousCurrentTrapInfo.cell(CI),'ExpectedCentre')
                         LocalExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).ExpectedCentre;
                     else
                         LocalExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).cellCenter;
                     end
                     
+                    if ttacObject.TrapPresentBoolean
                     ExpectedCellCentre = LocalExpectedCellCentre + [TrapLocations(TrapsToCheck(TI)).xcenter TrapLocations(TrapsToCheck(TI)).ycenter] - ([TrapWidth TrapHeight] + 1) ;
+                    else
+                        ExpectedCellCentre = LocalExpectedCellCentre;
+                    end
                     
                     if ExpectedCellCentre(1)>ttacObject.ImageSize(1)
                         ExpectedCellCentre(1) = ttacObject.ImageSize(1);
@@ -272,10 +292,19 @@ for TP = Timepoints
                     end
                     PredictedCellLocation = CrossCorrelationPrior.*PredictedCellLocation;
                     
-                    PredictedCellLocationsAllCells{TI}(:,:,CI) = ACBackGroundFunctions.get_cell_image(PredictedCellLocation,...
-                        ttacObject.TrapImageSize,...
-                        (ceil(ProspectiveImageSize/2)*[1 1] + ceil(fliplr(ttacObject.TrapImageSize)/2)) - LocalExpectedCellCentre,...
-                        -2*abs(CrossCorrelationValueThreshold) ).*(TrapDecisionImage<CrossCorrelationDIMthreshold);
+                    %this for loop might seem somewhat strange and
+                    %unecessary, but it is to deal with the 'TrapImage'
+                    %being the whole image and therefore not necessarily an
+                    %odd number in size.
+                    if ttacObject.TrapPresentBoolean
+                        PredictedCellLocationsAllCells{TI}(:,:,CI) = ACBackGroundFunctions.get_cell_image(PredictedCellLocation,...
+                            ttacObject.TrapImageSize,...
+                            (ceil(ProspectiveImageSize/2)*[1 1] + ceil(fliplr(ttacObject.TrapImageSize)/2)) - LocalExpectedCellCentre,...
+                            -2*abs(CrossCorrelationValueThreshold) ).*(TrapDecisionImage<CrossCorrelationDIMthreshold);
+                    else
+                        
+                        PredictedCellLocationsAllCells{TI}(:,:,CI) = ACBackGroundFunctions.put_cell_image(PredictedCellLocationsAllCells{TI}(:,:,CI),PredictedCellLocation,ExpectedCellCentre);
+                    end
                     
                     
                     
@@ -337,13 +366,18 @@ for TP = Timepoints
         SliceableTrapLocations = TrapLocations(TrapsToCheck);
         SliceableTrapMaxCell = TrapMaxCell(TrapsToCheck);
         
+        if ttacObject.TrapPresentBoolean
         ACTrapImageStack = ACBackGroundFunctions.get_cell_image(ACImage,...
                                                                 TrapImageSize,...
                                                                 [[SliceableTrapLocations(:).xcenter]' [SliceableTrapLocations(:).ycenter]']);
         
-        
+        else
+            ACTrapImageStack = ACImage;
+        end
         %parfor actually looking for cells
+        %fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
         parfor TI = 1:length(TrapsToCheck)
+        
         %for TI = 1:length(TrapsToCheck)
         %fprintf('lin 348 SegmentConsecutive....: make parallel again\n')
             
@@ -561,10 +595,13 @@ for TP = Timepoints
         ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TrapsToCheck) = SliceableTrapInfoToWrite;
         ttacObject.TimelapseTraps.cTimepoint(ttacObject.TimelapseTraps.timepointsToProcess(1)).trapMaxCell = TrapMaxCell;
         ttacObject.TimelapseTraps.cTimepoint(TP).trapMaxCellUTP = TrapMaxCell;
+        ttacObject.TimelapseTraps.timepointsProcessed(TP) = true;
         
         TrapInfo(TrapsToCheck) = SliceableTrapInfo;
-            
+    else
+        TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
     end
+    
     
     PreviousWholeImage = WholeImage;
     PreviousTrapLocations = TrapLocations;

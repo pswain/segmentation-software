@@ -1,4 +1,4 @@
-function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime)
+function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
 %RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
@@ -80,6 +80,9 @@ if nargin<7 ||isempty(TrackTrapsInTime)
     
 end
 
+if nargin<8 || isempty(LeaveFirstTimepointUnchanged)
+    LeaveFirstTimepointUnchanged = false;
+end
     
 %% Load timelapses
 for i=1:length(positionsToIdentify)
@@ -124,7 +127,7 @@ for i=1:length(positionsToIdentify)
     
     %on the first position find the trap images and then just assign all the relevant fields for
     %other positions.
-    if  cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))
+    if  (cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
             getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cExperiment.cCellVision);
     end
     
@@ -132,7 +135,7 @@ for i=1:length(positionsToIdentify)
         cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
     end
     
-    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,false,ACmethod);
+    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod);
     
     cExperiment.saveTimelapseExperiment(currentPos);
     

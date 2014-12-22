@@ -55,7 +55,7 @@ function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,ima
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
-for k=1:length(trap) %CHANGE BACK to PARFOR
+parfor k=1:length(trap) %CHANGE BACK to PARFOR
     [p_im d_im]=cCellVision.classifyImageLinear(image{k});
     
     % combined_d_im=d_im+old_d_im/5;
@@ -131,7 +131,8 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,i
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
-for k=1:length(trap) %CHANGE BACK TO parfor
+parfor k=1:length(trap) %CHANGE BACK TO parfor
+    %fprintf('CHANGE BACK TO parfor[identifyCellCentresTrap]')
     %     j=trap(k);
     [p_im d_im]=cCellVision.classifyImage2Stage(image{k});
     

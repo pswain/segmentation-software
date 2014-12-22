@@ -12,6 +12,8 @@ ttacObject.TrapLocation = [];
 if ttacObject.TrapPresentBoolean 
 
     ttacObject.TrapImageSize = [2*timelapseTraps.cTrapSize.bb_height + 1   2*timelapseTraps.cTrapSize.bb_width + 1];
+else
+    ttacObject.TrapImageSize = timelapseTraps.imSize;
 
 end
 ttacObject.LengthOfTimelapse = length(timelapseTraps.cTimepoint);
