@@ -83,8 +83,17 @@ for timepoint=cTimelapse.timepointsToProcess
                 else
                     len=0;
                     trapInfo(trap).cellLabel=0;
+                    trapInfo(trap).cellLabel=0;
+                    trapInfo(trap).cell(1).cellCenter=[];
+                    trapInfo(trap).cell(1).cellRadius=[];
                 end
                 trapMaxCell(trap)=len;            
+            elseif ~trapInfo(trap).cellsPresent
+                trapInfo(trap).cellLabel=0;
+                trapInfo(trap).cell(1).cellCenter=[];
+                trapInfo(trap).cell(1).cellRadius=[];
+
+
             else
                 trapInfo(trap).cellLabel=zeros(1,length(trapInfo(trap).cell));
                 circen=[trapInfo(trap).cell(:).cellCenter];

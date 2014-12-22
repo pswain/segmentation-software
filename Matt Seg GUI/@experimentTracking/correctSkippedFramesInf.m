@@ -107,6 +107,19 @@ for nSkip=1:1
             b=full(cellInf.imBackground);
             b(locSkipped)=temp;
             cellInf.imBackground=sparse(b);
+            
+            if isfield(cExperiment.cellInf,'radiusFL')
+                temp=(cExperiment.cellInf(channel).radiusFL(locSkippedPre)+cExperiment.cellInf(channel).radiusFL(locSkippedPost))./2;
+                b=full(cellInf.radiusFL);
+                b(locSkipped)=temp;
+                cellInf.radiusFL=sparse(b);
+            end
+            if isfield(cExperiment.cellInf,'nuclearTagLoc')
+                temp=(cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPre)+cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPost))./2;
+                b=full(cellInf.nuclearTagLoc);
+                b(locSkipped)=temp;
+                cellInf.nuclearTagLoc=sparse(b);
+            end
         end
         
         cExperiment.cellInf(channel)=cellInf;

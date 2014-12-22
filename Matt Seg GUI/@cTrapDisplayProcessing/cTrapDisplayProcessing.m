@@ -112,7 +112,13 @@ classdef cTrapDisplayProcessing<handle
                 
                 identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i));
                 d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);%%index j was changed to i
-                cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+                
+                %                 cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+                if length(cTimelapse.channelsForSegment)>1
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough2',[],identification_image_stacks);
+                else
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+                end
                 
                 for j=1:length(traps)
                     image=trap_images(:,:,j);
