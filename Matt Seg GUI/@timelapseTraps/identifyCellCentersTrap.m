@@ -150,8 +150,7 @@ t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,
 bw=t_im<cCellVision.twoStageThresh;
 segCenters=cTimelapse.returnTrapsFromImage(bw,timepoint,trap);
 
-parfor k=1:length(trap)
-    %fprintf('CHANGE BACK TO parfor[identifyCellCentresTrap]')
+for k=1:length(trap)
 
     j=k;
     data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
