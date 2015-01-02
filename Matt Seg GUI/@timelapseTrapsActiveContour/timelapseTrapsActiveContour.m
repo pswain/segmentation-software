@@ -34,7 +34,7 @@ classdef timelapseTrapsActiveContour<handle
     end
     
     properties(Constant)
-        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres'}
+        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image'}
     end
     
     methods
@@ -247,11 +247,12 @@ classdef timelapseTrapsActiveContour<handle
             % currently just returns the numbers of all the traps at the
             % timepoint TrapIndicesToSegment
             
-            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
+            %TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
+            TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo,2);
             
-            %TrapIndicesToSegment = [3 9 13 17];
-            %fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
-            
+%             TrapIndicesToSegment = [3];
+%             fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
+%             
         end
             
         
@@ -460,7 +461,7 @@ classdef timelapseTrapsActiveContour<handle
             end
              
             if nargin<6 || isempty(normalise)
-                normalise = [];
+                normalise = 'none';
             end
                  
              
@@ -547,12 +548,12 @@ classdef timelapseTrapsActiveContour<handle
 
         end
         
-        function [CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
+        function [CellTransformedImage, CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             %[CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             
             ttacTransformFunction = str2func(['ttacImageTansformationMethods.' ttacObject.Parameters.ImageSegmentation.ImageTransformMethod]);
 
-            [CellTransformedImage CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
+            [CellTransformedImage, CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
                
         end
         
@@ -697,6 +698,9 @@ classdef timelapseTrapsActiveContour<handle
                 ttacObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
             end
             
+            if strcmp(ACmethod,ttacObject.ACmethods{3}) %jusy cross correlating whole image with first image and shifting accordingly (for cycloheximide datasets)
+                ttacObject.SegmentConsecutiveTimepointsNoChanges(FirstTimepoint,LastTimepoint);
+            end
             
         end
         

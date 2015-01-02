@@ -85,3 +85,8 @@ cTimelapse.offset(find(strcmp(searchString,cTimelapse.channelNames)),:) = [0 0];
 %illumination. Should come from illumination measurements.
 cTimelapse.BackgroundCorrection{find(strcmp(searchString,cTimelapse.channelNames))} = [];
 
+
+%add an error model entry that can later be set to be an error model object which can be fed pixel
+%data values and spits out the estimated shot noise.
+cTimelapse.ErrorModel{find(strcmp(searchString,cTimelapse.channelNames))} = [];
+

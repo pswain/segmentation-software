@@ -20,7 +20,10 @@ end
 
 TrapIM = cTimelapse.returnTrapsTimepoint(TI,TP,channel);
 
-cCellVision.cTrap.trapOutline = ACTrapFunctions.make_trap_pixels_from_image(double(TrapIM));
+cCellVision.cTrap.trap1 = TrapIM;
+
+cCellVision.identifyTrapOutline;
+%cCellVision.cTrap.trapOutline = ACTrapFunctions.make_trap_pixels_from_image(double(TrapIM));
 
 %experimental section to change the trap images to make the trap detection more consistent.
 

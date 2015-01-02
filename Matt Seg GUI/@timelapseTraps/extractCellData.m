@@ -1,7 +1,13 @@
-function extractCellData(cTimelapse,type)
+function extractCellData(cTimelapse,type,channels)
 
 if nargin<2
     type='max';
+end
+
+if nargin<3 || isempty(channels)
+    
+    channels = 1:length(cTimelapse.channelNames);
+    
 end
 
 numCells=sum(cTimelapse.cellsToPlot(:));
@@ -36,8 +42,10 @@ end
 radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'cellRadiusFL');
 
 
+for channel=1:length(channels)
+    channel_number = channels(channel);
+    BGextracted = false;
 
-for channel=1:length(cTimelapse.channelNames)
     if numStacks<2
         extractedData(channel).mean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).median=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -48,7 +56,7 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).smallmax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).min=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).imBackground=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-        extractedData(channel).area=sparse(zeros(numCells,length(cTimelapse.cTimepoint)));
+        extractedData(channel).area=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).radius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
                 extractedData(channel).radiusFL=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).segmentedRadius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -60,7 +68,15 @@ for channel=1:length(cTimelapse.channelNames)
         extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
         extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));              
         extractedData(channel).nuclearTagLoc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-     
+        
+         %for Elco's data extraction
+        extractedData(channel).pixel_sum=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        extractedData(channel).pixel_variance_estimate=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+        
+        %end elcos section
+        
+        extractedData(channel).trapNum = [];
+        extractedData(channel).cellNum = [];
         
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -81,12 +97,20 @@ for channel=1:length(cTimelapse.channelNames)
         
         
         extractedData(channel).nuclearTagLoc=zeros(numCells,length(cTimelapse.timepointsProcessed));
+        
+        %for Elco's data extraction
+        extractedData(channel).pixel_sum=zeros(numCells,length(cTimelapse.timepointsProcessed));
+        extractedData(channel).pixel_variance_estimate=zeros(numCells,length(cTimelapse.timepointsProcessed));
+        
+        %end elcos section
        
+        extractedData(channel).trapNum = [];
+        extractedData(channel).cellNum = [];
     end
     
-    
-    
-    for timepoint=1:length(cTimelapse.timepointsProcessed)
+
+     for timepoint=1:length(cTimelapse.timepointsProcessed)
+         
         if cTimelapse.timepointsProcessed(timepoint)
             disp(['Timepoint Number ',int2str(timepoint)]);
             %     uniqueTraps=unique(traps);
@@ -95,9 +119,28 @@ for channel=1:length(cTimelapse.channelNames)
             
             %             trapImages=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
             
-            tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel,'stack');
+            tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel_number,'stack');
             
-            if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+            %for Elco's data extraction
+            %get background correction and shift in the same way as the actual image for pixel_variance:
+            if ~BGextracted
+                if length(cTimelapse.BackgroundCorrection)>=channel_number && ~isempty(cTimelapse.BackgroundCorrection{channel_number})
+                    BGcorrection = cTimelapse.BackgroundCorrection{channel_number};
+                    TimepointBoundaries = fliplr(cTimelapse.offset(channel_number,:));
+                    BGcorrection = padarray(BGcorrection,abs(TimepointBoundaries));
+                    LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
+                    HigherTimepointBoundaries = [size(tpStack,1),size(tpStack,2)] + TimepointBoundaries + abs(TimepointBoundaries);
+                    BGcorrection = BGcorrection(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
+                    
+                else
+                    BGcorrection = ones(size(tpStack,1),size(tpStack,2));
+                end
+                BGextracted = true;
+            end
+            %end elcos section
+            
+            
+            if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
                 
                 tpStack_3=cTimelapse.returnSingleTimepoint(timepoint,channelTag,'stack'); %% Extract from mCherry channel. 
             
@@ -128,15 +171,22 @@ for channel=1:length(cTimelapse.channelNames)
                 if cTimelapse.trapsPresent
                     trapImages=returnTrapStack(cTimelapse,tpStack,currTrap,timepoint);
                     
+                    %for Elco's variance estimate
+                    BGtrapImage = returnTrapStack(cTimelapse,BGcorrection,currTrap,timepoint);
+                    
                     %for nuclear tag extraction. Getting FL info from mCh
-                    if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+                    if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
                        trapImages2= returnTrapStack(cTimelapse,tpStack_3,currTrap,timepoint);
                     end
                     
                 else
                     trapImages=tpStack;
+                    
+                    %for Elcos' variance estimate
+                    BGtrapImage = BGcorrection;
+                    
                     %for nuclear tag extraction. Getting FL info from mCh:
-                    if(channel==channelNuclear && length(cTimelapse.channelNames)>2)
+                    if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
                        trapImages2=tpStack_3;
                     end
                     
@@ -168,7 +218,7 @@ for channel=1:length(cTimelapse.channelNames)
                             tMean(l)=mean(tempIm(:));
                             
                             %for nuclear tag extraction. Getting FL info from mCh:
-                             if(channel==channelNuclear && length(cTimelapse.channelNames)>2 )
+                             if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2 )
                                 if( areStacks==1)
                                     tempIm2=double(trapImages2(:,:,l));
                                     tempIm2=tempIm2(cellLoc);
@@ -192,7 +242,7 @@ for channel=1:length(cTimelapse.channelNames)
                                 trapImWhole(:,:,1)=max(trapImages,[],3);
                                 
                                  %for nuclear tag extraction. Getting FL info from mCh:
-                                 if(channel==channelNuclear && length(cTimelapse.channelNames)>2)                                    
+                                 if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)                                    
                                     trapImWhole2(:,:,1)=max(trapImages2,[],3);
                                  else 
                                      trapImWhole2(:,:,1) =trapImWhole; 
@@ -208,7 +258,7 @@ for channel=1:length(cTimelapse.channelNames)
                             cellFL=trapIm(cellLoc);
                             
                              %for nuclear tag extraction. Getting FL info from mCh:
-                                 if(channel==channelNuclear && length(cTimelapse.channelNames)>2)                                    
+                                 if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)                                    
                                     trapIm2=trapImWhole2(:,:,k);
                                     cellFL2=trapIm2(cellLoc);
                                  else
@@ -364,8 +414,39 @@ for channel=1:length(cTimelapse.channelNames)
                                     extractedData(channel).trapNum(dataInd)=currTrap;
                                     extractedData(channel).cellNum(dataInd)=currCell;
                                     
+                                   
+                                    
                                 end
                             end
+                            
+                            %for Elco's data extraction
+                            if length(cTimelapse.ErrorModel)>=channel_number && ~isempty(cTimelapse.ErrorModel{channel_number})
+                                correction_values = BGtrapImage(cellLoc);
+                                ErrorModel = cTimelapse.ErrorModel{channel_number};
+                                %use cTimelapse ErrorModel (object of error model class) to estimate
+                                %variance and expected value of data. division by correction values
+                                %is to return data to raw estimate state. In time may want to adjust
+                                %to use value estimates if encounter biased errors
+                                estimatedVariance = ErrorModel.evaluateError(cellFL./correction_values,[],[],true);
+                                
+                                %correct variance estimate to take account of multiplication
+                                estimatedVariance = estimatedVariance.*(correction_values.^2);
+                            else
+                                estimatedVariance = zeros(size(cellFL));
+                                
+                            end
+                            
+                            if issparse(extractedData(channel).radius) %ensures that arrays are sparse if possible
+                                extractedData(channel).pixel_variance_estimate(dataInd,timepoint) = sum(estimatedVariance);
+                                extractedData(channel).pixel_sum(dataInd,timepoint) = sum(cellFL);
+                            else
+                                extractedData(channel).pixel_variance_estimate(dataInd,timepoint,k) = sum(estimatedVariance);
+                                extractedData(channel).pixel_sum(dataInd,timepoint,k) = sum(cellFL);
+                            end
+                            
+                            %end elcos section
+                            
+                            
                         end
                     end
                     
@@ -384,7 +465,7 @@ function trapsTimepoint=returnTrapStack(cTimelapse,image,trap,timepoint)
 cTrap=cTimelapse.cTrapSize;
 bb=max([cTrap.bb_width cTrap.bb_height])+100;
 bb_image=padarray(image,[bb bb]);
-trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,size(image,3),'uint16');
+trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,size(image,3),class(image));
 for j=1:size(image,3)
     y=round(cTimelapse.cTimepoint(timepoint).trapLocations(trap).ycenter + bb);
     x=round(cTimelapse.cTimepoint(timepoint).trapLocations(trap).xcenter + bb);

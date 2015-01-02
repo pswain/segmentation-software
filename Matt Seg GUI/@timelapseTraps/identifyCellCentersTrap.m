@@ -51,6 +51,7 @@ trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
 parfor k=1:length(trap) %CHANGE BACK to PARFOR
     [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline);
     
+    % combined_d_im=d_im+old_d_im/5;
     if cTimelapse.magnification<100
         t_im=imfilter(d_im,fspecial('gaussian',4,1.1),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
         bw=t_im<cCellVision.twoStageThresh;
@@ -149,7 +150,9 @@ t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,
 bw=t_im<cCellVision.twoStageThresh;
 segCenters=cTimelapse.returnTrapsFromImage(bw,timepoint,trap);
 
-for k=1:length(trap)
+parfor k=1:length(trap)
+    %fprintf('CHANGE BACK TO parfor[identifyCellCentresTrap]')
+
     j=k;
     data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
     if tPresent

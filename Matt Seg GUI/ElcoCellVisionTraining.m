@@ -121,6 +121,8 @@ cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
+%SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
+
 
 %% check histrogram of images
 
@@ -153,11 +155,14 @@ for slicei = 1:size(imS,3)
 
 end
 %% look at single image from cCellVision
+TI = 3;
+TP =10;
+
 
 gui = GenericStackViewingGUI;
-A =cTimelapse.returnSegmenationTrapsStack(1,1);
+A =cTimelapse.returnSegmenationTrapsStack(TI,TP);
 A = A{1};
-figure(4);imshow(A(:,:,2),[])
+figure(4);imshow(A(:,:,1),[])
 gui.stack = A;
 gui.LaunchGUI
 
@@ -168,7 +173,12 @@ gui.stack = reshape(B,size(A,1),size(A,2),[]);
 gui.LaunchGUI;
 
 
+%% classify image A and show result
 
+decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
+%[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
+gui.stack = cat(3,A,decision_im);
+gui.LaunchGUI
 %% generate training set
 
 cCellVision.trainingParams.cost=4;
@@ -218,7 +228,7 @@ cCellVision.trainingParams.gamma=1
 %% parameter grid search
 %cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
 ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
-ws = round(ws./min(ws,[],2));
+%ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
 maxTP = 30;
 step_size=max(length(cTimelapse.cTimepoint),max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1])); % set step size so never using more than 30 timepoints
@@ -239,20 +249,34 @@ cCellVision.trainSVMLinear(step_size,cmd);toc
 
 disp = experimentTrackingGUI
 
-%%
+%% 
+%From matt's original code, doesn't seem to do anything but make very
+%similar data structure but renamed. Try using below instead
 
 maxTP = 200;
 step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
 cCellVision.generateTrainingSet2Stage(cTimelapse,step_size);
-%%
-maxTP = 30;
+
+%% just use same data for training two stage and linear
+
+cCellVision.trainingData.kernel_features = cCellVision.trainingData.features;
+cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
+%% two stage grid search
+maxTP= 30;
+
+ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
+%ws = round(ws./min(ws,[],2));
+cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
+
 step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
 cCellVision.runGridSearch(step_size);
 
 %%
 maxTP = 100;
+ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
 step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
-cmd = ['-t 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
+step_size = 1;
+cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trainingParams.cost,cCellVision.trainingParams.gamma);
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 

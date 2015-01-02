@@ -17,17 +17,24 @@ end
 
 ttacObject.cCellVision = cCellVision;
 
-ttacObject.TrapImage = cCellVision.cTrap.trapOutline;
-
-[ttacObject.TrapPixelImage] = ACTrapFunctions.makeTrapPixelsFunction(cCellVision.cTrap.trapOutline);
-
-ttacObject.TrapImageSize = size(cCellVision.cTrap.trapOutline);
-
+if ttacObject.TrapPresentBoolean 
+    
+    ttacObject.TrapImage = cCellVision.cTrap.trapOutline;
+    
+    [ttacObject.TrapPixelImage] = ACTrapFunctions.makeTrapPixelsFunction(cCellVision.cTrap.trapOutline);
+    
+    ttacObject.TrapImageSize = size(cCellVision.cTrap.trapOutline);
+    
+end
 %% get image dimensions
 
 image = ttacObject.ReturnImage(1,1);
 
 ttacObject.ImageSize = size(image);
+
+if ~ttacObject.TrapPresentBoolean
+    ttacObject.TrapImageSize = ttacObject.ImageSize;
+end
 
 clear('image');
 
