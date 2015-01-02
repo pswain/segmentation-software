@@ -67,7 +67,7 @@ classdef experimentTracking<handle
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
         trackCells(cExperiment,positionsToTrack,cellMovementThresh)       
         selectTPToProcess(cExperiment,positions);
-        combineTracklets(cExperiment,positions);
+        combineTracklets(cExperiment,positions,params);
         
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
@@ -80,7 +80,7 @@ classdef experimentTracking<handle
         
         cTimelapse=returnTimelapse(cExperiment,timelapseNum);
         saveTimelapseExperiment(cExperiment,currentPos);
-        saveExperiment(cExperiment);
+        saveExperiment(cExperiment,fileName);
         plotCellInformation(cExperiment,position);
     end
 end

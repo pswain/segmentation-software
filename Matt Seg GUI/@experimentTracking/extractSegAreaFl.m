@@ -27,7 +27,9 @@ end
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    warning off
     cTimelapse.extractSegAreaFl(channelStr, type);
+    warning on
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(experimentPos);

@@ -17,7 +17,7 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 %debug_outputs is for debugging:
 %     debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
 
-ElcoWay = true; %boolean on whether to find training set Elco's way or Matt's way
+ElcoWay = false; %boolean on whether to find training set Elco's way or Matt's way
 
 debug_outputs = {};
 if nargin<3
@@ -40,9 +40,7 @@ if debugging
 end
 
 cCellVision.training_channels = cTimelapse.channelNames(cTimelapse.channelsForSegment);
-
 cCellVision.filterFunction = type;
-
 cCellVision.TrainDataGenerationDate = date;
 
 index=1;
@@ -102,7 +100,6 @@ for timepoint=1:frame_ss:total_num_timepoints
         
         
         if ~ElcoWay %Matt's way of getting cell centres. Elco is trying something different
-            
             %used to broaden the lines for more accurate classification
             %             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
             

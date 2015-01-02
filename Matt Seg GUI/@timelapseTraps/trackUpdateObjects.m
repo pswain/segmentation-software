@@ -3,6 +3,10 @@ function trackUpdateObjects(cTimelapse,cCellVision,traps,channel,timepoint,bw,tr
 %how much cells can overlap before the smaller one is removed
 cellOverlapAllowed=.4;
 
+if strcmp(cCellVision.method,'wholeIm');
+    d_im=cTimelapse.returnTrapsFromImage(d_im,timepoint,traps);
+end
+
 if isempty(trap_image)
     image=[];
     image=cell(1);
@@ -88,7 +92,8 @@ for j=1:length(image)%(image,3)
         temp_im=temp_im-diffIm.*trapG;
     end
     temp_imFilt=medfilt2(temp_im,[2 2],'symmetric');
-        
+%     [grdxTemp, grdyTemp] = gradient(single(temp_imFilt));
+
     bb1=0;
 
     k=traps(j);
@@ -132,7 +137,7 @@ for j=1:length(image)%(image,3)
                     
                     tempR=trapInfom1(trapIndex).cell(locBigCell(bigCellIndex)).cellRadius;
                     tempRadiusSearch(1)=tempR-1;tempRadiusSearch(2)=tempR+2;
-                    [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                    [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
                     circen(end+1:end+size(circen1,1),:)=circen1-bb1;
                     cirrad(end+1:end+length(cirrad1))=cirrad1;
                     
@@ -155,9 +160,13 @@ for j=1:length(image)%(image,3)
     for bwlIndex=1:max(bwl(:))
         bw_mask=bwl==bwlIndex;
         if magnification<100
-            [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius*scale,bw_mask,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+            if bwlIndex==1
+                [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+            else
+                [~, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accum,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+            end
         else
-            [~, circen1 cirrad1] =CircularHough_Grd_matt(imresize(temp_imFilt,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.7,fltr4accum);
+            [~, circen1 cirrad1] =CircularHough_Grd_matt(imresize(temp_imFilt,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),[],max(temp_im(:))*.1,8,.7,fltr4accum);
         end
 %         circen=circen-bb1;
         bw_mask=[];
@@ -194,8 +203,8 @@ for j=1:length(image)%(image,3)
         pline_y = round(r * sin(theta) + y);
         loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
         pline_x(loc)=[];pline_y(loc)=[];
-        for i=1:length(pline_x)
-            temp_im(pline_y(i),pline_x(i),1)=1;
+        for circIndex=1:length(pline_x)
+            temp_im(pline_y(circIndex),pline_x(circIndex),1)=1;
         end
         locfill=[y x];
         temp_imFilled(:,:,numCells)=imfill(temp_im,round(locfill))>0;
@@ -294,8 +303,8 @@ for j=1:length(image)
             pline_y = round(r * sin(theta) + y);
             loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
             pline_x(loc)=[];pline_y(loc)=[];
-            for i=1:length(pline_x)
-                temp_im(pline_y(i),pline_x(i),1)=1;
+            for circIndex=1:length(pline_x)
+                temp_im(pline_y(circIndex),pline_x(circIndex),1)=1;
             end
             trapInfo(traps(j)).cell(k).segmented=sparse(temp_im);
         end
@@ -320,7 +329,7 @@ end
 
 
 
-function [accum, varargout] = CircularHough_Grd_matt(img, radrange, mattmask, varargin)
+function [accum, varargout] = CircularHough_Grd_matt(img, radrange, mattmask, accum,varargin)
 %Detect circular shapes in a grayscale image. Resolve their center
 %positions and radii.
 %
@@ -341,6 +350,7 @@ function [accum, varargout] = CircularHough_Grd_matt(img, radrange, mattmask, va
 %               [minimum_radius , maximum_radius]  (unit: pixels)
 %               **NOTE**:  A smaller range saves computational time and
 %               memory.
+
 %
 %  grdthres:    (Optional, default is 10, must be non-negative)
 %               The algorithm is based on the gradient field of the
@@ -575,15 +585,6 @@ func_compu_radii = true;
 
 % Validation of arguments
 vap_grdthres = 1;
-% if nargin > (1 + vap_grdthres),
-%     if isnumeric(varargin{vap_grdthres}) && ...
-%             varargin{vap_grdthres}(1) >= 0,
-%         prm_grdthres = varargin{vap_grdthres}(1);
-%     else
-%         error(['CircularHough_Grd: ''grdthres'' has to be ', ...
-%             'a non-negative number']);
-%     end
-% end
 
 vap_fltr4LM = 2;    % filter for the search of local maxima
 
@@ -611,76 +612,82 @@ if nargout > 3,  dbg_on = true;  end
 
 %%%%%%%% Building accumulation array %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Convert the image to single if it is not of
-% class float (single or double)
-img_is_double = isa(img, 'double');
-if ~(img_is_double || isa(img, 'single')),
-    imgf = single(img);
+    
+    % Convert the image to single if it is not of
+    % class float (single or double)
+    img_is_double = isa(img, 'double');
+    if ~(img_is_double || isa(img, 'single')),
+        imgf = single(img);
+    end
+    
+    % Compute the gradient and the magnitude of gradient
+    if img_is_double,
+        [grdx, grdy] = gradient(img);
+    else
+        [grdx, grdy] = gradient(imgf);
+    end
+    grdmag = sqrt(grdx.^2 + grdy.^2);
+if isempty(accum)
+    
+    % Get the linear indices, as well as the subscripts, of the pixels
+    % whose gradient magnitudes are larger than the given threshold
+    prm_grdthres=prm_grdthres*max(grdmag(:));
+    grdmasklin = find(grdmag > prm_grdthres);
+    [grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
+    
+    % Compute the linear indices (as well as the subscripts) of
+    % all the votings to the accumulation array.
+    % The Matlab function 'accumarray' accepts only double variable,
+    % so all indices are forced into double at this point.
+    % A row in matrix 'lin2accum_aJ' contains the J indices (into the
+    % accumulation array) of all the votings that are introduced by a
+    % same pixel in the image. Similarly with matrix 'lin2accum_aI'.
+    rr_4linaccum = double( prm_r_range );
+    linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
+        (rr_4linaccum(1) + 0.5) : rr_4linaccum(2) ];
+    
+    lin2accum_aJ = floor( ...
+        double(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+        repmat( double(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
+        );
+    lin2accum_aI = floor( ...
+        double(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+        repmat( double(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
+        );
+    
+    % Clip the votings that are out of the accumulation array
+    mask_valid_aJaI = ...
+        lin2accum_aJ > 0 & lin2accum_aJ < (size(grdmag,2) + 1) & ...
+        lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
+    
+    mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
+    lin2accum_aJ = lin2accum_aJ .* mask_valid_aJaI + mask_valid_aJaI_reverse;
+    lin2accum_aI = lin2accum_aI .* mask_valid_aJaI + mask_valid_aJaI_reverse;
+    clear mask_valid_aJaI_reverse;
+    
+    % Linear indices (of the votings) into the accumulation array
+    lin2accum = sub2ind( size(grdmag), lin2accum_aI, lin2accum_aJ );
+    
+    lin2accum_size = size( lin2accum );
+    lin2accum = reshape( lin2accum, [numel(lin2accum),1] );
+    clear lin2accum_aI lin2accum_aJ;
+    
+    % Weights of the votings, currently using the gradient maginitudes
+    % but in fact any scheme can be used (application dependent)
+    weight4accum = ...
+        repmat( double(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
+        mask_valid_aJaI(:);
+    clear mask_valid_aJaI;
+    
+    % Build the accumulation array using Matlab function 'accumarray'
+    accum = accumarray( lin2accum , weight4accum );
+    accum = [ accum ; zeros( numel(grdmag) - numel(accum) , 1 ) ];
+    accum = reshape( accum, size(grdmag) );
+    
+    % Smooth the accumulation array
+    fltr4accum = fltr4accum / sum(fltr4accum(:));
+    accum = filter2( fltr4accum, accum );
 end
-
-% Compute the gradient and the magnitude of gradient
-if img_is_double,
-    [grdx, grdy] = gradient(img);
-else
-    [grdx, grdy] = gradient(imgf);
-end
-grdmag = sqrt(grdx.^2 + grdy.^2);
-
-% Get the linear indices, as well as the subscripts, of the pixels
-% whose gradient magnitudes are larger than the given threshold
-prm_grdthres=prm_grdthres*max(grdmag(:));
-grdmasklin = find(grdmag > prm_grdthres);
-[grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
-
-% Compute the linear indices (as well as the subscripts) of
-% all the votings to the accumulation array.
-% The Matlab function 'accumarray' accepts only double variable,
-% so all indices are forced into double at this point.
-% A row in matrix 'lin2accum_aJ' contains the J indices (into the
-% accumulation array) of all the votings that are introduced by a
-% same pixel in the image. Similarly with matrix 'lin2accum_aI'.
-rr_4linaccum = double( prm_r_range );
-linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
-    (rr_4linaccum(1) + 0.5) : rr_4linaccum(2) ];
-
-lin2accum_aJ = floor( ...
-    double(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-    repmat( double(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
-    );
-lin2accum_aI = floor( ...
-    double(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-    repmat( double(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
-    );
-
-% Clip the votings that are out of the accumulation array
-mask_valid_aJaI = ...
-    lin2accum_aJ > 0 & lin2accum_aJ < (size(grdmag,2) + 1) & ...
-    lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
-
-mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
-lin2accum_aJ = lin2accum_aJ .* mask_valid_aJaI + mask_valid_aJaI_reverse;
-lin2accum_aI = lin2accum_aI .* mask_valid_aJaI + mask_valid_aJaI_reverse;
-clear mask_valid_aJaI_reverse;
-
-% Linear indices (of the votings) into the accumulation array
-lin2accum = sub2ind( size(grdmag), lin2accum_aI, lin2accum_aJ );
-
-lin2accum_size = size( lin2accum );
-lin2accum = reshape( lin2accum, [numel(lin2accum),1] );
-clear lin2accum_aI lin2accum_aJ;
-
-% Weights of the votings, currently using the gradient maginitudes
-% but in fact any scheme can be used (application dependent)
-weight4accum = ...
-    repmat( double(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
-    mask_valid_aJaI(:);
-clear mask_valid_aJaI;
-
-% Build the accumulation array using Matlab function 'accumarray'
-accum = accumarray( lin2accum , weight4accum );
-accum = [ accum ; zeros( numel(grdmag) - numel(accum) , 1 ) ];
-accum = reshape( accum, size(grdmag) );
-
 
 %%%%%%%% Locating local maxima in the accumulation array %%%%%%%%%%%%
 
@@ -705,9 +712,7 @@ prm_fltrLM_npix = max([ 6, ceil((prm_fltrLM_R/2)^1.8) ]);
 % -- Lower bound of the intensity of local maxima
 prm_LM_LoBndRa = 0.2;  % minimum ratio of LM to the max of 'accum'
 
-% Smooth the accumulation array
-fltr4accum = fltr4accum / sum(fltr4accum(:));
-accum = filter2( fltr4accum, accum );
+
 
 % Select a number of Areas-Of-Interest from the accumulation array
 if prm_useaoi,
@@ -742,25 +747,6 @@ else
     accumAOI = [1, size(accum,1), 1, size(accum,2)];
 end
 
-% Thresholding of 'accum' by a lower bound
-prm_LM_LoBnd = max(accum(:)) * prm_LM_LoBndRa;
-
-% Build the filter for searching for local maxima
-fltr4LM = zeros(2 * prm_fltrLM_R + 1);
-
-[mesh4fLM_x, mesh4fLM_y] = meshgrid(-prm_fltrLM_R : prm_fltrLM_R);
-mesh4fLM_r = sqrt( mesh4fLM_x.^2 + mesh4fLM_y.^2 );
-fltr4LM_mask = ...
-    ( mesh4fLM_r > prm_fltrLM_r & mesh4fLM_r <= prm_fltrLM_R );
-fltr4LM = fltr4LM - ...
-    fltr4LM_mask * (prm_fltrLM_s / sum(fltr4LM_mask(:)));
-
-if prm_fltrLM_R >= 4,
-    fltr4LM_mask = ( mesh4fLM_r < (prm_fltrLM_r - 1) );
-else
-    fltr4LM_mask = ( mesh4fLM_r < prm_fltrLM_r );
-end
-fltr4LM = fltr4LM + fltr4LM_mask / sum(fltr4LM_mask(:));
 
 % **** Debug code (begin)
 if dbg_on,
@@ -773,25 +759,8 @@ circen = zeros(0,2);
 for k = 1 : size(accumAOI, 1),
     aoi = accumAOI(k,:);    % just for referencing convenience
     % Thresholding of 'accum' by a lower bound
-    accumaoi_LBMask = ...
-        ( accum(aoi(1):aoi(2), aoi(3):aoi(4)) > prm_LM_LoBnd );
     
-    % Apply the local maxima filter
-    candLM = conv2( accum(aoi(1):aoi(2), aoi(3):aoi(4)) , ...
-        fltr4LM , 'same' );
-    candLM_mask = ( candLM > 0 );
     
-    % Clear the margins of 'candLM_mask'
-    candLM_mask([1:prm_fltrLM_R, (end-prm_fltrLM_R+1):end], :) = 0;
-    candLM_mask(:, [1:prm_fltrLM_R, (end-prm_fltrLM_R+1):end]) = 0;
-    
-    % **** Debug code (begin)
-    if dbg_on,
-        dbg_LMmask(aoi(1):aoi(2), aoi(3):aoi(4)) = ...
-            dbg_LMmask(aoi(1):aoi(2), aoi(3):aoi(4)) + ...
-            accumaoi_LBMask + 2 * candLM_mask;
-    end
-    % **** Debug code (end)
     
     candLM_mask=mattmask;
     % Group the local maxima candidates by adjacency, compute the
@@ -829,18 +798,6 @@ for k = 1 : size(accumAOI, 1),
         circen = [circen; cc_x, cc_y];
     end
 end
-
-% **** Debug code (begin)
-if dbg_on,
-    figure(dbg_bfigno); imagesc(dbg_LMmask); axis image;
-    title('Generated map of local maxima');
-    if size(accumAOI, 1) == 1,
-        figure(dbg_bfigno+1);
-        surf(candLM, 'EdgeColor', 'none'); axis ij;
-        title('Accumulation array after local maximum filtering');
-    end
-end
-% **** Debug code (end)
 
 
 %%%%%%%% Estimation of the Radii of Circles %%%%%%%%%%%%

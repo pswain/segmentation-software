@@ -138,8 +138,8 @@ for timepoint=cTimelapse.timepointsToProcess
                     for i=1:size(dist,2)
                         [val loc]=min(dist(:));
                         [row col]=ind2sub(size(dist),loc);
-                        
-%                         if trap==18 && timepoint==42
+%                         
+%                         if trap==11 && timepoint==77
 %                             b=1;
 %                         end
                         

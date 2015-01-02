@@ -5,7 +5,7 @@ function correctSkippedFramesInf(cExperiment,type)
 %accident;
 
 if nargin<2
-    type='norm'
+    type='norm';
 end
 
 for nSkip=1:1
@@ -108,13 +108,13 @@ for nSkip=1:1
             b(locSkipped)=temp;
             cellInf.imBackground=sparse(b);
             
-            if isfield(cExperiment.cellInf,'radiusFL')
+            if isfield(cellInf,'radiusFL')
                 temp=(cExperiment.cellInf(channel).radiusFL(locSkippedPre)+cExperiment.cellInf(channel).radiusFL(locSkippedPost))./2;
                 b=full(cellInf.radiusFL);
                 b(locSkipped)=temp;
                 cellInf.radiusFL=sparse(b);
             end
-            if isfield(cExperiment.cellInf,'nuclearTagLoc')
+            if isfield(cellInf,'nuclearTagLoc')
                 temp=(cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPre)+cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPost))./2;
                 b=full(cellInf.nuclearTagLoc);
                 b(locSkipped)=temp;

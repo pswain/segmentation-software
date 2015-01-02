@@ -15,4 +15,4 @@ for i=1:size(data,2)
     newData(loc,i)=temp(loc);
 end
 
-newData(newData==0)=NaN;
+% newData(newData==0)=NaN;

@@ -79,6 +79,8 @@ if sum(loc)>0
                 timepointIm=max(timepointIm,[],3);
             case 'stack'
                 timepointIm=timepointIm;
+            case 'sum'
+                timepointIm=sum(timepointIm,3);
         end
         
         
@@ -146,7 +148,14 @@ else
 end
 
 if image_rotation~=0
-    timepointIm=imrotate(timepointIm,image_rotation,'bilinear','loose');
+    medVal=median(timepointIm(:));
+    bbN=200;
+    tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
+    tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
+    tpImtemp(tpImtemp==0)=medVal;
+        timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+
+    
 end
 
 if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})

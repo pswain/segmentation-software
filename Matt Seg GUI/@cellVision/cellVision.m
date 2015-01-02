@@ -5,6 +5,7 @@ classdef cellVision<handle
         cPatchParameters
         SVMModel
         SVMModelLinear
+        SVMModelGPU
         twoStageThresh
         scaling
         trainingData
@@ -59,8 +60,8 @@ classdef cellVision<handle
         
         %to classify an image
         [predicted_im decision_im filtered_image]=classifyImage(cCellSVM,image);
-        [predicted_im decision_im filtered_image]=classifyImageLinear(cCellSVM,image);
-        [predicted_im decision_im filtered_image]=classifyImage2Stage(cCellSVM,image);
+        [predicted_im decision_im filtered_image]=classifyImageLinear(cCellSVM,image,trapOutline);
+        [predicted_im decision_im filtered_image]=classifyImage2Stage(cCellSVM,image,trapOutline);
         filt_feat=createImFilterSetCellTrap(cCellSVM,image);
         filt_feat=createImFilterSetCellAsic(cCellSVM,image);
         [block cell]=createHOGFeaturesTraps(cCellSVM,image);

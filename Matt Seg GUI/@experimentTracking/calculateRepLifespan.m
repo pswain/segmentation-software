@@ -48,9 +48,8 @@ nValue=sum(motherLoc);
 if isfield(cExperiment.lineageInfo.motherInfo,'birthTimeHMM') && ~isempty(cExperiment.lineageInfo.motherInfo.birthTimeHMM)
     numBirths=sum(cExperiment.lineageInfo.motherInfo.birthTimeHMM>0,2);
     maxBirths=numBirths(motherLoc);
-    for i=1:max(maxBirths)
-        lifespan(i)=sum(maxBirths>i);
-    end
+    x=1:max(maxBirths);
+    lifespan=sum(repmat(maxBirths,[1 length(x)]) > repmat(x,[length(maxBirths) 1]));
     
     %below calculates statistics for the RLS curves like mean/median
     %lifespan using censored data
@@ -58,7 +57,14 @@ if isfield(cExperiment.lineageInfo.motherInfo,'birthTimeHMM') && ~isempty(cExper
     medRepTime=median(repTime(repTime>0));
     lastBirth=max(cExperiment.lineageInfo.motherInfo.birthTimeHMM,[],2);
     lastBirthToEnd=cExperiment.lineageInfo.motherInfo.motherStartEnd(:,2)-lastBirth;
-    censor=lastBirthToEnd<censorCutoff*medRepTime;
+    
+    %assume that if the censor value is <10, want it in terms of the number
+    %of median replications, otherwise, want the raw timepoints
+    if censorCutoff<6
+        censor=lastBirthToEnd<censorCutoff*medRepTime;
+    else
+            censor=lastBirthToEnd<censorCutoff;
+    end
     censorMother=censor(motherLoc);
     [f,x,flo,fup] = ecdf(maxBirths,'Censoring',censorMother>0,'function','survivor','alpha',.05,'bounds','on');
     %     figure(1);stairs(x,f,'LineWidth',2);title(['n= ' num2str(length(maxBirths')) ' Median births ' num2str(median(maxBirths)) ' KM median ' num2str(medianLife) ])
@@ -111,7 +117,15 @@ repTime=diff(birthTimesRemovedDuplicates,1,2);
 medRepTime=median(repTime(repTime>0));
 lastBirth=max(birthTimesRemovedDuplicates,[],2);
 lastBirthToEnd=cExperiment.lineageInfo.motherInfo.motherStartEnd(:,2)-lastBirth;
-censor=lastBirthToEnd<censorCutoff*medRepTime;
+
+%assume that if the censor value is <10, want it in terms of the number
+%of median replications, otherwise, want the raw timepoints
+if censorCutoff<6
+    censor=lastBirthToEnd<censorCutoff*medRepTime;
+else
+    censor=lastBirthToEnd<censorCutoff;
+end
+
 censorMother=censor(motherLoc);
 [f,x,flo,fup] = ecdf(maxBirths,'Censoring',censorMother>0,'function','survivor','alpha',.05,'bounds','on');
 

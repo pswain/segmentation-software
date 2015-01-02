@@ -31,7 +31,7 @@ if ~isempty(pt1) && ~isempty(pt2)
 
 %         temp(loc)=temp(loc).^2;
 %         temp(loc)=(temp(loc).^2)*1.5;
-        temp(loc)=(tempFracShrink(loc).^2);%*1.5;
+        temp(loc)=(tempFracShrink(loc).^1.8);%*1.5;
 
     end
     if find(temp2>1)
