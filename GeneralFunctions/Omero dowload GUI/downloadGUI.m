@@ -1,4 +1,4 @@
-function  [folder omeroDs]=downloadGUI(singleDs, singlePos)
+function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
     %GUI function for downloading data from the Omero database. 'single' is a logical input.
     %If 'singleDs' is true - only one dataaset will be downloaded - to the folder specified by
     %the output variable 'folder', which is a string.
@@ -21,16 +21,24 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos)
     %Load the latest version of the OmeroDatabase object - this has all the
     %recorded contents of the database - much more convenient than querying the
     %database itself
+    
     SavePath='/Volumes/AcquisitionData2/Swain Lab/Ivan/software in progress/omeroinfo_donottouch/dbInfo.mat';%Path to the saved object representing the current state of the database
+    if nargin>2
+        if strcmp(server,'skye.bio.ed.ac.uk')
+            SavePath='/Volumes/AcquisitionData2/Swain Lab/Ivan/software in progress/omeroinfo_donottouch/dbInfoSkye.mat';%Path to the saved object representing the current state of the database
+        end
+    end
     if ~exist(SavePath)==2
         error('Omero code not found - make sure you are connected to the microscope computer (129.215.109.100)');
     end
     load(SavePath);
+    obj=obj2;
 
     %Prepare the path
     addpath(genpath('/Volumes/AcquisitionData2/Swain Lab/OmeroCode'));
     OmeroDatabase.preparePath;
-    obj2=obj2.login;
+    obj=obj.login;
+    obj2=obj;
     %Parse the important info into cell arrays
     handles.downloadDialog=figure('Units','Normalized','Position',[0.2815 0.3444 0.5756 0.5263],'MenuBar','None', 'NumberTitle', 'Off', 'Name', 'Omero database download');
     %set(handles.downloadDialog('WindowStyle','Modal'); %Uncomment this when finished
