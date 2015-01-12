@@ -7,6 +7,7 @@ end
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
+    fprintf('selecting cells for position %s\n',cExperiment.dirs{currentPos})
     load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
     cTrapDisplayPlot(cTimelapse,cCellVision);
     

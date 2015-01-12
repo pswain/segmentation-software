@@ -1,5 +1,6 @@
 function compileCellInformation(cExperiment,positionsToExtract)
-
+%compileCellInformation(cExperiment,positionsToExtract)
+%
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved
 %Timelapses. If method is 'update', it finds the cells that have been added
@@ -18,9 +19,27 @@ experimentPos=positionsToExtract(1);
 load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
-[cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
+[cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
+
+% %%alternative if anyone ever wants to implement it
+% 
+% for i=1:length(cExperiment.cellInf)
+%     field_names = fieldnames(cExperiment.cellInf);
+%     for fi = 1:length(field_names)
+%         fn = field_names{fi};
+%         cExperiment.cellInf(i).(fn)=sparse(tempLen,size(cExperiment.cellInf(i).(fn),2));
+%     end
+% end
+% 
+% %then similarly over positions to compile
+% %Elco
+
 
 tempLen=50e3;
+membraneData=isfield(cExperiment.cellInf(1),'membraneMedian');
+radiusFLData=isfield(cExperiment.cellInf(1),'radiusFL');
+segmentedRadiusData=isfield(cExperiment.cellInf(1),'segmentedRadius');
+
 for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).mean=sparse(tempLen,size(cExperiment.cellInf(i).mean,2));
     cExperiment.cellInf(i).median=sparse(tempLen,size(cExperiment.cellInf(i).median,2));
@@ -35,11 +54,23 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).xloc=sparse(tempLen,size(cExperiment.cellInf(i).xloc,2));
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
     cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));
+    cExperiment.cellInf(i).pixel_sum= sparse(tempLen,size(cExperiment.cellInf(i).pixel_sum,2));
+    cExperiment.cellInf(i).pixel_variance_estimate= sparse(tempLen,size(cExperiment.cellInf(i).pixel_variance_estimate,2));
+
+    if membraneData
+        cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
+        cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
+        cExperiment.cellInf(i).nuclearTagLoc= sparse(tempLen,size(cExperiment.cellInf(i).nuclearTagLoc,2));
+    end
     
-    cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
-    cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
-    cExperiment.cellInf(i).nuclearTagLoc= sparse(tempLen,size(cExperiment.cellInf(i).nuclearTagLoc,2)); 
+    if radiusFLData
+        cExperiment.cellInf(i).radiusFL= sparse(tempLen,size(cExperiment.cellInf(i).radiusFL,2));
+    end
     
+
+    if segmentedRadiusData
+        cExperiment.cellInf(i).segmentedRadius= sparse(tempLen,size(cExperiment.cellInf(i).segmentedRadius,2));
+    end
     
 % 
 %     cExperiment.cellInf(i).mean=zeros(tempLen,size(cExperiment.cellInf(i).mean,2),size(cExperiment.cellInf(i).mean,3));
@@ -66,7 +97,7 @@ for i=1:length(positionsToExtract)
     cTimelapse=cExperiment.returnTimelapse(experimentPos);
     dim=1;
     if max(cTimelapse.timepointsProcessed)>0
-        for j=1:length(cTimelapse.channelNames)
+        for j=1:length(cTimelapse.extractedData)
             temp=cTimelapse.extractedData(j).mean;
             cExperiment.cellInf(j).mean(index+1:index+size(temp,1),1:size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).median;
@@ -83,15 +114,28 @@ for i=1:length(positionsToExtract)
             temp=cTimelapse.extractedData(j).smallmax5;
             cExperiment.cellInf(j).smallmax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
-            temp=cTimelapse.extractedData(j).membraneMedian; 
-            cExperiment.cellInf(j).membraneMedian(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            if membraneData
+                temp=cTimelapse.extractedData(j).membraneMedian;
+                cExperiment.cellInf(j).membraneMedian(index+1:index+size(temp,1),1:size(temp,2))=temp;
                 
-            temp=cTimelapse.extractedData(j).membraneMax5; 
-            cExperiment.cellInf(j).membraneMax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                temp=cTimelapse.extractedData(j).membraneMax5;
+                cExperiment.cellInf(j).membraneMax5(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                
+                temp=cTimelapse.extractedData(j).nuclearTagLoc;
+                cExperiment.cellInf(j).nuclearTagLoc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
             
-            temp=cTimelapse.extractedData(j).nuclearTagLoc; 
-            cExperiment.cellInf(j).nuclearTagLoc(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
+            if radiusFLData
+                temp=cTimelapse.extractedData(j).radiusFL;
+                cExperiment.cellInf(j).radiusFL(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+            
+            if segmentedRadiusData
+                temp=cTimelapse.extractedData(j).segmentedRadius;
+                cExperiment.cellInf(j).segmentedRadius(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+
             
             temp=cTimelapse.extractedData(j).imBackground;
             cExperiment.cellInf(j).imBackground(index+1:index+size(temp,1),1:size(temp,2))=temp;
@@ -106,11 +150,21 @@ for i=1:length(positionsToExtract)
             cExperiment.cellInf(j).yloc(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
             temp=cTimelapse.extractedData(j).trapNum;
-            cExperiment.cellInf(j).trapNum(index+1:index+length(temp))=temp;
+            cExperiment.cellInf(j).trapNum(index+1:index+size(temp,2))=temp;
             temp=cTimelapse.extractedData(j).cellNum;
-            cExperiment.cellInf(j).cellNum(index+1:index+length(temp))=temp;
+            cExperiment.cellInf(j).cellNum(index+1:index+size(temp,2))=temp;
             
-            cExperiment.cellInf(j).posNum(index+1:index+length(temp))=experimentPos;
+            
+            temp=cTimelapse.extractedData(j).pixel_sum;
+            cExperiment.cellInf(j).pixel_sum(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            temp=cTimelapse.extractedData(j).pixel_variance_estimate;
+            cExperiment.cellInf(j).pixel_variance_estimate(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            
+            temp=cTimelapse.extractedData(j).area;
+            cExperiment.cellInf(j).area(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            
+            
+            cExperiment.cellInf(j).posNum(index+1:index+size(temp,1))=experimentPos;
         end
         index=index+size(cTimelapse.extractedData(j).xloc,1);
     end
@@ -128,15 +182,27 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).min(index+1:end,:)=[];
     cExperiment.cellInf(i).imBackground(index+1:end,:)=[];
     
-    cExperiment.cellInf(i).membraneMedian(index+1:end,:)=[];
-    cExperiment.cellInf(i).membraneMax5(index+1:end,:)=[];
-
-    cExperiment.cellInf(i).nuclearTagLoc(index+1:end,:)=[];
+    if membraneData
+        cExperiment.cellInf(i).membraneMedian(index+1:end,:)=[];
+        cExperiment.cellInf(i).membraneMax5(index+1:end,:)=[];
+        cExperiment.cellInf(i).nuclearTagLoc(index+1:end,:)=[];
+    end
+    
+    if radiusFLData
+        cExperiment.cellInf(i).radiusFL(index+1:end,:)=[];
+    end
+    
+    if segmentedRadiusData
+        cExperiment.cellInf(i).segmentedRadius(index+1:end,:)=[];
+    end
     
     cExperiment.cellInf(i).radius(index+1:end,:)=[];
     cExperiment.cellInf(i).xloc(index+1:end,:)=[];
     cExperiment.cellInf(i).yloc(index+1:end,:)=[];
     
+    cExperiment.cellInf(i).area(index+1:end,:)=[];
+    cExperiment.cellInf(i).pixel_sum(index+1:end,:)=[];
+    cExperiment.cellInf(i).pixel_variance_estimate(index+1:end,:)=[];
     cExperiment.cellInf(i).area(index+1:end,:)=[];
 end
 

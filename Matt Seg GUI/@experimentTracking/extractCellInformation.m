@@ -1,4 +1,6 @@
-function extractCellInformation(cExperiment,positionsToExtract,type)
+function extractCellInformation(cExperiment,positionsToExtract,type,channels)
+% extractCellInformation(cExperiment,positionsToExtract,type,channels)
+
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved
@@ -28,9 +30,14 @@ for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %
+    
+    if nargin<4 || isempty(channels)
+        channels = 1:length(cTimelapse.channelNames);
+    end
+    
     switch type
         case {'max','all','std'} 
-            cTimelapse.extractCellData(type);
+            cTimelapse.extractCellData(type,channels);
         case {'b','basic'}
             cTimelapse.extractCellParamsOnly();
     end

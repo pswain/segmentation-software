@@ -29,7 +29,7 @@ switch selection
             cTimelapse.identifyCellObjects(cCellVision,timepoint,trap,channel,method,bw);
         end
     case 'remove'
-        try
+        
             pts=[];
             
             circen=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellCenter];
@@ -43,10 +43,19 @@ switch selection
                 
                 if length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)>1
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(loc)=[];
+                    if ~isempty(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel)
+                        cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc)=[];
+                        
+                    end
                 else
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);
+                    cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
+
+                    cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel=[];
+                        
+
                 end
                 %                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellRadius(loc)=[];
                 %                 if size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented,3)>1
@@ -59,12 +68,13 @@ switch selection
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);
+                cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
             end
 %         catch
 %             cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented(:,:,1)))>1;
 %             cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellCenters=[];
 %             cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellRadius=[];
-        end
+
         
     case 'addPlot'
         bw=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented(:,:,1)));

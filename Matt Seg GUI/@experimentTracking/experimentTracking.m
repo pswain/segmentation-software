@@ -48,10 +48,11 @@ classdef experimentTracking<handle
             index=1;
             for i=1:length(tempdir)
                 if tempdir(i).isdir
-                    if index>2
-                        cExperiment.dirs{index-2}=tempdir(i).name;
+                    if ~strcmp(tempdir(i).name(1),'.')
+                        cExperiment.dirs{index}=tempdir(i).name;
+                        index=index+1;
                     end
-                    index=index+1;
+                    
                 end
             end
             cExperiment.cellsToPlot=cell(1);
@@ -61,25 +62,25 @@ classdef experimentTracking<handle
         %functions for loading data and then processing to identify and
         %track the traps
         createTimelapsePositions(cExperiment,searchString,positionsToLoad,magnification,image_rotation,trapsPresent,timepointsToLoad);
-        identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify);
+        identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo);
         segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
         visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
         trackCells(cExperiment,positionsToTrack,cellMovementThresh)       
         selectTPToProcess(cExperiment,positions);
-        combineTracklets(cExperiment,positions);
+        combineTracklets(cExperiment,positions,params);
         
         selectCellsToPlot(cExperiment,cCellVision,position);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
         correctSkippedFramesInf(cExperiment,type);
         
-        extractCellInformation(cExperiment,positionsToExtract,type);
+        extractCellInformation(cExperiment,positionsToExtract,type,channels);
         compileCellInformation(cExperiment,positions);
         compileCellInformationParamsOnly(cExperiment,positions);
         
         cTimelapse=returnTimelapse(cExperiment,timelapseNum);
         saveTimelapseExperiment(cExperiment,currentPos);
-        saveExperiment(cExperiment);
+        saveExperiment(cExperiment,fileName);
         plotCellInformation(cExperiment,position);
     end
 end

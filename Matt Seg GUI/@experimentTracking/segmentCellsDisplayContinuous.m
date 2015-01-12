@@ -12,9 +12,10 @@ while (~finishedSeg)
         load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
         cExperiment.currentDir=cExperiment.dirs{currentPos};
         tempy=cTimelapse.addTimepoints;
+        newTP=length(cTimelapse.timepointsToProcess)>sum(cTimelapse.timepointsProcessed);
         newTP=tempy|newTP;
         cExperiment.cTimelapse=cTimelapse;
-        if cExperiment.trackTrapsOverwrite & tempy
+        if cExperiment.trackTrapsOverwrite & newTP
             tp=1:length(cExperiment.cTimelapse.cTimepoint);
 %             tp(cExperiment.cTimelapse.timepointsProcessed(1:end-5)>0)=[];
             cTimelapse.trackTrapsThroughTime(cCellVision,tp);

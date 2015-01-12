@@ -4,79 +4,113 @@ function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints)
 if nargin<3 || isempty(timepoints)
     timepoints=1:length(cTimelapse.cTimepoint);
 end
-
+tic
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-bb=30;
-accumCol=0;
-accumRow=0;
-regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
-regIm=double(regIm);
-regIm=regIm(bb:end-bb,bb:end-bb);
-timepointReg=timepoints(1);
-for i=2:length(timepoints)
-    
-
-    
-        timepoint=timepoints(i);
-    newIm=cTimelapse.returnSingleTimepoint(timepoint);
-    newIm=double(newIm);
-    newIm=newIm/median(newIm(:))*median(regIm(:));
-    newIm=newIm(bb:end-bb,bb:end-bb);
-%     newIm=padarray(newIm,[bb bb],median(newIm(:)));
-    [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
-
-    
-    colDif=output(4);
-    rowDif=output(3);
-    
-    %correction for case of huge (innacurate moves)
-    if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
-        colDif=accumCol;
-    end
-    if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_height*1/2
-        rowDif=accumRow;
-    end
-    
-    accumCol = colDif;
-    accumRow = rowDif;
-
-    
-    xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
-    yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
-    
-    xloc(xloc<1) = 1;
-    xloc(xloc>cTimelapse.imSize(2)) = cTimelapse.imSize(2);
-    yloc(yloc<1) = 1;
-    yloc(yloc>cTimelapse.imSize(1)) = cTimelapse.imSize(1);
-    
-    cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
-    
-    xlocCELL=num2cell(xloc);
-    ylocCELL = num2cell(yloc);
 
 
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
-    
-    if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
-        regIm=newIm;
-        timepointReg=timepoints(i);
-        accumCol = 0;
-        accumRow = 0;
-    end
-    
-    waitbar(timepoint/timepoints(end));
-
-%     if rem(timepoint,1e3)==0
-%         regIm=newIm;
-%         accumCol=output(4)+accumCol;
-%         accumRow=output(3)+accumRow;
-%         timepointReg=timepoint;
-%     end
+%for initialising trapInfo
+if cTimelapse.trapsPresent
+    data_template = sparse(false(size(cCellVision.cTrap.trap1)));
+else
+    data_template = sparse(false(cTimelapse.imSize));
 end
+
+trapInfo_struct=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
+    'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
+
+if cTimelapse.trapsPresent
+    
+    
+    bb=30;
+    accumCol=0;
+    accumRow=0;
+    regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
+    regIm=double(regIm);
+    regIm=regIm(bb:end-bb,bb:end-bb);
+regImFft=fft2(regIm);
+    timepointReg=timepoints(1);
+    
+    
+    trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
+    
+    
+    for i=2:length(timepoints)
+        
+        
+        
+    timepoint=timepoints(i);
+        newIm=cTimelapse.returnSingleTimepoint(timepoint);
+        newIm=double(newIm);
+        newIm=newIm/median(newIm(:))*median(regIm(:));
+        newIm=newIm(bb:end-bb,bb:end-bb);
+        %     newIm=padarray(newIm,[bb bb],median(newIm(:)));
+    [output ~] = dftregistration(regImFft,fft2(newIm),1);
+%     [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
+
+        
+        
+        colDif=output(4);
+        rowDif=output(3);
+        
+        %correction for case of huge (innacurate moves)
+        if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
+            colDif=accumCol;
+        end
+        if abs(rowDif-accumRow)>cTimelapse.cTrapSize.bb_height*1/2
+            rowDif=accumRow;
+        end
+        
+        accumCol = colDif;
+        accumRow = rowDif;
+        
+        
+        xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
+        yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
+        
+        xloc(xloc<1) = 1;
+        xloc(xloc>cTimelapse.imSize(2)) = cTimelapse.imSize(2);
+        yloc(yloc<1) = 1;
+        yloc(yloc>cTimelapse.imSize(1)) = cTimelapse.imSize(1);
+        
+        cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
+        
+        xlocCELL=num2cell(xloc);
+        ylocCELL = num2cell(yloc);
+        
+        
+        [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
+        [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
+        
+        cTimelapse.cTimepoint(timepoint).trapInfo = trapInfo_struct;
+        
+        if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
+            regIm=newIm;
+        regImFft=fft2(regIm);
+            timepointReg=timepoints(i);
+            accumCol = 0;
+            accumRow = 0;
+        end
+        
+        waitbar(timepoint/timepoints(end));
+        
+        %     if rem(timepoint,1e3)==0
+        %         regIm=newIm;
+        %         accumCol=output(4)+accumCol;
+        %         accumRow=output(3)+accumRow;
+        %         timepointReg=timepoint;
+        %     end
+    end
+    
+else
+    [cTimelapse.cTimepoint(timepoints).trapLocations] = deal(struct('xcenter',0,'ycenter',0));
+    [cTimelapse.cTimepoint(timepoints).trapInfo] = deal(trapInfo_struct);
+    
+end
+toc
 close(h)
-end
 
+
+end
 function old2()
 
 
@@ -110,7 +144,7 @@ for i=2:length(timepoints)
     meanDX=mean(xdiff(ix(1:round(length(ix)*.8))),2);
     [~, ix]=sort(abs(ydiff),'ascend');
     meanDY=mean(ydiff(ix(1:round(length(ix)*.8))),2);
-
+    
     xloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).xcenter]+meanDX;
     yloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).ycenter]+meanDY;
     
@@ -120,7 +154,7 @@ for i=2:length(timepoints)
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
     ylocCELL = num2cell(yloc);
     [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
-
+    
     
 end
 close(h)
@@ -169,31 +203,31 @@ function [output Greg] = dftregistration(buf1ft,buf2ft,usfac)
 % function [output Greg] = dftregistration(buf1ft,buf2ft,usfac);
 % Efficient subpixel image registration by crosscorrelation. This code
 % gives the same precision as the FFT upsampled cross correlation in a
-% small fraction of the computation time and with reduced memory 
+% small fraction of the computation time and with reduced memory
 % requirements. It obtains an initial estimate of the crosscorrelation peak
 % by an FFT and then refines the shift estimation by upsampling the DFT
-% only in a small neighborhood of that estimate by means of a 
+% only in a small neighborhood of that estimate by means of a
 % matrix-multiply DFT. With this procedure all the image points are used to
 % compute the upsampled crosscorrelation.
 % Manuel Guizar - Dec 13, 2007
 
-% Portions of this code were taken from code written by Ann M. Kowalczyk 
-% and James R. Fienup. 
-% J.R. Fienup and A.M. Kowalczyk, "Phase retrieval for a complex-valued 
-% object by using a low-resolution image," J. Opt. Soc. Am. A 7, 450-458 
+% Portions of this code were taken from code written by Ann M. Kowalczyk
+% and James R. Fienup.
+% J.R. Fienup and A.M. Kowalczyk, "Phase retrieval for a complex-valued
+% object by using a low-resolution image," J. Opt. Soc. Am. A 7, 450-458
 % (1990).
 
 % Citation for this algorithm:
-% Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup, 
-% "Efficient subpixel image registration algorithms," Opt. Lett. 33, 
+% Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup,
+% "Efficient subpixel image registration algorithms," Opt. Lett. 33,
 % 156-158 (2008).
 
 % Inputs
-% buf1ft    Fourier transform of reference image, 
+% buf1ft    Fourier transform of reference image,
 %           DC in (1,1)   [DO NOT FFTSHIFT]
-% buf2ft    Fourier transform of image to register, 
+% buf2ft    Fourier transform of image to register,
 %           DC in (1,1) [DO NOT FFTSHIFT]
-% usfac     Upsampling factor (integer). Images will be registered to 
+% usfac     Upsampling factor (integer). Images will be registered to
 %           within 1/usfac of a pixel. For example usfac = 20 means the
 %           images will be registered within 1/20 of a pixel. (default = 1)
 
@@ -211,16 +245,16 @@ if exist('usfac')~=1, usfac=1; end
 
 % Compute error for no pixel shift
 if usfac == 0,
-    CCmax = sum(sum(buf1ft.*conj(buf2ft))); 
+    CCmax = sum(sum(buf1ft.*conj(buf2ft)));
     rfzero = sum(abs(buf1ft(:)).^2);
-    rgzero = sum(abs(buf2ft(:)).^2); 
-    error = 1.0 - CCmax.*conj(CCmax)/(rgzero*rfzero); 
+    rgzero = sum(abs(buf2ft(:)).^2);
+    error = 1.0 - CCmax.*conj(CCmax)/(rgzero*rfzero);
     error = sqrt(abs(error));
-    diffphase=atan2(imag(CCmax),real(CCmax)); 
+    diffphase=atan2(imag(CCmax),real(CCmax));
     output=[error,diffphase];
-        
-% Whole-pixel shift - Compute crosscorrelation by an IFFT and locate the
-% peak
+    
+    % Whole-pixel shift - Compute crosscorrelation by an IFFT and locate the
+    % peak
 elseif usfac == 1,
     [m,n]=size(buf1ft);
     CC = ifft2(buf1ft.*conj(buf2ft));
@@ -228,20 +262,20 @@ elseif usfac == 1,
     [max2,loc2] = max(max1);
     rloc=loc1(loc2);
     cloc=loc2;
-    CCmax=CC(rloc,cloc); 
+    CCmax=CC(rloc,cloc);
     rfzero = sum(abs(buf1ft(:)).^2)/(m*n);
-    rgzero = sum(abs(buf2ft(:)).^2)/(m*n); 
+    rgzero = sum(abs(buf2ft(:)).^2)/(m*n);
     error = 1.0 - CCmax.*conj(CCmax)/(rgzero(1,1)*rfzero(1,1));
     error = sqrt(abs(error));
-    diffphase=atan2(imag(CCmax),real(CCmax)); 
-    md2 = fix(m/2); 
+    diffphase=atan2(imag(CCmax),real(CCmax));
+    md2 = fix(m/2);
     nd2 = fix(n/2);
     if rloc > md2
         row_shift = rloc - m - 1;
     else
         row_shift = rloc - 1;
     end
-
+    
     if cloc > nd2
         col_shift = cloc - n - 1;
     else
@@ -249,7 +283,7 @@ elseif usfac == 1,
     end
     output=[error,diffphase,row_shift,col_shift];
     
-% Partial-pixel shift
+    % Partial-pixel shift
 else
     
     % First upsample by a factor of 2 to obtain initial estimate
@@ -260,8 +294,8 @@ else
     CC=zeros(mlarge,nlarge);
     CC(m+1-fix(m/2):m+1+fix((m-1)/2),n+1-fix(n/2):n+1+fix((n-1)/2)) = ...
         fftshift(buf1ft).*conj(fftshift(buf2ft));
-  
-    % Compute crosscorrelation and locate the peak 
+    
+    % Compute crosscorrelation and locate the peak
     CC = ifft2(ifftshift(CC)); % Calculate cross-correlation
     [max1,loc1] = max(CC);
     [max2,loc2] = max(max1);
@@ -269,9 +303,9 @@ else
     CCmax=CC(rloc,cloc);
     
     % Obtain shift in original pixel grid from the position of the
-    % crosscorrelation peak 
+    % crosscorrelation peak
     [m,n] = size(CC); md2 = fix(m/2); nd2 = fix(n/2);
-    if rloc > md2 
+    if rloc > md2
         row_shift = rloc - m - 1;
     else
         row_shift = rloc - 1;
@@ -283,31 +317,31 @@ else
     end
     row_shift=row_shift/2;
     col_shift=col_shift/2;
-
+    
     % If upsampling > 2, then refine estimate with matrix multiply DFT
     if usfac > 2,
         %%% DFT computation %%%
         % Initial shift estimate in upsampled grid
-        row_shift = round(row_shift*usfac)/usfac; 
-        col_shift = round(col_shift*usfac)/usfac;     
+        row_shift = round(row_shift*usfac)/usfac;
+        col_shift = round(col_shift*usfac)/usfac;
         dftshift = fix(ceil(usfac*1.5)/2); %% Center of output array at dftshift+1
         % Matrix multiply DFT around the current shift estimate
         CC = conj(dftups(buf2ft.*conj(buf1ft),ceil(usfac*1.5),ceil(usfac*1.5),usfac,...
             dftshift-row_shift*usfac,dftshift-col_shift*usfac))/(md2*nd2*usfac^2);
-        % Locate maximum and map back to original pixel grid 
-        [max1,loc1] = max(CC);   
-        [max2,loc2] = max(max1); 
+        % Locate maximum and map back to original pixel grid
+        [max1,loc1] = max(CC);
+        [max2,loc2] = max(max1);
         rloc = loc1(loc2); cloc = loc2;
         CCmax = CC(rloc,cloc);
         rg00 = dftups(buf1ft.*conj(buf1ft),1,1,usfac)/(md2*nd2*usfac^2);
-        rf00 = dftups(buf2ft.*conj(buf2ft),1,1,usfac)/(md2*nd2*usfac^2);  
+        rf00 = dftups(buf2ft.*conj(buf2ft),1,1,usfac)/(md2*nd2*usfac^2);
         rloc = rloc - dftshift - 1;
         cloc = cloc - dftshift - 1;
         row_shift = row_shift + rloc/usfac;
-        col_shift = col_shift + cloc/usfac;    
-
-    % If upsampling = 2, no additional pixel shift refinement
-    else    
+        col_shift = col_shift + cloc/usfac;
+        
+        % If upsampling = 2, no additional pixel shift refinement
+    else
         rg00 = sum(sum( buf1ft.*conj(buf1ft) ))/m/n;
         rf00 = sum(sum( buf2ft.*conj(buf2ft) ))/m/n;
     end
@@ -323,7 +357,7 @@ else
         col_shift = 0;
     end
     output=[error,diffphase,row_shift,col_shift];
-end  
+end
 
 % Compute registered version of buf2ft
 if (nargout > 1)&&(usfac > 0),
@@ -348,7 +382,7 @@ function out=dftups(in,nor,noc,usfac,roff,coff)
 %               units of upsampled pixels (default = size(in))
 % roff, coff    Row and column offsets, allow to shift the output array to
 %               a region of interest on the DFT (default = 0)
-% Recieves DC in upper left corner, image center must be in (1,1) 
+% Recieves DC in upper left corner, image center must be in (1,1)
 % Manuel Guizar - Dec 13, 2007
 % Modified from dftus, by J.R. Fienup 7/31/06
 
@@ -357,7 +391,7 @@ function out=dftups(in,nor,noc,usfac,roff,coff)
 %   - Embed the array "in" in an array that is usfac times larger in each
 %     dimension. ifftshift to bring the center of the image to (1,1).
 %   - Take the FFT of the larger array
-%   - Extract an [nor, noc] region of the result. Starting with the 
+%   - Extract an [nor, noc] region of the result. Starting with the
 %     [roff+1 coff+1] element.
 
 % It achieves this result by computing the DFT in the output array without

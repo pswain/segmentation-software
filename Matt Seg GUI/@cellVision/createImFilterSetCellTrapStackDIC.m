@@ -15,6 +15,7 @@ function filt_feat=createImFilterSetCellTrapStackDIC(cCellSVM,image)
 %image= an image containing the trap and ideally some cells
  
 %% Normalize the image and traps
+image=double(image);
 n_filt=3;
 nHough=2*1;
 nHoughIm=0;
@@ -76,14 +77,14 @@ rangeim=maxim-minim;
 image = cat(3,image,minim,maxim,rangeim);
 
 %normalize over range
-im=[];
-for slicei = 1:size(image,3)
+for slicei = size(image,3)-3:size(image,3)
     
     tempim = image(:,:,slicei);
     tempim=tempim*imScale/median(tempim(:));
     
-    im(:,:,slicei)=tempim;
+    image(:,:,slicei)=tempim;
 end
+im=image;
  
 filt_feat=zeros(size(im,1)*size(im,2),(size(im,3)*n_filt)*nHough + (nHoughIm+1)*(size(im,3)*n_filt)*nBW + size(im,3)*n_filt + nSym,'double');
 filt_im=zeros(size(im,1),size(im,2),(size(im,3)*n_filt),'double');
@@ -159,10 +160,10 @@ fltr4accum2=imresize(fltr4accum,1.5);
 
 dogIm=[];
 for i=1:size(filt_im,3)
-    
-    
+    [grdx, grdy] = gradient(single(filt_im(:,:,i)));
+
     %     [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.005,10,fltr4accum);
-    [accum] =  CircularHough_Grd(filt_im(:,:,i), [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.5)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.01,6,fltr4accum);
+    [accum] =  CircularHough_Grd(filt_im(:,:,i),grdx,grdy, [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.5)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.01,6,fltr4accum);
     temp_index=temp_index+1;
     temp_im=accum;
     filt_im2(:,:,(i-1)*nHough+1)=temp_im;
@@ -171,9 +172,10 @@ for i=1:size(filt_im,3)
     
     
     
-    [accum] =  CircularHough_Grd(filt_im(:,:,i), [ceil((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.01,11,fltr4accum2);
-    temp_im = imfilter((accum),f2,'replicate');
+    [accum] =  CircularHough_Grd(filt_im(:,:,i),grdx,grdy, [ceil((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.01,11,fltr4accum2);
+%     temp_im = imfilter((accum),f2,'replicate');
     temp_index=temp_index+1;
+    temp_im=accum;
     filt_feat(:,temp_index)=temp_im(:);
     filt_im2(:,:,(i-1)*nHough+2)=temp_im;
 
@@ -189,42 +191,56 @@ end
  
 %% Filters based on thresholding and distance transforms of the previous filters
 n=true(7);
-for i=1:size(filt_im,3)%+(size(filt_im2,3)))
+strelClose=strel('disk',9);
+% tpDilated=cCellSVM.cTrap.trapOutline;
+tpDilated=imdilate(cCellSVM.cTrap.trapOutline,strelClose);
+r=floor(size(filt_im,1)/2);
+c=floor(size(filt_im,2)/2);
+
+for i=1:size(filt_im,3)%+size(filt_im2,3)
     if i-1<size(filt_im,3)
+        
+        
         if rem(i,n_filt)>3 || rem(i,n_filt)==0
             es_im=stdfilt(filt_im(:,:,i),n);
         else
             es_im=filt_im(:,:,i); 
         end
-    else
-        es_im=filt_im2(:,:,i-size(filt_im,3));
-    end
-    es_im=es_im/max(es_im(:));
-    r=size(es_im,2)/2;c=size(es_im,1)/2;
-    for j=1:1
-        temp_im=es_im(:,:,j);
-        %         temp_im(cCellSVM.cTrap.trapOutline>0)=median(temp_im(:));
-        %             thresh=graythresh(temp_im)*.8;
-        thresh=.8*graythresh(temp_im(round(r-r*2/3:r+r*2/3),round(c-c*2/3:c+c*2/3)));
+%         es_im=es_im-min(es_im(:));
+        es_im=es_im/max(es_im(:));
+        thresh=.8*graythresh(es_im(round(r-r*2/3:r+r*2/3),round(c-c*2/3:c+c*2/3)));
 
         if thresh>.9
             thresh=.9;
         end
-        temp_im=im2bw(temp_im,thresh);
-        imbw=imdilate(temp_im,se1);
-        b_edge=4;
-        imbw(1:b_edge,:)=0;
-        imbw(:,end-b_edge:end)=0;
-        imbw(:,1:b_edge)=0;
-        imbw(end-b_edge:end,:)=0;
-            im_fill=imfill(imbw,'holes');
-        im_fill_notrap=im_fill;
-        im_fill_notrap(cCellSVM.cTrap.trapOutline)=0;
-                  
-        temp_im=bwdist(~im_fill_notrap);
-        temp_index=temp_index+1;
-        filt_feat(:,temp_index)=temp_im(:);
+        
+        temp_im=es_im>thresh;
+        closeIm=imclose(temp_im,strelClose);
+%         imbw=closeIm-imerode(temp_im,se2);    
+        imbw=closeIm;
+    else
+        es_im=filt_im2(:,:,i-size(filt_im,3));
+        es_im=es_im-min(es_im(:));
+%         thresh=mean(es_im(:))+1.5*std(es_im(:));
+%         thresh=mean(es_im(tpDilated(:)))+.5*std(es_im(tpDilated(:)));
+        thresh=.7*graythresh(es_im(tpDilated(:)));
+        temp_im=es_im>thresh;
+        imbw=temp_im;
+        
     end
+    b_edge=4;
+    imbw(1:b_edge,:)=0;
+    imbw(:,end-b_edge:end)=0;
+    imbw(:,1:b_edge)=0;
+    imbw(end-b_edge:end,:)=0;
+%     im_fill=imfill(imbw,'holes');
+    im_fill_notrap=imbw;
+    im_fill_notrap(cCellSVM.cTrap.trapOutline)=0;
+    
+    temp_im=bwdist(~im_fill_notrap);
+    temp_index=temp_index+1;
+    filt_feat(:,temp_index)=temp_im(:);
+    
 end
  
 %% Add additional features based on symmetry of the trap, and predicted location of the cells
@@ -288,7 +304,7 @@ filt_feat(:,temp_index)=temp_im(:);
  
  
 %%
-function [accum, varargout] = CircularHough_Grd(img, radrange, varargin)
+function [accum, varargout] = CircularHough_Grd(img, grdx,grdy,radrange, varargin)
  
  
 %%%%%%%% Arguments and parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -370,18 +386,12 @@ if nargout > 3,  dbg_on = true;  end
 %%%%%%%% Building accumulation array %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 % Convert the image to single if it is not of
-% class float (single or double)
-img_is_double = isa(img, 'double');
-if ~(img_is_double || isa(img, 'single')),
-    imgf = single(img);
-end
+% class float (single or single)
+% img=single(img);
  
 % Compute the gradient and the magnitude of gradient
-if img_is_double,
-    [grdx, grdy] = gradient(img);
-else
-    [grdx, grdy] = gradient(imgf);
-end
+% [grdx,grdy] = imgradientxy(img);
+
 grdmag = sqrt(grdx.^2 + grdy.^2);
  
 % Get the linear indices, as well as the subscripts, of the pixels
@@ -389,22 +399,22 @@ grdmag = sqrt(grdx.^2 + grdy.^2);
 grdmasklin = find(grdmag > prm_grdthres);
 [grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
  
-rr_4linaccum = double( prm_r_range );
+rr_4linaccum = single( prm_r_range );
 linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
     (rr_4linaccum(1) + 0.5) : rr_4linaccum(2) ];
  
 lin2accum_aJ = floor( ...
-    double(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-    repmat( double(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
+    single(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( single(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
     );
 lin2accum_aI = floor( ...
-    double(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
-    repmat( double(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
+    single(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( single(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
     );
  
 % Clip the votings that are out of the accumulation array
 mask_valid_aJaI = ...
-    lin2accum_aJ > 0 & lin2accum_aJ < (size(grdmag,2) + 1) & ...
+    (lin2accum_aJ > 0) & lin2accum_aJ < (size(grdmag,2) + 1) & ...
     lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
  
 mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
@@ -422,7 +432,7 @@ clear lin2accum_aI lin2accum_aJ;
 % Weights of the votings, currently using the gradient maginitudes
 % but in fact any scheme can be used (application dependent)
 weight4accum = ...
-    repmat( double(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
+    repmat( single(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
     mask_valid_aJaI(:);
 clear mask_valid_aJaI;
  

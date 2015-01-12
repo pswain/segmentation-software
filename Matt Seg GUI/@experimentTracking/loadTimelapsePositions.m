@@ -23,7 +23,7 @@ cExperiment.image_rotation=image_rotation;
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);
-    cExperiment.cTimelapse=timelapseTraps([cExperiment.saveFolder '/' cExperiment.dirs{currentPos}]);
+    cExperiment.cTimelapse=timelapseTraps(fullfile(cExperiment.saveFolder, cExperiment.dirs{currentPos}));
     cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.pixelSize,cExperiment.image_rotation,timepointsToLoad);
     cExperiment.pixelSize=cExperiment.cTimelapse.pixelSize;
     cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;

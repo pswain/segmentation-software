@@ -83,8 +83,17 @@ for timepoint=cTimelapse.timepointsToProcess
                 else
                     len=0;
                     trapInfo(trap).cellLabel=0;
+                    trapInfo(trap).cellLabel=0;
+                    trapInfo(trap).cell(1).cellCenter=[];
+                    trapInfo(trap).cell(1).cellRadius=[];
                 end
                 trapMaxCell(trap)=len;            
+            elseif ~trapInfo(trap).cellsPresent
+                trapInfo(trap).cellLabel=0;
+                trapInfo(trap).cell(1).cellCenter=[];
+                trapInfo(trap).cell(1).cellRadius=[];
+
+
             else
                 trapInfo(trap).cellLabel=zeros(1,length(trapInfo(trap).cell));
                 circen=[trapInfo(trap).cell(:).cellCenter];
@@ -129,8 +138,8 @@ for timepoint=cTimelapse.timepointsToProcess
                     for i=1:size(dist,2)
                         [val loc]=min(dist(:));
                         [row col]=ind2sub(size(dist),loc);
-                        
-%                         if trap==18 && timepoint==42
+%                         
+%                         if trap==11 && timepoint==77
 %                             b=1;
 %                         end
                         
