@@ -76,7 +76,7 @@ classdef timelapseTraps<handle
         identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
         d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
         addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
-        identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image)
+        identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
         identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
         identifyCells(cTimelapse, cCellVision,traps, channel, method)
         

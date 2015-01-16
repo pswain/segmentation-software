@@ -4,7 +4,7 @@ function extractLineageInfo(cTimelapse,params)
 %motherDistCutoff is the number of motherRadiuses that the daughter can be
 %from the mother and still be considered a daughter.
 
-% cTimelapse.correctSkippedFramesInf;
+cTimelapse.correctSkippedFramesInf;
 
 if nargin<2
     params.motherDurCutoff=(.6);
@@ -16,7 +16,7 @@ if nargin<2
     
     num_lines=1;clear prompt; clear def;
     prompt(1) = {'Fraction of timelapse a mother must be present'};
-    prompt(2) = {'Multiple of mother radius a daughter can be from the mother'};
+    prompt(2) = {'Multiple of daugther radius a daughter can be from the mother (plus mother Radius)'};
     prompt(3) = {'Fraction of daughters that must be budded through the trap to be considered'};
     prompt(4) = {'Daughter birth radius cutoff thresh (less than)'};
         prompt(5) = {'Daughter growth rate (in radius pixels)'};
@@ -121,6 +121,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
             tpCheckBefore(:,1:tpBefore)=1;
         end
         tpCheckBefore=tpCheckBefore>0;
+        
         %cells must be pres when the mother is, but not at any other time
         presDuringMother=full(max(cTimelapse.extractedData(1).xloc(:,tpCheck)>0,[],2));
         if ~isempty(presDuringMother) & size(presDuringMother,1)~=size(cTimelapse.extractedData(1).trapNum,1)
@@ -142,23 +143,51 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         daughterRadius=full(cTimelapse.extractedData(1).radius(trapLDaughters,tpCheck));
         daughterRSmooth=[];daughterRStart=[];
         
+        motherRadius=full(cTimelapse.extractedData(1).radius(motherLoc,tpCheck));
+        motherRadius(motherRadius<7)=7;
+        motherRadius=smooth(motherRadius,20,'moving')';
+        motherXLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
+        motherYLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
+
+                xlocDaughters(xlocDaughters==0)=NaN;
+        ylocDaughters(ylocDaughters==0)=NaN;
+
         daughterRStart=500;
         daughterGRate=0;
+        daughtersCloseToMother=[];
         if isempty(xlocDaughters)
             xlocDaughters=zeros(1,sum(tpCheck));
             ylocDaughters=zeros(1,sum(tpCheck));
             daughterGRate=0;
+            daughtersCloseToMother=0;
         else
             for d=1:size(daughterRadius,1)
-                temp=daughterRadius(d,:)>0;
-                if sum(temp)
-                    tempSmooth=smooth(daughterRadius(d,temp),5,'lowess');
-                    daughterRSmooth(d,temp)=tempSmooth;
+                tempLoc=daughterRadius(d,:)>0;
+                if sum(tempLoc)
+                    tempSmooth=smooth(daughterRadius(d,tempLoc),5);
+                    daughterRSmooth(d,tempLoc)=tempSmooth;
                     len=length(tempSmooth);
-                    len=min([3 len]);
+                    len=min([5 len]);
                     daughterRStart(d)=min(tempSmooth(1:len));
                     
-                    if len>1
+                    
+                    xDistToMother=xlocDaughters(d,:)-motherXLoc;
+                    yDistToMother=ylocDaughters(d,:)-motherYLoc;
+                    
+                    %only look at the first three tp a cell is there to see
+                    %if it is nearby a mother
+                    indThere=find(tempLoc);
+                    indThere=indThere(1:len);
+                    %if cell is to the right of the mother (between trap), be more
+                    %lenient in the distance
+                    xDistToMother(xDistToMother>3)=xDistToMother(xDistToMother>3)-3;
+                    
+                    distToMother=sqrt(xDistToMother.^2 + yDistToMother.^2);
+                    nearbyMother=distToMother(indThere) <= 1+motherDistCutoff + daughterRSmooth(indThere) + motherRadius(indThere);
+                    daughtersCloseToMother(d)=max(nearbyMother);
+                    
+                    %don't really use the growth rate thing anymore
+                    if len>100
                         tFit=fit([1:length(tempSmooth)]',tempSmooth,fitFun);
                         daughterGRate(d)=tFit.p1;
                     else
@@ -168,30 +197,30 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
                     daughterRSmooth(d,:)=ones(size(daughterRSmooth(1,:)))*1e3;
                     daughterRStart(d)=1e3;
                     daughterGRate(d)=0;
+                    daughtersCloseToMother(d)=0;
                 end
                 
             end
             daughterRadius=daughterRSmooth;
         end
-        xlocDaughters(xlocDaughters==0)=NaN;
-        ylocDaughters(ylocDaughters==0)=NaN;
         
-        motherRadius=full(cTimelapse.extractedData(1).radius(motherLoc,tpCheck));
-        motherRadius(motherRadius<8)=8;
-        motherRadius=smooth(motherRadius,20,'moving')';
-        motherXLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
-        motherYLoc=full(cTimelapse.extractedData(1).xloc(motherLoc,tpCheck));
         
         xDistToMother=xlocDaughters-repmat(motherXLoc,size(xlocDaughters,1),1);
         yDistToMother=ylocDaughters-repmat(motherYLoc,size(ylocDaughters,1),1);
         
-        %throw away cells that are too far from the mother, and are too big
-        distToMother=sqrt(xDistToMother.^2 + yDistToMother.^2);
-        daughtersCloseToMother=distToMother < repmat(1+motherDistCutoff*motherRadius,size(distToMother,1),1);
+%         %if cell is to the right of the mother (between trap), be more
+%         %lenient in the distance
+        xDistToMother(xDistToMother>0)=xDistToMother(xDistToMother>0)-3;
+%         
+%         %throw away cells that are too far from the mother, and are too big
+%         distToMother=sqrt(xDistToMother.^2 + yDistToMother.^2);
+%         daughtersCloseToMother=distToMother < repmat(1+motherDistCutoff*(params.birthRadiusThresh-1) + motherRadius,size(distToMother,1),1);
+% 
+%         actualDaughters=max((daughtersCloseToMother),[],2);
+        actualDaughters=daughtersCloseToMother';
+        
         daughtersPassRadTest=daughterRStart<params.birthRadiusThresh;
         daughtersPassGrowthRadTest=daughterGRate>params.daughterGRateThresh;
-
-        actualDaughters=max((daughtersCloseToMother),[],2);
         actualDaughters=actualDaughters & daughtersPassRadTest' & daughtersPassGrowthRadTest';
         
         %below finds the first location that the daughter cells appear
@@ -209,6 +238,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
                 end
             end
         end
+        
         actualDaughterPos=firstDaughterPos & repmat(actualDaughters,1,size(firstDaughterPos,2));
         
         daughterXLoc=zeros(size(actualDaughters));
@@ -266,6 +296,8 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         
         %fidn the min distance of the daugther when born
         %         minMothDist=nanmin(distToMother(actualDaughters,:),[],2);
+        distToMother=sqrt(xDistToMother.^2 + yDistToMother.^2);
+
         minMothDist=distToMother(actualDaughterPos(actualDaughters,:));
         
         daughterDuration=sum(xlocDaughters(actualDaughters,:)>0,2);

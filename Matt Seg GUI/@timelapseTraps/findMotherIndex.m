@@ -10,8 +10,8 @@ function motherIndex=findMotherIndex(cTimelapse)
 %locations
 xloc=zeros(1,1e5);
 yloc=zeros(1,1e5);
-xlocM=zeros(100,1000);
-ylocM=zeros(100,1000);
+xlocM=zeros(100,length(cTimelapse.timepointsProcessed));
+ylocM=zeros(100,length(cTimelapse.timepointsProcessed));
 
 ind=1;
 for timepoint=cTimelapse.timepointsToProcess
@@ -36,8 +36,8 @@ cellPres=xloc>0;
 trapCenterX=median(xloc(cellPres));
 trapCenterY=median(yloc(cellPres));
 ylocM(ylocM==0)=NaN; xlocM(xlocM==0)=NaN;
-trapCenterXTime=smooth(nanmedian(xlocM),50);
-trapCenterYTime=smooth(nanmedian(ylocM),50);
+trapCenterXTime=smooth(nanmedian(xlocM),size(xlocM,2)/2,'rlowess');
+trapCenterYTime=smooth(nanmedian(ylocM),size(xlocM,2)/2,'rlowess');
 
 
 %debug for old cTimelapses without the cTrapSize parameter
@@ -45,10 +45,10 @@ if isempty(cTimelapse.cTrapSize)
     cTimelapse.cTrapSize.bb_height=40;
     cTimelapse.cTrapSize.bb_width=40;
 end
-    % if the closest cell is within a 1/5.5 of the frame from the center of the
+    % if the closest cell is within a 1/4 of the frame from the center of the
 % trap, that is the mother
 
-cutoff=ceil(cTimelapse.cTrapSize.bb_height/5.5);
+cutoff=ceil(cTimelapse.cTrapSize.bb_height/4);
 motherIndex=[];
 pt1=[trapCenterX trapCenterY];
 pt1=double(pt1);
