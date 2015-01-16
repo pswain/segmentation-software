@@ -7,29 +7,30 @@ classdef cellResultsViewingGUI<handle
         SettingsPanel; % subpanel of top panel where settings are selected
         ChannelDataCode; % cell array indicating which data field correspond to which images 
         ShowcellOutline = true; % whether to show the outline of the cell in the image
-        CellSelectListInterface; % GUI list of cells available for selection
+        CellSelectListInterface; % GUI list of cells available for selection. Automatically populated when CellsForSelection is changed.
         CellsForSelection; % array used for populating cell select list
         CellsforSelectionDiplayString; %String cell constructed form the structure to make the cellSelectionInterface
-        SelectImageChannelButton;
-        SelectPlotChannelButton;
-        SelectPlotFieldButton;
-        ResetImageScaleButton;
-        CellSelected;
-        TimepointSelected;
-        CellImageHandle;
-        PlotHandle;
-        slider;
-        TimepointSpacing = 5;
-        ImageRange = [0 65536];
-        DataCursorObject;
+        SelectImageChannelButton; %handle for image channel selection button
+        SelectPlotChannelButton; %handle for plot channel selection button
+        SelectPlotFieldButton; %handle for plot field selection button
+        ResetImageScaleButton; %handle for image channel selection button
+        CellSelected; %a field to hold the index of the cell selected for plotting and imaging - updated by the cell selection call back
+        TimepointSelected; %a field to hold the index of the timepoint selected for plotting and imaging - updated by the slider call back
+        CellImageHandle; % handle for the axis on which the cell is drawn
+        PlotHandle; % handle for the axes on which the data is plotted
+        slider; %slider object
+        TimepointSpacing = 5; % time between consecutive timepoints. Used in plotting to make a proper x axis
+        ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
         
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+
     methods
         function CellResGUI=cellResultsViewingGUI(cExperiment)
+            % CellResGUI=cellResultsViewingGUI(cExperiment) a GUI for
+            % viewing the data extracted for single cells along with the
+            % images of those cells at particular timepoints. Intended to
+            % be used for checking data for obvious tracking errors and
+            % such.
             
             if nargin<1 ||isempty(cExperiment)
                 [filename, pathname] = uigetfile('*.mat', 'Pick a cExperiment File');
@@ -46,8 +47,6 @@ classdef cellResultsViewingGUI<handle
 
             scrsz = get(0,'ScreenSize');
             CellResGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(4) 2*scrsz(4)/3]);
-            
-            CellResGUI.DataCursorObject = datacursormode(CellResGUI.figure);
             
             CellResGUI.TopPanel = uipanel('Parent',CellResGUI.figure,...
                 'Position',[.015 .5575 .97 .4275 ]);

@@ -1,5 +1,6 @@
 function CellRes_plot(CellResGUI )
-% CellRes_plot( CellResGUI ) plots the graph at the bottom.
+% CellRes_plot( CellResGUI ) plots the graph at the bottom. MIght be good
+% to at some point allow custom plots.
 
 cell_position = CellResGUI.CellsForSelection(CellResGUI.CellSelected,1);
 
@@ -8,8 +9,6 @@ trap_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,2);
 cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
 
 timepoint = CellResGUI.TimepointSelected;
-
-cell_number = find(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel == cell_tracking_number);
 
 plot_field = CellResGUI.SelectPlotFieldButton.String{CellResGUI.SelectPlotFieldButton.Value};
 

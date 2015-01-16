@@ -1,6 +1,8 @@
 function CellRes_key_press_cb(CellResGUI,src,event)
 %CellRes_key_press_cb(GUI,property,src,event)
-%   Call back for the key press function for the CellResGUI
+%   Call back for the key press function for the CellResGUI shifts the
+%   slider value on left right presses and the CellSelectd value on up/down
+%   presses
 
 
 switch event.Key
