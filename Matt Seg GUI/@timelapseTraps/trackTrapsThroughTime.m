@@ -106,6 +106,10 @@ else
     [cTimelapse.cTimepoint(timepoints).trapInfo] = deal(trapInfo_struct);
     
 end
+
+[cTimelapse.cTimepoint(timepoints).trapMaxCell] = deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
+[cTimelapse.cTimepoint(timepoints).trapMaxCellUTP] =  deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
+    
 toc
 close(h)
 
