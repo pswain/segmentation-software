@@ -32,7 +32,7 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
         error('Omero code not found - make sure you are connected to the microscope computer (129.215.109.100)');
     end
     load(SavePath);
-
+    obj2.preparePath;
     obj2.User='upload';
     obj2=obj2.login;
     %Parse the important info into cell arrays
