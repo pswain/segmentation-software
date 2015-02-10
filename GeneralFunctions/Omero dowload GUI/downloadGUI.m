@@ -32,28 +32,46 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
         error('Omero code not found - make sure you are connected to the microscope computer (129.215.109.100)');
     end
     load(SavePath);
+    if exist('obj2')==0
+        obj2=obj;
+    end
     obj2.preparePath;
     obj2.User='upload';
     obj2=obj2.login;
-    %Parse the important info into cell arrays
+    handles.obj=obj2;
+
+    %Create the figure
     handles.downloadDialog=figure('Units','Normalized','Position',[0.2815 0.3444 0.5756 0.5263],'MenuBar','None', 'NumberTitle', 'Off', 'Name', 'Omero database download');
     %set(handles.downloadDialog('WindowStyle','Modal'); %Uncomment this when finished
     %writing this function
-    handles.obj=obj2;
-    handles.projNames=obj2.getProjectNames;
+    
+    %Define data structures for display - add an 'All' option to allow
+    %reselection of all datasets in a certain category
+    handles.projNames=['All' obj2.getProjectNames];
+    dateArray=obj2.getDates;
+    handles.dateArray=['All' dateArray(:,1)'];
+    handles.tagNames=['All' obj2.getTagNames(false)];
+    handles.userNames=['All' obj2.getUsers];
+    
+    %Create the drop down selection lists
     handles.projList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.05 .7 .4 .2],'Style','popupmenu','String',handles.projNames,'Callback',@changeProject,'TooltipString','Choose a project to see the list of datasets that you can download');
-    %handles.dsIdList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.05 .75 .2 .1],'Style','edit','String','','Callback',@enterId,'TooltipString','Enter the ID of the dataset you want to download');
-    handles.tagNames=obj2.getTagNames(true);
+    %handles.dsIdList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.05 .75 .2 .1],'Style','edit','String','','Callback',@enterId,'TooltipString','Enter the ID of the dataset you want to download');  
     handles.tagList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.55 .7 .4 .2],'Style','popupmenu','String',handles.tagNames,'Callback',@changeTag,'TooltipString','Choose a tag name to see the list of datasets with this tag');
+    handles.dateList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.55 .65 .4 .2],'Style','popupmenu','String',handles.dateArray,'Callback',@changeTag,'TooltipString','Choose a date to see only datasets captured on this day');
+
+    
     handles.downloadButton=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.55 .05 .4 .1],'Style','pushbutton','String','Download','Callback',@runDownload,'TooltipString','Click to download selected datasets');
     handles.dsTable=uitable('Parent',handles.downloadDialog,'Units','Normalized','Position',[.05 .2 .9 .6],'ColumnWidth',{60,200,200,300},'ColumnName',{'ID','Project','Name','Tags'},'CellSelectionCallback',@cellSelected, 'TooltipString', 'Select one or more dataset to download');
     handles.projText=uicontrol(handles.downloadDialog,'BackgroundColor',[0.8 0.8 0.8],'Units','Normalized','Position',[.05 .9 .4 .05],'Style','Text','String','Select a Project');
     handles.tagText=uicontrol(handles.downloadDialog,'BackgroundColor',[0.8 0.8 0.8],'Units','Normalized','Position',[.55 .9 .4 .05],'Style','Text','String','Select a Tag');
-
+    
+    
+    
     %Get the info from the database
     data=obj2.loadDbData;
     set(handles.dsTable,'data',data);
     handles.data=data;
+    handles.subset=true(1,length(data));%This indicates which datasets to display (in this case all of them)
     guidata(handles.downloadDialog,handles);
     % Pause until resume function
     uiwait(handles.downloadDialog);
