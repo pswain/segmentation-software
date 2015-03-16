@@ -1,13 +1,13 @@
 function imageStack = radial_gradient(imageStack,parameters,varargin)
 %function image = radial_gradient_DICangle_and_radialaddition(imageStack,parameters,varargin)
-
+%
 %parameters.postprocessing    - a range of options: 'none','absolute' and
 %                               'invert' being hte most useful
-
+%
 %varargin{1} - image stack of trapiness of each pixel in the corresponding image in imageStack
-
+%
 %NOTES
-
+%
 %With 'invert' false this transformation will give low scores for pixels at
 %which radial change in intensity is positive (from black to white) 
 %With'invert' true it will give low scores for pixels at which radial change in

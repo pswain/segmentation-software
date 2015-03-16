@@ -16,6 +16,13 @@ if ~isempty(pt1) && ~isempty(pt2)
     end
     temp=dist(:,:,3);
     temp2=dist(:,:,3);
+    
+    %if cells grow by one, don't punish at all
+    if find(temp2==1)
+        loc=temp2>1;
+        temp(loc)=0;
+    end
+    
     if find(temp<0)
         %If cell shrinks, then penalize a lot
         loc=temp<0;
@@ -24,19 +31,18 @@ if ~isempty(pt1) && ~isempty(pt2)
 
 %         temp(loc)=temp(loc).^2;
 %         temp(loc)=(temp(loc).^2)*1.5;
-        temp(loc)=(tempFracShrink(loc).^2);%*1.5;
+        temp(loc)=(tempFracShrink(loc).^1.8);%*1.5;
 
     end
-    if find(temp2>0)
+    if find(temp2>1)
         %if a cell grow a lot, penalize it
         tempFracGrow=(bnew-anew)./bnew;
         tempFracGrow=(tempFracGrow)*10;
 
-        loc=temp2>0;
+        loc=temp2>1;
 %         temp(loc)=temp(loc).^1.5;
         
         temp(loc)=tempFracGrow(loc).^1.1;
-
     end
     dist(:,:,3)=temp;
     

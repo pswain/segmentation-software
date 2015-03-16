@@ -22,7 +22,7 @@ classdef cTrapDisplay<handle
     %image to display either the primary or secondary information.
     methods
         function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
-            
+            %function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
             if nargin<3 || isempty(overlay)
                 cDisplay.trackOverlay=false;
             else
@@ -34,10 +34,12 @@ classdef cTrapDisplay<handle
             else
                 cDisplay.channel=channel;
             end
-            if (nargin<5 || isempty(traps) ) && cTimelapse.trapsPresent 
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
-            elseif ~cTimelapse.trapsPresent
-                traps=1;
+            if nargin<5 || isempty(traps)  
+                if cTimelapse.trapsPresent 
+                    traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                elseif ~cTimelapse.trapsPresent
+                    traps=1;
+                end
             end
             
             if nargin<6 || isempty(trackThroughTime)
@@ -120,7 +122,8 @@ classdef cTrapDisplay<handle
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
                     set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
                     if cDisplay.trackOverlay
-                        set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
+                        %set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
+                        set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     else
                         set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     end

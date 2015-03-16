@@ -1,12 +1,15 @@
-
+load('/Users/mcrane2/OneDrive/timelapses/Gal/gal10 - 2h - 7 Mar 2013/cExperiment.mat')
+load('/Users/mcrane2/OneDrive/timelapses/Gal/gal10 - 2h - 15 apr 2013/cExperiment.mat')
+load('/Users/mcrane2/OneDrive/timelapses/Gal/gal10 - 2h - 27 Feb 2013/cExperiment.mat')
+load('/Users/mcrane2/OneDrive/timelapses/Gal/gal10 - 20h - 8 Feb 2013/cExperiment.mat')
 
 data=cExperiment.cellInf(2).max5;
 data(isnan(data))=median(data(~isnan(data)));
 data(data==0)=min(data(data>0));
 % data=zscore(data');
 % data=data';
-data(10,:)=[];
-d=pdist(data,'cityblock');
+% data(10,:)=[];
+d=pdist(data,'cosine');
 figure(2);imshow(data,[]);colormap(jet)
 %
 z=squareform(d);

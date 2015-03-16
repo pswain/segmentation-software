@@ -63,7 +63,7 @@ im=[];
 % image2=image2*imScale/median(image2(:));
 % image2temp=image2-(image2-imScale).*trapG;
 % im(:,:,1)=image2temp;
- 
+
 image=double(image);
 image=image*imScale/median(image(:));
  

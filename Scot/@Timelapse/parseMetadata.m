@@ -14,6 +14,7 @@ function metaData=parseMetadata(moviedir)
     %Get the experiment name
     
     %get the experiment name
+    metaData=struct;
     k=strfind(moviedir,'/');
     if strcmp(moviedir(end),'/')
         metaData.foldername=moviedir(k(end-1)+1:end-1);

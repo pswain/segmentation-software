@@ -81,7 +81,7 @@ if ~isempty(cCellVision.cTrap)
             tempFlat(loc)=1;
             imflat(:,:,i)=tempFlat;
         else %use elco's active contour stuff
-            ImageTransformParameters = struct('invert',false);
+            ImageTransformParameters = struct('postprocessing','invert');
              ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',size(im,1)/3,'opt_points',6,...
                 'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500);
             

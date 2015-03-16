@@ -1,7 +1,7 @@
 function saveTimelapseExperiment(cExperiment,currentPos)
     cTimelapse=cExperiment.cTimelapse;
 
-    save([cExperiment.saveFolder '/',cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    save([cExperiment.saveFolder filesep,cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
 %     save([cExperiment.rootFolder '/',cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
 
  cExperiment.cTimelapse=[];   

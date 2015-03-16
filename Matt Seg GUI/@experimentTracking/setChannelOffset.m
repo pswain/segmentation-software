@@ -21,7 +21,7 @@ if nargin<3
     def=[];prompt=[];
     for i=1:size(cTimelapse.offset,1)
         def{i} = num2str(cTimelapse.offset(i,:));
-        prompt{i} = ['offset channel ' num2str(i)];
+        prompt{i} = ['offset channel ' num2str(i) ' : ' cTimelapse.channelNames{i}];
     end
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     

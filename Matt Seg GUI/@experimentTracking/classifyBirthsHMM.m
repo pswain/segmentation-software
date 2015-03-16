@@ -1,4 +1,4 @@
-function classifyBirthsHMM(cExperiment)
+function classifyBirthsHMM(cExperiment,birthHMM)
 % this function extracts the training states that will be used by the HMM
 % to determine the times of birth for the daughter cells. The functions
 % extractLineageInfo and compileLineageInfo must be run before this
@@ -7,13 +7,22 @@ function classifyBirthsHMM(cExperiment)
 if isempty(cExperiment.lineageInfo.motherInfo.daughterLabel)
     errdlg('Must load a HMM or run trainBirthHMM');
 end
+
+if nargin<2 && isempty(cExperiment.lineageInfo.birthHMM.estTrans)
+    errdlg('Must load a HMM or run trainBirthHMM');
+end
+
+if nargin<2
+    birthHMM=cExperiment.lineageInfo.birthHMM;
+end
+
 cExperiment.lineageInfo.HMMbirths=[];
 cExperiment.lineageInfo.motherInfo.birthTimeHMM=[];
 
 for i=1:length(cExperiment.lineageInfo.daughterHMMTrainingStates)
 
-state=hmmdecode(cExperiment.lineageInfo.daughterHMMTrainingStates{i},cExperiment.lineageInfo.birthHMM.estTrans,cExperiment.lineageInfo.birthHMM.estEmis);
-cExperiment.lineageInfo.HMMbirths(i,:)=state(2,:);
+state=hmmdecode(cExperiment.lineageInfo.daughterHMMTrainingStates{i},birthHMM.estTrans,birthHMM.estEmis);
+cExperiment.lineageInfo.HMMbirths(i,1:length(state(2,:)))=state(2,:);
 end
 
 cExperiment.lineageInfo.motherInfo.birthTimeHMM=[];

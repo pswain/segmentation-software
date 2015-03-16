@@ -1,14 +1,24 @@
-function editSegmentation(cExperiment,cCellVision,positionsToIdentify)
+function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap)
 
 if nargin<3
     positionsToIdentify=1:length(cExperiment.dirs);
+end
+
+if nargin<4 || isempty(show_overlap)
+    options = {'yes','no'};
+    [button_pressed] = questdlg('would you like to colour the cells according to their tracking?',...
+                                            'tracking questions:',...
+                                        options{1},options{2},options{2});
+
+    show_overlap = strcmp(button_pressed,options{1});
+
 end
     
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-    cTrapDisplay(cTimelapse,cCellVision);
+    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    cTrapDisplay(cTimelapse,cCellVision,show_overlap);
     
     uiwait();
     cExperiment.cTimelapse=cTimelapse;

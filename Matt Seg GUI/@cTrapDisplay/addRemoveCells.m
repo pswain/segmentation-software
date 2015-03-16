@@ -29,13 +29,13 @@ if strcmp(key,cDisplay.CurateTracksKey)
     
     
     
-else
+elseif ~cDisplay.trackOverlay
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
-        disp(['remove circle at ', num2str([Cx,Cy])]);
+        disp(sprintf('remove circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
         selection='remove';
     else
-        disp(['add circle at ', num2str([Cx,Cy])]);
+        disp(sprintf('add circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
         selection='add';
     end
     method='hough';

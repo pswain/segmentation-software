@@ -9,7 +9,7 @@ if nargin<2
 end
 cCellSVM.SVMModel = svmtrain2(cCellSVM.trainingData.class(1,1:ss:end)', cCellSVM.trainingData.features(1:ss:end,:),cmd)
 
-
+cCellSVM.TrainData = date;
 
 % cCellSVM.SVMModel = svmtrain2(cCellSVM.trainingData.kernel_class(1,1:ss:end)', cCellSVM.trainingData.kernel_features(1:ss:end,:),cmd)
 

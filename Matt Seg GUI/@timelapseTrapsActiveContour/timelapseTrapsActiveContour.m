@@ -33,6 +33,10 @@ classdef timelapseTrapsActiveContour<handle
         
     end
     
+    properties(Constant)
+        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image','nothing'}
+    end
+    
     methods
         
         function ttacObject= timelapseTrapsActiveContour(Parameters)
@@ -110,18 +114,23 @@ classdef timelapseTrapsActiveContour<handle
             %can handle an CellIndex as an array, in which case returns
             %column of form [x's   y's].
             
-           CellCentre =  reshape(double([ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell(CellIndex).cellCenter]),2,[])';
-           
-           if ttacObject.TrapPresentBoolean
-           
-           CellCentre = CellCentre + ...
-               repmat(ttacObject.ReturnTrapCentre(Timepoint,TrapIndex) - [ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height],length(CellIndex),1) - 1;
-           % the -1 on this might seem strange but think about it. if the
-           % cell center relative is [1 1] it should be at the first square
-           % [1 1] square of the trap image so then you should add [0 0] to
-           % the first entry of the trap image which is 
-           %    trap_centre - bb_width
-           % so then for [1 1] the answer [1 1] + trap_centre - bb_width - [1 1]
+            if nargin<4 || isempty(CellIndex)
+                CellIndex = 1:length(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell);
+            end
+            
+            CellCentre =  reshape(double([ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell(CellIndex).cellCenter]),2,[])';
+            
+            
+            if ttacObject.TrapPresentBoolean
+                
+                CellCentre = CellCentre + ...
+                    repmat(ttacObject.ReturnTrapCentre(Timepoint,TrapIndex) - [ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height],length(CellIndex),1) - 1;
+                % the -1 on this might seem strange but think about it. if the
+                % cell center relative is [1 1] it should be at the first square
+                % [1 1] square of the trap image so then you should add [0 0] to
+                % the first entry of the trap image which is
+                %    trap_centre - bb_width
+                % so then for [1 1] the answer [1 1] + trap_centre - bb_width - [1 1]
         
            end
            
@@ -191,10 +200,12 @@ classdef timelapseTrapsActiveContour<handle
         function CellAngles = ReturnCellAngles(ttacObject,TP,TI,CI)
             % CellAngles = ReturnCellAngles(ttacObject,TP,TI,CI)
             
-            if isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellAngles') && ...
-                    length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles)==ttacObject.Parameters.ImageSegmentation.OptPoints
+            if isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellAngle') && ...
+                    length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngle)==ttacObject.Parameters.ImageSegmentation.OptPoints
                 
-                CellAngles = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles;
+                CellAngles = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngle;
+                
+                        
             else
                 CellAngles = linspace(0,2*pi,(ttacObject.Parameters.ImageSegmentation.OptPoints+1));
                 CellAngles = CellAngles(1:(end-1));
@@ -232,15 +243,18 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        
         function TrapIndicesToSegment = TrapsToCheck(ttacObject,Timepoint)
             % TrapIndicesToSegment = TrapsToCheck(ttacObject,Timepoint)
             
             % currently just returns the numbers of all the traps at the
             % timepoint TrapIndicesToSegment
             
+            %TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapLocations,2);
             TrapIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo,2);
             
+%             TrapIndicesToSegment = [3];
+%             fprintf('USING REDUCED TRAP SET,CHANGE BACK AT 249 IN TIMELAPSETRAPSACTIVECONTOUR \n \n');
+%             
         end
             
         
@@ -275,7 +289,7 @@ classdef timelapseTrapsActiveContour<handle
                     end
                     
                     TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellRadii = Radii(TPi,:);
-                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngles = Angles(TPi,:);
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngle = Angles(TPi,:);
                     
                     %TemporaryCTimepoint.trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
                     
@@ -361,18 +375,20 @@ classdef timelapseTrapsActiveContour<handle
         end
         
         
-        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
+        function CellImage = ReturnSubImages(ttacObject,Timepoints,CentreStack,SubImageSize,channel,normalise)
             %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
             
             % ttacObject    -  object of the timelapseTrapsActiveContour class
 
             % Timepoints    -  1 x n vector of the timepoint of each cell to be transformed 
-
-            % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
-
-            % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
             
-            % channel       -  index of the channel to use
+            % CentreStack   -  stack of [x1 y1 ; x2 y2 ; x3 y3 ;...] (image wise) location of
+            %                  centres of subimages desired 
+            
+            %SubImageSize   -  size of image to get. Should be odd.
+
+            % channel       -  index of the channel to use or string 'trap'
+            %                  for trap pixel images.
             
             % normalise     -  whether to normalise the images (currently
             %                  only median is used), so if this input is
@@ -380,7 +396,7 @@ classdef timelapseTrapsActiveContour<handle
             %                  by the median of each timepoint
 
             
-            if nargin<5
+            if nargin<5 || isempty(channel)
                 channel = 1;
             end
             
@@ -393,30 +409,26 @@ classdef timelapseTrapsActiveContour<handle
             
             UniqueTimepoints = unique(Timepoints);
             
-            CellImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
+            CellImage = zeros(SubImageSize,SubImageSize,length(Timepoints));
             
             for TP =UniqueTimepoints
                 
-                Image = ttacObject.ReturnImage(TP,channel);
-                
-                switch normalise
-                    case 'median'
-                        Image = double(Image);
-                        Image = Image./(median(Image(:)));
-                    case 'none'
+                if ischar(channel) && strcmp(channel,'trap')
+                    Image = ttacObject.ReturnTrapImage(TP);
+                else
+                    Image = ttacObject.ReturnImage(TP,channel);
+                    switch normalise
+                        case 'median'
+                            Image = double(Image);
+                            Image = Image./(median(Image(:)));
+                    end
                 end
                 
-                CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
+                RelevantEntries = Timepoints==TP;
                 
-                RelevantEntries = find(Timepoints==TP);
+                CurrentTPCellCentres = CentreStack(RelevantEntries,:);
                 
-                for TIindex = 1:length(RelevantEntries)
-                    
-                    CurrentTPCellCentres(TIindex,:) = ttacObject.ReturnCellCentreAbsolute(TP,TrapIndices(RelevantEntries(TIindex)),CellIndices(RelevantEntries( TIindex)));
-                    
-                end
-                
-                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres);
+                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,SubImageSize,CurrentTPCellCentres);
                 
                 
             end
@@ -424,6 +436,72 @@ classdef timelapseTrapsActiveContour<handle
             
                    
 
+        end
+        
+        
+        function CellImage = ReturnImageOfSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices,channel,normalise)
+            %TrapImage = ReturnImageOfSingleCell(ttacObject,Timepoint,TrapIndices,CellIndices,channel(optional))
+             
+            % ttacObject    -  object of the timelapseTrapsActiveContour class
+ 
+            % Timepoints    -  1 x n vector of the timepoint of each cell to be transformed 
+ 
+            % TrapIndices   -  1 x n vector of the trapindex of each cell to be transformed
+ 
+            % CellIndices   -  1 x n vector of the cellindex of each cell to be transformed
+             
+            % channel       -  index of the channel to use
+             
+            % normalise     -  whether to normalise the images (currently
+            %                  only median is used), so if this input is
+            %                  the string 'median' the images are divided
+            %                  by the median of each timepoint
+ 
+             
+            if nargin<5
+                channel = 1;
+            end
+             
+            if nargin<6 || isempty(normalise)
+                normalise = 'none';
+            end
+                 
+             
+             
+             
+            UniqueTimepoints = unique(Timepoints);
+             
+            CellImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
+             
+            for TP =UniqueTimepoints
+                 
+                Image = ttacObject.ReturnImage(TP,channel);
+                 
+                switch normalise
+                    case 'median'
+                        Image = double(Image);
+                        Image = Image./(median(Image(:)));
+                    case 'none'
+                end
+                 
+                CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
+                 
+                RelevantEntries = find(Timepoints==TP);
+                 
+                for TIindex = 1:length(RelevantEntries)
+                     
+                    CurrentTPCellCentres(TIindex,:) = ttacObject.ReturnCellCentreAbsolute(TP,TrapIndices(RelevantEntries(TIindex)),CellIndices(RelevantEntries( TIindex)));
+                     
+                end
+                 
+                CellImage(:,:,RelevantEntries) = ACBackGroundFunctions.get_cell_image(Image,ttacObject.Parameters.ImageSegmentation.SubImageSize,CurrentTPCellCentres);
+                 
+                 
+            end
+             
+             
+                    
+ 
         end
         
         function CellTrapImage = ReturnTrapPixelsForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
@@ -472,12 +550,12 @@ classdef timelapseTrapsActiveContour<handle
 
         end
         
-        function [CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
+        function [CellTransformedImage, CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             %[CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             
             ttacTransformFunction = str2func(['ttacImageTansformationMethods.' ttacObject.Parameters.ImageSegmentation.ImageTransformMethod]);
 
-            [CellTransformedImage CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
+            [CellTransformedImage, CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
                
         end
         
@@ -559,6 +637,77 @@ classdef timelapseTrapsActiveContour<handle
             
         end
         
+        function [ACmethod, answer_value] = SelectACMethod(ttacObject,ACmethod)
+            %[ACmethod, answer_value] = SelectACMethod(ttacObject,method) method to check submitted ACmethod (either
+            %number or string) and run dialog if it is not preset or inappropriate. returns string
+            %for use by wrapper function below.
+            %answer_value is 1 if selected ok and 0 if selected cance;.
+            
+            
+            if nargin<2 || isempty(ACmethod)
+                run_select_dialog = true;
+                ACmethod = [];
+            else
+                if ischar(ACmethod)
+                    ACindex = strcmp(ACmethod,ttacObject.ACmethods);
+                    if any(ACindex)
+                        ACmethod = ttacObject.ACmethods{ACindex};
+                        run_select_dialog = false;
+                    else
+                        run_select_dialog = true;
+                        ACmethod = [];
+                    end
+                else 
+                    ACmethod = ttacObject.ACmethods(ACmethod);
+                    ACmethod = ACmethod{1};
+                    run_select_dialog = false;
+                end
+            end
+            
+            
+            
+            if run_select_dialog
+            widths = cellfun(@length,ttacObject.ACmethods);
+        
+            [ACmethod,answer_value] = listdlg('PromptString','select an active contour method',...
+                                          'SelectionMode','single',...
+                                          'ListSize',[max(widths,[],2) + 10, 1.5*size(ttacObject.ACmethods,1)+2]*8 + [10 40],...
+                                          'ListString',ttacObject.ACmethods);
+                                      %[ACmethod,answer_value] = ttacObject.ACmethods{ACmethod};
+            else
+                answer_value = true;
+            end
+        end
+        
+        function  RunActiveContourMethod(ttacObject,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod)
+            if nargin<5 || isempty(ACmethod)
+                ACmethod = [];
+            end
+            
+            [ACmethod,answer_value] = SelectACMethod(ttacObject,ACmethod);
+            
+            if answer_value == false
+                fprintf('\n\n    active contour method cancelled   \n\n')
+                return
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{1}) %active contour and cross correlation
+                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallel(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{2}) %active contour on identified and tracked cells
+                ttacObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{3}) %jusy cross correlating whole image with first image and shifting accordingly (for cycloheximide datasets)
+                ttacObject.SegmentConsecutiveTimepointsNoChanges(FirstTimepoint,LastTimepoint);
+            end
+            if strcmp(ACmethod,ttacObject.ACmethods{4}) %nothing - useful somtimes for instantiating timelapse and tracking traps before editing by hand
+            end
+            
+        end
+        
         
         
     end %methods
@@ -571,7 +720,8 @@ classdef timelapseTrapsActiveContour<handle
             DefaultParameterMatFileLocation = mfilename('fullpath');
             FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
             DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
-            load(DefaultParameterMatFileLocation,'DefaultParameters');
+            load(DefaultParameterMatFileLocation,'Parameters');
+            DefaultParameters = Parameters;
         end
 
         

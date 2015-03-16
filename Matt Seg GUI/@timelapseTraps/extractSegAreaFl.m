@@ -1,5 +1,7 @@
 function extractSegAreaFl(cTimelapse, channelStr, type)
 
+replaceOldSegmented=true;
+
 if nargin<3
     type='max';
 end
@@ -51,63 +53,117 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
         %than just channel=2;
         
         
-        tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel,'stack');
-        
+        tpStack=cTimelapse.returnTrapsTimepoint([],timepoint,channel,type);
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
-        
-        for trapIndex=1:length(trapInfo)
-            if cTimelapse.trapsPresent
-                trapImages=returnTrapStack(cTimelapse,tpStack,trapIndex,timepoint);
-            else
-                trapImages=tpStack;
+
+        %in case ethere is no fluorescent image at that tp, just copy the
+        %current radius over
+        if ~sum(tpStack(:))
+            for trapIndex=1:length(trapInfo)
+                for cellIndex=1:length(trapInfo(trapIndex).cell)
+                    cTimelapse.cTimepoint(timepoint).trapInfo(trapIndex).cell(cellIndex).cellRadiusFL=trapInfo(trapIndex).cell(cellIndex).cellRadius;
+                end
             end
             
-            tStd=[];tMean=[];
-            for l=1:size(trapImages,3)
-                tempIm=double(trapImages(:,:,l));
-                tStd(l)=std(tempIm(:));
-                tMean(l)=mean(tempIm(:));
+            %if there is a fluorescent image, do the following
+        else
+            
+            bw=cell(length(trapInfo));
+            bw2=cell(length(trapInfo));
+            parfor trapIndex=1:length(trapInfo)
+                bwStart=zeros([size(tpStack,1) size(tpStack,2)])>0;
+                if trapInfo(trapIndex).cellsPresent
+%                     for cellIndex=1:length(trapInfo(trapIndex).cell)
+%                         bwStart=bwStart | imfill(full(trapInfo(trapIndex).cell(cellIndex).segmented),'holes');
+%                     end
+                    tpIm=tpStack(:,:,trapIndex);
+                    flValues=tpIm(bwStart);
+                    [v ind]=sort(flValues,'descend');
+                    bwStartLoc=find(bwStart(:));
+                    numP=1:floor(sum(bwStart(:))*.05);
+                    tpIm=double(tpIm);
+                    tpIm=tpIm/max(tpIm(:));
+                    bwStart=im2bw((tpIm),graythresh(tpIm)*1.1);
+                                        bwStart=imdilate(bwStart,strel('disk',1));
+                    bw2{trapIndex}=bwStart;
+                    tpIm(bwStartLoc(ind(numP)))=v(numP+length(numP)+3);
+%                     bw{trapIndex} = activecontour(tpIm,bwStart,120,'chan-vese','SmoothFactor',.7,'ContractionBias',-.1);
+                                        bw{trapIndex} = activecontour(tpIm,bwStart,120,'chan-vese',.7);
+                else
+                    bw{trapIndex}=bwStart;
+                    bw2{trapIndex}=bwStart;
+                end
             end
-            [b, indStd]=max(tStd);
-            [b, indMean]=max(tMean);
             
-            switch type
-                case 'max'
-                    trapImWhole(:,:,1)=max(trapImages,[],3);
-                case 'std'
-                    trapImWhole(:,:,1)=trapImages(:,:,indStd);
-                case 'mean'
-                    trapImWhole(:,:,1)=trapImages(:,:,indMean);
-            end
-            
-            
-            currTrap=trapIndex;
-            trapIm=trapImWhole;
-            im=medfilt2(trapIm,[3 3]);
-            im=double(im);
-            im=im/max(im(:));
-            rawimg=im*255;
-            %rawimg = im;
-            [~, circen, cirrad] = CircularHough_Grd(rawimg, [2 10],1);
-            
-            for cellIndex=1:length(trapInfo(trapIndex).cell)
-                cc = cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellCenter;
-                if ~isempty(cc)
-                    % get the segmented area
-                    seg = returnSegmentedArea(im,cc,circen,cirrad);
-                    
-                    if ~isempty(seg)
-                        oldSeg=cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented;
-                        oldSeg=imfill(full(oldSeg),'holes');
-                        overlap=double(sum(seg(oldSeg(:)>0)))/double(sum(oldSeg(:)));
-                        if overlap>.1
-                            % store the segmented area
-                            edgeSeg= bwmorph(seg,'remove');
-                            cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented = edgeSeg>0;
-                            cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadius=sqrt(sum(seg(:))/pi);
+            for trapIndex=1:length(trapInfo)
+                trapImages=tpStack(:,:,trapIndex);
+                trapImWhole=trapImages;
+                currTrap=trapIndex;
+                trapIm=trapImWhole;
+                im=medfilt2(trapIm,[3 3]);
+                im=double(im);
+                im=im/max(im(:));
+                rawimg=im*255;
+                
+                cirrad=[trapInfo(currTrap).cell(:).cellRadius];
+                if ~isempty(cirrad)
+                    radRangeT=[min(cirrad)-2 max(cirrad)+1];
+                    radRangeT(1)=max(radRangeT(1),3);
+                    radRangeT(2)=max(radRangeT(2),4);
+                    %                 [centers,radii,metric]=imfindcircles(bw2{trapIndex},radRangeT,'Sensitivity',1);
+                    centers=[];radii=cirrad;
+                    %returns too many circles, so if there are crazy numbers of
+                    %circles, only use the most likely circles
+%                     if length(cirrad)+1>radii
+%                         bwCirc.centers=centers(1:length(cirrad)+1,:);bwCirc.radii=radii(1:length(cirrad)+1);
+%                     else
+                        bwCirc.centers=centers;bwCirc.radii=radii;
+%                     end
+                end
+                
+                for cellIndex=1:length(trapInfo(trapIndex).cell)
+                    cc = cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellCenter;
+                    if ~isempty(cc) 
+                        circenT=[trapInfo(currTrap).cell(:).cellCenter];
+                        circen=[];
+                        circen(:,1)=circenT(1:2:end);
+                        circen(:,2)=circenT(2:2:end);
+                        
+                        
+                        % get the segmented area
+                        if min(size(bwCirc.radii))>0
+                            [seg oldSeg]= returnSegmentedArea(im,bw{trapIndex},cc,circen,cirrad,bwCirc);
                         else
+                            seg=[];
+                        end
+                        
+                        if ~isempty(seg)
+                            %                         oldSeg=cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented;
+                            %                         oldSeg=imfill(full(oldSeg),'holes');
+                            overlap=double(sum(seg(oldSeg(:)>0)))/double(sum(oldSeg(:)));
+                            if overlap>.2
+                                % store the segmented area
+                                
+                                if replaceOldSegmented
+                                    edgeSeg= bwmorph(seg,'remove');
+                                    cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented = edgeSeg>0;
+                                    
+                                    % overwrite the offset so that you
+                                    % don't accidentally offset the image
+                                    % that was segmented with the
+                                    % fluorescence
+                                    cTimelapse.offset=zeros(size(cTimelapse.offset));
+                                end
+                                cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=sqrt(sum(seg(:))/pi);
+                                
+                            else
+                                cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=sqrt(sum(oldSeg(:))/pi);
+                            end
+                        else
+                            cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=trapInfo(trapIndex).cell(cellIndex).cellRadius;
                         end
                     else
+                        cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=[];
                     end
                 end
             end
@@ -140,21 +196,31 @@ end
 
 
 
-function bwNew = returnSegmentedArea(im,ccenter,circen,cirrad)
+function [bwNew temp_im]= returnSegmentedArea(im,bw,ccenter,circen,cirrad,bwCirc)
 
-bw=im2bw(im,1.1*graythresh(im));
+
+% bw=im2bw(im,1.1*graythresh(im));
 
 bwNew=[];
 if ~isempty(circen)
         numCells = knnsearch(circen,double(ccenter),'K',1);
-        
-        
-    
-    cirrad=cirrad+2;
+     
+%     cirrad=cirrad(numCells);
     nseg=80;
-    temp_im=zeros(size(bw))>0;
+    temp_im=zeros(size(im))>0;
     
     x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
+    
+    %below is to calculate the radius using the bw image based on the
+    %fluorescence
+%     centers=bwCirc.centers;radii=bwCirc.radii;
+%     [centers,radii]=imfindcircles(bw,[3 r+4],'Sensitivity',1);
+%     numCells = knnsearch([centers radii],[double(ccenter) cirrad(numCells)],'K',1);
+%     x=centers(numCells,1);y=centers(numCells,2);r=radii(numCells);
+
+    r=r+1.9;
+% x=circen(:,1);y=circen(:,2);r=cirrad;
+
     x=double(x);y=double(y);r=double(r);
     if r<11
         theta = 0 : (2 * pi / nseg) : (2 * pi);
@@ -175,7 +241,34 @@ if ~isempty(circen)
     locfill=[y x];
     temp_im=imfill(temp_im,round(locfill))>0;
     
+
     bwNew=zeros(size(bw));
     bwNew(temp_im)=bw(temp_im);
+    bwT=double(bw);bwT(bwNew>0)=2;
+    %figure;imshow(bwT,[]);impixelinfo;title(num2str(r-1));pause(.1);
+    
+    %to calculate the original segmentation in case active contour was used
+            numCells = knnsearch(circen,double(ccenter),'K',1);
+
+        cirrad=cirrad;
+            x=circen(numCells,1);y=circen(numCells,2);r=cirrad(numCells);
+    temp_im=zeros(size(im))>0;
+    r=double(r);
+    if r<11
+        theta = 0 : (2 * pi / nseg) : (2 * pi);
+    elseif r<18
+        theta = 0 : (2 * pi / nseg/2) : (2 * pi);
+    else
+        theta = 0 : (2 * pi / nseg/4) : (2 * pi);
+    end
+    pline_x = round(r * cos(theta) + x);
+    pline_y = round(r * sin(theta) + y);
+    loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
+    pline_x(loc)=[];pline_y(loc)=[];
+    for j=1:length(pline_x)
+        temp_im(pline_y(j),pline_x(j),1)=1;
+    end
+    locfill=[y x];
+    temp_im=imfill(temp_im,round(locfill))>0;
 end
 

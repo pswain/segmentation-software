@@ -1,5 +1,6 @@
 function provideOffset(cExperiment,channel_offset,channel,positionsToIdentify)
-   
+%function provideOffset(cExperiment,channel_offset,channel,positionsToIdentify)
+    
 if nargin<4 || isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
 end

@@ -1,4 +1,4 @@
-function [radii,angles] = initialise_snake_radial(im,N,x,y,Rmin,Rmax)
+function [radii,angles,RminTP,RmaxTP] = initialise_snake_radial(im,N,x,y,Rmin,Rmax,exclude_logical)
 %function [radii,angles] = initialise_snake_radial(im,N,x,y,Rmin,Rmax)
 
 
@@ -7,10 +7,23 @@ function [radii,angles] = initialise_snake_radial(im,N,x,y,Rmin,Rmax)
 % (x,y)  - centre coordinate
 % Rmin   - minimal distance of cell edge from centre allowed
 % Rmax   - maximum distance of cell edge from centre allowed
-
+%
+%   optional
+%
+% exclude_logical - logical of size of image with true at pixels that should not be within the cells
+%                   outline. Used to set Rmin and Rmax for the image.
 
 
 N = max(N,4);
+
+RminTP = Rmin*ones(N,1);
+RmaxTP = Rmax*ones(N,1);
+
+if nargin < 7 || isempty(exclude_logical)
+    use_exclude = false;
+else
+    use_exclude = true;
+end
 
 
 % make an N+1 length vector of equally spaced angles.
@@ -20,11 +33,20 @@ radii = zeros(size(angles));
 
 [imY,imX] = size(im);
 
+
+
+if use_exclude
+    
+    [RminTP,RmaxTP] = ACBackGroundFunctions.set_bounds_from_exclude_image(exclude_logical,x,y,angles,RminTP,RmaxTP);
+    
+end
+
+
 for i=1:N
     %loops through all the first N points (leaving out the repeated zero
     %N+1) and get the best point in the image for them.
-    cordx = uint16(x+(Rmin:Rmax)'*cos(angles(i)));%radial cords
-    cordy = uint16(y+(Rmin:Rmax)'*sin(angles(i)));
+    cordx = uint16(x+(RminTP(i):RmaxTP(i))'*cos(angles(i)));%radial cords
+    cordy = uint16(y+(RminTP(i):RmaxTP(i))'*sin(angles(i)));
     
     cordx(cordx<1) = 1;
     cordx(cordx>imX) = imX;

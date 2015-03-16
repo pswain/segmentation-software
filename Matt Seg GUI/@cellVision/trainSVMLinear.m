@@ -9,4 +9,5 @@ if nargin<2
 end
 % cCellSVM.SVMModel = train(cCellSVM.trainingData.class(1,1:ss:end)', sparse(cCellSVM.trainingData.features(1:ss:end,:)),cmd)
 cCellSVM.SVMModelLinear = train(cCellSVM.trainingData.class(1,1:ss:end)', sparse(cCellSVM.trainingData.features(1:ss:end,:)),cmd)
+cCellSVM.TrainData = date;
 

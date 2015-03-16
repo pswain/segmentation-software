@@ -13,22 +13,27 @@ function cTimelapseOUT = fuseTimlapses(timelapse_cell)
 %example.
 
 
-
+standard_cTimelapse_fields = {'filename','trapLocations','trapInfo','trapMaxCell'};
 
 if ~isempty(timelapse_cell)
    
     for tli = 1:length(timelapse_cell)
         
-        current_timelapse = timelapse_cell{tli};
+        current_timelapse = timelapse_cell{tli}.copy;
+        for fi = 1:length(standard_cTimelapse_fields) 
+            if ~isfield(current_timelapse.cTimepoint,standard_cTimelapse_fields{fi})
+                [current_timelapse.cTimepoint(:).(standard_cTimelapse_fields{fi})] = deal([]);
+            end
+        end
         if tli ==1
             
-            current_timelapse.makeFileNamesAbsolute;
-            cTimelapseOUT = current_timelapse.copy;
+            cTimelapseOUT = current_timelapse;
+            cTimelapseOUT.makeFileNamesAbsolute;
             
         else
-            if isfield(current_timelapse.cTimepoint,'trapMaxCell')
-                current_timelapse.cTimepoint=rmfield(current_timelapse.cTimepoint,'trapMaxCell');
-            end
+%             if isfield(current_timelapse.cTimepoint,'trapMaxCell')
+%                 current_timelapse.cTimepoint=rmfield(current_timelapse.cTimepoint,'trapMaxCell');
+%             end
             
             current_timelapse.makeFileNamesAbsolute;
             cTimelapseOUT.timepointsProcessed = [cTimelapseOUT.timepointsProcessed (current_timelapse.timepointsProcessed+length(cTimelapseOUT.cTimepoint))];
