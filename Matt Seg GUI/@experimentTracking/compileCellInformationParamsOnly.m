@@ -26,21 +26,27 @@ for i=2:length(positionsToExtract)
     if max(cTimelapse.timepointsProcessed)>0
         if ~isempty(cTimelapse.extractedData(1).radius)
             j=1;
-                
-                temp=cTimelapse.extractedData(j).radius;
-                cExperiment.cellInf(j).radius(end+1:end+size(temp,1),:)=temp;
-                temp=cTimelapse.extractedData(j).trapNum;
-                cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1))=temp;
-                temp=cTimelapse.extractedData(j).cellNum;
-                cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1))=temp;
-                
-                temp=cTimelapse.extractedData(j).xloc;
-                cExperiment.cellInf(j).xloc(end+1:end+size(temp,1),:)=temp;
-                temp=cTimelapse.extractedData(j).yloc;
-                cExperiment.cellInf(j).yloc(end+1:end+size(temp,1),:)=temp;
-                
-                
-                cExperiment.cellInf(j).posNum(end+1:end+size(temp,1))=experimentPos;
+            
+            if isfield(cTimelapse.extractedData(j),'nucArea');
+                temp=cTimelapse.extractedData(j).nucArea;
+                cExperiment.cellInf(j).nucArea(end+1:end+size(temp,1),:)=temp;
+                temp=cTimelapse.extractedData(j).distToNuc;
+                cExperiment.cellInf(j).distToNuc(end+1:end+size(temp,1),:)=temp;
+            end
+            temp=cTimelapse.extractedData(j).radius;
+            cExperiment.cellInf(j).radius(end+1:end+size(temp,1),:)=temp;
+            temp=cTimelapse.extractedData(j).trapNum;
+            cExperiment.cellInf(j).trapNum(end+1:end+size(temp,1))=temp;
+            temp=cTimelapse.extractedData(j).cellNum;
+            cExperiment.cellInf(j).cellNum(end+1:end+size(temp,1))=temp;
+            
+            temp=cTimelapse.extractedData(j).xloc;
+            cExperiment.cellInf(j).xloc(end+1:end+size(temp,1),:)=temp;
+            temp=cTimelapse.extractedData(j).yloc;
+            cExperiment.cellInf(j).yloc(end+1:end+size(temp,1),:)=temp;
+            
+            
+            cExperiment.cellInf(j).posNum(end+1:end+size(temp,1))=experimentPos;
         end
     end
     cExperiment.cTimelapse=[];

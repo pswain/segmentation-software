@@ -165,10 +165,11 @@ end
  else
      TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
  end
+ 
+disp = cTrapDisplay(ttacObject.TimelapseTraps,[]);
 
 %% loop through the rest of the timepoints
 for TP = Timepoints
-    
     tic;
     fprintf('timepoint %d \n',TP)
     
@@ -192,7 +193,13 @@ for TP = Timepoints
         
         %get decision image for each trap from SVM
         %If the traps have not been previously segmented this also initialises the trapInfo field
-        DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
+        if strcmp(ttacObject.cCellVision.method,'wholeIm')
+            wholeImSegCh= ttacObject.TimelapseTraps.returnSegmenationTrapsStack(ttacObject.TrapsToCheck(TP),TP,'whole');
+            DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),wholeImSegCh,[]);
+            DecisionImageStack=ttacObject.TimelapseTraps.returnTrapsFromImage(DecisionImageStack,TP);
+        else
+            DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
+        end
         TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
     
         if ttacObject.TrapPresentBoolean
@@ -259,16 +266,18 @@ for TP = Timepoints
                         ExpectedCellCentre = LocalExpectedCellCentre;
                     end
                     
-                    if ExpectedCellCentre(1)>ttacObject.ImageSize(1)
-                        ExpectedCellCentre(1) = ttacObject.ImageSize(1);
+                    %botch fix for error over Exzpected centre being out of
+                    %range
+                    if ExpectedCellCentre(1)>size(WholeImageElcoHough,2);%ttacObject.ImageSize(1)
+                        ExpectedCellCentre(1) = size(WholeImageElcoHough,2);%ttacObject.ImageSize(1);
                     end
                     
                     if ExpectedCellCentre(1)<1;
                         ExpectedCellCentre(1) = 1;
                     end
                     
-                    if ExpectedCellCentre(2)>ttacObject.ImageSize(2)
-                        ExpectedCellCentre(2) = ttacObject.ImageSize(2);
+                    if ExpectedCellCentre(2)>size(WholeImageElcoHough,1);%ttacObject.ImageSize(2)
+                        ExpectedCellCentre(2) = size(WholeImageElcoHough,1);%ttacObject.ImageSize(2);
                     end
                     
                     if ExpectedCellCentre(2)<1;
@@ -610,9 +619,13 @@ for TP = Timepoints
     TimeOfTimepoint = toc;
     fprintf('timepoint analysed in %.2f seconds \n',TimeOfTimepoint);
     
+    disp.slider.Value = TP;
+    disp.slider_cb;
+    pause(.1);
 end %end TP loop
  
- 
+close(disp.figure); 
+
 end
 
 function WholeImage = IMnormalise(WholeImage)

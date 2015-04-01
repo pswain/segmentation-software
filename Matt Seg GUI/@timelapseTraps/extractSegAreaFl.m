@@ -1,6 +1,5 @@
-function extractSegAreaFl(cTimelapse, channelStr, type)
+function extractSegAreaFl(cTimelapse, channelStr, type,replaceOldSegmented)
 
-replaceOldSegmented=true;
 
 if nargin<3
     type='max';
@@ -18,6 +17,10 @@ if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProces
     if length(cTimelapse.timepointsProcessed)==1
         cTimelapse.timepointsProcessed=0;
     end
+end
+
+if nargin<4 
+    replaceOldSegmented=true;
 end
 
 switch type
@@ -80,7 +83,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     flValues=tpIm(bwStart);
                     [v ind]=sort(flValues,'descend');
                     bwStartLoc=find(bwStart(:));
-                    numP=1:floor(sum(bwStart(:))*.05);
+                    numP=1:floor(sum(bwStart(:))*.02);
                     tpIm=double(tpIm);
                     tpIm=tpIm/max(tpIm(:));
                     bwStart=im2bw((tpIm),graythresh(tpIm)*1.1);
@@ -88,7 +91,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     bw2{trapIndex}=bwStart;
                     tpIm(bwStartLoc(ind(numP)))=v(numP+length(numP)+3);
 %                     bw{trapIndex} = activecontour(tpIm,bwStart,120,'chan-vese','SmoothFactor',.7,'ContractionBias',-.1);
-                                        bw{trapIndex} = activecontour(tpIm,bwStart,120,'chan-vese',.7);
+                                        bw{trapIndex} = activecontour(tpIm,bwStart,110,'chan-vese',.7);
                 else
                     bw{trapIndex}=bwStart;
                     bw2{trapIndex}=bwStart;
@@ -143,16 +146,16 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                             overlap=double(sum(seg(oldSeg(:)>0)))/double(sum(oldSeg(:)));
                             if overlap>.2
                                 % store the segmented area
-                                
+                                edgeSeg= bwmorph(seg,'remove');
                                 if replaceOldSegmented
-                                    edgeSeg= bwmorph(seg,'remove');
-                                    cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented = edgeSeg>0;
-                                    
+                                    cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmented=sparse(edgeSeg>0);
                                     % overwrite the offset so that you
                                     % don't accidentally offset the image
                                     % that was segmented with the
                                     % fluorescence
                                     cTimelapse.offset=zeros(size(cTimelapse.offset));
+                                else
+                                    cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).segmentedFL = sparse(edgeSeg>0);
                                 end
                                 cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(cellIndex).cellRadiusFL=sqrt(sum(seg(:))/pi);
                                 
@@ -218,7 +221,7 @@ if ~isempty(circen)
 %     numCells = knnsearch([centers radii],[double(ccenter) cirrad(numCells)],'K',1);
 %     x=centers(numCells,1);y=centers(numCells,2);r=radii(numCells);
 
-    r=r+1.9;
+    r=r*1.15+1;
 % x=circen(:,1);y=circen(:,2);r=cirrad;
 
     x=double(x);y=double(y);r=double(r);

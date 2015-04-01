@@ -185,7 +185,7 @@ classdef timelapseTrapsActiveContour<handle
         function CellRadii = ReturnCellRadii(ttacObject,TP,TI,CI)
             % ReturnCellRadii = ReturnRadii(ttacObject,TP,TI,CI)
             
-            if isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellRadii') && ...
+            if TP>1 && isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellRadii') && ...
                     length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellRadii)==ttacObject.Parameters.ImageSegmentation.OptPoints
                 
                 CellRadii = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellRadii;
@@ -305,7 +305,11 @@ classdef timelapseTrapsActiveContour<handle
                     end
                     
                     TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmented = sparse(SegmentationBinary);
-                    
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmentedAC = sparse(SegmentationBinary);
+                    seg_areas=full(SegmentationBinary);
+                    segLabel=imfill(seg_areas,'holes');
+                        cellLoc=segLabel>0;
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).radiusAC=sqrt(sum(cellLoc(:))/pi);
                     %debuggery
                     CellArraySizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
                     CellLabelSizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
