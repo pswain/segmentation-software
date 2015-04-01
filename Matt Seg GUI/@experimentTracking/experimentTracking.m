@@ -74,7 +74,7 @@ classdef experimentTracking<handle
         
         correctSkippedFramesInf(cExperiment,type);
         
-        extractCellInformation(cExperiment,positionsToExtract,type,channels);
+        extractCellInformation(cExperiment,positionsToExtract,type,channels,cellSegType);
         compileCellInformation(cExperiment,positions);
         compileCellInformationParamsOnly(cExperiment,positions);
         

@@ -1,14 +1,17 @@
-function extractCellData(cTimelapse,type,channels)
+function extractCellData(cTimelapse,type,channels,cellSegType)
 
 if nargin<2
     type='max';
 end
 
 if nargin<3 || isempty(channels)
-    
-    channels = 1:length(cTimelapse.channelNames);
-    
+    channels = 1:length(cTimelapse.channelNames);    
 end
+
+if nargin<4 || isempty(cellSegType)
+    cellSegType='segmented';
+end
+
 
 numCells=sum(cTimelapse.cellsToPlot(:));
 [trap cell]=find(cTimelapse.cellsToPlot);
@@ -202,7 +205,15 @@ for channel=1:length(channels)
                     if isempty(temp_loc)
                     else
                         
-                        seg_areas=full(trapInfo(currTrap).cell(temp_loc).segmented);
+                        if isfield(trapInfo(currTrap).cell(temp_loc),cellSegType)
+                            if ~isempty(trapInfo(currTrap).cell(temp_loc).(cellSegType));
+                                seg_areas=full(trapInfo(currTrap).cell(temp_loc).(cellSegType));
+                            else
+                                seg_areas=full(trapInfo(currTrap).cell(temp_loc).segmented);
+                            end
+                        else
+                            seg_areas=full(trapInfo(currTrap).cell(temp_loc).segmented);
+                        end
                         segLabel=zeros(size(seg_areas));
                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(temp_loc).cellCenter);
                         if ~isempty(loc)
@@ -331,7 +342,18 @@ for channel=1:length(channels)
                                     
                                     seg_areas=zeros(size(trapInfo(currTrap).cell(1).segmented));
                                     for allCells=1:length(trapInfo(currTrap).cellLabel)
-                                        seg_areas=seg_areas|full(trapInfo(currTrap).cell(allCells).segmented);
+                                        % to catch bugs when segmented channel is empty
+                                        if ~isfield(trapInfo(currTrap).cell(temp_loc),cellSegType) 
+                                            tSeg=full(trapInfo(currTrap).cell(allCells).segmented);
+                                        else
+                                            tSeg=full(trapInfo(currTrap).cell(allCells).(cellSegType));
+                                        end
+                                        
+                                        if isempty(tSeg)
+                                            tSeg=full(trapInfo(currTrap).cell(allCells).segmented);
+                                        end
+                                        seg_areas=seg_areas|tSeg;
+                                        
                                         %                         seg_areas=imdilate(seg_areas,s1);
                                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(allCells).cellCenter);
                                         if ~isempty(loc)
@@ -358,15 +380,15 @@ for channel=1:length(channels)
                                         extractedData(channel).segmentedRadius(dataInd,timepoint)= sqrt(sum(cellLoc(:))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
                                         if isfield(trapInfo(currTrap).cell(temp_loc),'nucArea');
                                             if isempty(trapInfo(currTrap).cell(temp_loc).nucArea)
-                                                extractedData(channel).nucArea(j,timepoint)=NaN;
-                                                extractedData(channel).distToNuc(j,timepoint)=NaN;
+                                                extractedData(channel).nucArea(dataInd,timepoint)=NaN;
+                                                extractedData(channel).distToNuc(dataInd,timepoint)=NaN;
                                             else
-                                                extractedData(channel).nucArea(j,timepoint)=trapInfo(currTrap).cell(temp_loc).nucArea;
-                                                extractedData(channel).distToNuc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).distToNuc;
+                                                extractedData(channel).nucArea(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).nucArea;
+                                                extractedData(channel).distToNuc(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).distToNuc;
                                             end
                                         end
                                         if isfield(trapInfo(currTrap).cell(temp_loc),'radiusAC');
-                                            extractedData(channel).radiusAC=trapInfo(currTrap).cell(temp_loc).radiusAC;
+                                            extractedData(channel).radiusAC(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).radiusAC;
                                         end
                                         extractedData(channel).xloc(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                                         extractedData(channel).yloc(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
@@ -400,7 +422,7 @@ for channel=1:length(channels)
                                     
                                     seg_areas=zeros(size(trapInfo(currTrap).cell(1).segmented));
                                     for allCells=1:length(trapInfo(currTrap).cellLabel)
-                                        seg_areas=seg_areas|full(trapInfo(currTrap).cell(allCells).segmented);
+                                        seg_areas=seg_areas|full(trapInfo(currTrap).cell(allCells).(cellSegType));
                                         %                         seg_areas=imdilate(seg_areas,s1);
                                         loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(allCells).cellCenter);
                                         if ~isempty(loc)
