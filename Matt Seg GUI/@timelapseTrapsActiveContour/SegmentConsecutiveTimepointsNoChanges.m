@@ -132,7 +132,16 @@ PreviousTrapInfo = [];
  if TPtoStartSegmenting == ttacObject.TimelapseTraps.timepointsToProcess(1)
      TrapMaxCell = zeros(1,length(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapLocations));
  else
-     TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
+    if isfield(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1),'trapMaxCellUTP')
+        TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
+    else
+        TrapMaxCell = zeros(1,length(ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting).trapLocations));
+        if ~isfield(ttacObject.TimelapseTraps.cTimepoint(1),'trapMaxCell')
+            ttacObject.TimelapseTraps.cTimepoint(1).trapMaxCell = TrapMaxCell;
+            ttacObject.TimelapseTraps.cTimepoint(1).trapMaxCellUTP = TrapMaxCell;
+        end
+    end
+     
  end
 
  WholeImageOne = ttacObject.ReturnImage(Timepoints(1),CrossCorrelationChannel);
@@ -199,10 +208,12 @@ for TP = Timepoints
                     
                     %write active contour result and change cross
                     %correlation matrix and decision image.
-                    
-                    RadiiResult = CurrentFirstTrapInfo.cell(NCI).cellRadii;
-                    AnglesResult = CurrentFirstTrapInfo.cell(NCI).cellAngle;
-                    
+                    if isfield(CurrentFirstTrapInfo.cell(NCI),'cellRadii')
+                        RadiiResult = CurrentFirstTrapInfo.cell(NCI).cellRadii;
+                        AnglesResult = CurrentFirstTrapInfo.cell(NCI).cellAngle;
+                    else
+                        RadiiResult = [];
+                    end
                     %if the cell has been added manually it won't have a
                     %radii or angle entry.
                     if isempty(RadiiResult)

@@ -1,5 +1,5 @@
 function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
-%RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod)
+%RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
 %OverwriteTimelapseParameters controls if experiment or timelapse parameters are used

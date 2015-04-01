@@ -34,7 +34,7 @@ classdef timelapseTrapsActiveContour<handle
     end
     
     properties(Constant)
-        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image'}
+        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image','nothing'}
     end
     
     methods
@@ -200,10 +200,12 @@ classdef timelapseTrapsActiveContour<handle
         function CellAngles = ReturnCellAngles(ttacObject,TP,TI,CI)
             % CellAngles = ReturnCellAngles(ttacObject,TP,TI,CI)
             
-            if isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellAngles') && ...
-                    length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles)==ttacObject.Parameters.ImageSegmentation.OptPoints
+            if isfield(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI),'cellAngle') && ...
+                    length(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngle)==ttacObject.Parameters.ImageSegmentation.OptPoints
                 
-                CellAngles = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngles;
+                CellAngles = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).cell(CI).cellAngle;
+                
+                        
             else
                 CellAngles = linspace(0,2*pi,(ttacObject.Parameters.ImageSegmentation.OptPoints+1));
                 CellAngles = CellAngles(1:(end-1));
@@ -287,7 +289,7 @@ classdef timelapseTrapsActiveContour<handle
                     end
                     
                     TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellRadii = Radii(TPi,:);
-                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngles = Angles(TPi,:);
+                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).cellAngle = Angles(TPi,:);
                     
                     %TemporaryCTimepoint.trapInfo(TI).cell(CI).ActiveContourParameters = ttacObject.Parameters;
                     
@@ -704,6 +706,8 @@ classdef timelapseTrapsActiveContour<handle
             
             if strcmp(ACmethod,ttacObject.ACmethods{3}) %jusy cross correlating whole image with first image and shifting accordingly (for cycloheximide datasets)
                 ttacObject.SegmentConsecutiveTimepointsNoChanges(FirstTimepoint,LastTimepoint);
+            end
+            if strcmp(ACmethod,ttacObject.ACmethods{4}) %nothing - useful somtimes for instantiating timelapse and tracking traps before editing by hand
             end
             
         end
