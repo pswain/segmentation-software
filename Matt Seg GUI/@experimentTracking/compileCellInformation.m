@@ -40,6 +40,8 @@ membraneData=isfield(cExperiment.cellInf(1),'membraneMedian');
 radiusFLData=isfield(cExperiment.cellInf(1),'radiusFL');
 segmentedRadiusData=isfield(cExperiment.cellInf(1),'segmentedRadius');
 radiusACData=isfield(cExperiment.cellInf(1),'radiusAC');
+nucAreaData=isfield(cExperiment.cellInf(1),'nucArea');
+
 
 for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).mean=sparse(tempLen,size(cExperiment.cellInf(i).mean,2));
@@ -55,7 +57,7 @@ for i=1:length(cExperiment.cellInf)
         cExperiment.cellInf(i).radiusAC=sparse(tempLen,size(cExperiment.cellInf(i).radiusAC,2));
     cExperiment.cellInf(i).radiusFL=sparse(tempLen,size(cExperiment.cellInf(i).radiusFL,2));
 
-      
+    
     cExperiment.cellInf(i).xloc=sparse(tempLen,size(cExperiment.cellInf(i).xloc,2));
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
     cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));
@@ -80,6 +82,12 @@ for i=1:length(cExperiment.cellInf)
     if radiusACData
         cExperiment.cellInf(i).radiusAC= sparse(tempLen,size(cExperiment.cellInf(i).radiusAC,2));
     end
+    
+    if nucAreaData
+        cExperiment.cellInf(i).nucArea= sparse(tempLen,size(cExperiment.cellInf(i).nucArea,2));
+        cExperiment.cellInf(i).distToNuc= sparse(tempLen,size(cExperiment.cellInf(i).distToNuc,2));
+    end
+
 % 
 %     cExperiment.cellInf(i).mean=zeros(tempLen,size(cExperiment.cellInf(i).mean,2),size(cExperiment.cellInf(i).mean,3));
 %     cExperiment.cellInf(i).median=zeros(tempLen,size(cExperiment.cellInf(i).median,2),size(cExperiment.cellInf(i).median,3));
@@ -139,8 +147,16 @@ for i=1:length(positionsToExtract)
                 cExperiment.cellInf(j).radiusFL(index+1:index+size(temp,1),1:size(temp,2))=temp;
             end
             if radiusACData
-                temp=cTimelapse.extractedData(j).radiusFL;
+                temp=cTimelapse.extractedData(j).radiusAC;
                 cExperiment.cellInf(j).radiusAC(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+            
+            if nucAreaData
+                temp=cTimelapse.extractedData(j).nucArea;
+                cExperiment.cellInf(j).nucArea(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                temp=cTimelapse.extractedData(j).distToNuc;
+                cExperiment.cellInf(j).distToNuc(index+1:index+size(temp,1),1:size(temp,2))=temp;
+
             end
 
             
@@ -209,6 +225,15 @@ for i=1:length(cExperiment.cellInf)
         cExperiment.cellInf(i).segmentedRadius(index+1:end,:)=[];
     end
     
+    if radiusACData
+    cExperiment.cellInf(i).radiusAC(index+1:end,:)=[];
+    end
+    
+    if nucAreaData
+        cExperiment.cellInf(i).nucArea(index+1:end,:)=[];
+        cExperiment.cellInf(i).distToNuc(index+1:end,:)=[];
+    end
+
     cExperiment.cellInf(i).radius(index+1:end,:)=[];
     cExperiment.cellInf(i).xloc(index+1:end,:)=[];
     cExperiment.cellInf(i).yloc(index+1:end,:)=[];
