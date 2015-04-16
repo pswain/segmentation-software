@@ -9,12 +9,15 @@ cTimelapse.timelapseDir = [];
 load('~/Documents/microscope_files_swain_microscope/microscope characterisation/SuperTrainingTimelapse.mat')
 load('~/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellVision-plates-zstacks(for_trainin).mat')
 
-%% use cExperiment to make a training set - WARNING, generally will load a cCellVision
-
-num_timepoints = 30;
+%% load cExperiment - will load cCellVision
 
 [file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
 load(fullfile(path,file));
+
+
+%% use cExperiment to make a training set - WARNING, generally will load a cCellVision
+
+num_timepoints = 32;
 
 fprintf('\n\n choose a new location in which to save the training cExperiment \n \n');
 [NewExpLocation] = uigetdir(path);
@@ -73,7 +76,7 @@ expGUI = experimentTrackingGUI;
 %  Needs to already be segmented and curated (can't do it afterwards unless non trap timelapse)
 
 [file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
-load(fullfile(path,file));
+load(fullfile(path,file),'cExperiment');
 
 
 for di = 1:length(cExperiment.dirs)
@@ -156,7 +159,7 @@ for slicei = 1:size(imS,3)
 end
 %% look at single image from cCellVision
 TI = 3;
-TP =10;
+TP =1;
 
 
 gui = GenericStackViewingGUI;
@@ -183,7 +186,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=10000; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -274,13 +277,13 @@ cCellVision.runGridSearch(step_size);
 %%
 maxTP = 100;
 ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
-step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
+%step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
 step_size = 1;
 cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trainingParams.cost,cCellVision.trainingParams.gamma);
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 
-
+%%
 
 %%%%%%%%%%%%%%%%%%  TESTS   %%%%%%%%%%%%%%%%%%%%%%%%%%
 

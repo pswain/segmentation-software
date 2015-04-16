@@ -69,7 +69,7 @@ classdef experimentTracking<handle
         selectTPToProcess(cExperiment,positions);
         combineTracklets(cExperiment,positions,params);
         
-        selectCellsToPlot(cExperiment,cCellVision,position);
+        selectCellsToPlot(cExperiment,cCellVision,position,channel);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
         correctSkippedFramesInf(cExperiment,type);

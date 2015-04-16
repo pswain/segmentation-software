@@ -81,7 +81,21 @@ if nargin<7 ||isempty(TrackTrapsInTime)
 end
 
 if nargin<8 || isempty(LeaveFirstTimepointUnchanged)
-    LeaveFirstTimepointUnchanged = false;
+   options = {'leave unchanged' 'change'};
+    cancel_option = 'cancel';
+   button_answer = questdlg('Would you like to leave the first timepoint unchanged?', ...
+                         'leave first timepoint unchanged:', ...
+                         options{1},options{2},cancel_option,options{1});
+                     
+     if strcmp(button_answer,cancel_option)
+         fprintf('\n\n    active contour method cancelled    \n\n')
+         return
+     elseif strcmp(button_answer,options{1})
+         LeaveFirstTimepointUnchanged = true;
+     elseif strcmp(button_answer,options{2})
+         LeaveFirstTimepointUnchanged = false;
+     end
+    
 end
     
 %% Load timelapses
@@ -146,6 +160,8 @@ for i=1:length(positionsToIdentify)
 end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
+
+beep;pause(0.3);beep
 
 end
 

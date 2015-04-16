@@ -56,9 +56,9 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellSelectListInterface = uicontrol(CellResGUI.TopPanel,'Style','listbox','String',{'no cells selected'},...
                 'Units','normalized','Position',[.33 .015 .3 .97],'Max',1,'Min',1,'Callback',@(src,event)SelectCell(CellResGUI));
             
-            CellResGUI.CellsForSelection = [cExperiment.cellInf.posNum' cExperiment.cellInf.trapNum' cExperiment.cellInf.cellNum'];
+            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum' cExperiment.cellInf(1).trapNum' cExperiment.cellInf(1).cellNum'];
             
-            CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf.posNum(1));
+            CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
                 

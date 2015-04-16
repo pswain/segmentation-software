@@ -4,6 +4,8 @@ function SegmentConsecutiveTimepointsNoChanges(ttacObject,FirstTimepoint,LastTim
 %CrossCorrelationChannel to register the image with the first timepoint,
 %then just moves cells by this registration value without changing the cell
 %outline at all.
+% Parameters.CrossCorrelation.JumpSize1 is used as the maxmimum
+%allowed drift from first timepoint.
 %
 %
 %   INPUTS
@@ -14,7 +16,7 @@ function SegmentConsecutiveTimepointsNoChanges(ttacObject,FirstTimepoint,LastTim
 %outline
 
 
-MaxOffsetRegistration = 30;
+MaxOffsetRegistration = ttacObject.Parameters.CrossCorrelation.JumpSize1;
 
 
 FixFirstTimePointBoolean = true;
@@ -157,9 +159,18 @@ for TP = Timepoints
     WholeImage = ttacObject.ReturnImage(TP,CrossCorrelationChannel);
     WholeImage = IMnormalise(WholeImage);
     
-    TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
+    % crude fix for the the trapInfo structure hasn't been properly setup
+    % (for example if timelapses were fused).
+    if ~isstruct(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo) && isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo)
+        ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo = ttacObject.TimelapseTraps.cTimepoint(Timepoints(1)).trapInfo;
+    end
     
-    TrapsToCheck = ttacObject.TrapsToCheck(TP);
+    if ~isstruct(ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations) && isempty(ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations)
+        ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations = ttacObject.TimelapseTraps.cTimepoint(Timepoints(1)).trapLocations;
+    end
+    
+    TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
+    TrapsToCheck = ttacObject.TrapsToCheck(Timepoints(1));
     
     if TP>= TPtoStartSegmenting;
         
