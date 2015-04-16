@@ -23,13 +23,13 @@ end
 
 image = padarray(image,((size_subimage-1)/2),m);
 
- 
 
 %gets 30 by 30 square centered on 'center' in the original image
 for i=1:size(centerStack,1)
-
+    
     show_image(:,:,i) = image(round(centerStack(i,2))+(0:(size_subimage(1)-1))',round(centerStack(i,1))+(0:(size_subimage(2)-1))');
 
+ 
 end
 
 end

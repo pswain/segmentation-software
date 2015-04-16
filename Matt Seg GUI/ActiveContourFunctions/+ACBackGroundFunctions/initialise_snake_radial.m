@@ -14,7 +14,7 @@ function [radii,angles,RminTP,RmaxTP] = initialise_snake_radial(im,N,x,y,Rmin,Rm
 %                   outline. Used to set Rmin and Rmax for the image.
 
 
-N = max(N,4);
+N = max(N,2);
 
 RminTP = Rmin*ones(N,1);
 RmaxTP = Rmax*ones(N,1);

@@ -194,7 +194,8 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
                         daughterGRate(d)=0;
                     end
                 else
-                    daughterRSmooth(d,:)=ones(size(daughterRSmooth(1,:)))*1e3;
+                        t1=ones(size(daughterRadius(1,:)))*1e3;
+                        daughterRSmooth(d,1:length(t1))=t1;
                     daughterRStart(d)=1e3;
                     daughterGRate(d)=0;
                     daughtersCloseToMother(d)=0;

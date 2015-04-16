@@ -1,4 +1,4 @@
-function extractSegAreaFl(cExperiment,positionsToTrack,channelStr,type)
+function extractSegAreaFl(cExperiment,positionsToTrack,channelStr,type,overwriteSeg)
 if isempty(cExperiment.saveFolder)
     cExperiment.saveFolder=cExperiment.rootFolder;
 end
@@ -23,12 +23,16 @@ if nargin<4
     type=answer{2};
 end
 
+if nargin<5
+    overwriteSeg=false;
+end
+
 %% Run the tracking on the timelapse
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     warning off
-    cTimelapse.extractSegAreaFl(channelStr, type);
+    cTimelapse.extractSegAreaFl(channelStr, type,overwriteSeg);
     warning on
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;
