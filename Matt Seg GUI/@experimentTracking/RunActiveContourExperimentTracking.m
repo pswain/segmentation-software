@@ -1,5 +1,5 @@
-function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
-%RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+%RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
 %OverwriteTimelapseParameters controls if experiment or timelapse parameters are used
@@ -129,7 +129,7 @@ for i=1:length(positionsToIdentify)
     end
     
     if TrackTrapsInTime
-        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.cCellVision,cExperiment.timepointsToProcess);
+        cExperiment.cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
         cExperiment.cTimelapse = cTimelapse;
         
@@ -142,7 +142,7 @@ for i=1:length(positionsToIdentify)
     %on the first position find the trap images and then just assign all the relevant fields for
     %other positions.
     if  (cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
-            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cExperiment.cCellVision);
+            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cCellVision);
     end
     
     if isempty(cTimelapse.ActiveContourObject.TrapLocation) || OverwriteTimelapseParameters
