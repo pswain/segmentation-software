@@ -43,9 +43,9 @@ if ~isempty(cCellVision.cTrap)
         [xx yy] = meshgrid(1:Wide,1:Height);
         
         if i==1
-        fprintf('please select the centre of one of the two traps\n')
+        fprintf('please select the centre of one of the two traps and press enter\n')
         else
-            fprintf('please select the ceontre of the other trap\n')
+            fprintf('please select the centre of the other trap and press enter\n')
         end
         
         [loc(1) loc(2)]=getpts(gca);
@@ -93,6 +93,8 @@ if ~isempty(cCellVision.cTrap)
             ForcingImage = ACImageTransformations.radial_gradient(ForcingImage,ImageTransformParameters);
             %fprintf('\nTrap Image for trap outline set to no transformation\n')
             [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(TrapImage)/2));
+            
+            fprintf('\n\n please edit the outline by clicking on the image and press enter when you are satisfied \n\n ')
             
             [RadiiRes,AngleRes] = ACBackGroundFunctions.edit_AC_manual(TrapImage,[PntX PntY],RadiiRes',AngleRes');
             

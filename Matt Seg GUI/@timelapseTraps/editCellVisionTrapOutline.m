@@ -35,6 +35,7 @@ TrapIM(~BigTrapOutline) = mean(TrapIM(BigTrapOutline));
 
 cCellVision.cTrap.trap1 = TrapIM;
 cCellVision.cTrap.trap2 = TrapIM;
+cCellVision.se.trap = [];
 
 
 end

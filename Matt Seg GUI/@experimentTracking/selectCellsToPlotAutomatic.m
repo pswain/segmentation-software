@@ -4,7 +4,7 @@ if nargin<2
     %     positionsToTrack=1:length(cExperiment.dirs);
 end
 
-if nargin<3
+if nargin<3 || isempty(params)
     load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
     
     params.fraction=.8; %fraction of timelapse length that cells must be present or
@@ -15,8 +15,8 @@ if nargin<3
     if ~isempty(cExperiment.timepointsToProcess)
         loc=find(cExperiment.timepointsToProcess);
         params.duration=loc(end); %number of frames cells must be present
-        params.framesToCheck=loc(end);
-        params.framesToCheckEnd=loc(1);
+        params.framesToCheck=max(cExperiment.timepointsToProcess);
+        params.framesToCheckEnd=min(cExperiment.timepointsToProcess);
     end
     num_lines=1;clear prompt; clear def;
     prompt(1) = {'Fraction of whole timelapse a cell must be present'};

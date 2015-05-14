@@ -41,16 +41,15 @@ end
 end
 
 function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
-% s1=strel('disk',0);
-% for i=1:length(cTimelapse.cTrapsLabelled(traps(1)).timepoint)
-% disp(['Timepoint ',int2str(timepoint)])
+%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
+%Not sure exactly, written by Matt, but is a somewhat legacy way of
+%identifying cell outlines in the image using the hough transform without
+%consideration for past timepoints. trap_image no longer used since it was
+%changed to a cell array. Basically certainly uses channel 1 so if using
+%this code make sure channel 1 is centre DIC image.
 
-%     image=cTimelapse.returnTrapsTimepoint(traps,i,channel);
-if isempty(trap_image)
-    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
-else
-    image=trap_image;
-end
+
+image = cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
 image=double(image);
 
 f1=fspecial('gaussian',7,2);

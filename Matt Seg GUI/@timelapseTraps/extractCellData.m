@@ -114,7 +114,7 @@ for channel=1:length(channels)
     end
     
     
-    for timepoint=1:length(cTimelapse.timepointsProcessed)
+    for timepoint=find(cTimelapse.timepointsProcessed)
         
         if cTimelapse.timepointsProcessed(timepoint)
             disp(['Timepoint Number ',int2str(timepoint)]);
