@@ -7,5 +7,5 @@ function saveTimelapseExperiment(cExperiment,currentPos)
  cExperiment.cTimelapse=[];   
      cCellVision=cExperiment.cCellVision;
     cExperiment.cCellVision=[];
-save([cExperiment.saveFolder '/cExperiment'],'cExperiment','cCellVision');
+save([cExperiment.saveFolder filesep 'cExperiment.mat'],'cExperiment','cCellVision');
     cExperiment.cCellVision=cCellVision;
