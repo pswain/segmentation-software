@@ -1062,7 +1062,12 @@ for k = 1 : size(accumAOI, 1),
             candgrp_acmsum;
         cc_y = sum( candgrp_IdxI .* accum(candgrp_idx2acm) ) / ...
             candgrp_acmsum;
-        circen = [circen; cc_x, cc_y];
+        % added by Elco to try and stop strange edge cases where the centre
+        % of the cells is an NaN. Hopefully shouldn't break downstream
+        % code.
+        if ~isnan(cc_x) && ~isnan(cc_y)
+            circen = [circen; cc_x, cc_y];
+        end
     end
 end
 
