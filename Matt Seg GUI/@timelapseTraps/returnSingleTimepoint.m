@@ -12,11 +12,11 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %timelapseDir is set to 'ignore' then this is not performed and simply the
 %filename is used.
 
-if nargin<3
+if nargin<3 || isempty(channel)
     channel=1;
 end
 
-if nargin<4
+if nargin<4 || isempty(type)
     type='max';
 end
 

@@ -191,6 +191,16 @@ classdef cellResultsViewingGUI<handle
             
         end
         
+        function setCellsWithLogical(CellResGUI,logical_of_cells)
+        %function setCellsWithLogical(CellResGUI,logical)
+        % set cells to look at as a subset of the whole of cExperiment just
+        % by providing a logical or an index vector.
+        
+        CellResGUI.CellsForSelection = [CellResGUI.cExperiment.cellInf(1).posNum(logical_of_cells)' ...
+                                        CellResGUI.cExperiment.cellInf(1).trapNum(logical_of_cells)'...
+                                        CellResGUI.cExperiment.cellInf(1).cellNum(logical_of_cells)'];
+        
+        end
         
     end
 end
