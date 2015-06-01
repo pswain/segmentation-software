@@ -1,9 +1,11 @@
 function show_image = get_cell_image(image,size_subimage,centerStack,m)
-%function show_image = get_cell_image(image,center)
-
+%function show_image = get_cell_image(image,size_subimage,centerStack,m)
+%
 %get a stack of size_subimage by size_sub_image chunks of the image 
 %centered on centers in the centre vector.
-%size_subimage should be odd.
+%size_subimage should be odd and can be a [vertical_size horiontal_size]
+%sub image.
+%m is the value with which to padarray if necessary
 %centerStack = [x's  y's]
 
 if numel(size_subimage) ==1

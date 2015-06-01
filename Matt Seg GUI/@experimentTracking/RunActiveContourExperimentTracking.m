@@ -22,6 +22,10 @@ if nargin <4 || (isempty(FirstTimepoint) || isempty(LastTimepoint))
         1,...
         {int2str(LowestAllowedTimepoint); int2str(HighestAllowedTimepoint)});
     
+    if isempty(answer)
+        fprintf('\n\n active contour method cancelled\n\n');
+        return
+    end
     FirstTimepoint = str2num(answer{1});
     LastTimepoint = str2num(answer{2});
   

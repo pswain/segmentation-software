@@ -9,15 +9,21 @@ cTimelapse.timelapseDir = [];
 load('~/Documents/microscope_files_swain_microscope/microscope characterisation/SuperTrainingTimelapse.mat')
 load('~/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellVision-plates-zstacks(for_trainin).mat')
 
-%% load cExperiment - will load cCellVision
+%% load cExperiment 
 
-[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
-load(fullfile(path,file));
+[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope_analysis/');
+load(fullfile(path,file),'cExperiment');
+
+%% load cCellVision
+
+[file,path] = uigetfile('~/SkyDrive/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellvisionFiles/');
+load(fullfile(path,file),'cCellVision');
+
 
 
 %% use cExperiment to make a training set - WARNING, generally will load a cCellVision
 
-num_timepoints = 32;
+num_timepoints = 30;
 
 fprintf('\n\n choose a new location in which to save the training cExperiment \n \n');
 [NewExpLocation] = uigetdir(path);
@@ -158,7 +164,7 @@ for slicei = 1:size(imS,3)
 
 end
 %% look at single image from cCellVision
-TI = 3;
+TI = 1;
 TP =1;
 
 
@@ -168,6 +174,8 @@ A = A{1};
 figure(4);imshow(A(:,:,1),[])
 gui.stack = A;
 gui.LaunchGUI
+
+
 
 %%
 

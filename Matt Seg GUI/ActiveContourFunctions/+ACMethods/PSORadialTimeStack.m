@@ -20,6 +20,8 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 %     spread_factor_prior   default =  0.5 used in particle swarm optimisation. determines spread of initial particles.
 %     seeds                 default = 100 number of seeds used for Particle Swarm Optimisation
 %     TerminationEpoch      default = 500 number of epochs to run for sure before terminating
+%     MaximumRadiusChange   default = 2  maximum change in radius allowed
+%                           between each consecutive timepoint
 % Centers_stack  - [x y] matix of centers of cell at each image in stack
 
 %
@@ -55,6 +57,7 @@ alpha = ACparameters.alpha;%0.01%weighs non image parts (none at the moment)
 betaElco =ACparameters.beta;%0.01 %weighs difference between consecutive time points.
 R_min = ACparameters.R_min;%1;
 R_max = ACparameters.R_max;%15; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
+MaximumRadiusChange = ACparameters.MaximumRadiusChange;
 opt_points = ACparameters.opt_points;%8;
 visualise = ACparameters.visualise;%3; %degree of visualisation (0,1,2,3)
 EVALS = ACparameters.EVALS;%6000; %maximum number of iterations passed to fmincon
@@ -113,10 +116,22 @@ D2radii_all = [];
 siy = size(forcing_images,2);
 six = size(forcing_images,1);
 
-%set lower bounds to be centre -  starting contour radius s_R
-LB = R_min*ones(opt_points*Timepoints,1);
-%set lower bounds to be centre +  starting contour radius s_R
-UB = R_max*ones(size(LB));
+if use_previous_timepoint
+    
+    LB = kron(ones(Timepoints,1),radii_previous_time_point') - kron((1:Timepoints)',MaximumRadiusChange*ones(opt_points,1));
+    LB(LB<R_min) = R_min;
+    
+    UB = kron(ones(Timepoints,1),radii_previous_time_point') + kron((1:Timepoints)',MaximumRadiusChange*ones(opt_points,1));
+    UB(UB>R_max) = R_max;
+    
+else
+    %set lower bounds to be centre -  starting contour radius s_R
+    LB = R_min*ones(opt_points*Timepoints,1);
+    %set lower bounds to be centre +  starting contour radius s_R
+    UB = R_max*ones(size(LB));
+
+end
+
 
 for iP=1:Timepoints
     %fprintf('cell %d \n',iP)
@@ -189,14 +204,18 @@ if prior_provided %prior given
     
     %seed values are a distribution around the usual starting function
     %given by 'initialise_snake_radial'
-    PSOseed2 = repmat(radii_init_score_all,floor(seeds/3)-1,1);
-    PSOseed2 = PSOseed2-spread_factor*randn(size(PSOseed2)).*repmat(D2radii_all,floor(seeds/3)-1,1);
-    PSOseed2 = [radii_init_score_all;PSOseed2];
-    
+    PSOseed2 = repmat(radii_init_score_all,floor(seeds/3),1);
+    PSOseed2 = PSOseed2-spread_factor*randn(size(PSOseed2)).*repmat(D2radii_all,size(PSOseed2,1),1);
+    if size(PSOseed2,1)>0
+        PSOseed2(1,:) = radii_init_score_all;
+    end
     %seed values are a distribution around the prior given (if given)
-    PSOseed3 = repmat(prior,seeds-2*floor(seeds/3)-1,1);
+    PSOseed3 = repmat(prior,seeds-2*floor(seeds/3),1);
     PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,size(PSOseed3,1),1);
-    PSOseed3 = [prior;PSOseed3];
+    
+    if size(PSOseed3,1)>0
+        PSOseed3(1,:) = prior;
+    end
     
     PSOseed = [PSOseed1;PSOseed2;PSOseed3];
     
@@ -320,7 +339,7 @@ if visualise>=3
         pause
         close(figure_handle_2)
     end
-else
+elseif visualise>=1
     pause(0.1)
 end
 

@@ -81,6 +81,13 @@ CrossCorrelationPrior2 = 2*fspecial('gaussian',ProspectiveImageSize,JumpSize2);
 CrossCorrelationPrior2 = CrossCorrelationPrior2.*cos(angle);
 CrossCorrelationPrior2(:,1:(floor(ProspectiveImageSize/2))) = 0;
 CrossCorrelationPrior = max((1-JumpWeight)*CrossCorrelationPrior1/max(CrossCorrelationPrior1(:)),JumpWeight*CrossCorrelationPrior2/max(CrossCorrelationPrior2(:)));
+PerformRegistration = ttacObject.Parameters.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
+MaxRegistration = ttacObject.Parameters.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
+
+if ttacObject.TrapPresentBoolean
+    PerformRegistration = false; %registration should be covered by tracking in the traps.
+end
+
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
 %for debugging
@@ -110,7 +117,7 @@ NewCellStruct = struct('cellCenter',[],...
 
 %protects program from super crashing out by opening and closing a million
 %images.
-if LastTimepoint-FirstTimepoint>50 || ~isempty(gcp('nocreate'))%(matlabpool('size') ~= 0)
+if LastTimepoint-FirstTimepoint>50 %(matlabpool('size') ~= 0)
     
     ACparameters.visualise = 0;
 end
@@ -166,7 +173,7 @@ end
      TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
  end
  
-disp = cTrapDisplay(ttacObject.TimelapseTraps,[]);
+disp = cTrapDisplay(ttacObject.TimelapseTraps,[],[],ttacObject.Parameters.ActiveContour.ShowChannel);
 
 %% loop through the rest of the timepoints
 for TP = Timepoints
@@ -222,7 +229,7 @@ for TP = Timepoints
         CrossCorrelating = false(size(TrapsToCheck));
         
         PredictedCellLocationsAllCells = cell(size(TrapsToCheck));
-        
+
         for TI = 1:length(TrapsToCheck)
             %fprintf('%d,trap\n',TI)
             CurrentTrapInfo = TrapInfo(TrapsToCheck(TI));
@@ -237,9 +244,19 @@ for TP = Timepoints
             
             if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && ~isinf(CrossCorrelationValueThreshold) && ~isempty(PreviousCurrentTrapInfo.cell(1).cellCenter)
                 
+                %register images and use to inform expeted position
+                if PerformRegistration
+                    reg_result = FindRegistrationForImageStack(cat(3,PreviousWholeImage,WholeImage),1,MaxRegistration);
+                    reg_result = fliplr(reg_result(2,:));
+                    %this is no the shift required in the current image - 
+                    % [x y] after fliplr - to make it match up with the
+                    % Previous timepoint image, so is later subtracted from
+                    % the expected position to get a better expected
+                    % position estimate.
+                end
+                
                 
                 PredictedCellLocationsAllCells{TI} = zeros(ttacObject.TrapImageSize(1),ttacObject.TrapImageSize(2),length(PreviousCurrentTrapInfo.cell));
-                
                 if ttacObject.Parameters.ActiveContour.visualise>2;
                     cc_gui.stack = cat(3,WholeImageElcoHough,WholeImage);
                     cc_gui.LaunchGUI;
@@ -269,6 +286,10 @@ for TP = Timepoints
                         LocalExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).cellCenter;
                     end
                     
+                    if PerformRegistration
+                        LocalExpectedCellCentre = LocalExpectedCellCentre - reg_result;
+                    end
+                    
                     if ttacObject.TrapPresentBoolean
                     ExpectedCellCentre = LocalExpectedCellCentre + [TrapLocations(TrapsToCheck(TI)).xcenter TrapLocations(TrapsToCheck(TI)).ycenter] - ([TrapWidth TrapHeight] + 1) ;
                     else
@@ -293,7 +314,11 @@ for TP = Timepoints
                         ExpectedCellCentre(2) = 1;
                     end
                     
-                    CellRadii = PreviousCurrentTrapInfo.cell(CI).cellRadii;
+                    if ~isfield(PreviousCurrentTrapInfo.cell(CI),'cellRadii')
+                        CellRadii = PreviousCurrentTrapInfo.cell(CI).cellRadius;
+                    else
+                        CellRadii = PreviousCurrentTrapInfo.cell(CI).cellRadii;
+                    end
                     
                     PredictedCellLocation = zeros(ProspectiveImageSize,ProspectiveImageSize);
                     for CellRadius = CellRadii
@@ -394,8 +419,8 @@ for TP = Timepoints
             ACTrapImageStack = ACImage;
         end
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
-        parfor TI = 1:length(TrapsToCheck)
+        fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
+        for TI = 1:length(TrapsToCheck)
         
         %for TI = 1:length(TrapsToCheck)
         %fprintf('lin 348 SegmentConsecutive....: make parallel again\n')
@@ -435,8 +460,10 @@ for TP = Timepoints
                 if CrossCorrelating(TI)
                     %look for cells based on cross correlation with
                     %previous timepoint
-                    value = max(PredictedCellLocationsAllCells{TI}(:));
-                    [Index] = find(PredictedCellLocationsAllCells{TI}==value,1);
+                    [value,Index] = max(PredictedCellLocationsAllCells{TI}(:));
+                    %[Index] = find(PredictedCellLocationsAllCells{TI}==value,1);
+                    value = value(1);
+                    Index = Index(1);
                     if value>CrossCorrelationValueThreshold
                         [ynewcell,xnewcell,CIpar] = ind2sub(size(PredictedCellLocationsAllCells{TI}),Index);
                         ProceedWithCell = true;
@@ -547,14 +574,18 @@ for TP = Timepoints
                     SegmentationBinary = imfill(SegmentationBinary,'holes');
                     DilateSegmentationBinary = imdilate(SegmentationBinary,strel('disk',PostCellIdentificationDilateValue),'same');
                     
-                     if CrossCorrelating(TI)
-                         %remove cell that has been successfully cross
-                         %correlated from cross correlation matrix
-                         PredictedCellLocationsAllCells{TI}(:,:,CIpar) = -2*abs(CrossCorrelationValueThreshold);
-                         %ensure no cells are found overlapping identified cell
-                         PredictedCellLocationsAllCells{TI}(repmat(DilateSegmentationBinary,[1,1,size(PredictedCellLocationsAllCells{TI},3)])) = -2*abs(CrossCorrelationValueThreshold);
-                     end
-                     %remove pixels identified as cell pixels from
+                    if CrossCorrelating(TI)
+                        %remove cell that has been successfully cross
+                        %correlated from cross correlation matrix
+                        PredictedCellLocationsAllCells{TI}(:,:,CIpar) = -2*abs(CrossCorrelationValueThreshold);
+                        
+                        %ensure no cells are found overlapping identified cell
+                        pixels_to_remove = find(DilateSegmentationBinary);
+                        all_pixels_to_remove = kron(ones(1,size(PredictedCellLocationsAllCells{TI},3)),pixels_to_remove') + kron(((0:(size(PredictedCellLocationsAllCells{TI},3)-1))*size(PredictedCellLocationsAllCells{TI},1)*size(PredictedCellLocationsAllCells{TI},2)),ones(1,length(pixels_to_remove)));
+                        PredictedCellLocationsAllCells{TI}(all_pixels_to_remove) = -2*abs(CrossCorrelationValueThreshold);
+                        
+                    end
+                    %remove pixels identified as cell pixels from
                      %decision image
                      TrapDecisionImage(DilateSegmentationBinary) = 2*abs(TwoStageThreshold);
                      
@@ -577,6 +608,12 @@ for TP = Timepoints
             %for new cells it is simply their current location
              for CI = 1:length(NewCrossCorrelatedCells);
                 CellMove = (ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).cellCenter - PreviousCurrentTrapInfo.cell(OldCells(CI)).cellCenter);
+                
+                if PerformRegistration 
+                    % so as not to confuse jumps in registration (which
+                    % will be added anyway) with cell specific movement.
+                    CellMove = CellMove + reg_result;
+                end
                 if any(abs(CellMove)>4) %more than 4, probably a jump, cell movement not related to previous timepoint
                     CellMove = [0 0];
                 end
