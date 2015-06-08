@@ -56,7 +56,7 @@ if sum(loc)>0
             ffile=fullfile(cTimelapse.timelapseDir,file);
         end
         if ~isempty(cTimelapse.imSize)
-            timepointIm=zeros([cTimelapse.imSize sum(loc)]);
+            timepointIm=[];%zeros([cTimelapse.imSize sum(loc)]);
             if strfind(ffile,'TIF')
                 timepointIm=imread(ffile,'Index',1);
                 timepointIm=timepointIm(:,:,1);
@@ -75,6 +75,8 @@ if sum(loc)>0
         
         %change if want things other than maximum projection
         switch type
+            case 'min'
+                timepointIm=min(timepointIm,[],3);
             case 'max'
                 timepointIm=max(timepointIm,[],3);
             case 'stack'
@@ -138,6 +140,8 @@ end
 %
 if ~isempty(cTimelapse.imScale)
     timepointIm=imresize(timepointIm,cTimelapse.imScale);
+    %to correct for black lines
+    timepointIm(1:2,:)=timepointIm(3:4,:);
     timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
 end
 

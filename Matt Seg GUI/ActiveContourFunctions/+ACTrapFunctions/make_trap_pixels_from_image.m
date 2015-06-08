@@ -1,4 +1,8 @@
-function TrapPixels  = make_trap_pixels_from_image(TrapIm,Parameters)
+function TrapPixels  = make_trap_pixels_from_image(TrapIm,Parameters,shouldDisp,oldTrapIm)
+
+if nargin<2 || isempty(shouldDisp)
+    shouldDisp=true;
+end
 centers = zeros(2,2);
 
 Nmorph = 0;
@@ -8,31 +12,42 @@ TrapIm = TrapIm/max(TrapIm(:));
 
 %% finding centers
 
-f_im = figure;
-imshow(TrapIm,[])
-n = 1;
-fprintf('\n\nselect pillar centers\n\n');
-while n<3
-    [centers(n,1), centers(n,2)] = ginput(1);
-    hold on
-    plot(centers(n,1),centers(n,2),'or');
-    pause(0.1);
-    n = n+1;
-    
+if shouldDisp
+    f_im = figure;
+    imshow(TrapIm,[])
+    n = 1;
+    fprintf('\n\nselect pillar centers\n\n');
+    while n<3
+        [centers(n,1), centers(n,2)] = ginput(1);
+        hold on
+        plot(centers(n,1),centers(n,2),'or');
+        pause(0.1);
+        n = n+1;
+        
+    end
+    hold off
+else
+    trapProps=regionprops(bwlabel(oldTrapIm),'Centroid');
+    centers=[trapProps(:).Centroid];
+    centers=reshape(centers,length(centers)/2,2)';
+%     centers(1,:)=[35 20];
+%     centers(2,:)=[35 60];
 end
-hold off
-
 %% finding boundary
 
 % just a way to get default parameters
 ttacObject = timelapseTrapsActiveContour;
 
-if nargin>1
+if nargin>1 && ~isempty(Parameters)
     ttacObject.Parameters = Parameters;
 else
 
 ttacObject.Parameters.ActiveContour.opt_points = 10;
+if shouldDisp
 ttacObject.Parameters.ActiveContour.visualise = 4;
+else
+    ttacObject.Parameters.ActiveContour.visualise = 0;
+end
 ttacObject.Parameters.ActiveContour.alpha = 5e-1;
 %ttacObject.Parameters.ImageTransformation.ImageTransformFunction = 'none';
 ttacObject.Parameters.ActiveContour.seeds = 35;
@@ -67,18 +82,18 @@ end
 
 TrapPixels = imfill(TrapPixels,'holes');
 
-TrapPixels = imdilate(TrapPixels,strel('disk',2));
+TrapPixels = imdilate(TrapPixels,strel('disk',1));
 
 if Nmorph>0
 TrapPixels = bwmorph(TrapPixels,'erode',Nmorph);
 TrapPixels = bwmorph(TrapPixels,'dilate',Nmorph);
 end
 
-imshow(OverlapGreyRed(TrapIm,TrapPixels,[],[],true),[]);
-fprintf('\n\n press any button to continue \n\n')
-pause;
+% imshow(OverlapGreyRed(TrapIm,TrapPixels,[],[],true),[]);
+% fprintf('\n\n press any button to continue \n\n')
+% pause;
 
-
-close(f_im);
-
+if shouldDisp
+    close(f_im);
+end
 end
