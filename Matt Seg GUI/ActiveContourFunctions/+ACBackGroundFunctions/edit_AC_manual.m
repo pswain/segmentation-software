@@ -10,7 +10,8 @@ function [radii,angles,center] = edit_AC_manual(image,center,radii,angles)
 Rmin=2;
 Rmax=max(size(image));
 
-im_center =  round(fliplr(size(image) - 1)/2);
+%assumes image has odd size
+im_center =  round(fliplr(size(image) - 1)/2) +1;
 
 if nargin<2 || isempty(center)
     
@@ -49,7 +50,7 @@ imshow(image,[]);
 
 hold on
 for i =1:length(radii);
-    lines_h(i) =  plot([xmin(i) xmax(i)]+center(1)+1,[ymin(i) ymax(i)]+center(2)+1,'b');
+    lines_h(i) =  plot([xmin(i) xmax(i)]+center(1),[ymin(i) ymax(i)]+center(2),'b');
 end
 
 center_h = plot(center(1),center(2),'ob');

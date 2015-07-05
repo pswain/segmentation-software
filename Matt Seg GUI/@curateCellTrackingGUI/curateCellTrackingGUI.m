@@ -77,7 +77,7 @@ classdef curateCellTrackingGUI<handle
                 TrackingCurator.StripWidth = maxTimepoint;
             end
             
-            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex));
+            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex));
             
             if TrackingCurator.ShowOtherChannels
                 
@@ -348,7 +348,7 @@ classdef curateCellTrackingGUI<handle
                             tempImage = 0.3*tempImage;
                             tempImage = cat(3,tempImage,tempImage,tempImage);
                             [tempIndexI, tempIndexJ] = find(tempOutline==0,1);
-                            tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex);
+                            tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex);
                             
                             tempOutline = label2rgb(tempOutline,'jet','w','noshuffle');
                             tempOutline(tempIndexI,tempIndexJ,:) = 255;

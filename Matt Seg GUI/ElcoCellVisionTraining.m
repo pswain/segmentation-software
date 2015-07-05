@@ -132,6 +132,12 @@ SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
 %SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
 
+%% set segmentation method
+
+SegMethod = @(CSVM,image) NoTrapVerySlimBadFocus(CSVM,image);
+
+%SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
+
 
 %% check histrogram of images
 
@@ -165,7 +171,7 @@ for slicei = 1:size(imS,3)
 end
 %% look at single image from cCellVision
 TI = 1;
-TP =1;
+TP =7;
 
 
 gui = GenericStackViewingGUI;
@@ -194,7 +200,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs

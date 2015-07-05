@@ -107,7 +107,7 @@ classdef cTrapDisplay<handle
                 dis_w=dis_w+1;
             end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;

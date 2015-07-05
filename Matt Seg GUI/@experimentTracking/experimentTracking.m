@@ -82,6 +82,7 @@ classdef experimentTracking<handle
         saveTimelapseExperiment(cExperiment,currentPos);
         saveExperiment(cExperiment,fileName);
         plotCellInformation(cExperiment,position);
+        copyExperiment(cExperiment,new_location)
     end
 end
 

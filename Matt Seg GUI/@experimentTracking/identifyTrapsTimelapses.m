@@ -51,24 +51,24 @@ for i=1:length(positionsToIdentify)
                 [cTimelapse.cTimepoint(cExperiment.timepointsToProcess(1)).trapLocations(:).ycenter],2);
             ExclusionZone = [];
             if TotalXDrift>0
-                ExclusionZone = [(cTimelapse.imSize(2) - (TotalXDrift + ceil(cTimelapse.cTrapSize.bb_width/2))) 1 ...
+                ExclusionZone = [(cTimelapse.imSize(2) - (TotalXDrift + ceil(cTimelapse.cTrapSize.bb_width))) 1 ...
                                     cTimelapse.imSize(2) cTimelapse.imSize(1)];
                 
             else
                 ExclusionZone = [1 1 ...
-                                    (TotalXDrift + ceil(cTimelapse.cTrapSize.bb_width/2)) cTimelapse.imSize(1)];
+                                    (TotalXDrift + ceil(cTimelapse.cTrapSize.bb_width)) cTimelapse.imSize(1)];
                 
             end
             
              if TotalYDrift>0
                 ExclusionZone = [ExclusionZone ;...
-                                    [1 (cTimelapse.imSize(1) - (TotalYDrift + ceil(cTimelapse.cTrapSize.bb_height/2))) ...
+                                    [1 (cTimelapse.imSize(1) - (TotalYDrift + ceil(cTimelapse.cTrapSize.bb_height))) ...
                                     cTimelapse.imSize(2) cTimelapse.imSize(1)] ];
                 
             else
                 ExclusionZone = [ExclusionZone ;...
                                     [1 1 ...
-                                    cTimelapse.imSize(2) (TotalYDrift + ceil(cTimelapse.cTrapSize.bb_height/2))] ];
+                                    cTimelapse.imSize(2) (TotalYDrift + ceil(cTimelapse.cTrapSize.bb_height))] ];
                  
             end
             

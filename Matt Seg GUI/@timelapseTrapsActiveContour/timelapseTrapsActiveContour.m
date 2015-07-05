@@ -109,7 +109,7 @@ classdef timelapseTrapsActiveContour<handle
         
         function CellCentre = ReturnCellCentreAbsolute(ttacObject,Timepoint,TrapIndex,CellIndex)
             % CellCentre = ReturnCellCentreAbsolute(ttacObject,Timepoint,TrapIndex,CellIndex)
-            
+            %
             %returns the ABSOLUTE position (as double) of the cells in the image.
             %can handle an CellIndex as an array, in which case returns
             %column of form [x's   y's].
@@ -121,7 +121,7 @@ classdef timelapseTrapsActiveContour<handle
             CellCentre =  reshape(double([ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell(CellIndex).cellCenter]),2,[])';
             
             
-            if ttacObject.TrapPresentBoolean
+            if ttacObject.TrapPresentBoolean && ~isempty(CellCentre)
                 
                 CellCentre = CellCentre + ...
                     repmat(ttacObject.ReturnTrapCentre(Timepoint,TrapIndex) - [ttacObject.TimelapseTraps.cTrapSize.bb_width ttacObject.TimelapseTraps.cTrapSize.bb_height],length(CellIndex),1) - 1;
@@ -478,8 +478,12 @@ classdef timelapseTrapsActiveContour<handle
             CellImage = zeros(ttacObject.Parameters.ImageSegmentation.SubImageSize,ttacObject.Parameters.ImageSegmentation.SubImageSize,length(Timepoints));
              
             for TP =UniqueTimepoints
-                 
-                Image = ttacObject.ReturnImage(TP,channel);
+                
+                Image = (sign(channel(1))*ttacObject.ReturnImage(TP,abs(channel(1))));
+                
+                for chi = 2:length(channel)
+                    Image = Image + (sign(channel(chi))*ttacObject.ReturnImage(TP,abs(channel(chi))));
+                end
                  
                 switch normalise
                     case 'median'

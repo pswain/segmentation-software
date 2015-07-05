@@ -122,10 +122,13 @@ radii_stack_mat = cat(2,repmat(radii_previous_timepoint,points,1),radii_stack_ma
 %quicker but could cause errors for small numbers of time points
 %timepoint_diff_mat = (1 - ( radii_stack_mat(:,1:(end-radii_length))./radii_stack_mat(:,(radii_length+1):end))).^2;
 
-timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))./...
-                        (radii_stack_mat(:,(radii_length+1):end) +  radii_stack_mat(:,1:(end-radii_length)))).^2;
+%timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))./...
+%                        (radii_stack_mat(:,(radii_length+1):end) +  radii_stack_mat(:,1:(end-radii_length)))).^2;
 
-Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat.*timepoint_diff_mat>0.01,2);
+timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))).^2;
+
+
+Ftot = Ftot+ time_change_punishing_factor*sum(timepoint_diff_mat,2);
 
 end
 

@@ -1,15 +1,12 @@
 function setChannelOffset(cExperiment,positionsToExtract,offset)
-
-%method is either 'overwrite' or 'update'. If overwrite, it goes through
-%all of the cellsToPlot and extracts the information from the saved
-%Timelapses. If method is 'update', it finds the cells that have been added
-%to the cellsToPlot and adds their inf to the cellInf, and removes those
-%that have been removed.
-
+%setChannelOffset(cExperiment,positionsToExtract,offset)
+% sets the offset field for all cTimelapse objects in the cExperiment
+% class.
+%offset is an array as in cTimelapse. Can leave blank and write by GUI.
 
 
 if nargin<2
-    positionsToExtract=find(cExperiment.posTracked);
+    positionsToExtract=1:length(cExperiment.dirs);
 %     positionsToTrack=1:length(cExperiment.dirs);
 end
 
@@ -40,3 +37,5 @@ for i=1:length(positionsToExtract)
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(experimentPos);
 end
+
+fprintf('finished setting offsets\n')

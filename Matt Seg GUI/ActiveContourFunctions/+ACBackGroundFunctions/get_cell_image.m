@@ -23,15 +23,31 @@ if nargin<4 || isempty(m)
     end
 end
 
-image = padarray(image,((size_subimage-1)/2),m);
+image_cell = GetSubStack(image,round(fliplr(centerStack)),size_subimage,m);
 
 
-%gets 30 by 30 square centered on 'center' in the original image
-for i=1:size(centerStack,1)
+if size(centerStack,1)>1
+show_image = m*ones([size_subimage size(centerStack,1)]);
+
+for i=1:length(image_cell)
     
-    show_image(:,:,i) = image(round(centerStack(i,2))+(0:(size_subimage(1)-1))',round(centerStack(i,1))+(0:(size_subimage(2)-1))');
-
- 
+    show_image(:,:,i) = image_cell{i};
+    
 end
+else
+    show_image = image_cell{1};
+end
+
+% 
+% image = padarray(image,((size_subimage-1)/2),m);
+% 
+% 
+% %gets 30 by 30 square centered on 'center' in the original image
+% for i=1:size(centerStack,1)
+%     
+%     show_image(:,:,i) = image(round(centerStack(i,2))+(0:(size_subimage(1)-1))',round(centerStack(i,1))+(0:(size_subimage(2)-1))');
+% 
+%  
+% end
 
 end
