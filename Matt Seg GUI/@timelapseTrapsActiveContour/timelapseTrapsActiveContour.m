@@ -34,7 +34,7 @@ classdef timelapseTrapsActiveContour<handle
     end
     
     properties(Constant)
-        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image','nothing'}
+        ACmethods = {'AC method with cross correlation','AC method on found and tracked centres','Register Image with First Timepoint Image','AC method specifically for GFP stacks','nothing'}
     end
     
     methods
@@ -711,7 +711,12 @@ classdef timelapseTrapsActiveContour<handle
             if strcmp(ACmethod,ttacObject.ACmethods{3}) %jusy cross correlating whole image with first image and shifting accordingly (for cycloheximide datasets)
                 ttacObject.SegmentConsecutiveTimepointsNoChanges(FirstTimepoint,LastTimepoint);
             end
-            if strcmp(ACmethod,ttacObject.ACmethods{4}) %nothing - useful somtimes for instantiating timelapse and tracking traps before editing by hand
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{4}) % method designed specifically for bright GFP images. Has some caveats and requirements
+                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+            end
+            
+            if strcmp(ACmethod,ttacObject.ACmethods{5}) %nothing - useful somtimes for instantiating timelapse and tracking traps before editing by hand
             end
             
         end

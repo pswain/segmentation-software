@@ -23,7 +23,7 @@ load(fullfile(path,file),'cCellVision');
 
 %% use cExperiment to make a training set - WARNING, generally will load a cCellVision
 
-num_timepoints = 30;
+num_timepoints = 40;
 
 fprintf('\n\n choose a new location in which to save the training cExperiment \n \n');
 [NewExpLocation] = uigetdir(path);
@@ -106,6 +106,15 @@ cTimelapseDisplay(cTimelapse)
 clear cExperiment currentPos di file path
 
 figure;imshow(OverlapGreyRed(double(cCellVision.cTrap.trap1),cCellVision.cTrap.trapOutline,[],[],true),[]);
+
+%%
+TP = round(rand*length(cTimelapse.cTimepoint));
+TI = round(rand*length(cTimelapse.cTimepoint(TP).trapInfo));
+
+imshow(OverlapGreyRed(double(cTimelapse.returnSingleTrapTimepoint(TI,TP,1)),cCellVision.cTrap.trapOutline,[],[],true),[]);
+
+
+
 %% improve cCellvision trap outline
 
     which_cell_to_use = 2;
@@ -137,6 +146,31 @@ SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 SegMethod = @(CSVM,image) NoTrapVerySlimBadFocus(CSVM,image);
 
 %SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
+
+%% set segmentation method
+
+SegMethod = @(CSVM,image) createImFilterSetNoTrapSlimGFP(CSVM,image);
+
+%SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
+
+%% for GFP segmentation, get mean_brightness
+pix_values = [];
+TPsRand = randperm(length(cTimelapse.cTimepoint));
+for i=1:5
+    im = cTimelapse.returnSingleTimepoint(TPsRand(i),cTimelapse.channelsForSegment(2));
+    pix_values = cat(1,pix_values,im(:));
+    
+end
+
+mean_brightness = mean(pix_values(pix_values>5*median(pix_values)));
+
+cCellVision.se = struct;
+
+cCellVision.se.se3=strel('disk',3);
+    cCellVision.se.se2=strel('disk',2);
+    cCellVision.se.se1=strel('disk',1);
+
+cCellVision.se.mean_brightness = mean_brightness;
 
 
 %% check histrogram of images
@@ -170,14 +204,18 @@ for slicei = 1:size(imS,3)
 
 end
 %% look at single image from cCellVision
-TI = 1;
-TP =7;
+%TI = 1;
+%TP =6;
+
+TP = round(rand*length(cTimelapse.cTimepoint));
+TI = round(rand*length(cTimelapse.cTimepoint(TP).trapInfo));
+
 
 
 gui = GenericStackViewingGUI;
 A =cTimelapse.returnSegmenationTrapsStack(TI,TP);
 A = A{1};
-figure(4);imshow(A(:,:,1),[])
+figure(4);imshow(cTimelapse.returnSingleTrapTimepoint(TI,TP),[])
 gui.stack = A;
 gui.LaunchGUI
 
@@ -200,7 +238,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -297,8 +335,22 @@ cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trai
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 
-%%
+%% classify images and see
 
+for TP = 1:length(cTimelapse.cTimepoint);
+
+traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
+
+DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);
+TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
+
+DecisionImageStack = DecisionImageStack./(2*max(abs(DecisionImageStack(:))));
+DecisionImageStack = DecisionImageStack -min(DecisionImageStack(:));
+TrapStack = TrapStack./max(TrapStack(:));
+
+view_gui = GenericStackViewingGUI(cat(2,DecisionImageStack,TrapStack));
+uiwait()
+end
 %%%%%%%%%%%%%%%%%%  TESTS   %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% test function handles thing
