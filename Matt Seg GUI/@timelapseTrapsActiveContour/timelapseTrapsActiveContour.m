@@ -103,7 +103,11 @@ classdef timelapseTrapsActiveContour<handle
             
             %can handle CellIndex as an array
             
-            CellLabel = [ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cellLabel(CellIndex)];
+            if nargin<4
+                CellLabel = ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cellLabel;
+            else
+                CellLabel = [ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cellLabel(CellIndex)];
+            end
         end
         
         
@@ -217,8 +221,8 @@ classdef timelapseTrapsActiveContour<handle
             
         end
         
-        function Image = ReturnImage(ttacObject,Timepoint,Channel)
-            % Image = ReturnImage(ttacObject,Timepoint,Channel)
+        function Image = ReturnImage(ttacObject,Timepoint,Channel,normalise)
+            % Image = ReturnImage(ttacObject,Timepoint,Channel,normalise)
             
             % reuturns a the image from a single timepoint (Timepoint) in
             % channel (Channel).
@@ -231,6 +235,10 @@ classdef timelapseTrapsActiveContour<handle
                 Channel = 1;
             end
             
+            if nargin<4 || isempty(normalise)
+                normalise = 'none';
+            end
+            
             Image = ttacObject.TimelapseTraps.returnSingleTimepoint(Timepoint,Channel);
             
             %%%REALLY TEMPORARY JUST TO FIX DOA1%%%%%%%%%%%
@@ -239,6 +247,21 @@ classdef timelapseTrapsActiveContour<handle
                 Image = fliplr(Image);
             end
             
+            switch normalise
+                case 'median'
+                    Image = double(Image);
+                    Image = Image./(median(Image(:)));
+                case 'none'
+                    Image = double(Image);
+                case 'raw'
+                case 'medsubiqr'
+                    Image = double(Image);
+                    Image = Image - (median(Image(:)));
+                    image_iqr = iqr(Image(:));
+                    if image_iqr ~=0
+                        Image = Image/image_iqr;
+                    end
+            end
             
         end
         
@@ -307,11 +330,11 @@ classdef timelapseTrapsActiveContour<handle
                     end
                     
                     TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmented = sparse(SegmentationBinary);
-                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmentedAC = sparse(SegmentationBinary);
+                    %TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).segmentedAC = sparse(SegmentationBinary);
                     seg_areas=full(SegmentationBinary);
                     segLabel=imfill(seg_areas,'holes');
                         cellLoc=segLabel>0;
-                    TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).radiusAC=sqrt(sum(cellLoc(:))/pi);
+                    %TemporaryCTimepoint.trapInfo(TI(TPi)).cell(CI(TPi)).radiusAC=sqrt(sum(cellLoc(:))/pi);
                     %debuggery
                     CellArraySizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cell);
                     CellLabelSizeAfter = size(TemporaryCTimepoint.trapInfo(TI(TPi)).cellLabel);
@@ -420,12 +443,7 @@ classdef timelapseTrapsActiveContour<handle
                 if ischar(channel) && strcmp(channel,'trap')
                     Image = ttacObject.ReturnTrapImage(TP);
                 else
-                    Image = ttacObject.ReturnImage(TP,channel);
-                    switch normalise
-                        case 'median'
-                            Image = double(Image);
-                            Image = Image./(median(Image(:)));
-                    end
+                    Image = ttacObject.ReturnImage(TP,channel,normalise);
                 end
                 
                 RelevantEntries = Timepoints==TP;
@@ -479,18 +497,18 @@ classdef timelapseTrapsActiveContour<handle
              
             for TP =UniqueTimepoints
                 
-                Image = (sign(channel(1))*ttacObject.ReturnImage(TP,abs(channel(1))));
                 
-                for chi = 2:length(channel)
-                    Image = Image + (sign(channel(chi))*ttacObject.ReturnImage(TP,abs(channel(chi))));
+                for chi = 1:length(channel)
+                    temp_Image = ttacObject.ReturnImage(TP,abs(channel(chi)),normalise);
+                    if chi == 1
+                        Image = (sign(channel(1))*temp_Image);
+                
+                    else
+                    Image = Image + (sign(channel(chi))*temp_Image);
+                    end
                 end
-                 
-                switch normalise
-                    case 'median'
-                        Image = double(Image);
-                        Image = Image./(median(Image(:)));
-                    case 'none'
-                end
+                
+                
                  
                 CurrentTPCellCentres = zeros(sum(Timepoints==TP,2),2);
                  
@@ -561,10 +579,13 @@ classdef timelapseTrapsActiveContour<handle
         function [CellTransformedImage, CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             %[CellTransformedImage CellImages] = ReturnTransformedImagesForSingleCell(ttacObject,Timepoints,TrapIndices,CellIndices)
             
-            ttacTransformFunction = str2func(['ttacImageTansformationMethods.' ttacObject.Parameters.ImageSegmentation.ImageTransformMethod]);
-
-            [CellTransformedImage, CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
-               
+            if ~isempty(CellIndices)
+                ttacTransformFunction = str2func(['ttacImageTansformationMethods.' ttacObject.Parameters.ImageSegmentation.ImageTransformMethod]);
+                [CellTransformedImage, CellImages] = ttacTransformFunction(ttacObject,Timepoints,TrapIndices,CellIndices);
+            else
+                CellTransformedImage = [];
+                CellImages = [];
+            end
         end
         
         
@@ -687,7 +708,7 @@ classdef timelapseTrapsActiveContour<handle
             end
         end
         
-        function  RunActiveContourMethod(ttacObject,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod)
+        function  RunActiveContourMethod(ttacObject,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse)
             if nargin<5 || isempty(ACmethod)
                 ACmethod = [];
             end
@@ -700,12 +721,12 @@ classdef timelapseTrapsActiveContour<handle
             end
             
             if strcmp(ACmethod,ttacObject.ACmethods{1}) %active contour and cross correlation
-                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallel(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallel(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse);
 
             end
             
             if strcmp(ACmethod,ttacObject.ACmethods{2}) %active contour on identified and tracked cells
-                ttacObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+                ttacObject.SegmentConsecutiveTimePoints(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse);
             end
             
             if strcmp(ACmethod,ttacObject.ACmethods{3}) %jusy cross correlating whole image with first image and shifting accordingly (for cycloheximide datasets)
@@ -713,7 +734,7 @@ classdef timelapseTrapsActiveContour<handle
             end
             
             if strcmp(ACmethod,ttacObject.ACmethods{4}) % method designed specifically for bright GFP images. Has some caveats and requirements
-                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged);
+                ttacObject.SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse);
             end
             
             if strcmp(ACmethod,ttacObject.ACmethods{5}) %nothing - useful somtimes for instantiating timelapse and tracking traps before editing by hand

@@ -1,5 +1,5 @@
-function SegmentConsecutiveTimepointsCrossCorrelationParallel(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean)
-%SegmentConsecutiveTimepointsCrossCorrelation(ttacObject,FirstTimepoint,LastTimepoint,varargin)
+function SegmentConsecutiveTimepointsCrossCorrelationParallel(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,CellsToUse)
+%SegmentConsecutiveTimepointsCrossCorrelation(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,CellsToUse)
 %Complete segmentation function that uses the cCellVision and cross correlation to find images of
 %cells and performs the active contour to get the edges.
 %
@@ -10,6 +10,11 @@ function SegmentConsecutiveTimepointsCrossCorrelationParallel(ttacObject,FirstTi
 % LastTimepoint     - and to end
 % FixFirstTimePoint - optional : if this is true the software will not alter the first timepoint
 %                     but will still use the information in finding cells.
+% CellsToUse        - optional (array) of type [trapIndex cellLabel] 
+%                     specifying which cells should be
+%                     segmented. can also just be the
+%                     column vector [trapIndex] - currently only this
+%                     second form works.
 %
 %
 %outline
@@ -76,11 +81,19 @@ JumpSize2 = ttacObject.Parameters.CrossCorrelation.JumpSize2;% 15; distance a ce
 JumpWeight = ttacObject.Parameters.CrossCorrelation.JumpWeight;% 0.2; weight given to larger jump (raise of pops frequent).
 
 CrossCorrelationPrior1 = fspecial('gaussian',ProspectiveImageSize,JumpSize1); %filter with which prospective image is multiplied to weigh centres close to expected stronger.
+
+%DONT COMMIT = trial cross correlation prior change
+% [CrossCorrelationPrior1,~] = ACBackGroundFunctions.radius_and_angle_matrix(ProspectiveImageSize*[1 1]);
+% CrossCorrelationPrior1 = (1./(CrossCorrelationPrior1+20)).*(CrossCorrelationPrior1<=JumpSize1);
+% CrossCorrelationPrior1(CrossCorrelationPrior1 == Inf) = 1;
+% CrossCorrelationPrior1(CrossCorrelationPrior1~=0) = CrossCorrelationPrior1(CrossCorrelationPrior1~=0)+10;
+
 CrossCorrelationPrior2 = 2*fspecial('gaussian',ProspectiveImageSize,JumpSize2);
 [~,angle] = ACBackGroundFunctions.radius_and_angle_matrix([ProspectiveImageSize,ProspectiveImageSize]);
 CrossCorrelationPrior2 = CrossCorrelationPrior2.*cos(angle);
 CrossCorrelationPrior2(:,1:(floor(ProspectiveImageSize/2))) = 0;
 CrossCorrelationPrior = max((1-JumpWeight)*CrossCorrelationPrior1/max(CrossCorrelationPrior1(:)),JumpWeight*CrossCorrelationPrior2/max(CrossCorrelationPrior2(:)));
+
 PerformRegistration = ttacObject.Parameters.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
 MaxRegistration = ttacObject.Parameters.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
 
@@ -90,6 +103,9 @@ end
 
 Recentering = true; %recalcluate the centre of the cells each time as the average ofthe outline
 
+min_filt_size = 3; %filter DIM by square of this size
+
+f_dim = fspecial('disk',3);
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
 %for debugging
@@ -175,7 +191,13 @@ end
      TrapMaxCell = ttacObject.TimelapseTraps.cTimepoint(TPtoStartSegmenting-1).trapMaxCellUTP;
  end
  
-disp = cTrapDisplay(ttacObject.TimelapseTraps,[],[],ttacObject.Parameters.ActiveContour.ShowChannel);
+ if nargin<5|| isempty(CellsToUse)
+     TrapsToCheck = ttacObject.TrapsToCheck(Timepoints(1));
+ else
+     TrapsToCheck = intersect(CellsToUse(:,1),ttacObject.TrapsToCheck(Timepoints(1)))';
+ end
+ 
+disp = cTrapDisplay(ttacObject.TimelapseTraps,[],[],ttacObject.Parameters.ActiveContour.ShowChannel,TrapsToCheck);
 
 %% loop through the rest of the timepoints
 for TP = Timepoints
@@ -214,7 +236,6 @@ for TP = Timepoints
     
     TrapLocations = ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations;
     
-    
     if ttacObject.TrapPresentBoolean
         [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false,CrossCorrelationUseCanny);
     else
@@ -224,7 +245,11 @@ for TP = Timepoints
     WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;
     WholeImageElcoHoughNormalised = WholeImageElcoHough./repmat(WholeImageElcoHoughSum,[1 1 size(WholeImageElcoHough,3)]);
     
-    TrapsToCheck = ttacObject.TrapsToCheck(TP);
+    if nargin<5|| isempty(CellsToUse)
+        TrapsToCheck = ttacObject.TrapsToCheck(TP);
+    else
+        TrapsToCheck = intersect(CellsToUse(:,1),ttacObject.TrapsToCheck(TP))';
+    end
     
     if TP>= TPtoStartSegmenting;
         
@@ -238,6 +263,15 @@ for TP = Timepoints
             DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
         end
         TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
+        
+        %min filtering to try and get rid of spurious points. May not want
+        %to leave this in. Addition of 1/1000 image stack is to break ties
+        %later.
+        %DecisionImageStack = minmaxfilt(DecisionImageStack,[min_filt_size min_filt_size 1],'min','same') + (DecisionImageStack/1000);
+        DIM2 = imfilter(DecisionImageStack,f_dim,'same');
+        DIM2(DecisionImageStack>CrossCorrelationDIMthreshold) = DecisionImageStack(DecisionImageStack>CrossCorrelationDIMthreshold);
+        DecisionImageStack = DIM2;
+
         
         %for use later in subimage getting
         WholeImageElcoHoughMedians = zeros(1,size(WholeImageElcoHough,3));
@@ -256,7 +290,7 @@ for TP = Timepoints
         for TI = 1:length(TrapsToCheck)
             %fprintf('%d,trap\n',TI)
             CurrentTrapInfo = TrapInfo(TrapsToCheck(TI));
-            TrapDecisionImage = DecisionImageStack(:,:,TI);
+            TrapDecisionImage = DecisionImageStack(:,:,TrapsToCheck(TI));
             
             %             %might need to do something about this
             %             if isempty(CurrentTrapInfo)
@@ -489,8 +523,8 @@ for TP = Timepoints
             if CrossCorrelating(TI)
                 PreviousCurrentTrapInfo = SliceablePreviousTrapInfo(TI);
             end
-            TrapDecisionImage = DecisionImageStack(:,:,TI);
             Trap = TrapsToCheck(TI);
+            TrapDecisionImage = DecisionImageStack(:,:,Trap);
             ParCurrentTrapInfo = SliceableTrapInfo(TI);
             
             NotCells = TrapTrapLogical;

@@ -60,17 +60,8 @@ in = ginput(1);
 
 while ~isempty(in)
     
-    xnew = in(1)-center(1);
-    ynew = in(2)-center(2);
-    [Rnew,angle_new] = ACBackGroundFunctions.xy_to_radial(xnew,ynew);
     
-    [~,minindex] = min(abs([angles;(2*pi)] - angle_new));
-    
-    if minindex==(length(radii)+1)
-        minindex=1;
-    end
-    
-    radii(minindex) = Rnew;
+    radii =  ACBackGroundFunctions.edit_radii_from_point(in,center,radii,angles);
     
     [px,py] = ACBackGroundFunctions.get_points_from_radii(radii,angles,center,40,size(image));
 

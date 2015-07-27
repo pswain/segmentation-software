@@ -67,7 +67,7 @@ seeds = ACparameters.seeds;%100;
 
 %parameters internal to the program
 
-method = 'PSO'; %'PSO','fmincon'
+method = 'PSO';%'lbfgsb'; %'PSO','lbfgsb'
 debug = false;%if set to one the final radii found will be stored in the debug folder of the cell_serpent folder.
 res_points = 49;%number of the snake points passed to the results matrix (needs to match 'snake_size'field of OOFdataobtainer object
 %for storing results
@@ -116,6 +116,8 @@ D2radii_all = [];
 siy = size(forcing_images,2);
 six = size(forcing_images,1);
 
+
+
 if use_previous_timepoint
     
     LB = kron(ones(Timepoints,1),radii_previous_time_point') - kron((1:Timepoints)',MaximumRadiusChange*ones(opt_points,1));
@@ -132,13 +134,15 @@ else
 
 end
 
+LBtemp = LB;
+UBtemp = UB;
 
 for iP=1:Timepoints
     %fprintf('cell %d \n',iP)
     if use_exclude_stack
         [radii_init_score,angles,RminTP,RmaxTP] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max,exclude_logical_stack(:,:,iP));
-        LB((iP-1)*opt_points + (1:opt_points)) = RminTP(:);
-        UB((iP-1)*opt_points + (1:opt_points)) = RmaxTP(:);
+        LBtemp((iP-1)*opt_points + (1:opt_points)) = RminTP(:);
+        UBtemp((iP-1)*opt_points + (1:opt_points)) = RmaxTP(:);
     else
         [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max);
         
@@ -177,6 +181,8 @@ end
     
 end
 
+LB(LBtemp>LB) = LBtemp(LBtemp>LB);
+UB(UBtemp<UB) = UBtemp(UBtemp<UB);
 
 %     %initialise the snake
 
@@ -256,9 +262,9 @@ switch method
         
         P = [0 EVALS seeds 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
         
-        %not sure multiplying by the interquartile range is sensible. 
-        radial_punishing_factor = alpha*iqr(forcing_images(:))*ones(opt_points,1);
-        time_change_punishing_factor = betaElco*iqr(forcing_images(:));
+        %stopped multiplying by the interquartile range. Now try and use tanh to keep image at good range. 
+        radial_punishing_factor = alpha*ones(opt_points,1);
+        time_change_punishing_factor = betaElco;
 
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
@@ -293,6 +299,42 @@ switch method
 %         end
 %    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    %case 'lbfgsb' %use lbfgsb solver optimiser downloaded from file exchange
+    % need to fix. producing wierd results alot of the time.
+    if false    
+    %now use lbggsb onresult
+        
+        deriv_step_size = 1;
+        
+        if use_previous_timepoint
+            func_to_optimise = @(radii_internal) ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,...
+                cat(2,repmat(radii_previous_time_point,size(radii_internal,2),1),radii_internal'),...
+                radial_punishing_factor,time_change_punishing_factor,[siy six],...
+                use_previous_timepoint,A,n,breaks,jj,C);
+        else
+            func_to_optimise = @(radii_internal) ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,...
+                radii_internal',...
+                radial_punishing_factor,time_change_punishing_factor,[siy six],...
+                use_previous_timepoint,A,n,breaks,jj,C);
+            
+        end
+        fun = @(radii)fminunc_wrapper( radii,...
+                                func_to_optimise,...
+                                @(radii_internal) elco_numerical_derivative_wrapper(func_to_optimise, radii_internal',deriv_step_size*ones(size(radii_internal')))); 
+        
+        
+            opts = struct('x0',radii_stack,...
+                'maxIts',ACparameters.EVALS,...
+                'maxTotalIts',ACparameters.EVALS,...
+                'printEvery',Inf);
+            [res,val] = lbfgsb( fun, LB, UB, opts );
+
+            if val<ResultsF
+        radii_stack = res;
+        ResultsF = val;
+            end
+    end
 end
 
 

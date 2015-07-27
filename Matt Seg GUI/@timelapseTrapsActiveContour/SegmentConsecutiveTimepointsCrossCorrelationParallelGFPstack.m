@@ -1,5 +1,5 @@
-function SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean)
-%SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean)
+function SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,CellsToUse)
+%SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(ttacObject,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,CellsToUse)
 %Complete segmentation function that uses the cCellVision and cross correlation to find images of
 %cells and performs the active contour to get the edges. This one is
 %specifically for GFP stacks in which the image transformation should be
@@ -15,6 +15,12 @@ function SegmentConsecutiveTimepointsCrossCorrelationParallelGFPstack(ttacObject
 % LastTimepoint     - and to end
 % FixFirstTimePoint - optional : if this is true the software will not alter the first timepoint
 %                     but will still use the information in finding cells.
+% CellsToUse        - optional (array) of type [trapIndex cellLabel] 
+%                     specifying which cells should be
+%                     segmented. can also just be the
+%                     column vector [trapIndex] - currently only this
+%                     second form works.
+%
 %
 %
 %outline
@@ -104,6 +110,8 @@ end
 Recentering = true; %recalcluate the centre of the cells each time as the average ofthe outline
 
 mean_brightness = ttacObject.cCellVision.se.mean_brightness; % a parameter specifically for GFP segmentation that rescales images to the mean brightness of the cell.
+
+min_filt_size = 3;
 
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
@@ -243,7 +251,11 @@ for TP = Timepoints
     WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;
     WholeImageElcoHoughNormalised = WholeImageElcoHough./repmat(WholeImageElcoHoughSum,[1 1 size(WholeImageElcoHough,3)]);
     
-    TrapsToCheck = ttacObject.TrapsToCheck(TP);
+    if nargin<5|| isempty(CellsToUse)
+        TrapsToCheck = ttacObject.TrapsToCheck(TP);
+    else
+        TrapsToCheck = intersect(CellsToUse(:,1),ttacObject.TrapsToCheck(TP));
+    end
     
     if TP>= TPtoStartSegmenting;
         
@@ -256,6 +268,12 @@ for TP = Timepoints
         else
             DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),[],[]);
         end
+        
+        %min filtering to try and get rid of spurious points. May not want
+        %to leave this in. Addition of 1/1000 image stack is to break ties
+        %later.
+        DecisionImageStack = minmaxfilt(DecisionImageStack,[min_filt_size min_filt_size 1],'min','same') + (DecisionImageStack/1000);
+        
         TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
         
         %for use later in subimage getting

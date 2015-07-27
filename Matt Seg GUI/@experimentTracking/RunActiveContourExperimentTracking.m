@@ -1,9 +1,27 @@
-function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
 %RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
 %OverwriteTimelapseParameters controls if experiment or timelapse parameters are used
 %ACmethods specifies which particular method to use.
+%
+%cExperiment                        - experimentTracking object
+%cCellVision                        - cCellVision object
+%positionsToIdentify                - positions to use
+%FirstTimepoint                     - time point to start segmenting
+%LastTimepoint                      - time point to stop segmenting
+%OverwriteTimelapseParameters       - whether to overwrite the cTimelapse
+%                                     parameters with cExperiment
+%                                     parameters
+%ACmethod                           - which method to use (chosen by dialog)
+%TrackTrapsInTime                   - whether to track the traps first
+%LeaveFirstTimepointUnchanged       - boolean. whether to leave the outline
+%                                     of the first time point fixed.
+%CellsToUse                         - a cell array of CellToUse matrices
+%                                     for each position (so should include
+%                                     empty entries for positions not to
+%                                     segment. If it is empty it will do
+%                                     all the cells.
 
 
 if nargin<2 || isempty(positionsToIdentify)
@@ -101,6 +119,13 @@ if nargin<8 || isempty(LeaveFirstTimepointUnchanged)
      end
     
 end
+
+if nargin<9 || isempty(CellsToUse)
+    
+    CellsToUse = cell(size(cExperiment.dirs));
+    [CellsToUse{:}] = deal([]);
+    
+end
     
 %% Load timelapses
 for i=1:length(positionsToIdentify)
@@ -153,7 +178,7 @@ for i=1:length(positionsToIdentify)
         cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
     end
     
-    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod);
+    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
     
     cExperiment.saveTimelapseExperiment(currentPos);
     

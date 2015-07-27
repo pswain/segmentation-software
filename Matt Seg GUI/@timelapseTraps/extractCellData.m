@@ -80,8 +80,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = [];
-        extractedData(channel).cellNum = [];
+        extractedData(channel).trapNum = zeros(1,numCells);
+        extractedData(channel).cellNum = zeros(1,numCells);
         
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -109,8 +109,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = [];
-        extractedData(channel).cellNum = [];
+        extractedData(channel).trapNum = zeros(1,numCells);
+        extractedData(channel).cellNum = zeros(1,numCells);
     end
     
     

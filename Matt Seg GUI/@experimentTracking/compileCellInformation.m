@@ -16,7 +16,7 @@ end
 
 %% Run the tracking on the timelapse
 experimentPos=positionsToExtract(1);
-load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
