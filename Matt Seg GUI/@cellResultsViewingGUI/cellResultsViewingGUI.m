@@ -156,7 +156,7 @@ classdef cellResultsViewingGUI<handle
             %keydown function
             set(CellResGUI.figure,'WindowKeyPressFcn',@(src,event)CellRes_key_press_cb(CellResGUI,src,event));
 
-            CellResGUI.SelectCell();
+            %CellResGUI.SelectCell();
             
         end
 
