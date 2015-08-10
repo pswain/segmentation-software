@@ -45,7 +45,20 @@ for i=1:length(motherLoc)
         t=param.Abs(i,bTimeIndex:bTimeEnd);
         t(t==0)=NaN;
         param.RLS(i,j)=nanmean(t);
+        
     end
     nRLS(i)=j;
 end
 param.Chron(param.Chron==0)=NaN;
+
+maxB=max(nRLS);
+for i=1:length(motherLoc)
+    temp=param.RLS(i,:);
+    temp(temp==0)=[];
+    param.RLSdeath(i,maxB-length(temp)+1:maxB)=temp;
+end
+
+param.RLSdeath=full(param.RLSdeath);
+param.RLS=full(param.RLS);
+param.Chron=full(param.Chron);
+param.Abs=full(param.Abs);

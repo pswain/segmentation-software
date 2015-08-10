@@ -33,6 +33,8 @@ switch method
         hough_track2(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
     case 'trackUpdateObjects'
         cTimelapse.trackUpdateObjects(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
+    case 'trackUpdateObjectsGPU'
+        cTimelapse.trackUpdateObjectsGPU(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
     case 'hough'
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
     case 'active_contour'

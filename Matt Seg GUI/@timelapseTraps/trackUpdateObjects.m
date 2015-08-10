@@ -1,4 +1,4 @@
-function trackUpdateObjects(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
+function trackUpdateObjects(cTimelapse,cCellVision,traps,channel,timepoint,bw,wholeIm,allowedOverlap,d_im)
 
 %how much cells can overlap before the smaller one is removed
 cellOverlapAllowed=.4;
@@ -7,7 +7,7 @@ if strcmp(cCellVision.method,'wholeIm');
     d_im=cTimelapse.returnTrapsFromImage(d_im,timepoint,traps);
 end
 
-if isempty(trap_image)
+if isempty(wholeIm)
     image=[];
     image=cell(1);
     identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoint);
@@ -18,12 +18,10 @@ if isempty(trap_image)
     end
 else
     image=cell(1);
-    for trapIndex=1:length(trap_image)
-        t=mean(trap_image{trapIndex},3);
-%         t=double(t);
-%         t=t/max(t(:));
-%         t=1-t;
-%         t=trap_image{trapIndex}(:,:,2)-trap_image{trapIndex}(:,:,3);
+    t=mean(wholeIm{1},3);
+    trap_im=cTimelapse.returnTrapsFromImage(t,timepoint);
+    for trapIndex=1:length(trap_im)
+        t=trap_im(:,:,trapIndex);
         image{trapIndex}=double(t);%(identification_image_stacks{trapIndex}(:,:,2)-identification_image_stacks{trapIndex}(:,:,3));
 
     end
@@ -69,6 +67,7 @@ scale=1;
 fltr4accum = ones(5,5);
 fltr4accum(2:4,2:4) = 2;
 fltr4accum(3,3) = 6;
+fltr4accumGPU=gpuArray(fltr4accum);
 
 magnification=cTimelapse.magnification;
 if magnification<100
@@ -78,6 +77,11 @@ else
 end
 
 cellInf=cell(length(image));
+wholeImGPU=gpuArray(single(wholeIm));
+temp_imFiltGPU=medfilt2(wholeImGPU,[2 2],'symmetric');
+accumWhole =CircularHough_Grd_matt(temp_imFiltGPU,searchRadius,[],[],max(temp_imFiltGPU(:))*.1,8,.9,fltr4accumGPU);
+accumWhole=gather(accumWhole);
+accumTraps=cTimelapse.returnTrapsFromImage(accumWhole,timepoint);
 for j=1:length(image)%(image,3)
     temp_im=image{j};
     
@@ -161,7 +165,7 @@ for j=1:length(image)%(image,3)
         bw_mask=bwl==bwlIndex;
         if magnification<100
             if bwlIndex==1
-                [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accumTraps(:,:,trapIndex),max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             else
                 [~, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accum,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             end

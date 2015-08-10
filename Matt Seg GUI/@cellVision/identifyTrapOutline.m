@@ -11,9 +11,9 @@ function identifyTrapOutline(cCellVision,cTimelapse,trapNum)
 
 if ~isempty(cCellVision.cTrap)
     im=double(cCellVision.cTrap.trap1);
-    im=stdfilt(im);
-    im=imfilter(im,fspecial('disk',2));
-    im=imerode(im,strel('disk',1));
+%     im=stdfilt(im);
+%     im=imfilter(im,fspecial('disk',2));
+%     im=imerode(im,strel('disk',1));
     % im=im-median(im(:));
     %     im=abs(im);
     im=im-min(im(:));
@@ -29,11 +29,11 @@ if ~isempty(cCellVision.cTrap)
         epsilon = 1.5;
         c0 = 4; % the constant value
         lambda1=1.0;%outer weight, please refer to "Chunming Li and et al,  Minimization of Region-Scalable Fitting Energy for Image Segmentation, IEEE Trans. Image Processing, vol. 17 (10), pp. 1940-1949, 2008"
-        lambda2=1.1;%inner weight
+        lambda2=1.3;%inner weight
         %if lambda1>lambda2; tend to inflate
         %if lambda1<lambda2; tend to deflate
         nu = 0.001*255*255;%length term
-        alf = 50;%data term weight
+        alf = 5;%data term weight
         
         h=figure,imagesc(uint8(im),[0 255]),colormap(gray),axis off;axis equal;
         
@@ -82,10 +82,11 @@ if ~isempty(cCellVision.cTrap)
             imflat(:,:,i)=tempFlat;
         else %use elco's active contour stuff
             ImageTransformParameters = struct('postprocessing','invert');
-             ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',size(im,1)/3,'opt_points',6,...
-                'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500);
+             ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',size(im,1)/3,'opt_points',12,...
+                'visualise',3,'EVALS',4000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',30,'TerminationEpoch',3000);
             
             ForcingImage = double(cCellVision.cTrap.trap1);
+%             ForcingImage=imcomplement(ForcingImage);
             ForcingImage = ForcingImage/median(ForcingImage(:));
             TrapImage = ACBackGroundFunctions.get_cell_image(ForcingImage,min(size(ForcingImage),[],2),[PntX PntY]);
             TrapImage = ACImageTransformations.radial_gradient(TrapImage,ImageTransformParameters);
