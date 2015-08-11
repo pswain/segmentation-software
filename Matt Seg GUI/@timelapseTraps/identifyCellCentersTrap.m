@@ -53,6 +53,7 @@ else
     trapOutline = false(size(image{1},1),size(image{1},2));
 end
 
+%fprintf('change back to parfor  - line 56 identifyCellCentresTrap\n')
 parfor k=1:length(trap) %CHANGE BACK to PARFOR
     [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline);
     
