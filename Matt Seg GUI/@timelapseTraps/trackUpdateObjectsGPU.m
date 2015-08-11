@@ -1,9 +1,9 @@
-function trackUpdateObjects(cTimelapse,cCellVision,traps,channel,timepoint,bw,wholeIm,allowedOverlap,d_im)
+function trackUpdateObjectsGPU(cTimelapse,cCellVision,traps,channel,timepoint,bw,wholeIm,allowedOverlap,d_im)
 
 %how much cells can overlap before the smaller one is removed
 cellOverlapAllowed=.4;
 
-if strcmp(cCellVision.method,'wholeIm');
+if strfind(cCellVision.method,'whole');
     d_im=cTimelapse.returnTrapsFromImage(d_im,timepoint,traps);
 end
 
@@ -18,12 +18,11 @@ if isempty(wholeIm)
     end
 else
     image=cell(1);
-%     t=mean(wholeIm{1},3);
-%     trap_im=cTimelapse.returnTrapsFromImage(t,timepoint);
-%     for trapIndex=1:length(trap_im)
-    for trapIndex=1:length(wholeIm);%(trap_im,3)
-
-        t=wholeIm{trapIndex};%(:,:,trapIndex);
+%     t=imcomplement(t);
+    wholeIm=min(wholeIm{1},[],3);
+    trap_im=cTimelapse.returnTrapsFromImage(wholeIm,timepoint);
+    for trapIndex=1:size(trap_im,3)
+        t=trap_im(:,:,trapIndex);
         image{trapIndex}=double(t);%(identification_image_stacks{trapIndex}(:,:,2)-identification_image_stacks{trapIndex}(:,:,3));
 
     end
@@ -43,6 +42,10 @@ if cTimelapse.trapsPresent
     trapG=imfilter(trapEdge,f1);
     trapG=trapG/max(trapG(:));
     
+        trapEdgeWhole=double(cCellVision.cTrap.currentTpOutline);
+    trapGWhole=imfilter(trapEdgeWhole,f1);
+    trapGWhole=trapGWhole/max(trapGWhole(:));
+
     cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
     cellTrap=bwlabel(cellTrap);
 end
@@ -79,25 +82,43 @@ else
 end
 
 cellInf=cell(length(image));
-% wholeImGPU=gpuArray(single(wholeIm));
-% temp_imFiltGPU=medfilt2(wholeImGPU,[2 2],'symmetric');
-% accumWhole =CircularHough_Grd_matt(temp_imFiltGPU,searchRadius,[],[],max(temp_imFiltGPU(:))*.1,8,.9,fltr4accumGPU);
-% accumWhole=gather(accumWhole);
-% accumTraps=cTimelapse.returnTrapsFromImage(accumWhole,timepoint);
-for j=1:length(image)%(image,3)
-    temp_im=image{j};
-    
-    diffIm=temp_im-median(temp_im(:));
+wholeImGPU=gpuArray(single(wholeIm));
+
+    diffIm=wholeImGPU-median(wholeImGPU(:));
     diffImAbs=abs(diffIm);
     diffImAbs=diffImAbs/max(diffImAbs(:));
-    fIm=imfilter(diffImAbs,f1);
+    fIm=imfilter(diffImAbs,gpuArray(f1));
     fIm=fIm/max(fIm(:));
-    temp_im=image{j}-.5*(fIm.*diffIm);
+    temp_im=wholeImGPU-.5*(fIm.*diffIm);
     
     if cTimelapse.trapsPresent
-        temp_im=temp_im-diffIm.*trapG;
+        temp_im=temp_im-diffIm.*trapGWhole;
     end
-    temp_imFilt=medfilt2(temp_im,[2 2],'symmetric');
+
+
+
+% temp_imFiltGPU=medfilt2(temp_im,[3 3]);
+temp_imFiltGPU=temp_im;
+[accumWhole] =CircularHough_Grd_matt(temp_imFiltGPU,searchRadius,[],[],max(temp_imFiltGPU(:))*.1,8,.9,fltr4accumGPU);
+accumWhole=gather(accumWhole);
+temp_imFiltWhole=gather(temp_imFiltGPU);
+temp_imFiltTraps=cTimelapse.returnTrapsFromImage(temp_imFiltWhole,timepoint);
+accumTraps=cTimelapse.returnTrapsFromImage(accumWhole,timepoint);
+for j=1:length(image)%(image,3)
+    temp_im=image{j};
+%     
+%     diffIm=temp_im-median(temp_im(:));
+%     diffImAbs=abs(diffIm);
+%     diffImAbs=diffImAbs/max(diffImAbs(:));
+%     fIm=imfilter(diffImAbs,f1);
+%     fIm=fIm/max(fIm(:));
+%     temp_im=image{j}-.5*(fIm.*diffIm);
+%     
+%     if cTimelapse.trapsPresent
+%         temp_im=temp_im-diffIm.*trapG;
+%     end
+%     temp_imFilt=medfilt2(temp_im,[2 2],'symmetric');
+    temp_imFilt=temp_imFiltTraps(:,:,j);
 %     [grdxTemp, grdyTemp] = gradient(single(temp_imFilt));
 
     bb1=0;
@@ -128,7 +149,7 @@ for j=1:length(image)%(image,3)
                 prevTpCell=imfill(full(prevTpCell),'holes');
                 prevTpCell=imerode(prevTpCell,se3);
                 cPredictThere=d_imTrap(prevTpCell);
-                cPredictThere=mean(cPredictThere(:))<(cCellVision.twoStageThresh+.6);
+                cPredictThere=mean(cPredictThere(:))<(cCellVision.twoStageThresh+.3);
                 
                 %             if trapIndex==13
                 %                 b=1;
@@ -142,7 +163,7 @@ for j=1:length(image)%(image,3)
                     tempBigCenter=prevTpCell;
                     
                     tempR=trapInfom1(trapIndex).cell(locBigCell(bigCellIndex)).cellRadius;
-                    tempRadiusSearch(1)=tempR-1;tempRadiusSearch(2)=tempR+2;
+                    tempRadiusSearch(1)=tempR-2;tempRadiusSearch(2)=tempR+2;
                     [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
                     circen(end+1:end+size(circen1,1),:)=circen1-bb1;
                     cirrad(end+1:end+length(cirrad1))=cirrad1;
@@ -167,7 +188,7 @@ for j=1:length(image)%(image,3)
         bw_mask=bwl==bwlIndex;
         if magnification<100
             if bwlIndex==1
-                [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accumTraps(:,:,trapIndex),max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             else
                 [~, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accum,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             end

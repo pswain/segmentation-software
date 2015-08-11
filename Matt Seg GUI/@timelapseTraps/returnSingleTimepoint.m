@@ -138,6 +138,20 @@ end
 %     warning('There is no data in this channel at this timepoint');
 % end
 %
+
+
+%correction for stupid thing where the first couple columns sometimes turn
+%REALLY bright .... why???? some camera issue.
+firstColMean=mean(timepointIm(:,1));
+medVal=median(timepointIm(:));
+meanVal=medVal;
+if firstColMean>meanVal*1.5
+    timepointIm(:,1)=meanVal;
+    firstColMean=mean(timepointIm(:,2));
+    if firstColMean>meanVal*1.5
+        timepointIm(:,2)=meanVal;
+    end
+end
 if ~isempty(cTimelapse.imScale)
     timepointIm=imresize(timepointIm,cTimelapse.imScale);
     %to correct for black lines
@@ -159,7 +173,6 @@ end
 
 
 if image_rotation~=0
-    medVal=median(timepointIm(:));
     bbN=200;
     tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
     tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
@@ -179,7 +192,7 @@ if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
     LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
     HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
-    timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
+    timepointIm = padarray(timepointIm,abs(TimepointBoundaries),medVal);
     timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
     
 end
