@@ -22,6 +22,12 @@ folder=[folder '/']
 
 newfiles=cell(1);
 
+% definition of basic timepoint structure
+cTimepointTemplate = struct('filename',[],'trapLocations',[],...
+                            'trapInfo',[],'trapMaxCell',[],'trapMaxCellUTP',[]);
+
+cTimelapse.cTimepoint = cTimepointTemplate;
+                        
 largestTimepoint = 0;
 for ss=1:length(searchString)
     timepoint_index=0;

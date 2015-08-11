@@ -1,5 +1,5 @@
-function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
-%RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+%RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
 %OverwriteTimelapseParameters controls if experiment or timelapse parameters are used
@@ -81,7 +81,21 @@ if nargin<7 ||isempty(TrackTrapsInTime)
 end
 
 if nargin<8 || isempty(LeaveFirstTimepointUnchanged)
-    LeaveFirstTimepointUnchanged = false;
+   options = {'leave unchanged' 'change'};
+    cancel_option = 'cancel';
+   button_answer = questdlg('Would you like to leave the first timepoint unchanged?', ...
+                         'leave first timepoint unchanged:', ...
+                         options{1},options{2},cancel_option,options{1});
+                     
+     if strcmp(button_answer,cancel_option)
+         fprintf('\n\n    active contour method cancelled    \n\n')
+         return
+     elseif strcmp(button_answer,options{1})
+         LeaveFirstTimepointUnchanged = true;
+     elseif strcmp(button_answer,options{2})
+         LeaveFirstTimepointUnchanged = false;
+     end
+    
 end
     
 %% Load timelapses
@@ -115,7 +129,7 @@ for i=1:length(positionsToIdentify)
     end
     
     if TrackTrapsInTime
-        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.cCellVision,cExperiment.timepointsToProcess);
+        cExperiment.cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
         cExperiment.cTimelapse = cTimelapse;
         
@@ -128,7 +142,7 @@ for i=1:length(positionsToIdentify)
     %on the first position find the trap images and then just assign all the relevant fields for
     %other positions.
     if  (cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
-            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cExperiment.cCellVision);
+            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cCellVision);
     end
     
     if isempty(cTimelapse.ActiveContourObject.TrapLocation) || OverwriteTimelapseParameters
@@ -146,6 +160,8 @@ for i=1:length(positionsToIdentify)
 end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
+
+beep;pause(0.3);beep
 
 end
 

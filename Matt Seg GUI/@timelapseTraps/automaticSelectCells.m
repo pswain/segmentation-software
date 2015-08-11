@@ -9,8 +9,8 @@ if nargin<2
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=5; %number of frames cells must be present
 %     params.cellsToCheck=4;
-    params.framesToCheck=length(cTimelapse.timepointsProcessed);
-    params.framesToCheckEnd=1;
+    params.framesToCheck=find(cTimelapse.timepointsProcessed,1,'last');
+    params.framesToCheckEnd=find(cTimelapse.timepointsProcessed,1,'first');
     
     num_lines=1;clear prompt; clear def;
     prompt(1) = {'Fraction of whole timelapse a cell must be present'};

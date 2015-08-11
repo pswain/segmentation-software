@@ -36,6 +36,7 @@ for i=1:length(positionsToCrop)
 %     load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
     cExperiment.cTimelapse=cExperiment.returnTimelapse(currentPos);
     cExperiment.cTimelapse.timepointsToProcess = cExperiment.timepointsToProcess;
+    cExperiment.cTimelapse.timepointsProcessed(~ismember(1:length(cExperiment.cTimelapse.timepointsProcessed),cExperiment.cTimelapse.timepointsToProcess)) = false;
     cExperiment.saveTimelapseExperiment(currentPos);   
     clear cTimelapse;
 end

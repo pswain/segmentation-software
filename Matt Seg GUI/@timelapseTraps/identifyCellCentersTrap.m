@@ -47,7 +47,12 @@ function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,ima
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
 
-trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+if cTimelapse.trapsPresent
+    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+else
+    trapOutline = false(size(image{1},1),size(image{1},2));
+end
+
 parfor k=1:length(trap) %CHANGE BACK to PARFOR
     [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline);
     
@@ -90,8 +95,14 @@ function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,i
 % This preallocates the segmented images to speed up execution
 tPresent=cTimelapse.trapsPresent;
 new_dim=zeros(size(old_d_im));
-trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
 
+if cTimelapse.trapsPresent
+    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+else
+    trapOutline = false(size(image{1},1),size(image{1},2));
+end
+
+%fprintf('not parfor!!!\n')
 parfor k=1:length(trap) %CHANGE BACK TO parfor
     [p_im d_im]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
     new_dim(:,:,k)=d_im;

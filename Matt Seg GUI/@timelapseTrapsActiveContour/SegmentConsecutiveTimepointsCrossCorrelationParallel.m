@@ -208,6 +208,15 @@ for TP = Timepoints
             [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false,CrossCorrelationUseCanny);
         end
         
+        %for use later in subimage getting
+        WholeImageElcoHoughMedians = zeros(1,size(WholeImageElcoHough,3));
+        
+        for slicei = 1:size(WholeImageElcoHough,3)
+            tempIm = WholeImageElcoHough(:,:,slicei);
+            WholeImageElcoHoughMedians(slicei) = median(tempIm(:));
+        end
+
+        
         TrapsToCheck = ttacObject.TrapsToCheck(TP);
         
         CrossCorrelating = false(size(TrapsToCheck));
@@ -293,7 +302,8 @@ for TP = Timepoints
                         for BestFiti = BestFit
                             PredictedCellLocation = PredictedCellLocation + ACBackGroundFunctions.get_cell_image(WholeImageElcoHough(:,:,BestFiti),...
                                 ProspectiveImageSize,...
-                                ExpectedCellCentre );
+                                ExpectedCellCentre,...
+                                WholeImageElcoHoughMedians(BestFiti));
                             %multiplication by Radmeans added because it seems like the
                             %transformation procedure gave higher values for smaller radii - so
                             %this should balance that.

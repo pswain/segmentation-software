@@ -39,7 +39,7 @@ classdef curateCellTrackingGUI<handle
             TrackingCurator.cTimelapse = cTimelapse;
             
             if nargin<2 || isempty(Timepoint)
-                Timepoint = 1;
+                Timepoint = min(TrackingCurator.cTimelapse.timepointsToProcess);
             end
             
             if ~(nargin<3 || isempty(TrapIndex))
@@ -71,7 +71,7 @@ classdef curateCellTrackingGUI<handle
             
             MiddleOfStripWidth = ceil(TrackingCurator.StripWidth/2);
             
-            maxTimepoint =length(cTimelapse.cTimepoint);
+            maxTimepoint =max(TrackingCurator.cTimelapse.timepointsToProcess);
             
             if TrackingCurator.StripWidth>maxTimepoint
                 TrackingCurator.StripWidth = maxTimepoint;
@@ -135,8 +135,8 @@ classdef curateCellTrackingGUI<handle
                 
                 TrackingCurator.slider=uicontrol('Style','slider',...
                     'Parent',gcf,...
-                    'Min',MiddleOfStripWidth,...
-                    'Max',maxTimepoint-MiddleOfStripWidth,...
+                    'Min',min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth - 1,...
+                    'Max',1+maxTimepoint-MiddleOfStripWidth,...
                     'Units','normalized',...
                     'Value',Timepoint,...
                     'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
@@ -147,10 +147,10 @@ classdef curateCellTrackingGUI<handle
                 %of TrackingCurator.slider changes the callback slider_cb is run.
                 hListener = addlistener(TrackingCurator.slider,'Value','PostSet',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
                 
-                if Timepoint<MiddleOfStripWidth
-                    Timepoint = ceil(MiddleOfStripWidth);
+                if Timepoint<min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth
+                    Timepoint = floor(min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth);
                 elseif Timepoint>maxTimepoint-MiddleOfStripWidth
-                    Timepoint = floor(maxTimepoint-MiddleOfStripWidth);
+                    Timepoint = ceil(maxTimepoint-MiddleOfStripWidth);
                 end
                 set(TrackingCurator.slider,'Value',Timepoint);
                 curateCellTrackingGUI_slider_cb(TrackingCurator);
@@ -185,7 +185,7 @@ classdef curateCellTrackingGUI<handle
             
             DoAWaitBar = false;
             if nargin<2
-                Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+                Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
                 DoAWaitBar = true;
                 
             end
@@ -230,7 +230,7 @@ classdef curateCellTrackingGUI<handle
             
             %Return empty cells for the images
             
-            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
@@ -245,7 +245,7 @@ classdef curateCellTrackingGUI<handle
             
             %Return empty cells for the images
             
-            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
             CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
             
@@ -268,7 +268,7 @@ classdef curateCellTrackingGUI<handle
             
             
             if nargin<2
-                Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+                Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             end
             
             

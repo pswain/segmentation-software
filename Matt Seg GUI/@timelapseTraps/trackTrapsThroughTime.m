@@ -2,7 +2,7 @@ function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints)
 
 
 if nargin<3 || isempty(timepoints)
-    timepoints=1:length(cTimelapse.cTimepoint);
+    timepoints=cTimelapse.timepointsToProcess;
 end
 tic
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');

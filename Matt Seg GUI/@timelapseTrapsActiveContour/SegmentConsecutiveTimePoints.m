@@ -179,8 +179,8 @@ end
 
 
 disp = cTrapDisplay(ttacObject.TimelapseTraps,[]);
-% oldTrapIm=ttacObject.cCellVision.cTrap.contour;
-% oldTrapIm=imfill(oldTrapIm,'holes');
+
+
 %% loop through the rest of the timepoints
 for TP = Timepoints
     
@@ -358,7 +358,6 @@ for TP = Timepoints
             [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CellsToSegment(CNi));
             
             if UsePreviousTimepoint(CNi)
-                
                 %do segmentation of previously segmented cell
                 [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
                     ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CellsToSegment(CNi)).PreviousTimepointResult);
