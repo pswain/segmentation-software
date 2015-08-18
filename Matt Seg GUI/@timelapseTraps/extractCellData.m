@@ -61,6 +61,7 @@ switch type
         numStacks=1;
 end
 
+radiusFLData=isfield(cTimelapse.cTimepoint(find(cTimelapse.timepointsProcessed,1,'first')).trapInfo(1).cell,'cellRadiusFL');
 radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'cellRadiusFL');
 
 
