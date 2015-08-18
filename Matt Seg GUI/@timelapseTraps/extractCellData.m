@@ -346,15 +346,15 @@ for channel=1:length(channels)
                                     
                                     [max5_ indmax5_]=sort(cellFL2(:),'descend'); %nuclear tag pixels sorted
                                     
-                                    c=zeros(size(cellFL2));
+                                    c=false(size(cellFL2));
                                     
                                     if length(indmax5_)>maxPixGFP
                                         c(indmax5_(1:maxPixGFP))=1;
-                                        nucleusValHOG=sort(cellFL(c(1:maxPixGFP)),'descend');% max values in HOG channel inside nucleus area.
+                                        nucleusValHOG=sort(cellFL(c),'descend');% max values in HOG channel inside nucleus area.
                                         nuclocalization2 = double( mean( nucleusValHOG(1:maxPixOverlap) ) )./double(median(cellFL(:)));
                                     else
                                         c(indmax5_(1:5))=1; %limit for very small cells.
-                                        nucleusValHOG=sort(cellFL(c(1:5)),'descend');% max values in HOG channel inside nucleus area.
+                                        nucleusValHOG=sort(cellFL(c),'descend');% max values in HOG channel inside nucleus area.
                                         nuclocalization2 = double( mean( nucleusValHOG(1:5) ) )./double(median(cellFL(:)));
                                     end
                                     %END NUCLEAR
