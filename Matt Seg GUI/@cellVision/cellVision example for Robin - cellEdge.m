@@ -3,49 +3,39 @@ file='C:\Users\Matt\SkyDrive\timelapses\13-Jun 2014 (robin)\1-Pos_000_000cTimela
 file='/Users/mcrane2/SkyDrive/timelapses/13-Jun 2014 (robin)/1-Pos_000_000cTimelapse.mat';
 
 load(file);
-%%
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:24);
-cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:24);
-%%
-cTimelapse.timepointsToProcess=1:length(cTimelapse.timepointsProcessed)
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:19:end);
+cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:19:end);
+
 %%
 
-load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\Fob1DEL - YPDA - 14 Oct2014\pos 2 2 editted for training.mat')
+load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\1-Oct-2014 (Fob1 DEL AL)\2-Pos_002_007cTimelapse.mat')
 % cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:24); %40
-cTimelapse.timepointsToProcess=1:24;
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:5:200); %40
+cTimelapse.timepointsToProcess=1:40;
 
-cTimelapse.channelNames{1}='_001.tif';
-cTimelapse.channelsForSegment=[1 2 3]
-cTimelapse.timepointsProcessed=1:24;
+% cTimelapse.channelNames{1}='_001.tif';
+% cTimelapse.channelsForSegment=[1 2 3]
+% cTimelapse.timepointsProcessed=1:20;
 % cTimelapseOut=cTimelapse;
 % cTimelapseOut.makeFileNamesAbsolute;
 cTimelapseOut = fuseTimlapses({cTimelapse});
 %
-load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\05-Jul 2014\pos 0 editted for training.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:18); %32
-cTimelapse.timepointsProcessed=1:18;
-cTimelapse.timepointsToProcess=1:18;
+load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\28-Aug 2014 (DR w cont pregrown DR)\4-Pos_001_001cTimelapse.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:5:200); %32
+cTimelapse.timepointsProcessed=1:40;
+cTimelapse.timepointsToProcess=1:40;
 
 cTimelapse.channelsForSegment=[1 2 3]
 cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
 
-load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\28-Aug 2014 (DR w cont pregrown DR)\pos 0 for training.mat')
+% load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\28-Aug 2014 (DR w cont pregrown DR)\pos 0 for training.mat')
+% % cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
+% % cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:20:500); %40
+% cTimelapse.timepointsToProcess=1:25;
+% cTimelapse.channelNames{1}='_001.tif';
+% cTimelapse.channelsForSegment=[1 2 3]
+% cTimelapse.timepointsProcessed=1:25;
 % cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
-% cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:20:500); %40
-cTimelapse.timepointsToProcess=1:20;
-cTimelapse.channelNames{1}='_001.tif';
-cTimelapse.channelsForSegment=[1 2 3]
-cTimelapse.timepointsProcessed=1:20;
-cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
-
-load('C:\Users\mcrane2\OneDrive\timelapses\Maltose\new Maltose\Feb 7 2015 - 6h malPre newMal\2-Pos_001_001cTimelapse.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:25:400); %40
-cTimelapse.timepointsToProcess=1:15;
-cTimelapse.channelNames{1}='_001.tif';
-cTimelapse.channelsForSegment=[1 2 3]
-cTimelapse.timepointsProcessed=1:15;
-cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
 
 %%
 cTrapDisplay(cTimelapseOut,cCellVision);
@@ -56,50 +46,26 @@ cTrapDisplay(cTimelapse,cCellVision);
 cTrapDisplayProcessing(cTimelapse,cCellVision);
 
 %%
-load('C:\Users\mcrane2\OneDrive\Matlab\CellSegMatt\cCellVision Robin Nov 1.mat')
+load('cCellVision default Robin reduced.mat')
 %% Create the training set
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
+cCellVision.negativeSamplesPerImage=700; %set to 750 ish for traps
 step_size=1;
-    
-tic
-cCellVision.method='twostage'
-cCellVision.method='wholeIm'
 
-if ~strcmp(cCellVision.method,'wholeIm')
-    cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps
-    cCellVision.generateTrainingSetTimelapse(cTimelapseOut,step_size,@(CSVM,image) createImFilterSetCellTrapStackDIC(CSVM,image));
-else
-    cCellVision.negativeSamplesPerImage=25000; %set to 750 ish for traps
-    cCellVision.generateTrainingSetTimelapse_wholeIm(cTimelapseOut,step_size,@(CSVM,image) createImFilterSetCellTrapStackDIC_gpu(CSVM,image));
-end
-toc
-%% cuSVM training with GPU
-cCellVision.trainingData.class(cCellVision.trainingData.class==0)=-1;
-% [alphas, beta, svs]=cuSVMTrain(y,train,C,gamma,[]);
-C=1;
-gamma=1;
-ss=8;
-tic
-[alphas, beta, svs]=cuSVMTrain(single(cCellVision.trainingData.class(1:ss:end))',single(cCellVision.trainingData.features(1:ss:end,:)),C,gamma,[]);
-toc
-
-cCellVision.SVMModelGPU.alphas=alphas;
-cCellVision.SVMModelGPU.beta=beta;
-cCellVision.SVMModelGPU.svs=svs;
-cCellVision.SVMModelGPU.gamma=gamma;
+cCellVision.generateTrainingSetTimelapseCellEdge(cTimelapseOut,step_size,@(CSVM,image) createImFilterSetCellTrapStackDIC_cellEdge(CSVM,image));
 
 %% Guess the cost/gamma parameters
 cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %%
 cmd='-s 2 -w0 1 -w1 1 -v 5 -c ';
-step_size=18;
+step_size=35;
 cCellVision.runGridSearchLinear(step_size,cmd);
 %%
-step_size=3;
-cCellVision.trainingParams.cost=1;
-cmd = ['-s 2 -w0 1 -w1 1  -c ', num2str(cCellVision.trainingParams.cost)];
+step_size=4;
+cCellVision.trainingParams.cost=.5;
+cmd = ['-s 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
 cCellVision.trainSVMLinear(step_size,cmd);toc
 %%
@@ -108,15 +74,15 @@ cCellVision.trainSVMLinear(step_size,cmd);toc
 step_size=3;
 cCellVision.generateTrainingSet2Stage(cTimelapse,step_size);
 %%
-step_size=130;
+step_size=193;
 cmdin='-t 2 -w0 1 -w1 1';
 cCellVision.runGridSearch(step_size,cmdin);
 %%
-cCellVision.trainingParams.cost=1;
+cCellVision.trainingParams.cost=2;
 cCellVision.trainingParams.gamma=1;
 
 %%
-step_size=19;
+step_size=18;
 cmd = ['-t 2 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost),' -g ',num2str(cCellVision.trainingParams.gamma)];
 tic
 cCellVision.trainSVM(step_size,cmd);toc
@@ -141,21 +107,33 @@ cTimelapse.trackTrapsThroughTime();
 
 
 %%
+load('C:\Users\mcrane2\OneDrive\timelapses\DR robin\1-Oct-2014 (Fob1 DEL AL)\2-Pos_001_008cTimelapse.mat')
+%%
+cTrapDisplay(cTimelapse,cCellVision);
+%%
+trap=32;
+timepoint=566;
+    trap_im=cTimelapse.returnSegmenationTrapsStack(trap,timepoint);
 
-trap_im=cTimelapse.returnSingleTrapTimepoint(3,3,1);
+% trap_im=cTimelapse.returnSingleTrapTimepoint(3,3,1);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
-[p_im d_im]=cCellVision.classifyImage2Stage(trap_im);toc
+% [p_im d_im]=cCellVision.classifyImage2Stage(trap_im);toc
 
-% [p_im d_im]=cCellVision.classifyImageLinear(trap_im);toc
+[p_im d_im]=cCellVision.classifyImageLinear(trap_im{1});toc
 toc
 % [p_im d_im]=cCellVision.classifyImage(trap_im);toc
 
 figure(11);imshow(p_im,[]);
 % figure(2);imshow(imfilter(d_im,fspecial('disk',1)),[]);impixelinfo
-figure(3);imshow(trap_im,[]);
+figure(3);imshow(trap_im{1}(:,:,1),[]);
 figure(4);imshow(d_im,[]);impixelinfo;colormap(jet)
 
+logDIM=1 ./ (1 + exp(2*-d_im));
+figure(4);imshow(logDIM,[]);impixelinfo;colormap(jet)
+%%
+cTimelapse.identifyCellObjects(cCellVision,286,1:48,[], 'hough2')
+%%
 
 %%
 trap_im=cTimelapse.returnSingleTrapTimelapse(5,1);
