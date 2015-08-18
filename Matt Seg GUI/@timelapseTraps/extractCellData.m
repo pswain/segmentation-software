@@ -61,7 +61,7 @@ switch type
         numStacks=1;
 end
 
-radiusFLData=isfield(cTimelapse.cTimepoint(find(cTimelapse.timepointsProcessed,1,'first')).trapInfo(1).cell,'cellRadiusFL');
+radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'cellRadiusFL');
 
 
 for channel=1:length(channels)
@@ -131,7 +131,7 @@ for channel=1:length(channels)
         extractedData(channel).cellNum = [];
     end
     
-    fprintf('Not currently using stack info - see line 145 \n');
+    
     for timepoint=1:min(length(cTimelapse.timepointsProcessed) ,length(cTimelapse.timepointsToProcess))
         
         if cTimelapse.timepointsProcessed(timepoint)
@@ -334,8 +334,14 @@ for channel=1:length(channels)
                                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                     flsorted2=sort(cellFL2(:),'descend');
                                     
-                                    maxPixGFP=25;
-                                    maxPixOverlap=5;
+                                    
+                                    if cTimelapse.magnification==100
+                                        maxPixOverlap=10;
+                                        maxPixGFP=35;
+                                    else
+                                        maxPixOverlap=5;
+                                        maxPixGFP=25;
+                                    end
                                     needChangeBackTo5=false;
                                     
                                     [max5_ indmax5_]=sort(cellFL2(:),'descend'); %nuclear tag pixels sorted
@@ -344,11 +350,11 @@ for channel=1:length(channels)
                                     
                                     if length(indmax5_)>maxPixGFP
                                         c(indmax5_(1:maxPixGFP))=1;
-                                        nucleusValHOG=sort(cellFL(indmax5_(1:maxPixGFP)),'descend');% max values in HOG channel inside nucleus area.
+                                        nucleusValHOG=sort(cellFL(c(1:maxPixGFP)),'descend');% max values in HOG channel inside nucleus area.
                                         nuclocalization2 = double( mean( nucleusValHOG(1:maxPixOverlap) ) )./double(median(cellFL(:)));
                                     else
                                         c(indmax5_(1:5))=1; %limit for very small cells.
-                                        nucleusValHOG=sort(cellFL(indmax5_(1:5)),'descend');% max values in HOG channel inside nucleus area.
+                                        nucleusValHOG=sort(cellFL(c(1:5)),'descend');% max values in HOG channel inside nucleus area.
                                         nuclocalization2 = double( mean( nucleusValHOG(1:5) ) )./double(median(cellFL(:)));
                                     end
                                     %END NUCLEAR
@@ -360,7 +366,7 @@ for channel=1:length(channels)
                                     %                 flPeak=flPeak(cellLoc);
                                     if issparse(extractedData(channel).radius)
                                         extractedData(channel).area(dataInd,timepoint)=length(cellFL);
-                                        extractedData(channel).max5(dataInd,timepoint)=mean(flsorted(1:5));
+                                        extractedData(channel).max5(dataInd,timepoint)=mean(flsorted(1:maxPixOverlap));
                                         extractedData(channel).mean(dataInd,timepoint)=mean(cellFL(:));
                                         extractedData(channel).median(dataInd,timepoint)=median(cellFL(:));
                                         
