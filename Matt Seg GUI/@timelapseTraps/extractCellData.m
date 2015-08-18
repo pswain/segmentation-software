@@ -20,12 +20,26 @@ s1=strel('disk',2);
 % convMatrix2=single(getnhood(strel('disk',2)));
 
 %nuclear tag extraction
+fprintf('This is doing weirdness for HOG things');
+fprintf('\nNo longer allows different stack methods');
+
 channelTag=3;
 channelNuclear=2;
-correctmKO2ForCherry=true;
+correctmKO2ForCherry=false;
+removeCherryLocFromKO2=false;
+useCherryRatioKO2=false;
 mKO2Ch=find(strcmp(cTimelapse.channelNames,'mKO2'));
+if isempty(mKO2Ch)
+    mKO2Ch=find(strcmp(cTimelapse.channelNames,'mKo2'));
+end
+if isempty(mKO2Ch)
+    mKO2Ch=500;
+end
 mChCh=find(strcmp(cTimelapse.channelNames,'mCherry'));
 
+% if correctmKO2ForCherry
+%     type='std';
+% end
 
 if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProcessed)==1
     tempSize=[cTimelapse.cTimepoint.trapInfo];
@@ -117,8 +131,8 @@ for channel=1:length(channels)
         extractedData(channel).cellNum = [];
     end
     
-    
-    for timepoint=find(cTimelapse.timepointsProcessed)
+    fprintf('Not currently using stack info - see line 145 \n');
+    for timepoint=1:min(length(cTimelapse.timepointsProcessed) ,length(cTimelapse.timepointsToProcess))
         
         if cTimelapse.timepointsProcessed(timepoint)
             disp(['Timepoint Number ',int2str(timepoint)]);
@@ -128,7 +142,7 @@ for channel=1:length(channels)
             
             %             trapImages=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
             
-            tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel_number,'stack');
+            tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel_number,'max');
             if all(tpStack==0)
                 %if empty do nothing
             else
@@ -160,7 +174,7 @@ for channel=1:length(channels)
                     end
                 end
                 
-                if (channel_number==mKO2Ch && correctmKO2ForCherry)
+                if (channel_number==mKO2Ch & correctmKO2ForCherry)
                     tpStack_4=cTimelapse.returnSingleTimepoint(timepoint,mChCh,'max'); %% Extract from mCherry channel.
                 end
                 
@@ -189,7 +203,7 @@ for channel=1:length(channels)
                         end
                         
                         % correct for bleedthrough from mCh into mKO2
-                        if(channel_number==mKO2Ch && correctmKO2ForCherry)
+                        if(channel_number==mKO2Ch) && (correctmKO2ForCherry)
                             trapImages3= returnTrapStack(cTimelapse,tpStack_4,currTrap,timepoint);
                         end
                         
@@ -231,10 +245,14 @@ for channel=1:length(channels)
                             end
                             cellLoc=segLabel>0;
                             
-%                             if(channel_number==mKO2Ch && correctmKO2ForCherry)
-%                                 nucLoc=trapImages3> median(trapImages3(:)) * 2;
-%                                 cellLoc(nucLoc>0)=0;
-%                             end
+                            if(channel_number==mKO2Ch && correctmKO2ForCherry) && removeCherryLocFromKO2
+                                nucLoc=trapImages3> median(trapImages3(:)) * 2;
+                                t=double(trapImages3)/max(trapImages3(:));
+%                                 t=max(trapImages,[],3);
+%                                 t=double(t)/max(t(:));
+%                                 nucLoc2=im2bw(t,.6*graythresh(t(cellLoc(:))));
+%                                 cellLoc(nucLoc2>0)=0;
+                            end
                             membraneLoc = seg_areas >0;
                             
                             tStd=[];tMean=[];
@@ -267,22 +285,27 @@ for channel=1:length(channels)
                                 %                             trapImWhole(:,:,3)=trapImages(:,:,indMean);
                                 case 'max'
                                     trapImWhole(:,:,1)=max(trapImages,[],3);
-                                    
-                                    %for nuclear tag extraction. Getting FL info from mCh:
-                                    if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
-                                        trapImWhole2(:,:,1)=max(trapImages2,[],3);
-                                    else
-                                        trapImWhole2(:,:,1) =trapImWhole;
-                                    end
                                 case 'std'
                                     trapImWhole(:,:,1)=trapImages(:,:,indStd);
                                 case 'mean'
                                     trapImWhole(:,:,1)=trapImages(:,:,indMean);
                             end
                             
+                            if (channel_number==mKO2Ch && correctmKO2ForCherry) && removeCherryLocFromKO2
+                                maxK=max(trapImWhole(:));
+                                maxCh=max(trapImages3(:));
+                                trapImWhole=double(trapImWhole)-trapImages3*maxK/maxCh;
+                            end
+                            %for nuclear tag extraction. Getting FL info from mCh:
+                            if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
+                                trapImWhole2(:,:,1)=max(trapImages2,[],3);
+                            else
+                                trapImWhole2(:,:,1) =trapImWhole;
+                            end
+
                             for k=1:size(trapImWhole,3)
                                 trapIm=trapImWhole(:,:,k);
-                                if(channel_number==mKO2Ch && correctmKO2ForCherry)
+                                if false & (channel_number==mKO2Ch && correctmKO2ForCherry) && useCherryRatioKO2
                                     trapIm=double(trapIm)./double(trapImages3);
                                 end
                                 cellFL=trapIm(cellLoc);

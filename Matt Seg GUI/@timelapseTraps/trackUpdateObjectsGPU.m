@@ -149,7 +149,7 @@ for j=1:length(image)%(image,3)
                 prevTpCell=imfill(full(prevTpCell),'holes');
                 prevTpCell=imerode(prevTpCell,se3);
                 cPredictThere=d_imTrap(prevTpCell);
-                cPredictThere=mean(cPredictThere(:))<(cCellVision.twoStageThresh+.6);
+                cPredictThere=mean(cPredictThere(:))<(cCellVision.twoStageThresh+.3);
                 
                 %             if trapIndex==13
                 %                 b=1;
@@ -163,7 +163,7 @@ for j=1:length(image)%(image,3)
                     tempBigCenter=prevTpCell;
                     
                     tempR=trapInfom1(trapIndex).cell(locBigCell(bigCellIndex)).cellRadius;
-                    tempRadiusSearch(1)=tempR-1;tempRadiusSearch(2)=tempR+2;
+                    tempRadiusSearch(1)=tempR-2;tempRadiusSearch(2)=tempR+2;
                     [accum, circen1 cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
                     circen(end+1:end+size(circen1,1),:)=circen1-bb1;
                     cirrad(end+1:end+length(cirrad1))=cirrad1;

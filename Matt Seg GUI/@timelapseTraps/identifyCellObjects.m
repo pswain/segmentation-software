@@ -50,8 +50,12 @@ function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap
 %changed to a cell array. Basically certainly uses channel 1 so if using
 %this code make sure channel 1 is centre DIC image.
 
-
-image = cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+%     image=cTimelapse.returnTrapsTimepoint(traps,i,channel);
+if isempty(trap_image)
+    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+else
+    image=trap_image;
+end
 image=double(image);
 
 f1=fspecial('gaussian',7,2);
@@ -1064,12 +1068,7 @@ for k = 1 : size(accumAOI, 1),
             candgrp_acmsum;
         cc_y = sum( candgrp_IdxI .* accum(candgrp_idx2acm) ) / ...
             candgrp_acmsum;
-        % added by Elco to try and stop strange edge cases where the centre
-        % of the cells is an NaN. Hopefully shouldn't break downstream
-        % code.
-        if ~isnan(cc_x) && ~isnan(cc_y)
-            circen = [circen; cc_x, cc_y];
-        end
+        circen = [circen; cc_x, cc_y];
     end
 end
 
