@@ -58,7 +58,7 @@ classdef timelapseTraps<handle
         loadTimelapseScot(cTimelapse,timelapseObj);
         
         %[trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
-        trackTrapsThroughTime(cTimelapse,cCellVision,timepoints);
+        trackTrapsThroughTime(cTimelapse,cCellVision,timepoints,isCont);
         trackCells(cTimelapse,cellMovementThresh);
         [histCellDist bins]=trackCellsHistDist(cTimelapse,cellMovementThresh);
         motherIndex=findMotherIndex(cTimelapse);

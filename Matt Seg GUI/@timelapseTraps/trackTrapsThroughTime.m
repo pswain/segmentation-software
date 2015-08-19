@@ -1,5 +1,7 @@
-function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints)
+function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints,isCont)
 
+% isCont is a new true/false in case the segmentation is continuous, so
+% don't overwrite the traps
 
 if nargin<3 || isempty(timepoints)
     timepoints=cTimelapse.timepointsToProcess;
@@ -7,6 +9,9 @@ end
 tic
 h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
 
+if nargin<4 || isempty(isCont)
+    isCont=false;
+end
 
 %for initialising trapInfo
 if cTimelapse.trapsPresent
@@ -30,9 +35,7 @@ if cTimelapse.trapsPresent
     regImFft=fft2(regIm);
     timepointReg=timepoints(1);
     
-    
-    trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
-    
+        trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
     
     for i=2:length(timepoints)
         
@@ -82,7 +85,9 @@ if cTimelapse.trapsPresent
         [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
         [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
         
-        cTimelapse.cTimepoint(timepoint).trapInfo = trapInfo_struct;
+        if ~isCont
+            cTimelapse.cTimepoint(timepoint).trapInfo = trapInfo_struct;
+        end
         
         if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
             regIm=newIm;
