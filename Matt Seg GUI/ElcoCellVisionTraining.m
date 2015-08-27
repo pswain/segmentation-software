@@ -81,8 +81,8 @@ expGUI = experimentTrackingGUI;
 %% make training timelapse from cExperiment - WARNING, generally will load a cCellVision
 %  Needs to already be segmented and curated (can't do it afterwards unless non trap timelapse)
 
-[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
-load(fullfile(path,file),'cExperiment');
+%[file,path] = uigetfile('~/Documents/microscope_files_swain_microscope/');
+%load(fullfile(path,file),'cExperiment');
 
 
 for di = 1:length(cExperiment.dirs)
@@ -136,6 +136,7 @@ cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 
 %% set segmentation method
+%Elcos BF filter set
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
@@ -156,7 +157,7 @@ SegMethod = @(CSVM,image) createImFilterSetNoTrapSlimGFP(CSVM,image);
 %% for GFP segmentation, get mean_brightness
 pix_values = [];
 TPsRand = randperm(length(cTimelapse.cTimepoint));
-for i=1:5
+for i=1:30
     im = cTimelapse.returnSingleTimepoint(TPsRand(i),cTimelapse.channelsForSegment(2));
     pix_values = cat(1,pix_values,im(:));
     
@@ -351,6 +352,37 @@ TrapStack = TrapStack./max(TrapStack(:));
 view_gui = GenericStackViewingGUI(cat(2,DecisionImageStack,TrapStack));
 uiwait()
 end
+
+
+
+%%
+
+%% classify images and see
+f = fspecial('disk',3);
+thresh = -0.3;
+for TP = 180%1:length(cTimelapse.cTimepoint);
+
+traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
+
+DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);
+TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
+
+DIM2 = imfilter(DecisionImageStack,f,'same');
+DIM2(DecisionImageStack>thresh) = DecisionImageStack(DecisionImageStack>thresh);
+
+DecisionImageStack = DecisionImageStack./(2*max(abs(DecisionImageStack(:))));
+DecisionImageStack = DecisionImageStack -min(DecisionImageStack(:));
+TrapStack = TrapStack./max(TrapStack(:));
+
+view_gui = GenericStackViewingGUI(cat(2,DecisionImageStack,TrapStack));
+uiwait()
+end
+
+
+
+G = fspecial('gaussian',[5 5],2);
+%# Filter it
+Ig = imfilter(I,G,'same');
 %%%%%%%%%%%%%%%%%%  TESTS   %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% test function handles thing

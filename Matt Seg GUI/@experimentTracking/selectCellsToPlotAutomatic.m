@@ -5,7 +5,7 @@ if nargin<2
 end
 
 if nargin<3 || isempty(params)
-    load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{1},'cTimelapse']);
     
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
@@ -46,6 +46,11 @@ if size(cExperiment.cellsToPlot,3)>1
     for i=1:length(cExperiment.posTracked)
         cExperiment.cellsToPlot{i}=sparse(zeros(1,1));
     end
+end
+
+%for backcompatibility with scripts that don't use this parameter
+if ~isfield(params,'maximumNumberOfCells')
+    params.maximumNumberOfCells = Inf;
 end
 
 %% Run the tracking on the timelapse

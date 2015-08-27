@@ -21,6 +21,7 @@ classdef cellResultsViewingGUI<handle
         slider; %slider object
         TimepointSpacing = 5; % time between consecutive timepoints. Used in plotting to make a proper x axis
         ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
+        cellImageSize = []; % can set to be the size of the cell image to show. Useful if there are not traps and it will show a smaller area
         
     end % properties
 
@@ -199,6 +200,30 @@ classdef cellResultsViewingGUI<handle
         CellResGUI.CellsForSelection = [CellResGUI.cExperiment.cellInf(1).posNum(logical_of_cells)' ...
                                         CellResGUI.cExperiment.cellInf(1).trapNum(logical_of_cells)'...
                                         CellResGUI.cExperiment.cellInf(1).cellNum(logical_of_cells)'];
+        
+        end
+        function setCellsAsMothers(CellResGUI)
+        % setCellsAsMothers(CellResGUI)
+        % sets the cells to only the mother cells of the cvells already selected.
+        if ~isempty(CellResGUI.cExperiment.lineageInfo)
+            
+            mother_cell_logical = ismember(CellResGUI.CellsForSelection,...
+                [CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum' ...
+                CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap' ...
+                CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel'],'rows');
+            
+            setCellsWithLogical(CellResGUI,mother_cell_logical);
+        else
+            fprintf('\n\n  No Mother Info for this experiment \n\n')
+        end
+            
+        end
+        
+        function setCellsToAll(CellResGUI)
+        % setCellsToAll(CellResGUI)
+        % returns selection to all cells in cExperiment
+
+        setCellsWithLogical(CellResGUI,true(size(CellResGUI.cExperiment.cellInf(1).posNum)));
         
         end
         

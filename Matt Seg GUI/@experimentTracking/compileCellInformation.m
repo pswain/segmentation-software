@@ -54,10 +54,8 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).min=sparse(tempLen,size(cExperiment.cellInf(i).min,2));
     cExperiment.cellInf(i).imBackground=sparse(tempLen,size(cExperiment.cellInf(i).imBackground,2));    
     cExperiment.cellInf(i).radius=sparse(tempLen,size(cExperiment.cellInf(i).radius,2));
-        cExperiment.cellInf(i).radiusAC=sparse(tempLen,size(cExperiment.cellInf(i).radiusAC,2));
-    cExperiment.cellInf(i).radiusFL=sparse(tempLen,size(cExperiment.cellInf(i).radiusFL,2));
 
-    
+   
     cExperiment.cellInf(i).xloc=sparse(tempLen,size(cExperiment.cellInf(i).xloc,2));
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
     cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));

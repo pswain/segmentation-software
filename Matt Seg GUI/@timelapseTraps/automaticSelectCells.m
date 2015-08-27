@@ -35,6 +35,9 @@ if nargin<2
 end
 
 cTimelapse.cellsToPlot(:)=0;
+if ~isfield(params, 'maximumNumberOfCells')
+    params.maximumNumberOfCells = Inf;
+end
 
 
 %keep track of number of cells found to ensure you don't go over

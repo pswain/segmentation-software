@@ -14,7 +14,7 @@ end
 
 
 numCells=sum(cTimelapse.cellsToPlot(:));
-[trap cell]=find(cTimelapse.cellsToPlot);
+[trap, cells]=find(cTimelapse.cellsToPlot);
 
 s1=strel('disk',2);
 % convMatrix2=single(getnhood(strel('disk',2)));
@@ -80,8 +80,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = zeros(1,numCells);
-        extractedData(channel).cellNum = zeros(1,numCells);
+        extractedData(channel).trapNum = trap';
+        extractedData(channel).cellNum = cells';
         
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -109,8 +109,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = zeros(1,numCells);
-        extractedData(channel).cellNum = zeros(1,numCells);
+        extractedData(channel).trapNum = trap';
+        extractedData(channel).cellNum = cells';
     end
     
     
@@ -167,10 +167,16 @@ for channel=1:length(channels)
             
             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
             uniqueTraps=unique(trap);
-            dataInd=0;
+            %dataInd=0;
             for j=1:length(uniqueTraps)%j=1:length(extractedData(channel).cellNum)
                 currTrap=uniqueTraps(j);% extractedData(channel).trapNum(j);
-                cellsCurrTrap=cell(trap==currTrap);
+                cellsCurrTrap=cells(trap==currTrap);
+                
+                %protect code from cases where no cells have been found and
+                %the cell structure is weird and weak
+                if ~trapInfo(currTrap).cellsPresent
+                    cellsCurrTrap = [];
+                end
                 
                 
                 if cTimelapse.trapsPresent
@@ -201,7 +207,9 @@ for channel=1:length(channels)
                     currCell=cellsCurrTrap(cellIndex);
                     temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
                     
-                    dataInd=dataInd+1;
+                    %replaced by Elco to try and be more stable - had some BAD problems with data extraction
+                    %dataInd=dataInd+1;
+                    dataInd = find(trap==currTrap & cells == currCell);
                     if isempty(temp_loc)
                     else
                         
@@ -392,8 +400,10 @@ for channel=1:length(channels)
                                         end
                                         extractedData(channel).xloc(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                                         extractedData(channel).yloc(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
-                                        extractedData(channel).trapNum(dataInd)=currTrap;
-                                        extractedData(channel).cellNum(dataInd)=currCell;
+                                        %now done at the beginning of the
+                                        %code.
+                                        %extractedData(channel).trapNum(dataInd)=currTrap;
+                                        %extractedData(channel).cellNum(dataInd)=currCell;
                                     end
                                     
                                 else
@@ -458,8 +468,9 @@ for channel=1:length(channels)
                                         extractedData(channel).segmentedRadius(dataInd,timepoint,k)= sqrt(sum(cellLoc(:))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
                                         extractedData(channel).xloc(dataInd,timepoint,k)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                                         extractedData(channel).yloc(dataInd,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
-                                        extractedData(channel).trapNum(dataInd)=currTrap;
-                                        extractedData(channel).cellNum(dataInd)=currCell;
+                                        %now done at the beginning of code
+                                        %extractedData(channel).trapNum(dataInd)=currTrap;
+                                        %extractedData(channel).cellNum(dataInd)=currCell;
                                     end
                                     
                                     

@@ -113,6 +113,7 @@ PriorRadiiStrings = cell(1,slice_size);
 PriorAnglesStrings = cell(1,slice_size);
 CellNumberTimelapseStrings = cell(1,slice_size);
 TimePointStrings = cell(1,slice_size);
+ExcludeImageStrings = cell(1,slice_size);
 
 for i=1:slice_size
     CellCentreStrings{i} = ['CellCentre' int2str(i)];
@@ -129,6 +130,8 @@ for i=1:slice_size
     CellInfo.(CellNumberTimelapseStrings{i}) = 0;
     TimePointStrings{i} = ['Timepoint' int2str(i)];
     CellInfo.(TimePointStrings{i}) = 0;
+    ExcludeImageStrings{i} = ['ExcludeImage' int2str(i)];
+    CellInfo.(ExcludeImageStrings{i})= false(SubImageSize,SubImageSize);
 end
 
 
@@ -217,6 +220,7 @@ for TP = Timepoints
         [CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(PriorAnglesStrings{SN+1}));
         [CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(CellNumberTimelapseStrings{SN+1}));
         [CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN})] = deal(CellInfo(UpdatedPreviousTimepoint).(TimePointStrings{SN+1}));
+        [CellInfo(UpdatedPreviousTimepoint).(ExcludeImageStrings{SN})] =deal(CellInfo(UpdatedPreviousTimepoint).(ExcludeImageStrings{SN+1}));
         
     end
     
@@ -243,8 +247,16 @@ for TP = Timepoints
         else
             CellsToCheck = find(ismember(ttacObject.ReturnLabel(TP,TI),CellsToUse(CellsToUse(:,1)==TI,2)));
         end
+        
+        %get the segcentresTrap to make exclude regions. Uses timelapse
+        %specific stuff, may want to adjust if you want to keep it general.
+        SegCentresTrap = full(ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo(TI).segCenters);
+        SegCentresTrap = bwlabel(SegCentresTrap);
+        if ttacObject.TrapPresentBoolean
+            SegCentresTrap(imerode(ttacObject.TrapImage,strel('disk',2))) = max(SegCentresTrap(:))+1;
+        end
+        
         for CI = CellsToCheck;
-            
             %fprintf('timepoint %d; trap %d ; cell %d \n',TP,TI,CI)
             
             %if the cell was previously recorded, put it
@@ -281,7 +293,7 @@ for TP = Timepoints
             
             
             % Properties updated on ever occurrence of a cell
-            
+            CellTrapCentre = ttacObject.ReturnCellCentreRelative(TP,TI,CI);
             CellInfo(CellEntry).(CellNumberTimelapseStrings{end}) = CI;
             CellInfo(CellEntry).(TimePointStrings{end}) = TP;
             CellInfo(CellEntry).(CellCentreStrings{end}) = ttacObject.ReturnCellCentreAbsolute(TP,TI,CI);
@@ -289,6 +301,18 @@ for TP = Timepoints
             CellInfo(CellEntry).TimePointsPresent = CellInfo(CellEntry).TimePointsPresent+1 ;
             CellInfo(CellEntry).UpdatedThisTimepoint = true;
             NumberOfCellsUpdated = NumberOfCellsUpdated+1;
+            
+            CellRegionLabel = SegCentresTrap(CellTrapCentre(2),CellTrapCentre(1));
+            if CellRegionLabel~=0;
+                CellExcludeImage = SegCentresTrap;
+                CellExcludeImage(CellExcludeImage == CellRegionLabel) = 0;
+                CellExcludeImage = CellExcludeImage>0;
+                CellInfo(CellEntry).(ExcludeImageStrings{end}) = ACBackGroundFunctions.get_cell_image(CellExcludeImage,...
+                                                                                                       SubImageSize,...
+                                                                                                       CellTrapCentre,...
+                                                                                                       false);
+            end
+            
             %checksum = sum([CellInfo(:).UpdatedThisTimepoint],2);
         end   
         
@@ -344,17 +368,17 @@ for TP = Timepoints
         if TP>=TPtoStartSegmenting
             
             
-            [TranformedImageStack,PriorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CellsToSegment(CNi));
+            [TranformedImageStack,PriorRadiiStack,ExcludeStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,ExcludeImageStrings,CellsToSegment(CNi));
             
             if UsePreviousTimepoint(CNi)
                 %do segmentation of previously segmented cell
                 [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
-                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CellsToSegment(CNi)).PreviousTimepointResult);
+                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,CellInfo(CellsToSegment(CNi)).PreviousTimepointResult,ExcludeStack);
                 
             else
                 %do first timepoint segmentation - so no previous timepoint
                 [RadiiResultsCellArray{CNi},AnglesResultsCellArray{CNi}] = ...
-                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack);
+                    ACMethods.PSORadialTimeStack(TranformedImageStack,ACparameters,FauxCentersStack,PriorRadiiStack,[],ExcludeStack);
                 
             end
             
@@ -458,7 +482,7 @@ end
 
 end
 
-function [TranformedImageStack,priorRadiiStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,CN)
+function [TranformedImageStack,priorRadiiStack,ExcludeImageStack] = getStacksFromCellInfo(CellInfo,PriorRadiiStrings,TransformedImageStrings,ExcludeImageStrings,CN)
 %function [TranformedImageStack,priorRadiiStack] = getStacksFromCellInfo(cellInfo,PriorRadiiStrings,TransformedImageStrings,CN);
 
 %small function to get the info out of CellInfo and into a stack as the
@@ -467,9 +491,11 @@ L = size(PriorRadiiStrings,2);
 
 TranformedImageStack = zeros([size(CellInfo(CN).(TransformedImageStrings{1})) L]);
 priorRadiiStack = zeros([L,size(CellInfo(CN).(PriorRadiiStrings{1}),2)]);
+ExcludeImageStack = false([size(CellInfo(CN).(ExcludeImageStrings{1})) L]);
 for i=1:L
     TranformedImageStack(:,:,i) = CellInfo(CN).(TransformedImageStrings{i});
     priorRadiiStack(i,:) = CellInfo(CN).(PriorRadiiStrings{i});
+    ExcludeImageStack(:,:,i) = CellInfo(CN).(ExcludeImageStrings{i});
 end
 
 
