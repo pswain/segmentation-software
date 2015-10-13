@@ -14,7 +14,7 @@ classdef cellResultsViewingGUI<handle
         SelectPlotChannelButton; %handle for plot channel selection button
         SelectPlotFieldButton; %handle for plot field selection button
         ResetImageScaleButton; %handle for image channel selection button
-        CellSelected; %a field to hold the index of the cell selected for plotting and imaging - updated by the cell selection call back
+        CellSelected = 0; %a field to hold the index of the cell selected for plotting and imaging - updated by the cell selection call back
         TimepointSelected; %a field to hold the index of the timepoint selected for plotting and imaging - updated by the slider call back
         CellImageHandle; % handle for the axis on which the cell is drawn
         PlotHandle; % handle for the axes on which the data is plotted
@@ -202,6 +202,17 @@ classdef cellResultsViewingGUI<handle
                                         CellResGUI.cExperiment.cellInf(1).cellNum(logical_of_cells)'];
         
         end
+        
+        function setCellsWithLogicalFromCellSelected(CellResGUI,logical_of_cells)
+        %function setCellsWithLogicalFromCellSelected(CellResGUI,logical)
+        % set cells to look at as a subset of the whole of those currently
+        % selected. 
+        
+        CellResGUI.CellsForSelection = CellResGUI.CellsForSelection(logical_of_cells,:);
+        
+        end
+        
+        
         function setCellsAsMothers(CellResGUI)
         % setCellsAsMothers(CellResGUI)
         % sets the cells to only the mother cells of the cvells already selected.
@@ -212,7 +223,7 @@ classdef cellResultsViewingGUI<handle
                 CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap' ...
                 CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel'],'rows');
             
-            setCellsWithLogical(CellResGUI,mother_cell_logical);
+            setCellsWithLogicalFromCellSelected(CellResGUI,mother_cell_logical);
         else
             fprintf('\n\n  No Mother Info for this experiment \n\n')
         end
