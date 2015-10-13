@@ -1,6 +1,7 @@
 function selectTPToProcess(cExperiment,positionsToCrop)
 
-load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
+cTimelapse=cExperiment.returnTimelapse(length(cExperiment.dirs));%Load last one in case it has fewer timepoints.
+%load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
 
 if nargin<2
     positionsToCrop=1:length(cExperiment.dirs);

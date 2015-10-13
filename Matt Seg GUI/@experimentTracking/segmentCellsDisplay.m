@@ -7,7 +7,7 @@ end
 if cExperiment.trackTrapsOverwrite
     for i=1:length(positionsToSegment)
         currentPos=positionsToSegment(i);
-        load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+        cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
         cExperiment.currentDir=cExperiment.dirs{currentPos};
         cExperiment.cTimelapse=cTimelapse;
         cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
@@ -19,7 +19,13 @@ end
 
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+    cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
+
+    %load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+%     if ~isempty(cTimelapse.omeroImage)
+%         cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;
+%         cTimelapse.omeroImage=getImages(cTimelapse.OmeroDatabase.Session, cTimelapse.omeroImage);
+%     end
     cExperiment.currentDir=cExperiment.dirs{currentPos};
     cExperiment.cTimelapse=cTimelapse;
     if isempty(cExperiment.cTimelapse.magnification)

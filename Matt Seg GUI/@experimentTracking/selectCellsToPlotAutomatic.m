@@ -5,7 +5,8 @@ if nargin<2
 end
 
 if nargin<3 || isempty(params)
-    load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
+    cTimelapse=cExperiment.returnTimelapse(1);
+    %load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
     
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
@@ -46,7 +47,8 @@ end
 %% Run the tracking on the timelapse
 for i=1:length(positionsToCheck)
     experimentPos=positionsToCheck(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse=cExperiment.returnTimelapse(experimentPos);
+    %load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     cTimelapse.automaticSelectCells(params);
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.cellsToPlot{i}=cTimelapse.cellsToPlot;

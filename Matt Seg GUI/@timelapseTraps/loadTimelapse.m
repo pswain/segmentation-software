@@ -1,16 +1,18 @@
 function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad,imScale)
 
-folder=cTimelapse.timelapseDir;
-tempdir=dir(folder);
-nfiles=0;
-names=cell(1);
-for i=1:length(tempdir)
-    names{i}=tempdir(i).name;
-end
 
 cTimelapse.channelNames=searchString;
+if isempty(cTimelapse.omeroImage)
+    folder=cTimelapse.timelapseDir;
+    tempdir=dir(folder);
+    nfiles=0;
+    names=cell(1);
+    for i=1:length(tempdir)
+        names{i}=tempdir(i).name;
+    end
 
 files=sort(names);
+folder=[folder '/']
 %% Read images into timelapse class
 % Timelapse is a seletion of images from a file. These images must be
 % loaded in the correct order from low to high numbers to ensure that the
@@ -18,7 +20,6 @@ files=sort(names);
 % trap correctly aligns with the images
 
 timepoint_index=0;
-folder=[folder '/']
 
 newfiles=cell(1);
 
@@ -45,14 +46,36 @@ end
 
 cTimelapse.timepointsToProcess = 1:largestTimepoint;
 
+
 if nargin>=6 && ~isempty(timepointsToLoad)
     if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
         timepointsToLoad=timepointsToLoad(timepointsToLoad<=length(cTimelapse.cTimepoint));
     end
     cTimelapse.cTimepoint=cTimelapse.cTimepoint(timepointsToLoad);
 end
+    image=imread(cTimelapse.cTimepoint(1).filename{1});
 
-image=imread(cTimelapse.cTimepoint(1).filename{1});
+else
+    %Image is from Omero database
+    %Define cTimepoint structure
+    cTimepointTemplate = struct('filename',[],'trapLocations',[],...
+                            'trapInfo',[],'trapMaxCell',[],'trapMaxCellUTP',[]);
+
+    cTimelapse.cTimepoint = cTimepointTemplate;
+       
+    %Correct Z position - load image from the middle of the stack
+    pixels=cTimelapse.omeroImage.getPrimaryPixels;
+    sizeT=pixels.getSizeT().getValue();
+    cTimelapse.cTimepoint(sizeT).filename=[];%This makes sure cTimepoint has the correct length
+    cTimelapse.timepointsToProcess = 1:sizeT;
+    sizeZ = pixels.getSizeZ().getValue();
+    z=round(sizeZ/2);
+    %Correct channel - defined by searchString
+    c=find(strcmp(searchString,cTimelapse.OmeroDatabase.Channels));
+    t=1;
+    image=cTimelapse.OmeroDatabase.downloadSlice(cTimelapse.omeroImage,z,t,c);
+end
+
 cTimelapse.imSize=size(image);
 if nargin<3 || isempty(magnfication)
     h=figure;imshow(image,[]);

@@ -1,6 +1,10 @@
 function extractCellInformation(cExperiment,positionsToExtract,type,channels, cellSegType)
 % extractCellInformation(cExperiment,positionsToExtract,type,channels)
 
+%If the 3rd input (type) is the string 'not determined' then the software
+%will run a dialog to get this info from the user. This was done to allow
+%the 4th input (channels) to come from a calling function (extractData in the GUI)
+%when the type is not yet known.
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved
@@ -16,6 +20,10 @@ if nargin<2
 end
 
 if nargin<3
+    type='not determined';
+end
+
+if strcmp(type,'not determined')
     num_lines=1;
     dlg_title = 'What to extract?';
     prompt = {['All Params using max projection (max), std focus (std), mean focus (mean), using all three measures (all), or basic (basic)' ...
@@ -32,7 +40,10 @@ end
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    %
+    cTimelapse=cExperiment.returnTimelapse(experimentPos);
+
+    %load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %
     
     if nargin<4 || isempty(channels)
