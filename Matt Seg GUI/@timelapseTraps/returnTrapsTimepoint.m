@@ -105,6 +105,7 @@ if cTimelapse.trapsPresent
         bb_image=padarray(image,[bb bb],median(image(:)));
         trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
         for j=1:length(traps)
+            try
             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
 %             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),2) + bb);
@@ -112,6 +113,9 @@ if cTimelapse.trapsPresent
             temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
             temp_im(temp_im==0)=mean(temp_im(:));
             trapsTimepoint(:,:,j)=temp_im;
+            catch
+                disp('stop here for debug');
+            end
         end
     end
 else

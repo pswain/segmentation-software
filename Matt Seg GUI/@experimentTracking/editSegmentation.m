@@ -29,7 +29,7 @@ end
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    cTimelapse=loadCurrentTimelapse(cExperiment,currentPos);
     if pos_traps_to_show_given
         traps_to_show = ((pos_traps_to_show{currentPos}(:))');
     else

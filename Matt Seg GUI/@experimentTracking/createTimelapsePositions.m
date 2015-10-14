@@ -1,12 +1,28 @@
 function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad)
 
-
-if nargin<2 || isempty(searchString)
-    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'DIC'});
+%cExperiment.OmeroDatabase is empty when using a dataset from a file folder
+if ~isempty(cExperiment.OmeroDatabase)
+    oImages=cExperiment.omeroDs.linkedImageList;
 end
 
-if nargin<3 || strcmp(positionsToLoad,'all')
-    positionsToLoad=1:length(cExperiment.dirs);
+
+
+if ~isempty(cExperiment.OmeroDatabase)
+    chNames=cExperiment.OmeroDatabase.Channels;
+    ch = menu('Choose channel used in segmentation (brightfield/DIC images)',cExperiment.OmeroDatabase.Channels);
+    searchString=chNames{ch};
+else
+    if nargin<2 || isempty(searchString)
+        searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'DIC'});
+    end
+end
+
+if ~isempty(cExperiment.OmeroDatabase)
+    positionsToLoad=1:oImages.size;
+else
+    if nargin<3 || strcmp(positionsToLoad,'all')
+        positionsToLoad=1:length(cExperiment.dirs);
+    end
 end
     
 if nargin<4
@@ -30,7 +46,11 @@ traps_present = [];
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);
-    cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
+    if ~isempty(cExperiment.OmeroDatabase)
+        cExperiment.cTimelapse=timelapseTraps(oImages.get(i-1),cExperiment.OmeroDatabase);
+    else
+        cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
+    end
     cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,traps_present,cExperiment.timepointsToLoad,cExperiment.imScale);
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.imScale=cExperiment.cTimelapse.imScale;
@@ -40,6 +60,7 @@ for i=1:length(positionsToLoad)
     %cExperiment.timepointsToLoad=length(cExperiment.cTimelapse.cTimepoint);
     traps_present = cExperiment.cTimelapse.trapsPresent;
     cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
-
-    cExperiment.saveTimelapseExperiment(currentPos);
+    
+    cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit
 end
+%Set timepointsToProcess - should be the smallest one of the timelapses

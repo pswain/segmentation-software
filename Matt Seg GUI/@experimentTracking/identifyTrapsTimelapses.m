@@ -36,7 +36,22 @@ end
 
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+%     if ~isempty(cExperiment.OmeroDatabase)%Experiment created from an Omero dataset - has a suffix to distinguish different cExperiment/timelapse files
+%         %Has this file already been downloaded?
+%         if exist([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse_' cExperiment.rootFolder '.mat'],'file')==2        
+%             load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse_' cExperiment.rootFolder '.mat']);   
+%         else
+%             cTimelapse=cExperiment.returnTimelapse(cExperiment,i);
+%         end
+%         %Saved version has only the server name in .OmeroDatabase and the
+%         %image Id number in omeroImage
+%         cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;
+%         cTimelapse.omeroImage=getImages(cExperiment.OmeroDatabase.Session, cTimelapse.omeroImage);
+%     else%Experiment created from a folder
+%         load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
+%     end
+
+    cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
     if ClearTrapInfo
         cTimelapse.clearTrapInfo;
     end

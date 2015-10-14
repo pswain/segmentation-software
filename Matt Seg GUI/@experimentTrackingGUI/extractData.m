@@ -1,4 +1,5 @@
 function extractData(cExpGUI)
 
 posVals=get(cExpGUI.posList,'Value');
-cExpGUI.cExperiment.extractCellInformation(posVals);
+[choice ok]=listdlg('ListString',cExpGUI.cExperiment.OmeroDatabase.Channels);
+cExpGUI.cExperiment.extractCellInformation(posVals,'not determined',choice);

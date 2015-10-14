@@ -26,7 +26,8 @@ classdef timelapseTraps<handle
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
         ErrorModel = {[]};
         %stuff Ivan has added
-        omeroDs%The id number of the omero dataset from which the raw data was donwloaded. If the object was created from a folder of images this is zero.
+        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
+        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
     end
     
     methods
@@ -47,7 +48,12 @@ classdef timelapseTraps<handle
                     folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
                     fprintf('\n    Select the folder containing the images associated with this timelapse\n');
                 end
-                cTimelapse.timelapseDir=folder;
+                if ischar(folder)
+                    cTimelapse.timelapseDir=folder;
+                else
+                    cTimelapse.omeroImage=folder;
+                    cTimelapse.OmeroDatabase=varargin{1};
+                end
                 cTimelapse.cellsToPlot=sparse(100,1e3);
             end
         end

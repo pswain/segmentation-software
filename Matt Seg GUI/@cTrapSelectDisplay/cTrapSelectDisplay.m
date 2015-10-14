@@ -88,7 +88,11 @@ classdef cTrapSelectDisplay<handle
                 
             im_mask=cDisplay.image;
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-            cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
+            if ~isempty(cTimelapse.omeroImage)
+                cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
+                figHandle=get(cDisplay.axesHandle,'Parent');
+                set(figHandle,'Name',char(cTimelapse.omeroImage.getName.getValue));
+            end
 %             cDisplay.subImage(index)=subimage(image);
             %                     colormap(gray);
             %                     set(cDisplay.subAxes(index),'CLimMode','manual')

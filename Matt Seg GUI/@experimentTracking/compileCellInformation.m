@@ -10,13 +10,14 @@ function compileCellInformation(cExperiment,positionsToExtract)
 
 
 if nargin<2
-    positionsToExtract=find(cExperiment.posTracked);
-    %     positionsToTrack=1:length(cExperiment.dirs);
+    %positionsToExtract=find(cExperiment.posTracked);
+         positionsToExtract=1:length(cExperiment.dirs);
 end
 
 %% Run the tracking on the timelapse
 experimentPos=positionsToExtract(1);
-load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
+cTimelapse=cExperiment.returnTimelapse(experimentPos);
+%load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
