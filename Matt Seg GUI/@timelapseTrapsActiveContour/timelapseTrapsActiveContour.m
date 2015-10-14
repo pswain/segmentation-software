@@ -742,6 +742,12 @@ classdef timelapseTrapsActiveContour<handle
             
         end
         
+        function ttacObject = saveobj(ttacObject)
+            %save function just to set TimelapseTraps fields empty.
+            %ttacObject is always a subclass of TimelapseTraps anyway.
+            ttacObject.TimelapseTraps = [];
+        end
+        
         
         
     end %methods
