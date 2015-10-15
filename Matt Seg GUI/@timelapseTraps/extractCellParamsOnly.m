@@ -31,6 +31,7 @@ for channel=1:1%length(cTimelapse.channelNames)
     extractedData(channel).distToNuc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).nucArea=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).radius=sparse(numCells,length(cTimelapse.timepointsToProcess));
+    extractedData(channel).radiusAC=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).xloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).yloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     
@@ -63,7 +64,9 @@ for channel=1:1%length(cTimelapse.channelNames)
                             extractedData(channel).distToNuc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).distToNuc;
                         end
                     end
-                    
+                    if isfield(trapInfo(currTrap).cell(temp_loc),'radiusAC');
+                        extractedData(channel).radiusAC(j,timepoint)=trapInfo(currTrap).cell(temp_loc).radiusAC;
+                    end
                 end
             end
         end

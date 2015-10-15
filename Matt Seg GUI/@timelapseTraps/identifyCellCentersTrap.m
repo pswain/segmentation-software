@@ -138,18 +138,24 @@ end
 function [d_im bw]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
 % This preallocates the segmented images to speed up execution
 tPresent=cTimelapse.trapsPresent;
-new_dim=zeros(size(old_d_im));
-bb=max(size(new_dim));
-trapCenters=zeros([2*bb+size(old_d_im,1) 2*bb+size(old_d_im,2)]);
-for k=1:length(trap)
-    trapCenters(round(cTimelapse.cTimepoint(timepoint).trapLocations(k).ycenter)+bb,round(cTimelapse.cTimepoint(timepoint).trapLocations(k).xcenter)+bb)=1;
-end
-dilateOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
-trapOutline=conv2(trapCenters,single(dilateOutline),'same');  
-trapEdges=conv2(trapCenters,ones(size(cCellVision.cTrap.trapOutline)),'same');
-currentTpOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
-trapOutline(trapEdges==0)=1;
-trapOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
+% bb=max(size(new_dim));
+% trapCenters=zeros([2*bb+size(old_d_im,1) 2*bb+size(old_d_im,2)]);
+% trapCentersNum=zeros([2*bb+size(old_d_im,1) 2*bb+size(old_d_im,2)]);
+% for k=1:length(trap)
+%     trapCenters(round(cTimelapse.cTimepoint(timepoint).trapLocations(k).ycenter)+bb,round(cTimelapse.cTimepoint(timepoint).trapLocations(k).xcenter)+bb)=1;
+% end
+% tempTrap=zeros(size(cCellVision.cTrap.trapOutline));
+% tempTrap(ceil(size(tempTrap,1)),ceil(size(tempTrap,2)))=1;
+trapOutline=repmat(cCellVision.cTrap.trapOutline,[1 length(trap)]);
+currentTpOutline=trapOutline;
+% dilateOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+% trapSquare=ones(size(cCellVision.cTrap.trapOutline));
+% 
+% trapOutline=conv2(trapCenters,single(dilateOutline),'same');  
+% trapEdges=conv2(trapCenters,ones(size(cCellVision.cTrap.trapOutline)),'same');
+% currentTpOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
+% trapOutline(trapEdges==0)=1;
+% trapOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
 
 cCellVision.cTrap.currentTpOutline=currentTpOutline>0;
 
@@ -157,7 +163,7 @@ k=1;
 [p_im d_im]=cCellVision.classifyImage2StageWhole(image{k},trapOutline>0);
 % [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline>0);
 
-new_dim(:,:,k)=d_im;
+new_dim=d_im;
 t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %
 bw=t_im<cCellVision.twoStageThresh;
 segCenters=cTimelapse.returnTrapsFromImage(bw,timepoint,trap);

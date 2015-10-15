@@ -12,7 +12,10 @@
 %chunks is done so that the tracking and mother detection can be tested on
 %a longer timelapse.
 
-
+%%
+clear all
+close all
+clc
 
 %% test cell identification, tracking and identification on very short timelapse
 

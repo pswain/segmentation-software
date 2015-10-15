@@ -17,8 +17,9 @@ while (~finishedSeg)
         cExperiment.cTimelapse=cTimelapse;
         if cExperiment.trackTrapsOverwrite & newTP
             tp=1:length(cExperiment.cTimelapse.cTimepoint);
-%             tp(cExperiment.cTimelapse.timepointsProcessed(1:end-5)>0)=[];
-            cTimelapse.trackTrapsThroughTime(cCellVision,tp);
+            %             tp(cExperiment.cTimelapse.timepointsProcessed(1:end-5)>0)=[];
+            isCont=true;
+            cTimelapse.trackTrapsThroughTime(cCellVision,tp,isCont);
             
             if isempty(cExperiment.cTimelapse.magnification)
                 cExperiment.cTimelapse.magnification=60;

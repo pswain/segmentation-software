@@ -44,6 +44,13 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 
 % Notes:
 
+%just use the previous Priors to segement cells
+if nargin>5 & ~isempty(radii_previous_time_point) 
+    ACparameters.R_min=max(min(radii_previous_time_point)*.75-2,2);
+    ACparameters.R_max=max(radii_previous_time_point)*1.2+2;
+end
+
+
 forcing_images = double(forcing_images);
 
 %this is done to try and stop average pixels contributing to outline so that no average of pixel
@@ -374,15 +381,15 @@ if visualise>=3
         [pxFULL,pyFULL] = ACBackGroundFunctions.get_full_points_from_radii(radii_res(1,:)',angles,Centers_stack(1,:),([2 2]*sub_image_size)+1);
         LogicalPoints = false(([2 2]*sub_image_size)+1);
         LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
-        %OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
-        OutlineImage = OverlapGreyRed(forcing_images(:,:,1),LogicalPoints,false,[],true);
+        OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
+%         OutlineImage = OverlapGreyRed(forcing_images(:,:,1),LogicalPoints,false,[],true);
         figure_handle_2 = figure;
         imshow(OutlineImage,[]);
         pause
         close(figure_handle_2)
     end
 elseif visualise>=1
-    pause(0.1)
+    drawnow;
 end
 
 

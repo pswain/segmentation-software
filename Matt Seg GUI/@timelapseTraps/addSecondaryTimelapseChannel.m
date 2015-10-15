@@ -55,6 +55,7 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
     %         cTimelapse.cTimepoint(i).filename{length(cTimelapse.channelNames)}=[folder files{loc}];
     %         cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr([repmat(folder,sum(loc),1) vertcat(files{loc})]));
             cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
+            files(loc)=[];
 
         end
 

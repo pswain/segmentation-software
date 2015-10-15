@@ -102,7 +102,9 @@ if cTimelapse.trapsPresent
         cTrap=cTimelapse.cTrapSize;
         image=cTimelapse.returnSingleTimepoint(timepoint,channel,type);
         bb=max([cTrap.bb_width cTrap.bb_height])+100;
-        bb_image=padarray(image,[bb bb],median(image(:)));
+%         bb_image=padarray(image,[bb bb],median(image(:)));
+        bb_image=padarray(image,[bb bb],mean(image(:)));
+
         trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
         for j=1:length(traps)
             try

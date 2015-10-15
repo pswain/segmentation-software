@@ -59,7 +59,7 @@ if isempty(cTimelapse.OmeroDatabase)
                 ffile=fullfile(cTimelapse.timelapseDir,file);
             end
             if ~isempty(cTimelapse.imSize)
-                timepointIm=zeros([cTimelapse.imSize sum(loc)]);
+            timepointIm=[];%zeros([cTimelapse.imSize sum(loc)]);
                 if strfind(ffile,'TIF')
                     timepointIm=imread(ffile,'Index',1);
                     timepointIm=timepointIm(:,:,1);
@@ -78,6 +78,8 @@ if isempty(cTimelapse.OmeroDatabase)
             
             %change if want things other than maximum projection
             switch type
+            case 'min'
+                timepointIm=min(timepointIm,[],3);
                 case 'max'
                     timepointIm=max(timepointIm,[],3);
                 case 'stack'
@@ -139,8 +141,24 @@ if isempty(cTimelapse.OmeroDatabase)
     %     warning('There is no data in this channel at this timepoint');
     % end
     %
+
+
+%correction for stupid thing where the first couple columns sometimes turn
+%REALLY bright .... why???? some camera issue.
+firstColMean=mean(timepointIm(:,1));
+medVal=median(timepointIm(:));
+meanVal=medVal;
+if firstColMean>meanVal*1.5
+    timepointIm(:,1)=meanVal;
+    firstColMean=mean(timepointIm(:,2));
+    if firstColMean>meanVal*1.5
+        timepointIm(:,2)=meanVal;
+    end
+end
     if ~isempty(cTimelapse.imScale)
         timepointIm=imresize(timepointIm,cTimelapse.imScale);
+    %to correct for black lines
+    timepointIm(1:2,:)=timepointIm(3:4,:);
         timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
     end
     
@@ -178,7 +196,7 @@ if isempty(cTimelapse.OmeroDatabase)
         TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
         LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
         HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
-        timepointIm = padarray(timepointIm,abs(TimepointBoundaries));
+    timepointIm = padarray(timepointIm,abs(TimepointBoundaries),medVal);
         timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
         
     end

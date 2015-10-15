@@ -28,9 +28,10 @@ if ~isempty(cCellSVM.SVMModel)
     %if the model has a two stage component apply it to the most likely
     %values
     b=dec_values;
+b=abs(b-cCellSVM.twoStageThresh);
     [B,IX]=sort(b(:),'ascend');
     
-    l=sum(~trapOutline(:))*.035;
+l=sum(~trapOutline(:))*.015; %.035
     loc=IX(1:(round(l)));
     
     [predict_label_kernel, ~, dec_values_kernel] = svmpredict(ones(length(loc),1), (filtered_image(loc,:)), cCellSVM.SVMModel); % test the training data]\
