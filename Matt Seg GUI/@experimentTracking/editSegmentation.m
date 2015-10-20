@@ -1,7 +1,19 @@
-function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap)
-
+function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,pos_traps_to_show,channel)
+%function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,PosTraps,channel)
+% PosTraps is a cell array of trap vectors indicating which traps should be
+% shown for each position.
 if nargin<3
     positionsToIdentify=1:length(cExperiment.dirs);
+end
+
+if nargin<5 || isempty(pos_traps_to_show)
+    pos_traps_to_show_given = false;
+else
+    pos_traps_to_show_given = true;
+end
+
+if nargin<6 || isempty(channel)
+    channel = 1;
 end
 
 if nargin<4 || isempty(show_overlap)
@@ -18,7 +30,12 @@ end
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
-    cTrapDisplay(cTimelapse,cCellVision,show_overlap);
+    if pos_traps_to_show_given
+        traps_to_show = ((pos_traps_to_show{currentPos}(:))');
+    else
+        traps_to_show = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
+    end
+    cTrapDisplay(cTimelapse,cCellVision,show_overlap,channel,traps_to_show);
     
     uiwait();
     cExperiment.cTimelapse=cTimelapse;

@@ -160,6 +160,7 @@ for ti = 1:length(timepoints_to_optimise)
     end
     %add 'area punishing term'
     
+    if false
     average_area = sum(radii_mat.^2,2);
     
     area_punishment = zeros(size(average_area));
@@ -177,6 +178,7 @@ for ti = 1:length(timepoints_to_optimise)
         F = F+area_punishment;
     else
         F = F+area_punishment;
+    end
     end
     Ftot = Ftot+F;
     

@@ -1,5 +1,5 @@
 function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
-
+% function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %Channel refers to the channel name. It access the channelNames property of
 %timelapse and uses that to find the appropriate files. If there is more
 %than DIC/GFP etc frame at the timepoint, it assuems it is a z-stack and
@@ -12,11 +12,11 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %timelapseDir is set to 'ignore' then this is not performed and simply the
 %filename is used.
 
-if nargin<3
+if nargin<3 || isempty(channel)
     channel=1;
 end
 
-if nargin<4
+if nargin<4 || isempty(type)
     type='max';
 end
 

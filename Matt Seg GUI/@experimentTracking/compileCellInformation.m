@@ -16,7 +16,7 @@ end
 
 %% Run the tracking on the timelapse
 experimentPos=positionsToExtract(1);
-load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
@@ -55,8 +55,10 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).imBackground=sparse(tempLen,size(cExperiment.cellInf(i).imBackground,2));    
     cExperiment.cellInf(i).radius=sparse(tempLen,size(cExperiment.cellInf(i).radius,2));
   
+=======
+>>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
 
-    
+   
     cExperiment.cellInf(i).xloc=sparse(tempLen,size(cExperiment.cellInf(i).xloc,2));
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
     

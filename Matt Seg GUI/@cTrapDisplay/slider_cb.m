@@ -44,7 +44,8 @@ for j=1:size(alltraps,3)
         segLabel = zeros(size(seg_areas));
         for i=1:size(seg_areas,3)
             
-            segLabel(:,:,i) = cell_label(i)*imfill(seg_areas(:,:,i),'holes');
+            %segLabel(:,:,i) = cell_label(i)*imfill(seg_areas(:,:,i),'holes');
+            segLabel(:,:,i) = cell_label(i)*seg_areas(:,:,i);
             
         end
         segLabel = max(segLabel,[],3);
