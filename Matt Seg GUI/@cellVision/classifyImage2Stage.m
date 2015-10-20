@@ -37,7 +37,6 @@ loc=IX(1:(round(l)));
 dec_values(loc)=dec_values_kernel;
 predict_label(loc)=predict_label_kernel;
 
-=======
 if ~isempty(cCellSVM.SVMModel)
     %if the model has a two stage component apply it to the most likely
     %values
@@ -52,6 +51,5 @@ if ~isempty(cCellSVM.SVMModel)
     dec_values(loc)=dec_values_kernel;
     predict_label(loc)=predict_label_kernel;
 end
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
-    predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
+predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
 decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);

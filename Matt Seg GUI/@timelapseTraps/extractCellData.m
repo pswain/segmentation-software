@@ -99,8 +99,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = trap';
-        extractedData(channel).cellNum = cells';
+        extractedData(channel).trapNum = [];
+        extractedData(channel).cellNum = [];
         
     else
         extractedData(channel).mean=(zeros(numCells,length(cTimelapse.timepointsProcessed),numStacks));
@@ -128,8 +128,8 @@ for channel=1:length(channels)
         
         %end elcos section
         
-        extractedData(channel).trapNum = trap';
-        extractedData(channel).cellNum = cells';
+        extractedData(channel).trapNum = [];
+        extractedData(channel).cellNum = [];
     end
     
     
@@ -180,30 +180,8 @@ for channel=1:length(channels)
                 end
                 
                 
-<<<<<<< HEAD
                 %             trapImagesStd=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'std');
                 %             trapImagesMean=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'mean');
-=======
-            end
-            
-            
-            %             trapImagesStd=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'std');
-            %             trapImagesMean=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel,'mean');
-            
-            
-            trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
-            uniqueTraps=unique(trap);
-            %dataInd=0;
-            for j=1:length(uniqueTraps)%j=1:length(extractedData(channel).cellNum)
-                currTrap=uniqueTraps(j);% extractedData(channel).trapNum(j);
-                cellsCurrTrap=cells(trap==currTrap);
-                
-                %protect code from cases where no cells have been found and
-                %the cell structure is weird and weak
-                if ~trapInfo(currTrap).cellsPresent
-                    cellsCurrTrap = [];
-                end
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
                 
                 
                 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
@@ -212,29 +190,14 @@ for channel=1:length(channels)
                 for j=1:length(uniqueTraps)%j=1:length(extractedData(channel).cellNum)
                     currTrap=uniqueTraps(j);% extractedData(channel).trapNum(j);
                     cellsCurrTrap=cell(trap==currTrap);
+                    %protect code from cases where no cells have been found and
+                	%the cell structure is weird and weak
+               	 	if ~trapInfo(currTrap).cellsPresent
+                  	  	cellsCurrTrap = [];
+                	end
                     
-                    
-<<<<<<< HEAD
                     if cTimelapse.trapsPresent
                         trapImages=returnTrapStack(cTimelapse,tpStack,currTrap,timepoint);
-=======
-                    %for nuclear tag extraction. Getting FL info from mCh:
-                    if(channel_number==channelNuclear && length(cTimelapse.channelNames)>2)
-                        trapImages2=tpStack_3;
-                    end
-                    
-                end
-                
-                for cellIndex=1:length(cellsCurrTrap)
-                    currCell=cellsCurrTrap(cellIndex);
-                    temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
-                    
-                    %replaced by Elco to try and be more stable - had some BAD problems with data extraction
-                    %dataInd=dataInd+1;
-                    dataInd = find(trap==currTrap & cells == currCell);
-                    if isempty(temp_loc)
-                    else
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
                         
                         %for Elco's variance estimate
                         BGtrapImage = returnTrapStack(cTimelapse,BGcorrection,currTrap,timepoint);
@@ -483,47 +446,6 @@ for channel=1:length(channels)
                                             extractedData(channel).yloc(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
                                             extractedData(channel).trapNum(dataInd)=currTrap;
                                             extractedData(channel).cellNum(dataInd)=currCell;
-=======
-                                        extractedData(channel).xloc(dataInd,timepoint)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
-                                        extractedData(channel).yloc(dataInd,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
-                                        %now done at the beginning of the
-                                        %code.
-                                        %extractedData(channel).trapNum(dataInd)=currTrap;
-                                        %extractedData(channel).cellNum(dataInd)=currCell;
-                                    end
-                                    
-                                else
-                                    extractedData(channel).area(dataInd,timepoint,k)=length(cellFL);
-                                    extractedData(channel).max5(dataInd,timepoint,k)=mean(flsorted(1:5));
-                                    extractedData(channel).mean(dataInd,timepoint,k)=mean(cellFL(:));
-                                    extractedData(channel).median(dataInd,timepoint,k)=median(cellFL(:));
-                                    
-                                    
-                                    extractedData(channel).membraneMedian(dataInd, timepoint)=median(membraneFL(:));
-                                    extractedData(channel).membraneMax5(dataInd, timepoint)=mean(mflsorted(1:5));
-                                    
-                                    extractedData(channel).nuclearTagLoc(dataInd,timepoint)=nuclocalization2 ;
-                                    
-                                    cellLocSmall=imerode(cellLoc,s1);
-                                    if sum(cellLocSmall)<1
-                                    end
-                                    
-                                    cellFLsmall=trapIm(cellLocSmall);
-                                    flPeak=conv2(double(trapIm),convMatrix);
-                                    flPeak=flPeak(cellLoc);
-                                    
-                                    extractedData(channel).smallmax5(dataInd,timepoint,k)=max(flPeak(:));
-                                    extractedData(channel).smallmean(dataInd,timepoint,k)=mean(cellFLsmall(:));
-                                    extractedData(channel).smallmedian(dataInd,timepoint,k)=median(cellFLsmall(:));
-                                    
-                                    seg_areas=zeros(size(trapInfo(currTrap).cell(1).segmented));
-                                    for allCells=1:length(trapInfo(currTrap).cellLabel)
-                                        seg_areas=seg_areas|full(trapInfo(currTrap).cell(allCells).(cellSegType));
-                                        %                         seg_areas=imdilate(seg_areas,s1);
-                                        loc=double(cTimelapse.cTimepoint(timepoint).trapInfo(currTrap).cell(allCells).cellCenter);
-                                        if ~isempty(loc)
-                                            seg_areas=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1))loc(2),loc(1)));
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
                                         end
                                         
                                     else
@@ -559,7 +481,6 @@ for channel=1:length(channels)
                                                 seg_areas=imfill(seg_areas(:,:,1),'holes');%sub2ind(size(seg_areas(:,:,1))loc(2),loc(1)));
                                             end
                                         end
-<<<<<<< HEAD
                                         %                     seg_areas=imdilate(seg_areas,s1);
                                         seg_areas=~seg_areas;
                                         
@@ -594,14 +515,6 @@ for channel=1:length(channels)
                                         end
                                         
                                         
-=======
-                                        extractedData(channel).segmentedRadius(dataInd,timepoint,k)= sqrt(sum(cellLoc(:))/pi);%trapInfo(currTrap).cell(temp_loc).cellRadius;
-                                        extractedData(channel).xloc(dataInd,timepoint,k)= trapInfo(currTrap).cell(temp_loc).cellCenter(1);
-                                        extractedData(channel).yloc(dataInd,timepoint,k)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
-                                        %now done at the beginning of code
-                                        %extractedData(channel).trapNum(dataInd)=currTrap;
-                                        %extractedData(channel).cellNum(dataInd)=currCell;
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
                                     end
                                 end
                                 

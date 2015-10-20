@@ -30,7 +30,7 @@ end
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
     %
     cTimelapse.offset=offset;
 
