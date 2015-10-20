@@ -112,7 +112,11 @@ classdef cTrapSelectDisplay<handle
                 [minval loc]=min(D);
                 
                 cDisplay.trapLocations(loc)=[];
+                
+                %don't need to update the trap positions when removing
+                %cells
                 [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
+                
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
 %                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);

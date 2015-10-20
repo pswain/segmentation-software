@@ -1,4 +1,4 @@
-function [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
+function [trapLocations trap_mask trapImages cc]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck,cc)
 
 %% For each timepoint, identify the locations of the traps
 %Go trhough each image in the timepoint object, and extract the locations
@@ -15,7 +15,9 @@ if nargin<6 || isempty(trapLocationsToCheck)
     trapLocationsToCheck=1:length(trapLocations); %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
 end
 
-
+if nargin<7 || isempty(cc)
+    cc=[]; %just to avoid redoing the cc if not necessary
+end
 
 
 cTrap=cCellVision.cTrap;
@@ -62,7 +64,7 @@ if ~any(size(trapLocations))
 end
 
 % if isempty(trapImagesPrevTp)
-    [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck);
+    [trapLocations trap_mask trapImages cc]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck,cc);
 % else
 % %     [trapLocations trap_mask trapImages]=updateTrapLocWithPrev(image,cTrap,trapLocations,trapImagesPrevTp);
 % end

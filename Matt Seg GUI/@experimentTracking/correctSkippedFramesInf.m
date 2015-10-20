@@ -66,6 +66,18 @@ for nSkip=1:1
             b(locSkipped)=temp;
             cellInf.mean=sparse(b);
             
+            temp=((cExperiment.cellInf(channel).membraneMedian(locSkippedPre)+cExperiment.cellInf(channel).membraneMedian(locSkippedPost))./2);
+            b=full(cellInf.membraneMedian);
+            b(locSkipped)=temp;
+            cellInf.membraneMedian=sparse(b);
+            
+                        temp=((cExperiment.cellInf(channel).membraneMax5(locSkippedPre)+cExperiment.cellInf(channel).membraneMax5(locSkippedPost))./2);
+            b=full(cellInf.membraneMax5);
+            b(locSkipped)=temp;
+            cellInf.membraneMax5=sparse(b);
+
+
+            
             temp=(cExperiment.cellInf(channel).median(locSkippedPre)+cExperiment.cellInf(channel).median(locSkippedPost))./2;
             b=full(cellInf.median);
             b(locSkipped)=temp;
