@@ -1,7 +1,27 @@
 function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,pos_traps_to_show,channel)
-%function editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,PosTraps,channel)
-% PosTraps is a cell array of trap vectors indicating which traps should be
-% shown for each position.
+% editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,pos_traps_to_show,channel)
+%
+%
+% cExperiment             :   object of the experimentTracking class
+% cCellVision             :   object of the cellVision class
+% positionsToIdentify     :   array of indices position to show. Defaults
+%                             to all in cExperiment
+% show_overlap            :   logical of whether to show tracking. asks via
+%                             GUI if not provided.
+% pos_traps_to_show       :   cell array of traps to show at each position
+%                             (an array of trap indices for each position
+%                             stored in a cell array). Defaults to showing
+%                             all traps for each position.
+% channel                 :   channel from which to take underlying image.
+%                             defaults to 1.
+%
+% This opens the cTrapDisplay GUI for each position requested, which is the
+% GUI used for editing segmentation result by addition and removal of
+% cells. 
+%
+% the GUI's are opened in turn, with each being opened after the present
+% one is closed.
+
 if nargin<3
     positionsToIdentify=1:length(cExperiment.dirs);
 end
@@ -26,7 +46,6 @@ if nargin<4 || isempty(show_overlap)
 
 end
     
-%% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     cTimelapse=loadCurrentTimelapse(cExperiment,currentPos);
@@ -35,7 +54,12 @@ for i=1:length(positionsToIdentify)
     else
         traps_to_show = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
     end
-    cTrapDisplay(cTimelapse,cCellVision,show_overlap,channel,traps_to_show);
+    %if pos_traps_to_show was provided, and the traps_to_show entry is
+    %empty, then no traps should be shown for this timelapse and the GUI is
+    %not opened.
+    if ~(pos_traps_to_show_given && isempty(traps_to_show))
+        cTrapDisplay(cTimelapse,cCellVision,show_overlap,channel,traps_to_show);
+    end
     
     uiwait();
     cExperiment.cTimelapse=cTimelapse;

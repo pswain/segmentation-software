@@ -1,5 +1,40 @@
 function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
+% identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
+% 
+% used in a number of places in the code to do slightly different things,
+% but in all cases it is intended to take some inputs and add a cell object
+% to the cTimelapse data structure with appropriate fields populated.
+%
+% cTimelapse    :   object of the timelapseTraps class
+% cCellVision   :   object of the cellVision class
+% timepoint     :   timepoint at which the segmentation is occurring.
+%                   defaults to 1.
+% traps         :   array of indices of traps at which segmentation should
+%                   be performed. defaults to 1.
+% channel       :   channel used to get images of the cells if they are not
+%                   provided
+% method        :   string determining which method to use to find cells.
+%                   Default is 'hough'
+% bw            :   a logical mask used in some methods to isolate area of
+%                   image in which to look for a cell like object.
+% trap_image    :   cell array of image stacks taken from
+%                           timelapseTraps.returnSegmentationTrapsStack
+%                   format depends on cCellVision.method
+% d_im          :   stack of decision images - one for each trap_image.
+%                   negative values indicate a location likely to be a cell
+%                   centre.
+%
+% Uses different methods depending on where it is being called from:
+%
+% from cTrapDisplayProcessing - the standard automated cell identifier - it
+% is called with the method 'trackUpdateObjects', which does identification
+% based on hough transform and cTimelapse.cTimepoint.trapInfo.segCentres,
+% giving preference and being more lenient to large cells found at previous
+% time point. It also removes cells with too great an overlap with either
+% other cells or the traps.
 
+
+%allowed overlap with traps
 allowedOverlap=.3;
 
 if nargin<3
@@ -26,37 +61,47 @@ if nargin<8
     trap_image=[];
 end
 
-% This goes through all images of the traps to determine the min/max
-% intensity value and the best threshold to use for all traps
+
 switch method
-    case 'hough2'
+    case 'hough2' %not sure on this one
         hough_track2(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
-    case 'trackUpdateObjects'
-        cTimelapse.trackUpdateObjects(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
-    case 'trackUpdateObjectsGPU'
+    case 'trackUpdateObjects' %maintained. Used for cTrapDisplayProcessing
+        cTimelapse.trackUpdateObjects(cCellVision,traps,timepoint,trap_image,allowedOverlap,d_im)
+    case 'trackUpdateObjectsGPU' % not sure on this one
         cTimelapse.trackUpdateObjectsGPU(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
-    case 'hough'
+    case 'hough' %maintained. used in editing GUI
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
-    case 'active_contour'
-        linear_segmentation(cTimelapse,cCellVision,traps,channel)
-    case 'elcoAC'
+    case 'active_contour'%seems to not be maintained
+        linear_segmentation(cTimelapse,cCellVision,traps,channel) 
+    case 'elcoAC' %maintained. Used in elcos curateTracking GUI.
         elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw);
 end
 end
 
-function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
-%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
+function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)
+%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)
 %Not sure exactly, written by Matt, but is a somewhat legacy way of
 %identifying cell outlines in the image using the hough transform without
 %consideration for past timepoints. trap_image no longer used since it was
 %changed to a cell array. Basically certainly uses channel 1 so if using
 %this code make sure channel 1 is centre DIC image.
 
-%     image=cTimelapse.returnTrapsTimepoint(traps,i,channel);
-if isempty(trap_image)
+% cTimelapse        :   object of the timelapseTraps class
+% cCellVision       :   object of the cellVision class
+% traps             :   array of trap Indices to identify cells in
+% channel           :   channel used to extract image if image is not
+%                       provided
+% timepoint         :   timepoint at which to identify cellObjects
+% bw_mask           :   
+% image             :   cell array of images used segmentation stack of images
+% allowedOverlap    :   
+
+%cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
+% cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],identification_image_stacks,d_im) 
+% identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
+% hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)
+if isempty(image)
     image=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
-else
-    image=trap_image;
 end
 image=double(image);
 
@@ -66,35 +111,25 @@ se3=cCellVision.se.se3;
 
 
 if cTimelapse.trapsPresent
-    %blur/reduce the edges of the traps so they don't impact the hough
-    %transform as much
-    %     trapEdge=cCellVision.cTrap.contour;
-    %     trapEdge=imdilate(trapEdge,se1);
     trapEdge=double(cCellVision.cTrap.trapOutline);
     trapG=imfilter(trapEdge,f1);
     trapG=trapG/max(trapG(:));
     
+    if cTimelapse.magnification~=cCellVision.magnification
     cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
+    end
     cellTrap=bwlabel(cellTrap);
 end
 
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
 searchRadius(1)=searchRadius(1)-1;
-% searchRadius(2)=searchRadius(2)+1;
 
+f1=fspecial('disk',2);
 
-if cTimelapse.magnification<100
-    %     f1=fspecial('gaussian',5,1);
-    f1=fspecial('disk',2 );
-else
-    f1=fspecial('disk',2);
-    %     f1=fspecial('gaussian',7,2);
-end
-% f2=fspecial('disk',3);
 
 if isempty(bw_mask)
-    %parfor j=1:size(image,3)
+    
     for j=1:size(image,3)
         
         temp_im=image(:,:,j);

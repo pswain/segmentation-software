@@ -1,5 +1,8 @@
 function extractCellData(cTimelapse,type,channels,cellSegType)
 
+%Elco note
+%something weird might be happening with xloc,yloc extraction. Check it.
+
 if nargin<2
     type='max';
 end

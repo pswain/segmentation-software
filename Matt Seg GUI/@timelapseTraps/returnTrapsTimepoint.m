@@ -1,8 +1,13 @@
 function trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
 %trapsTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
-%If there are traps in the timelapse, this returns a 3D image containg the set of 
-% traps indicated at the timepoint indicated. If there are no traps in the
-% timelapse however, it return the entire frame in a single 2D image.
+%
+% If there are traps in the timelapse, this returns a zstack containing the
+% images of the set of traps indicated at the timepoint indicated. If there
+% are no traps in the timelapse however, it return the entire frame in a
+% single 2D image.
+%
+% pads image with mean value, so pixels outside the image that are still in
+% the trap region will have a value of the mean of the whole image.
 
 if nargin<3
     timepoint=1;
@@ -22,7 +27,7 @@ if nargin<5
     type='max';
 end
 
-if cTimelapse.trapsPresent
+if cTimelapse.trapsPresent %ALL these can basically certainly be removed.
     if strcmp(channel,'segmented')
         for j=1:length(traps)
             trapsTimepoint(:,:,:,j)=cTimelapse.cTrapsLabelled(j).segmented(:,:,timepoint);
@@ -102,22 +107,15 @@ if cTimelapse.trapsPresent
         cTrap=cTimelapse.cTrapSize;
         image=cTimelapse.returnSingleTimepoint(timepoint,channel,type);
         bb=max([cTrap.bb_width cTrap.bb_height])+100;
-%         bb_image=padarray(image,[bb bb],median(image(:)));
         bb_image=padarray(image,[bb bb],mean(image(:)));
 
         trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
         for j=1:length(traps)
-            try
             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
-%             y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),2) + bb);
-%             x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j),1) + bb);
             temp_im=bb_image(y-cTrap.bb_height:y+cTrap.bb_height,x-cTrap.bb_width:x+cTrap.bb_width);
-            temp_im(temp_im==0)=mean(temp_im(:));
             trapsTimepoint(:,:,j)=temp_im;
-            catch
-                disp('stop here for debug');
-            end
+
         end
     end
 else

@@ -1,7 +1,17 @@
 classdef cTrapDisplay<handle
+    % cTrapDisplay
+    %
+    % A GUI that allows the editing of the segmentation by addition and
+    % removal of cells. The traps are shown as a grid an cells can be added
+    % and removed at individual time points by left and right clicking.
+    % 
+    % Can also open a tracking curation sub GUI that allows more detailed
+    % editing (adding and removing cells, changing their outline and the
+    % tracking across timepoints). This is done by holding down the
+    % CurateTracksKy (default 't') and clicking on a cell.
     properties
-        figure = [];
-        subImage = [];
+        figure = []; % the figure handle for the whole GUI
+        subImage = []; 
         subAxes=[];
         slider = [];
         pause_duration=[];
@@ -9,21 +19,29 @@ classdef cTrapDisplay<handle
         traps=[];
         channel=[]
         cCellVision=[];
-        trackOverlay=[];
-        tracksDisplayBox=[];
-        trapNum;
+        trackOverlay=[]; %boolean. stores overlay input and determines whether to color cells by label.
+        tracksDisplayBox=[]; %remove??
+        trapNum; % remove???
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = [];%stores value of key being held down while it is pressed
         
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+
     methods
         function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
-            %function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
-            
+            % cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps,trackThroughTime)
+            %
+            % cTimelapse        :   object of the timelapseTraps class
+            % cCellVision       :   object of the cellVision class
+            % overlay           :   boolean, default false. Whether to
+            %                       colour cells by their tracking label.
+            % channel           :   channel to show in the GUI. default 1.
+            % traps             :   array of trap indices for the traps to
+            %                       display in the GUI.
+            % trackThroughTime  :   boolean, default false. If true, tracks
+            %                       traps.
+            %
+            % timelapseTraps should have had timepoints selected already.
             timepoints=cTimelapse.timepointsToProcess;
             
             if nargin<3 || isempty(overlay)
@@ -50,62 +68,36 @@ classdef cTrapDisplay<handle
             end
             
             
-            try
-                isempty(cTimelapse.cTimepoint(timepoints(1)).trapInfo);
-                b=0;
-            catch
-                b=1;
+            if isempty(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
+                
+                cTrapSelectDisplay(cTimelapse,cCellVision,timepoints(1));
+                
+            end
+                
+            if isempty(cTimelapse.cTimepoint(timepoints(1)).trapInfo)
+                error('please select traps at the first timepoint before using this GUI')
             end
             
             if isempty(cTimelapse.timepointsProcessed)
-                if cTimelapse.trapsPresent
-                    tempSize=[cTimelapse.cTimepoint.trapInfo];
-                    cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(timepoints(1)).trapInfo));
-                else
-                    cTimelapse.timepointsProcessed=1;
-                end
+                cTimelapse.timepointsProcessed = false(1:max(cTimelapse.timepointsToProcess));
             end
             
             
-            if cTimelapse.trapsPresent
-                %In case the traps haven't been tracked through time
-                if trackThroughTime %isempty(cTimelapse.cTimepoint(end).trapLocations) && trackThroughTime
-                    trapImagesPrevTp=cTimelapse.returnTrapsTimepoint([],timepoints(1));
-                    h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-                    for i=2:length(timepoints)
-                        i
-                        timepoint=timepoints(i);
-                        %                         cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
-                        [~, ~, trapImagesPrevTp]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations,trapImagesPrevTp);
-                        
-                        waitbar(timepoint/timepoints(end));
-                    end
-                    close(h)
-                end
-                %commented by elco to allow display of 1 trap at a time.
-                %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
-            elseif b
-                image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
-                %                 if isempy(
-                for timepoint=timepoints
-                    cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
-                    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
-                    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
-                    cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=sparse(zeros(size(image))>0);
-                    cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
-                end
+            if trackThroughTime
+                cTimelapse.trackTrapsThroughTime(cCellVision,timepoints,false);
             end
-            
-%             cDisplay.channel=channel;
+
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
             cDisplay.cCellVision=cCellVision;
             cDisplay.figure=figure('MenuBar','none');
             
+            % width of grid of images - a little off square
             dis_w=ceil(sqrt(length(traps)));
             if dis_w>1
                 dis_w=dis_w+1;
             end
+            %height of image grid
             dis_h=max(ceil(length(traps)/dis_w),1);
             image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
             
@@ -123,12 +115,8 @@ classdef cTrapDisplay<handle
                     cDisplay.subImage(index)=subimage(image(:,:,i));
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
                     set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
-                    if cDisplay.trackOverlay
-                        %set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
-                        set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
-                    else
-                        set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
-                    end
+                    set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
+                    
                     index=index+1;
                 end
             end
@@ -149,14 +137,15 @@ classdef cTrapDisplay<handle
                 'SliderStep',SliderStep,...
                 'Callback',@(src,event)slider_cb(cDisplay));
             hListener = addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
-            
-%             cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
-%                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
-            
+
             cDisplay.slider_cb();
             
             %scroll wheel function
             set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
+            
+            %this pair of functions store key values of the key pressed so
+            %they can influence the behaviour of the GUI.
+            
             %keydown function
             set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)KeepKey_Press_cb(cDisplay,'KeyPressed',src,event));
             %key release function
@@ -164,10 +153,5 @@ classdef cTrapDisplay<handle
 
             
         end
-
-        % Other functions 
-        addRemoveCells(cDisplay,subAx,trap)
-        slider_cb(cDisplay)
-        tracksDisplay(cDisplay);
     end
 end

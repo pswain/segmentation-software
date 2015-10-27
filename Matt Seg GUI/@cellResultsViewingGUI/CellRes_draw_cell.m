@@ -23,9 +23,13 @@ end
 
 mother_info = CellResGUI.cExperiment.lineageInfo.motherInfo;
 %check if it is a mother cell
+if ~isempty(mother_info.motherPosNum)
 mother_index = ismember([mother_info.motherPosNum' mother_info.motherTrap' mother_info.motherLabel'], ...
     CellResGUI.CellsForSelection(CellResGUI.CellSelected,:), ...
         'rows');
+else
+    mother_index = [];
+end
 if any(mother_index)
     daughter_cell_numbers = find(ismember(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel, ...
         mother_info.daughterLabelHMM(mother_index,:)) & ~(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel==0));

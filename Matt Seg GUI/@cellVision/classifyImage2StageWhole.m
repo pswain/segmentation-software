@@ -1,5 +1,10 @@
-function  [predicted_im decision_im filtered_image]=classifyImage2StageWhole(cCellSVM,image,trapOutline)
-
+function  [predicted_im, decision_im, filtered_image]=classifyImage2StageWhole(cCellSVM,image,trapOutline)
+% [predicted_im, decision_im, filtered_image]=classifyImage2StageWhole(cCellSVM,image,trapOutline)
+%
+%
+% Elco. Looks to me like this is just the same as classifyImage2Stage
+% non of the extra variables seem to be used since imageTrapsOnly is just
+% image and tempCurrentTPOutline Doesn't get used.
 if nargin<2 || isempty(trapOutline)
     trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se1);
 end

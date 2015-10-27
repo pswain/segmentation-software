@@ -1,4 +1,7 @@
 function cropTimepoints(cExperiment,positionsToCrop)
+%cropTimepoints(cExperiment,positionsToCrop)
+%Completely removes a set of timepoints from each cTimelapse in the
+%cExperiment. Timepoints to keep are selected by GUI.
 
 num_lines=1;
 dlg_title = 'Tp to crop?';
@@ -14,7 +17,6 @@ end
 
 for i=1:length(positionsToCrop)
     currentPos=positionsToCrop(i);
-%     load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
     cExperiment.cTimelapse=cExperiment.returnTimelapse(currentPos);
     cExperiment.cTimelapse.cTimepoint=cExperiment.cTimelapse.cTimepoint(startTP:endTP);
     cExperiment.cTimelapse.timepointsProcessed = cExperiment.cTimelapse.timepointsProcessed(startTP:endTP);

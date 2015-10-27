@@ -1,5 +1,19 @@
 function identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo)
-
+% identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo)
+%
+%method to select the traps in a collection of positions. Runs through the
+%positions selected opening each in a cTrapSelectDisplay GUI and saving the
+%result. 
+%
+% TrackFirstTimpoint :  boolean. If true it tracks the first position after
+%                       selection and uses the result to rule out positions
+%                       that drift out of the field of view in the
+%                       subsequent timepoints. Then need to reselect first
+%                       position.
+%
+% ClearTrapInfo      :  boolean. if true clears all the previous trapInfo
+%                       other than fielnames. Can be useful if changing
+%                       cCellvision models for example.
 
 if nargin<3 ||isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
@@ -15,8 +29,6 @@ Message=(['Each position of the experiment will be displayed one by one. The pro
 h = helpdlg(Message);
 uiwait(h);
     
-%% Load timelapses
-
 Positive ='track first timepoint' ;
 Negative ='no thanks' ;
 TrackFirstTimpointDlgOut = questdlg(...
@@ -36,20 +48,6 @@ end
 
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-%     if ~isempty(cExperiment.OmeroDatabase)%Experiment created from an Omero dataset - has a suffix to distinguish different cExperiment/timelapse files
-%         %Has this file already been downloaded?
-%         if exist([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse_' cExperiment.rootFolder '.mat'],'file')==2        
-%             load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse_' cExperiment.rootFolder '.mat']);   
-%         else
-%             cTimelapse=cExperiment.returnTimelapse(cExperiment,i);
-%         end
-%         %Saved version has only the server name in .OmeroDatabase and the
-%         %image Id number in omeroImage
-%         cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;
-%         cTimelapse.omeroImage=getImages(cExperiment.OmeroDatabase.Session, cTimelapse.omeroImage);
-%     else%Experiment created from a folder
-%         load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-%     end
 
     cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
     if ClearTrapInfo
@@ -57,38 +55,41 @@ for i=1:length(positionsToIdentify)
     end
     if TrackFirstTimepoint
         if i==1
-            cTrapSelectDisplay(cTimelapse,cCellVision,cExperiment.timepointsToProcess(i));
+            cTrapSelectDisplay(cTimelapse,cCellVision,cExperiment.timepointsToProcess(1));
             uiwait();
-            cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
-            TotalXDrift = mode([cTimelapse.cTimepoint(cExperiment.timepointsToProcess(end)).trapLocations(:).xcenter] - ...
-                [cTimelapse.cTimepoint(cExperiment.timepointsToProcess(1)).trapLocations(:).xcenter],2);
-            TotalYDrift = mode([cTimelapse.cTimepoint(cExperiment.timepointsToProcess(end)).trapLocations(:).ycenter] - ...
-                [cTimelapse.cTimepoint(cExperiment.timepointsToProcess(1)).trapLocations(:).ycenter],2);
+            cTimelapse.trackTrapsThroughTime(cCellVision,cTimelapse.timepointsToProcess);
+            TotalXDrift = mode([cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(end)).trapLocations(:).xcenter] - ...
+                [cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations(:).xcenter],2);
+            TotalYDrift = mode([cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(end)).trapLocations(:).ycenter] - ...
+                [cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations(:).ycenter],2);
             
-            %exclude traps more than half out of image
-            ExclusionZone = [1 1 cTimelapse.imSize(2) cTimelapse.cTrapSize.bb_height;...
-                                1 1  cTimelapse.cTrapSize.bb_width cTimelapse.imSize(1);...
-                                (cTimelapse.imSize(2) - cTimelapse.cTrapSize.bb_width) 1 cTimelapse.imSize(2) cTimelapse.imSize(1);...
-                                1 (cTimelapse.imSize(1) - cTimelapse.cTrapSize.bb_height) cTimelapse.imSize(2) cTimelapse.imSize(1)];
+            %exclude traps more than on quarter out of image at the
+            %beginning or end.
+            y_bound = round(cTimelapse.cTrapSize.bb_height/2);
+            x_bound = round(cTimelapse.cTrapSize.bb_width/2);
+            ExclusionZone = [1 1 cTimelapse.imSize(2) y_bound;...
+                                1 1  x_bound cTimelapse.imSize(1);...
+                                (cTimelapse.imSize(2) - x_bound) 1 cTimelapse.imSize(2) cTimelapse.imSize(1);...
+                                1 (cTimelapse.imSize(1) - y_bound) cTimelapse.imSize(2) cTimelapse.imSize(1)];
             if TotalXDrift>0
-                ExclusionZone = [ExclusionZone ;(cTimelapse.imSize(2) - (TotalXDrift + ceil(cTimelapse.cTrapSize.bb_width))) 1 ...
+                ExclusionZone = [ExclusionZone ;(cTimelapse.imSize(2) - (TotalXDrift + ceil(x_bound))) 1 ...
                                     cTimelapse.imSize(2) cTimelapse.imSize(1)];
                 
             else
                 ExclusionZone = [ExclusionZone ;1 1 ...
-                                    (abs(TotalXDrift) + ceil(cTimelapse.cTrapSize.bb_width)) cTimelapse.imSize(1)];
+                                    (abs(TotalXDrift) + ceil(x_bound)) cTimelapse.imSize(1)];
                 
             end
             
              if TotalYDrift>0
                 ExclusionZone = [ExclusionZone ;...
-                                    [1 (cTimelapse.imSize(1) - (TotalYDrift + ceil(cTimelapse.cTrapSize.bb_height))) ...
+                                    [1 (cTimelapse.imSize(1) - (TotalYDrift + ceil(y_bound))) ...
                                     cTimelapse.imSize(2) cTimelapse.imSize(1)] ];
                 
             else
                 ExclusionZone = [ExclusionZone ;...
                                     [1 1 ...
-                                    cTimelapse.imSize(2) (abs(TotalYDrift) + ceil(cTimelapse.cTrapSize.bb_height))] ];
+                                    cTimelapse.imSize(2) (abs(TotalYDrift) + ceil(y_bound))] ];
                  
             end
             

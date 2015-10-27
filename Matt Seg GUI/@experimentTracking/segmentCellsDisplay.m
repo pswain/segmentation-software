@@ -1,4 +1,19 @@
 function segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment)
+% segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment)
+%
+% optionally tracks each positions in positionsToSegment and then creates a
+% cTrapDisplayProcessing GUI which identifies cells at each timepoint in
+% turn and displays the results. 
+%
+% cCellVision          :    and object of the cellVision class which
+%                           encodes the SVM for cell centre identification.
+%                           Usually taken from the cExperiment object.
+% positionsToSegment   :    (optional) array of indices of positions to
+%                           segment. Default - 1:length(cExperiment.dirs)
+%                           (i.e. all positions)
+%
+% tracking is done if cExperiment.trackTrapsOverwrite is true. CTimelapse
+% is saved after tracking and then again after cell identification.
 
 if nargin<3
     positionsToSegment=1:length(cExperiment.dirs);
@@ -8,8 +23,6 @@ if cExperiment.trackTrapsOverwrite
     for i=1:length(positionsToSegment)
         currentPos=positionsToSegment(i);
         cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
-        cExperiment.currentDir=cExperiment.dirs{currentPos};
-        cExperiment.cTimelapse=cTimelapse;
         cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
 
@@ -20,17 +33,6 @@ end
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
     cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
-
-    %load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-%     if ~isempty(cTimelapse.omeroImage)
-%         cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;
-%         cTimelapse.omeroImage=getImages(cTimelapse.OmeroDatabase.Session, cTimelapse.omeroImage);
-%     end
-    cExperiment.currentDir=cExperiment.dirs{currentPos};
-    cExperiment.cTimelapse=cTimelapse;
-    if isempty(cExperiment.cTimelapse.magnification)
-        cExperiment.cTimelapse.magnification=60;
-    end
     
     b=[cTimelapse.cTimepoint.trapLocations];
     if ~isempty(b) || ~cTimelapse.trapsPresent

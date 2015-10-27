@@ -1,4 +1,10 @@
 classdef experimentTracking<handle
+    %class for organising and numerous timelapseTraps objects, one for each
+    %position in the experiment. Mostly used to apply identical processing
+    %steps to each position, organise loading and saving of them, and
+    %compile the data from all the separate positions in one location.
+    %Indiviual timelapseTraps objects are created either from local files
+    %or from the omero database.
     
     properties
         rootFolder %folder where images are. When images are held in an Omero database this property is the suffix defining the filename: cExperiment_SUFFIX.mat
@@ -6,8 +12,8 @@ classdef experimentTracking<handle
         OmeroDatabase%Omero database object
         creator%string, the user who created this object(obtained by getenv('USERNAME'))
         saveFolder %folder to save the timelapse objects
-        dirs
-        posSegmented
+        dirs % cell array of directories in rootFolder. 
+        posSegmented % logical array of position already segmented.
         posTracked
         cellsToPlot
         currentDir
@@ -33,7 +39,7 @@ classdef experimentTracking<handle
     
     methods
         
-        function cExperiment=experimentTracking(folder, OmeroDatabase,  expName)
+        function cExperiment=experimentTracking(folder,saveFolder, OmeroDatabase,  expName)
             %% Folder input is a string with the full path to the root folder or an Omero dataset object (in that case the OmeroDatabase object must also be input)
             %Optional inputs 2-4 only used when creating objects using the
             %Omero database: OmeroDatabase - object of class OmeroDatabase
@@ -43,6 +49,8 @@ classdef experimentTracking<handle
             if nargin<1
                 fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
+            end
+            if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(folder,'Select the folder where data should be saved');
             end
@@ -51,7 +59,7 @@ classdef experimentTracking<handle
                 cExperiment.rootFolder=folder;
                 cExperiment.saveFolder=saveFolder;
             else
-                if nargin>2
+                if nargin>3
                     if iscell(expName)
                         expName=expName{:};
                     end
@@ -109,30 +117,7 @@ classdef experimentTracking<handle
             
         end
             
-        %functions for loading data and then processing to identify and
-        %track the traps
-        createTimelapsePositions(cExperiment,searchString,positionsToLoad,magnification,image_rotation,trapsPresent,timepointsToLoad);
-        identifyTrapsTimelapses(cExperiment,cCellVision,positionsToIdentify,TrackFirstTimepoint,ClearTrapInfo);
-        segmentCellsDisplay(cExperiment,cCellVision,positionsToSegment);
-        visualizeSegmentedCells(cExperiment,cCellVision,positionsToShow);
-        trackCells(cExperiment,positionsToTrack,cellMovementThresh)       
-        selectTPToProcess(cExperiment,positions);
-        combineTracklets(cExperiment,positions,params);
         
-        selectCellsToPlot(cExperiment,cCellVision,position,channel);
-        selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
-        
-        correctSkippedFramesInf(cExperiment,type);
-        
-        extractCellInformation(cExperiment,positionsToExtract,type,channels,cellSegType);
-        compileCellInformation(cExperiment,positions);
-        compileCellInformationParamsOnly(cExperiment,positions);
-        
-        cTimelapse=returnTimelapse(cExperiment,timelapseNum);
-        saveTimelapseExperiment(cExperiment,currentPos,saveCE);
-        saveExperiment(cExperiment,fileName);
-        plotCellInformation(cExperiment,position);
-        copyExperiment(cExperiment,new_location)
     end
 end
 

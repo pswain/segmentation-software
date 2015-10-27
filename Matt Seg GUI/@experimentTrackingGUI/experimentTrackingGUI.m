@@ -123,33 +123,5 @@ classdef experimentTrackingGUI<handle
             
         end
 
-        % Other functions 
-        
-
-        
-        createExperiment(cExpGUI)
-        loadSavedExperiment(cExpGUI)
-        loadCellVision(cExpGUI)
-        
-        
-        addSecondaryChannel(cExpGUI)
-        saveTimelapse(cExpGUI)
-        cropTimepoints(cExpGUI)
-        
-        selectChannel(cExpGUI)
-
-        displayWholeTimelapse(cExpGUI)
-        
-        selectTrapsToProcess(cExpGUI)
-        identifyCells(cExpGUI)
-        editProcessTimelapse(cExpGUI)
-        trackCells(cExpGUI)
-        selectCellsPlot(cExpGUI)
-        autoSelect(cExpGUI)
-        select(cExpGUI)
-        extractData(cExpGUI)
-        compileData(cExpGUI)
-        
-        processIndTimelapse(cExpGUI)
     end
 end
