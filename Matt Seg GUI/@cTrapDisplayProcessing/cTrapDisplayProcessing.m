@@ -108,8 +108,11 @@ classdef cTrapDisplayProcessing<handle
                     trap_images=trap_images/max(trap_images(:))*.75;
                 else
                 end
-                
+                if timepoint==196
+                    disp('stop for debug');
+                end
                 identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i),segType);
+                
                 d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);%%index j was changed to i
                 
                 if length(cTimelapse.channelsForSegment)>1
@@ -145,7 +148,7 @@ classdef cTrapDisplayProcessing<handle
                     temp_image{j}=image;
                 end
                 
-                tempy_im=zeros([size(trap_images,1) size(trap_images,2) 3]);
+                 tempy_im=zeros([size(trap_images,1) size(trap_images,2) 3]);
                 for j=1:size(trap_images,3)
                     set(cDisplay.subImage(j),'CData',tempy_im);
                     set(cDisplay.subAxes(j),'CLimMode','manual');
