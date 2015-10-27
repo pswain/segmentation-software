@@ -1,7 +1,14 @@
 function selectTPToProcess(cExperiment,positionsToCrop)
+% selectTPToProcess(cExperiment,positionsToCrop)
+%
+% sets the timepointsToProcess field of both cExperiment object and all its
+% children cTimelapse objects. also sets their timepointsProcessed field to
+% false for timepoints outside the range of timepointsToProcess. This is
+% done because subsequent processing steps will only be applied to the
+% timepoints listed as timepointsToProcess.
 
-cTimelapse=cExperiment.returnTimelapse(length(cExperiment.dirs));%Load last one in case it has fewer timepoints.
-%load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
+cTimelapse=cExperiment.returnTimelapse(length(cExperiment.dirs));
+%Load last one in case it has fewer timepoints as sometimes happens in an interrupted experiment.
 
 if nargin<2
     positionsToCrop=1:length(cExperiment.dirs);
@@ -34,9 +41,10 @@ cExperiment.saveExperiment();
 
 for i=1:length(positionsToCrop)
     currentPos=positionsToCrop(i);
-%     load([cExperiment.rootFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
     cExperiment.cTimelapse=cExperiment.returnTimelapse(currentPos);
     cExperiment.cTimelapse.timepointsToProcess = cExperiment.timepointsToProcess;
+    % set any elements of the timepointsProcessed field outside the range
+    % of timepoints to be processed to false
     cExperiment.cTimelapse.timepointsProcessed(~ismember(1:length(cExperiment.cTimelapse.timepointsProcessed),cExperiment.cTimelapse.timepointsToProcess)) = false;
     cExperiment.saveTimelapseExperiment(currentPos);   
     clear cTimelapse;

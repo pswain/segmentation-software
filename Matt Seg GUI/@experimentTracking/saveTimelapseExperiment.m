@@ -1,10 +1,20 @@
 function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
-%Third input saveCE is logical - if true, save the cExperiment file as well
-%as the timelapse
+% saveTimelapseExperiment(cExperiment,currentPos, saveCE)
+% 
+% saves cExperiment.cTimelapse to:
+%   [cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']
+%
+% also saves the cExperiment to:
+%       [cExperiment.saveFolder filesep 'cExperiment.mat']
+%
+% removing cExperiment.cCellVision, saving it as a separate object, then
+% putting it back.
+% 
+% Third input is only used by Omero code.It is saveCE: logical - if true,
+% save the cExperiment file as well as the timelapse,
     cTimelapse=cExperiment.cTimelapse;
 if isempty(cExperiment.OmeroDatabase)
-    save([cExperiment.saveFolder filesep,cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
-    %     save([cExperiment.rootFolder '/',cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    save([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
     
     cExperiment.cTimelapse=[];
     cCellVision=cExperiment.cCellVision;

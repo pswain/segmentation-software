@@ -1,19 +1,28 @@
-
 function filt_feat=createImFilterSetCellTrap(cCellSVM,image)
+% the default filter constructor written by Matt. A larger array of filters
+% (see code for details).
+%
+
+% ELCO NOTE - These comments seem to be entirely obsolete.
+%
+%%%%%%%%%%%%%%%
+%
 % This function creates a set of image filters used for identifying the
 % center of the cells located in the traps. It recieves a cropped image of
 % the timepoint containing just the image of the trap. This image has
 % the same dimensions as the cPCATrap. The cPCATrap is used to try to
 % subtract the trap, and remove it from the image to improve image
 % processing, and focus on the cells themselves.
- 
+% 
 % The raw image isn't used as a
- 
+% 
 % cPCATrap.pc_trap1= the first principle component trap
 % cPCATrap.pc_trap2= the second principle component trap
- 
+% 
 %image= an image containing the trap and ideally some cells
- 
+%
+%%%%%%%%%%%%%%
+
 %% Normalize the image and traps
 n_filt=5;
 nHough=4*1;

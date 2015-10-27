@@ -42,8 +42,8 @@ radiusFLData=isfield(cExperiment.cellInf(1),'radiusFL');
 segmentedRadiusData=isfield(cExperiment.cellInf(1),'segmentedRadius');
 radiusACData=isfield(cExperiment.cellInf(1),'radiusAC');
 nucAreaData=isfield(cExperiment.cellInf(1),'nucArea');
-
-
+areaData=isfield(cExperiment.cellInf(1),'area');
+pixelSumData=isfield(cExperiment.cellInf(1),'pixel_sum');
 for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).mean=sparse(tempLen,size(cExperiment.cellInf(i).mean,2));
     cExperiment.cellInf(i).median=sparse(tempLen,size(cExperiment.cellInf(i).median,2));
@@ -55,16 +55,19 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).min=sparse(tempLen,size(cExperiment.cellInf(i).min,2));
     cExperiment.cellInf(i).imBackground=sparse(tempLen,size(cExperiment.cellInf(i).imBackground,2));    
     cExperiment.cellInf(i).radius=sparse(tempLen,size(cExperiment.cellInf(i).radius,2));
-        cExperiment.cellInf(i).radiusAC=sparse(tempLen,size(cExperiment.cellInf(i).radiusAC,2));
-    cExperiment.cellInf(i).radiusFL=sparse(tempLen,size(cExperiment.cellInf(i).radiusFL,2));
+  
 
-    
+   
     cExperiment.cellInf(i).xloc=sparse(tempLen,size(cExperiment.cellInf(i).xloc,2));
     cExperiment.cellInf(i).yloc=sparse(tempLen,size(cExperiment.cellInf(i).yloc,2));
-    cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));
-    cExperiment.cellInf(i).pixel_sum= sparse(tempLen,size(cExperiment.cellInf(i).pixel_sum,2));
-    cExperiment.cellInf(i).pixel_variance_estimate= sparse(tempLen,size(cExperiment.cellInf(i).pixel_variance_estimate,2));
-
+    
+    if areaData
+        cExperiment.cellInf(i).area=sparse(tempLen,size(cExperiment.cellInf(i).area,2));
+    end
+    if pixelSumData
+        cExperiment.cellInf(i).pixel_sum= sparse(tempLen,size(cExperiment.cellInf(i).pixel_sum,2));
+        cExperiment.cellInf(i).pixel_variance_estimate= sparse(tempLen,size(cExperiment.cellInf(i).pixel_variance_estimate,2));
+    end
     if membraneData
         cExperiment.cellInf(i).membraneMedian= sparse(tempLen,size(cExperiment.cellInf(i).membraneMedian,2));
         cExperiment.cellInf(i).membraneMax5= sparse(tempLen,size(cExperiment.cellInf(i).membraneMax5,2));
@@ -180,21 +183,22 @@ for i=1:length(positionsToExtract)
             cExperiment.cellInf(j).yloc(index+1:index+size(temp,1),1:size(temp,2))=temp;
             
             temp=cTimelapse.extractedData(j).trapNum;
-            cExperiment.cellInf(j).trapNum(index+1:index+size(temp,2))=temp;
+            cExperiment.cellInf(j).trapNum(index+1:index+length(temp))=temp;
             temp=cTimelapse.extractedData(j).cellNum;
-            cExperiment.cellInf(j).cellNum(index+1:index+size(temp,2))=temp;
+            cExperiment.cellInf(j).cellNum(index+1:index+length(temp))=temp;
+            cExperiment.cellInf(j).posNum(index+1:index+length(temp))=experimentPos;
+
+            if pixelSumData
+                temp=cTimelapse.extractedData(j).pixel_sum;
+                cExperiment.cellInf(j).pixel_sum(index+1:index+size(temp,1),1:size(temp,2))=temp;
+                temp=cTimelapse.extractedData(j).pixel_variance_estimate;
+                cExperiment.cellInf(j).pixel_variance_estimate(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
+            if areaData
+                temp=cTimelapse.extractedData(j).area;
+                cExperiment.cellInf(j).area(index+1:index+size(temp,1),1:size(temp,2))=temp;
+            end
             
-            
-            temp=cTimelapse.extractedData(j).pixel_sum;
-            cExperiment.cellInf(j).pixel_sum(index+1:index+size(temp,1),1:size(temp,2))=temp;
-            temp=cTimelapse.extractedData(j).pixel_variance_estimate;
-            cExperiment.cellInf(j).pixel_variance_estimate(index+1:index+size(temp,1),1:size(temp,2))=temp;
-            
-            temp=cTimelapse.extractedData(j).area;
-            cExperiment.cellInf(j).area(index+1:index+size(temp,1),1:size(temp,2))=temp;
-            
-            
-            cExperiment.cellInf(j).posNum(index+1:index+size(temp,1))=experimentPos;
         end
         index=index+size(cTimelapse.extractedData(j).xloc,1);
     end
@@ -239,10 +243,13 @@ for i=1:length(cExperiment.cellInf)
     cExperiment.cellInf(i).xloc(index+1:end,:)=[];
     cExperiment.cellInf(i).yloc(index+1:end,:)=[];
     
-    cExperiment.cellInf(i).area(index+1:end,:)=[];
-    cExperiment.cellInf(i).pixel_sum(index+1:end,:)=[];
-    cExperiment.cellInf(i).pixel_variance_estimate(index+1:end,:)=[];
-    cExperiment.cellInf(i).area(index+1:end,:)=[];
+    if areaData
+        cExperiment.cellInf(i).area(index+1:end,:)=[];
+    end
+    if pixelSumData
+        cExperiment.cellInf(i).pixel_sum(index+1:end,:)=[];
+        cExperiment.cellInf(i).pixel_variance_estimate(index+1:end,:)=[];
+    end
 end
 
 cExperiment.saveExperiment();

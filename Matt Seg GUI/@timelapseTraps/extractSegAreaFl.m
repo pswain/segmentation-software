@@ -86,8 +86,9 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                     numP=1:floor(sum(bwStart(:))*.02);
                     tpIm=double(tpIm);
                     tpIm=tpIm/max(tpIm(:));
-                    bwStart=im2bw((tpIm),graythresh(tpIm)*1.1);
-                                        bwStart=imdilate(bwStart,strel('disk',1));
+                    bwStart=im2bw((tpIm),graythresh(tpIm));
+                    bwStart=imdilate(bwStart,strel('disk',1));
+
                     bw2{trapIndex}=bwStart;
                     tpIm(bwStartLoc(ind(numP)))=v(numP+length(numP)+3);
 %                     bw{trapIndex} = activecontour(tpIm,bwStart,120,'chan-vese','SmoothFactor',.7,'ContractionBias',-.1);

@@ -5,7 +5,7 @@ function addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, meth
 %
 
 if nargin<7
-    method='hough'
+    method='hough';
 end
 
 if nargin<8

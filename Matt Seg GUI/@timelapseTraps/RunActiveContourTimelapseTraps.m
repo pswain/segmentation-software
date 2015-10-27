@@ -1,4 +1,4 @@
-function RunActiveContourTimelapseTraps( cTimelapse,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod )
+function RunActiveContourTimelapseTraps( cTimelapse,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse )
 %RUNACTIVECONTOURTIMELAPSE( cTimelapse,FirstTimepoint,LastTimepoint )
 %basically a straightforward way to run the active contour methods
 %developed by me (Elco) on the cTimelapse object. 
@@ -38,8 +38,12 @@ if method_dialog_answer_value == false;
     return
 end
 
+if nargin<6 || isempty(CellsToUse)
+    CellsToUse = [];
+end
 
-cTimelapse.ActiveContourObject.RunActiveContourMethod(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod)
+
+cTimelapse.ActiveContourObject.RunActiveContourMethod(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse)
 
 fprintf('finished running active contour methods on timelapse \n')
 end

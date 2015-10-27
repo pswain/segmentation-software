@@ -1,7 +1,13 @@
 function  [predicted_im, decision_im, filtered_image]=classifyImageLinear(cCellSVM,image,trapOutline)
+%[predicted_im, decision_im, filtered_image]=classifyImageLinear(cCellSVM,image,trapOutline)
+% 
+% obsolete. everything done here is now done in classifyImageTwoStage, which
+% functions with linear or twostage models.
+%
 %cCellSVM is a cellVision model
 %image is a cell array of image stacks of the right depth (number of
 %channels/depths) for the cCellVision model
+% 
 
 
 if nargin<2

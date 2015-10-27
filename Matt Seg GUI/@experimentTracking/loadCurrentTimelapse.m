@@ -1,5 +1,13 @@
 function cTimelapse=loadCurrentTimelapse(cExperiment,positionsToLoad)
-
+%cTimelapse=loadCurrentTimelapse(cExperiment,positionsToLoad)
+%
+% loads a cTimelapse. Positions to load should be a single number
+% indicating which position to load. Note, positionsToLoad indicated index
+% in cExperiment.dirs to load, so depending on the ordering of the
+% directories in dirs cExperiment.loadCurrentTimelapse(2) will not
+% necessarily load the cTimlapse related to directory pos2, and will in
+% general load pos10 - his is due to alphabetic ordering.
+%
 if ~isempty(cExperiment.OmeroDatabase)%Experiment created from an Omero dataset - has a suffix to distinguish different cExperiment/timelapse files
     %Has this file already been downloaded?
     if strcmp(cExperiment.saveFolder(end),'/') || strcmp(cExperiment.saveFolder(end),'\')
@@ -18,7 +26,7 @@ if ~isempty(cExperiment.OmeroDatabase)%Experiment created from an Omero dataset 
     end
         
 else%Experiment created from a folder - name is just 'cTimelapse'
-    load([cExperiment.saveFolder '/' cExperiment.dirs{positionsToLoad},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{positionsToLoad},'cTimelapse']);
 end
 
 cExperiment.cTimelapse=cTimelapse;

@@ -1,25 +1,55 @@
 classdef cTrapDisplayProcessing<handle
+    % cTrapDisplayProcessing 
+    %
+    % a GUI (though with no user interaction) that segments a cTimelapse
+    % and shows the result at each iteration. This is the way all
+    % segmentation by Matts method is carried out. Applies the
+    %
+    %       timelapseTraps.identifyCellCentersTrap
+    %
+    % method to find a decision image and uses the
+    %       
+    %       timelapseTraps.identifyCellObjects
+    %
+    % method to use this to identify cell centres and outlines. This object
+    % then displays the results on an image of each trap. 
+    % As each timepoint is processed the cTimelapse.timepointsProcessed
+    % field is updated (true for processed timepoints)
+    %
+    % Resets the trapInfo field and populates the segCentres sparse logical
+    % array (2D array of cell centre regions) which are used in the
+    % identifyCellObjects code.
+    %
+    % note if magnification for cCellVision and cTimelapse is different
+    % these will be scaled.
+    
     properties
-        figure = [];
-        subImage = [];
-        subAxes=[];
-        slider = [];
-        pause_duration=[];
-        cTimelapse=[]
-        traps=[];
-        channel=[]
-        trapNum;
+        figure = []; % the figure in which the GUI is displayed
+        subImage = []; % array to hold the image handles for each trap image
+        subAxes=[]; % array to hold the handles for each sub axis created by subplot
+        cTimelapse=[] % cTimelapse object being segmented
+        traps=[]; % array of indices of traps to be segmented
+        channel=[] % channe; used for display (no necessarily that used in segmentation)
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+
     methods
         function cDisplay=cTrapDisplayProcessing(cTimelapse,cCellVision,timepoints,traps,channel,gui_name)
-            
-            %             if nargin<3
-            %                 method='twostage';
-            %             end
+            % cDisplay=cTrapDisplayProcessing(cTimelapse,cCellVision,timepoints,traps,channel,gui_name)
+            %
+            % cTimelapse    : object of the timelapseTraps class being
+            %                 segmented
+            % cCellVision   : object of the cellVision class encoding the
+            %                 SVM being used for the segmentation
+            % timepoints    : optional. array of timepoints to segment.
+            %                 Default is cTimelapse.timepointsToProcess
+            % traps         : optional. array of indices traps to segment.
+            %                 Default is all traps at timepoint
+            %                 timepoints(1).
+            % channel       : optional. Index of channel to show, not
+            %                 necessarily the one used for the
+            %                 segmentation. default is 1.
+            % gui_name      : optional. string used to make the name of the
+            %                 figure.
             if nargin<3 || isempty(timepoints)
                 timepoints=cTimelapse.timepointsToProcess;
             end
@@ -38,20 +68,6 @@ classdef cTrapDisplayProcessing<handle
                 gui_name='';
             end
             
-            if nargin<7 ||isempty(segType)
-                if strcmp(cCellVision.method,'wholeIm')
-                    segType='whole';
-                else
-                    segType='trap';
-                end
-            end
-            
-            
-            
-            if isempty(cTimelapse.magnification)
-                cTimelapse.magnification=60;
-            end
-            
             cTimelapse=cTimelapse;
             cDisplay.traps=traps;
             cTrap=cTimelapse.cTrapSize;
@@ -60,6 +76,7 @@ classdef cTrapDisplayProcessing<handle
             dis_w=ceil(sqrt(length(traps)));
             dis_h=max(ceil(length(traps)/dis_w),1);
             trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),channel);
+            trap_images = double(trap_images);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -70,15 +87,13 @@ classdef cTrapDisplayProcessing<handle
                     if index>length(traps)
                         break; end
                     
-                    %     h_axes(i)=subplot(dis_h,dis_w,i);
-                    %         h_axes(index)=subplot('Position',[t_width*(i-1)+bb t_height*(j-1)+bb t_width t_height]);
-                    cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);
-                    cDisplay.trapNum(index)=traps(index);
+                    cDisplay.subAxes(index)=subplot('Position',...
+                        [(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);
+
+                    cDisplay.subImage(index)=subimage(trap_images(:,:,index)/max(max(trap_images(:,:,index))));
                     
-                    cDisplay.subImage(index)=subimage(trap_images(:,:,index));
-                    %                     colormap(gray);
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
-                    %                     set(cDisplay.subAxes(index),'CLimMode','manual')
+                    
                     index=index+1;
                     
                 end
@@ -86,85 +101,82 @@ classdef cTrapDisplayProcessing<handle
             end
             pause(.001);
             
-            scalingFactor=cCellVision.magnification/cTimelapse.magnification;
-            if strcmp(cCellVision.method,'wholeIm')
-                firstIm=cTimelapse.returnSingleTimepoint(1,1);
-                d_im=zeros(size(firstIm,1)*scalingFactor,size(firstIm,2)*scalingFactor);
-            else
-                d_im=zeros(size(trap_images,1)*scalingFactor,size(trap_images,2)*scalingFactor,length(traps));
+            if isempty(cTimelapse.magnification)
+                error('\nset the magnification in cTimelapse class\n')
             end
-            trapsProcessed=0;tic
-            trapImagesPrevTp=[];
+
+            % just to get an image of the appropriate size - also used
+            % later.
+            identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(1),cCellVision.method);
+            d_im = zeros([size(identification_image_stacks{1},1) size(identification_image_stacks{1},2) length(identification_image_stacks)]);
+            
+            % identifyCellCentres resizes the image if magnification do not
+            % match, so need to do the same here.
+            %MAGNIFICATION
+            if cCellVision.magnification/cTimelapse.magnification ~= 1
+                d_im=imresize(d_im,cCellVision.magnification/cTimelapse.magnification);
+            end
+            trapsProcessed=0;
+            tic
             for i=1:length(timepoints)
                 timepoint=timepoints(i);
                 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
                 
                 if i>1
-                    set(cDisplay.figure,'Name',[gui_name ' Timepoint ' int2str(timepoint-1),' of ', num2str(max(timepoints)),' (',timePerTrap, 's /trap']);
+                    set(cDisplay.figure,'Name',[gui_name ' Timepoint ' int2str(timepoint-1),' of ', num2str(max(timepoints)),' (',timePerTrap, 's /trap )']);
                     drawnow;
                     
                     trap_images=cTimelapse.returnTrapsTimepoint(traps,timepoints(i),channel);
                     trap_images=double(trap_images);
                     trap_images=trap_images/max(trap_images(:))*.75;
-                else
                 end
-                if timepoint==196
-                    disp('stop for debug');
-                end
-                identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i),segType);
                 
-                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);%%index j was changed to i
-                
-                if length(cTimelapse.channelsForSegment)>1
-                    if strcmp(segType,'whole')
-                        identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i),'trap');
-                        cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
-                    else
-                        cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],identification_image_stacks,d_im);
-                    end
-                else
-%                     cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
-                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
+                % calculate the decision images used to find segmentation
+                % results.
+                if i>1 % if i==1 the decision image was retrieved already.
+                    identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.method);
                 end
+                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);
+                
+                % use this decision image  and the
+                %       cTimelapse.cTimepoint(timepoint).trapInfo.segCenters
+                % field populated by above method to find cell objects
+                % (i.e. actually identify centres and outlines)
+                cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
+
                 
                 for j=1:length(traps)
+                    trap = traps(j);
+                    
+                    % create an RGB z stack for the trap
                     image=trap_images(:,:,j);
                     image=double(image);
                     image=image/max(image(:))*.75;
                     image=repmat(image,[1 1 3]);
                     
-                    if cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cellsPresent
-                        seg_areas=[cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cell(:).segmented];
+                    if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
+                        seg_areas=[cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).segmented];
                         seg_areas=full(seg_areas);
-                        seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(cTimelapse.cTimepoint(timepoint).trapInfo(traps(j)).cell)]);
+                        seg_areas=reshape(seg_areas,[size(image,1) size(image,2) length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)]);
                         seg_areas=max(seg_areas,[],3);
                     else
-                        seg_areas=zeros([size(image,1) size(image,2)])>0;
+                        seg_areas=false([size(image,1) size(image,2)]);
                     end
+                    
+                    % make the edge pixels, given by seg_areas, red.
                     t_im=image(:,:,1);
-                    t_im(seg_areas)=1; %t_im(seg_areas)*3;
+                    t_im(seg_areas)=1; 
                     image(:,:,1)=t_im;
                     
                     temp_image{j}=image;
                 end
-                
-                 tempy_im=zeros([size(trap_images,1) size(trap_images,2) 3]);
-                for j=1:size(trap_images,3)
-                    set(cDisplay.subImage(j),'CData',tempy_im);
-                    set(cDisplay.subAxes(j),'CLimMode','manual');
-                    set(cDisplay.subAxes(j),'CLim',[0 1]);
-                end
-                drawnow;
-                
+
                 for j=1:length(traps)
                     image=temp_image{j};
                     set(cDisplay.subImage(j),'CData',image);
                     set(cDisplay.subAxes(j),'CLimMode','manual');
                     set(cDisplay.subAxes(j),'CLim',[min(image(:)) max(image(:))]);
                     
-                    if rem(j,12)==0
-                        drawnow;
-                    end
                     trapsProcessed=1+trapsProcessed;
                 end
                 drawnow;

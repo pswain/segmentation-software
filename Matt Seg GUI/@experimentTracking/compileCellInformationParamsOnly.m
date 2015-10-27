@@ -46,6 +46,7 @@ for i=2:length(positionsToExtract)
             cExperiment.cellInf(j).yloc(end+1:end+size(temp,1),:)=temp;
             
             
+            
             cExperiment.cellInf(j).posNum(end+1:end+size(temp,1))=experimentPos;
         end
     end

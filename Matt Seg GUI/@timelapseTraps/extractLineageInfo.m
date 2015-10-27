@@ -61,15 +61,18 @@ end
 
 histLabels=zeros(length(cTimelapse.cTimepoint(1).trapInfo),1e5);
 
-for timepoint=1:length(cTimelapse.timepointsToProcess)
-    if cTimelapse.timepointsProcessed(timepoint)
+for tp=1:length(cTimelapse.timepointsToProcess)
+    if cTimelapse.timepointsProcessed(tp)
+        timepoint=cTimelapse.timepointsToProcess(tp);
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
             if trapInfo(trap).cellsPresent
                 %                 histLabels(trap,trapInfo(trap).cellLabel)=histLabels(trap,trapInfo(trap).cellLabel)+ones(1,length(trapInfo(trap).cellLabel));
                 t=cTimelapse.lineageInfo.motherIndex(trap,timepoint);
                 if t
-                    histLabels(trap,trapInfo(trap).cellLabel(t))=histLabels(trap,trapInfo(trap).cellLabel(t))+1;
+                    if numel(trapInfo(trap).cellLabel)>0
+                        histLabels(trap,trapInfo(trap).cellLabel(t))=histLabels(trap,trapInfo(trap).cellLabel(t))+1;
+                    end
                 end
             end
         end
