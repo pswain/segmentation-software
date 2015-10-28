@@ -33,10 +33,13 @@ if sum(cell_data_index == 1)
     p.MarkerFaceColor = p.Color;
     
     % mother plotting stuff
-    
+    if ~isempty(CellResGUI.cExperiment.lineageInfo)
     cell_mother_index = (CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum == cell_position) &...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap == trap_number) & ...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
+    else
+        cell_mother_index = false;
+    end
               if any(cell_mother_index)
                   
                   birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM(cell_mother_index,:);
