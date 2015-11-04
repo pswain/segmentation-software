@@ -19,8 +19,9 @@ else
     cell_outline = false([CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_width CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_height]*2 + 1);
 end
 
+
+%mother stuff
 if ~isempty(CellResGUI.cExperiment.lineageInfo)
-    %mother stuff
     mother_info = CellResGUI.cExperiment.lineageInfo.motherInfo;
     %check if it is a mother cell
     if ~isempty(mother_info.motherPosNum)

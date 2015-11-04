@@ -69,7 +69,7 @@ classdef cTrapSelectDisplay<handle
             
             cDisplay.image=cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
             
-            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations,[],'none');
+            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision);
 
             TrapsToRemove = [];
             for trapi = 1:length(cDisplay.trapLocations)

@@ -193,7 +193,10 @@ else
                     disp('this cExperiment name has been used already - try again.')
                 end
             end
-            cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase, inputName);
+            %if experimentTracking is called with a non character first
+            %input this is assumed to be ab omerodatabase construction. The
+            %2nd input is then not used.
+            cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
             cExpGUI.cExperiment.createTimelapsePositions();
             %Upload the new cExperiment file to the database
             cExpGUI.cExperiment.saveExperiment;

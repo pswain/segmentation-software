@@ -33,7 +33,7 @@ if nargin<5 || isempty(trapImagesPrevTp)
 end
 
 if nargin<6 || isempty(trapLocationsToCheck)
-    trapLocationsToCheck=1:length(trapLocations); %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
+    trapLocationsToCheck='none'; %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
 end
 
 
