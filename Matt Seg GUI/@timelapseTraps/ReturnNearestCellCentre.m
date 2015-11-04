@@ -1,5 +1,4 @@
 function CellNumNearestCell = ReturnNearestCellCentre(cTimelapse,timepoint,trap,pt,thresh)
-
 %ReturnNearestCellCentre: Get nearest cell to a point on the image
 %--------------------------------------------------------------
 %Method written by Elco to find the nearest cell in a trap to a given pt
@@ -24,9 +23,9 @@ function CellNumNearestCell = ReturnNearestCellCentre(cTimelapse,timepoint,trap,
 %
 %OUTPUT
 %
-%  CellNumNearestCell        -       index of cell closest to the point pt.
+%  CellNumNearestCell        -      index of cell closest to the point pt.
 %                                   Empty if there are no cells in the trap
-%                                   or of no cells are closer than thresh.
+%                                   or if no cells are closer than thresh.
 
 
 if nargin<5

@@ -1,5 +1,7 @@
 function addRemoveCells(cDisplay,subAx,trap)
-
+% addRemoveCells(cDisplay,subAx,trap)
+%
+%
 cp=get(subAx,'CurrentPoint');
 
 key=cDisplay.KeyPressed;
@@ -15,7 +17,6 @@ cellPt=[Cx Cy];
 timepoint = floor(get(cDisplay.slider,'Value'));
 
 if strcmp(key,cDisplay.CurateTracksKey)
-    
 
     CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
     
