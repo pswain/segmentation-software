@@ -44,7 +44,7 @@ if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
     
     aPointMatrix = repmat(pt,size(pts,1),1);
     D = (sum(((aPointMatrix-pts).^2), 2)).^0.5;
-    [MinVal CellNumNearestCell]=min(D);
+    [MinVal, CellNumNearestCell]=min(D);
     MinVal = MinVal(1);
     CellNumNearestCell = CellNumNearestCell(1);
     if MinVal > thresh

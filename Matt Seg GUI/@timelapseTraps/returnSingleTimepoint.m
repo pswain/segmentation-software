@@ -57,6 +57,10 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 % Loading is done in a try catch loop and if it fails the user is
 % requested to provide a new timelapseDir. For cExperiments this is best
 % done using the changeRootDirsAll method.
+%
+% If there is no filename matching the channel at the timepoint requested
+% an image of the appropriate size of all zeros is returned and a warning
+% displayed.
 
 if nargin<3 || isempty(channel)
     channel=1;

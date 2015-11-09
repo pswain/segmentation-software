@@ -5,9 +5,5 @@ if isempty(cExpGUI.cExperiment.saveFolder)
 end
 
 posVals=get(cExpGUI.posList,'Value');
-cTimelapse=cExpGUI.cExperiment.loadCurrentTimelapse(1);
-
-%load([cExpGUI.cExperiment.saveFolder '/' cExpGUI.cExperiment.dirs{1},'cTimelapse']);
-
 
 cExpGUI.cExperiment.selectCellsToPlotAutomatic(posVals);

@@ -19,7 +19,6 @@ classdef cTrapDisplay<handle
         channel=[]
         cCellVision=[];
         trackOverlay=[]; %boolean. stores overlay input and determines whether to color cells by label.
-        tracksDisplayBox=[]; %remove??
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = [];%stores value of key being held down while it is pressed
         

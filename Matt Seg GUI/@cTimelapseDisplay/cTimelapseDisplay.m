@@ -13,26 +13,25 @@ classdef cTimelapseDisplay<handle
         subImage = [];
         subAxes=[];
         slider = [];
-        pause_duration=[];
         cTimelapse=[]
-        traps=[];
         channel=[]
-        cCellVision=[];
-        trackOverlay=[];
-        tracksDisplayBox=[];
         trapNum;
     end % properties
     
     methods
         function cDisplay=cTimelapseDisplay(cTimelapse,channel)
-                        %help here
+              %cDisplay=cTimelapseDisplay(cTimelapse,channel)
+              %
+              % creates a display GUI with a slide bar to show each image
+              % in channel at each timepoint. channel defaults to 1 and can
+              % be changed after construction by changing the property
+              % channel.
             if nargin<2
                 cDisplay.channel=1;
             else
                 cDisplay.channel=channel;
             end
           
-            timepoints=1:length(cTimelapse.cTimepoint);
                         
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.figure=figure('MenuBar','none');

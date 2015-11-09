@@ -139,6 +139,9 @@ for diri=1:length(cExperiment_true.dirs)
     cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
     
+    cTimelapse_true.ActiveContourObject = [];
+    cTimelapse_test.ActiveContourObject = [];
+    
     if isequaln(cTimelapse_test,cTimelapse_true)
         
         fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)
@@ -478,4 +481,49 @@ for diri=1:length(cExperiment_true.dirs)
 end
 
 fprintf('\n\n')
+
+
+%%
+
+clear 
+close all
+
+%% test ctrapDisplay GUI - in which cells are added and removed.
+% check hold down t type segmentation
+% check add/remove cells in full/empty traps
+
+l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_1/cExperiment.mat');
+cExperiment_test = l2.cExperiment;
+cExperiment_test.cCellVision = l2.cCellVision;
+
+report_string = 'dfault classifier';
+
+poses = 1:2;
+
+channels_to_extract = [5 6 7];
+
+cExperiment_test.editSegmentation(cExperiment_test.cCellVision,1:2,false)
+
+
+%% test Tracking curation GUI
+
+%TrackingCurator=curateCellTrackingGUI(cTimelapse,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
+
+%default test cExperiment.
+l2 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_curateTrackingGUI_test/cExperiment.mat');
+cExperiment_test = l2.cExperiment;
+cExperiment_test.cCellVision = l2.cCellVision;
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+cCellVision = cExperiment_test.cCellVision;
+
+TrackingCurator=curateCellTrackingGUI(cTimelapse,1,2,7,[1 3]);
+
+
+
+%% test full GUI based process.
+
+disp = experimentTrackingGUI
+
+
 

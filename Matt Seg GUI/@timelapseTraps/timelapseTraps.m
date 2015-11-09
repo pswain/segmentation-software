@@ -192,9 +192,7 @@ classdef timelapseTraps<handle
             end
             
             if ~isempty(cTimelapse.ActiveContourObject)
-                if ~isempty(cTimelapse.ActiveContourObject.TimelapseTraps)
                     cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-                end
             end
         end
     end

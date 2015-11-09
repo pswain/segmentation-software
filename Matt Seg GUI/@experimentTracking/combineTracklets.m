@@ -3,7 +3,7 @@ function combineTracklets(cExperiment,positionsToTrack,params)
 %combines cells of a cetain similarity within a certain number of
 %timepoints of each other.
 %default params:
-%   params.fraction=.1; %fraction of timelapse length that cells must be present or
+%     params.fraction=.1; %fraction of timelapse length that cells must be present or
 %     params.duration=3; %number of frames cells must be present
 %     params.framesToCheck=length(cTimelapse.timepointsProcessed);
 %     params.framesToCheckEnd=1;
@@ -18,9 +18,8 @@ if nargin<2
 end
 
 if nargin<3
-        experimentPos=positionsToTrack(1);
-    load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
-
+    experimentPos=positionsToTrack(1);
+    cTimelapse = cExperiment.loadCurrentTimelapse(experimentPos);
     params.fraction=.1; %fraction of timelapse length that cells must be present or
     params.duration=3; %number of frames cells must be present
     params.framesToCheck=length(cTimelapse.timepointsProcessed);
@@ -60,7 +59,7 @@ end
 %% Run the tracking on the timelapse
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
-    load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse = cExperiment.loadCurrentTimelapse(experimentPos);
     cTimelapse.combineTracklets(params);
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;

@@ -7,17 +7,21 @@ function [trapLocations, trap_mask, trapImages]=identifyTrapLocationsSingleTP(cT
 %             an image (note, ot the pillars, but the trap areas)
 % trapImage : a stack of images of each trap.
 %
-% If trapLocations are provided then these images are simply generated.
+% If trapLocations are provided then these images are simply generated
+% using those locations.
 %
-% If trapLocations are not providede the trap1 field of cCellVision.cTrap
-% is cross correlated with the first channel of cTimelapse at timepoint
-% 'timepoint' (note, the first channel is always used, so this should
-% correspond to the image in trap1 of cCellVision). A normalised cross
-% correlation is calculated, the absolute taken (I'm not sure why, probably
-% beccause DIC is often somewhat variable), and local maxima chosen until
-% all the points above a threhold (0.65* the maximum of the cross
-% correlation) have been selected. At each new selection, the points in its
-% immediate vicinity are rules out.
+% If trapLocations are not provided (i.e. in a call like:
+%
+%           cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision)
+%
+% the trap1 field of cCellVision.cTrap is cross correlated with the first
+% channel of cTimelapse at timepoint 'timepoint' (note, the first channel
+% is always used, so this should correspond to the image in trap1 of
+% cCellVision). A normalised cross correlation is calculated, the absolute
+% taken (I'm not sure why, probably beccause DIC is often somewhat
+% variable), and local maxima chosen until all the points above a threhold
+% (0.65* the maximum of the cross correlation) have been selected. At each
+% new selection, the points in its immediate vicinity are rules out.
 %
 % If TrapLocationToCheck is the string 'none', it has no effect, if it is an
 % index then those trapLocations are shifted to their nearest maxima in the
