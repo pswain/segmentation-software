@@ -189,7 +189,8 @@ for channel=1:length(channels)
                 dataInd=0;
                 for j=1:length(uniqueTraps)%j=1:length(extractedData(channel).cellNum)
                     currTrap=uniqueTraps(j);% extractedData(channel).trapNum(j);
-                    cellsCurrTrap=cell(trap==currTrap);
+                    cellsCurrTrap=unique(cells(trap==currTrap));
+                    
                     %protect code from cases where no cells have been found and
                 	%the cell structure is weird and weak
                	 	if ~trapInfo(currTrap).cellsPresent
@@ -231,6 +232,9 @@ for channel=1:length(channels)
                         temp_loc=find(trapInfo(currTrap).cellLabel==currCell);
                         
                         dataInd=dataInd+1;
+                        %above is a bullshit way to deal with info ...
+                        %below is better
+                        dataInd=find(cells==currCell & currTrap==trap);
                         if isempty(temp_loc)
                         else
                             
@@ -419,7 +423,6 @@ for channel=1:length(channels)
                                         if isempty(bkg)
                                             bkg=trapIm;
                                         end
-<<<<<<< HEAD
                                         extractedData(channel).std(dataInd,timepoint)=std(double(cellFL(:)));
                                         extractedData(channel).imBackground(dataInd,timepoint)=median(bkg(:));
                                         extractedData(channel).min(dataInd,timepoint)=min(cellFL(:));

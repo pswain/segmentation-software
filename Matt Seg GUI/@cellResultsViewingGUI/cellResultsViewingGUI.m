@@ -23,6 +23,7 @@ classdef cellResultsViewingGUI<handle
         ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
         cellImageSize = []; % can set to be the size of the cell image to show. Useful if there are not traps and it will show a smaller area
         
+        birthTypeUse='HMM'; %which birthtime dataset should be shown. Can be 'HMM' or 'Manual';
     end % properties
 
     methods
@@ -132,8 +133,8 @@ classdef cellResultsViewingGUI<handle
                 'Units','normalized','Position',[.015 y_bottom .97 setting_buttons_height],'Callback',@(src,event)ResetImageScale(CellResGUI));
             
             CellResGUI.CellImageHandle = axes('Parent',CellResGUI.TopPanel,'Position',[.685 .015 .3 .97 ]);
-            CellResGUI.CellImageHandle.XTick = [];
-            CellResGUI.CellImageHandle.YTick = [];
+            set(CellResGUI.CellImageHandle,'XTick',[]);
+            set(CellResGUI.CellImageHandle,'YTick',[]);
             
             
             CellResGUI.PlotHandle = axes('Parent',CellResGUI.PlotPanel,'Position',[.03 .05 .94 .9 ]);

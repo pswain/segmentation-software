@@ -10,9 +10,10 @@ cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
 
 timepoint = CellResGUI.TimepointSelected;
 
-plot_field = CellResGUI.SelectPlotFieldButton.String{CellResGUI.SelectPlotFieldButton.Value};
+tempy = get(CellResGUI.SelectPlotFieldButton,'String');
+plot_field=tempy{get(CellResGUI.SelectPlotFieldButton,'Value')};
 
-plot_channel = CellResGUI.SelectPlotChannelButton.Value;
+plot_channel = get(CellResGUI.SelectPlotChannelButton,'Value');
 
 cell_data_index = (CellResGUI.cExperiment.cellInf(1).posNum == cell_position) &...
                   (CellResGUI.cExperiment.cellInf(1).trapNum == trap_number) & ...
@@ -30,7 +31,7 @@ if sum(cell_data_index == 1)
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;
     
     p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint_index),'ob');
-    p.MarkerFaceColor = p.Color;
+    set(p,'MarkerFaceColor',get(p,'Color'));
     
     % mother plotting stuff
     
@@ -39,7 +40,17 @@ if sum(cell_data_index == 1)
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
               if any(cell_mother_index)
                   
-                  birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM(cell_mother_index,:);
+                  switch CellResGUI.birthTypeUse
+                      case 'HMM'
+                          birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM(cell_mother_index,:);
+                      case 'Manual'
+                          if ~isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'birthTimeManual')
+                              CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual= ...
+                                  CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM;
+                          end
+                          birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index,:);
+                  end
+
                   birth_times(birth_times==0) = [];
                   
                   %weird quirk where birth times seems to be [1 0 0 0 ...]

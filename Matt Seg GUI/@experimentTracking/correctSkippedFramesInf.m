@@ -11,14 +11,16 @@ end
 for nSkip=1:1
     for channel=1:length(cExperiment.cellInf)
         cellInf=cExperiment.cellInf(channel);
-%         d=abs(diff(cExperiment.cellInf(channel).xloc,1,2));
-%         dPre=d;dPre=padarray(dPre,[0 1],0,'post');
-%         dPost=d;dPost=padarray(dPost,[0 1],0,'pre');
+        %         d=abs(diff(cExperiment.cellInf(channel).xloc,1,2));
+        %         dPre=d;dPre=padarray(dPre,[0 1],0,'post');
+        %         dPost=d;dPost=padarray(dPost,[0 1],0,'pre');
         
-        if size(cExperiment.cellInf(channel).radius,1)~=size(cExperiment.cellInf(channel).xloc,1)
-            len=size(cExperiment.cellInf(channel).radius);
-            cExperiment.cellInf(channel).xloc=ones(len);
-            cExperiment.cellInf(channel).yloc=ones(len);
+        if isfield(cellInf,'xloc')
+            if size(cExperiment.cellInf(channel).radius,1)~=size(cExperiment.cellInf(channel).xloc,1)
+                len=size(cExperiment.cellInf(channel).radius);
+                cExperiment.cellInf(channel).xloc=ones(len);
+                cExperiment.cellInf(channel).yloc=ones(len);
+            end
         end
 
         dPre=cExperiment.cellInf(channel).mean(:,2:end)>0;
@@ -66,6 +68,7 @@ for nSkip=1:1
             b(locSkipped)=temp;
             cellInf.mean=sparse(b);
             
+            if isfield(cellInf,'membraneMedian')
             temp=((cExperiment.cellInf(channel).membraneMedian(locSkippedPre)+cExperiment.cellInf(channel).membraneMedian(locSkippedPost))./2);
             b=full(cellInf.membraneMedian);
             b(locSkipped)=temp;
@@ -75,7 +78,7 @@ for nSkip=1:1
             b=full(cellInf.membraneMax5);
             b(locSkipped)=temp;
             cellInf.membraneMax5=sparse(b);
-
+            end
 
             
             temp=(cExperiment.cellInf(channel).median(locSkippedPre)+cExperiment.cellInf(channel).median(locSkippedPost))./2;
@@ -120,18 +123,41 @@ for nSkip=1:1
             b(locSkipped)=temp;
             cellInf.imBackground=sparse(b);
             
-            if isfield(cellInf,'radiusFL')
-                temp=(cExperiment.cellInf(channel).radiusFL(locSkippedPre)+cExperiment.cellInf(channel).radiusFL(locSkippedPost))./2;
-                b=full(cellInf.radiusFL);
-                b(locSkipped)=temp;
-                cellInf.radiusFL=sparse(b);
-            end
+%             if isfield(cellInf,'radiusFL')
+%                 temp=(cExperiment.cellInf(channel).radiusFL(locSkippedPre)+cExperiment.cellInf(channel).radiusFL(locSkippedPost))./2;
+%                 b=full(cellInf.radiusFL);
+%                 b(locSkipped)=temp;
+%                 cellInf.radiusFL=sparse(b);
+%             end
             if isfield(cellInf,'nuclearTagLoc')
                 temp=(cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPre)+cExperiment.cellInf(channel).nuclearTagLoc(locSkippedPost))./2;
                 b=full(cellInf.nuclearTagLoc);
                 b(locSkipped)=temp;
                 cellInf.nuclearTagLoc=sparse(b);
             end
+            
+            %b/c the radiusFL may be skipped even though the 1st channel
+            %wasn't, need to correct for it separately
+            if isfield(cellInf,'radiusFL') 
+                dPre=cExperiment.cellInf(channel).radiusFL(:,2:end)>0;
+                dPre=padarray(dPre,[0 1],0,'post');
+                dPost=cExperiment.cellInf(channel).radiusFL(:,1:end-1)>0;
+                dPost=padarray(dPost,[0 1],0,'pre');
+                
+                
+                locSkipped=(dPost>0)&(dPre>0)& (cExperiment.cellInf(channel).radiusFL==0);
+                locSkippedPre=padarray(locSkipped,[0 nSkip],0,'post')>0;
+                locSkippedPre=locSkippedPre(:,nSkip+1:end);
+                locSkippedPost=padarray(locSkipped,[0 nSkip],0,'pre')>0;
+                locSkippedPost=locSkippedPost(:,1:end-nSkip);
+                
+                temp=(cExperiment.cellInf(channel).radiusFL(locSkippedPre)+cExperiment.cellInf(channel).radiusFL(locSkippedPost))./2;
+                b=full(cellInf.radiusFL);
+                b(locSkipped)=temp;
+                cellInf.radiusFL=sparse(b);
+            end
+
+
         end
         
         cExperiment.cellInf(channel)=cellInf;
