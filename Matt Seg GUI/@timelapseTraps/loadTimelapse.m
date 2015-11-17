@@ -4,8 +4,14 @@ folder=cTimelapse.timelapseDir;
 tempdir=dir(folder);
 nfiles=0;
 names=cell(1);
+% ran into a bug with some .img files that should have been hidden. Ignore
+% any file with . at the beginning
 for i=1:length(tempdir)
-    names{i}=tempdir(i).name;
+    if ~strcmp(tempdir(i).name(1),'.')
+        names{i}=tempdir(i).name;
+    else
+        names{i}='';
+    end
 end
 
 cTimelapse.channelNames=searchString;

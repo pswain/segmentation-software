@@ -11,6 +11,8 @@ classdef cTrapSelectDisplay<handle
         channel=[];
         ExclusionZones = []; %zones in which to not look for traps automatically stored as 4 vector [xStart1 yStart1 xend1 yend1;xStart2 yStart2 xend2 yend2]
         
+        cc %cross correlation from identifyTrapLocationsSingleTP. Storing this prevents having to recalculate it each time the user adds or removes a trap. Much faster
+        wholeIm %the whole image from returnSingleTimepoint so that each click doesn't require reloading the image
     end % properties
     %% Displays timelapse for a single trap
     %This can either dispaly the primary channel (DIC) or a secondary channel
@@ -45,7 +47,7 @@ classdef cTrapSelectDisplay<handle
             else
                 cDisplay.ExclusionZones = ExclusionZones;
             end
-            
+            cDisplay.cc=[];
             cDisplay.cCellVision=cCellVision;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.figure=figure;
@@ -56,7 +58,7 @@ classdef cTrapSelectDisplay<handle
             
             cDisplay.image=cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
             
-            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations,[],'none');
+            [cDisplay.trapLocations, trap_mask, tIm, cDisplay.cc, cDisplay.wholeIm]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc);
 
             TrapsToRemove = [];
             for trapi = 1:length(cDisplay.trapLocations)
@@ -84,7 +86,7 @@ classdef cTrapSelectDisplay<handle
                 end
             end
             
-            [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
+            [cDisplay.trapLocations, trap_mask, tIm, cDisplay.cc]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc,cDisplay.wholeIm);
                 
             im_mask=cDisplay.image;
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
@@ -107,6 +109,7 @@ classdef cTrapSelectDisplay<handle
                 pts(:,1)=[cDisplay.trapLocations.xcenter];
                 pts(:,2)=[cDisplay.trapLocations.ycenter];
                 
+                
                 trapPt=[Cx Cy];
                 D = pdist2(pts,trapPt,'euclidean');
                 [minval loc]=min(D);
@@ -115,8 +118,7 @@ classdef cTrapSelectDisplay<handle
                 
                 %don't need to update the trap positions when removing
                 %cells
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
-                
+                [cDisplay.trapLocations trap_mask ]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc,cDisplay.wholeIm);
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
 %                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
@@ -128,7 +130,7 @@ classdef cTrapSelectDisplay<handle
             else
                 cDisplay.trapLocations(end+1).xcenter=Cx;
                 cDisplay.trapLocations(end).ycenter=Cy;
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations));
+                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations),cDisplay.cc,cDisplay.wholeIm);
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
 %                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);

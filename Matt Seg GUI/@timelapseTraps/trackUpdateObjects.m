@@ -69,7 +69,7 @@ scale=1;
 fltr4accum = ones(5,5);
 fltr4accum(2:4,2:4) = 2;
 fltr4accum(3,3) = 6;
-fltr4accumGPU=gpuArray(fltr4accum);
+% fltr4accumGPU=gpuArray(fltr4accum);
 
 magnification=cTimelapse.magnification;
 if magnification<100

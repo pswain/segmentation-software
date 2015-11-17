@@ -23,6 +23,11 @@ end
 tp=timepoint;
 fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
 loc= ~cellfun('isempty',fileNum);
+
+% changed from above in case someone uses the channel name in the
+% rootfolder
+loc= cellfun('length',fileNum);
+loc=loc>=max(loc);
 if sum(loc)>0
     file=cTimelapse.cTimepoint(timepoint).filename{loc};
     
@@ -69,7 +74,11 @@ if sum(loc)>0
         end
         for i=2:sum(loc)
             file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-            ffile=fullfile(cTimelapse.timelapseDir,file);
+            if strcmp(cTimelapse.timelapseDir,'ignore')
+                ffile=file;
+            else
+                ffile=fullfile(cTimelapse.timelapseDir,file);
+            end
             timepointIm(:,:,i)=imread(ffile);
         end
         

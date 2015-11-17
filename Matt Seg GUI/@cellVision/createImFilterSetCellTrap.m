@@ -36,7 +36,7 @@ if ~isfield(cCellSVM.se,'trap')||isempty(cCellSVM.se.trap)
     cCellSVM.se.trap.f1=fspecial('gaussian',7,2);
     cCellSVM.se.trap.f2=fspecial('gaussian',7,2);
      
-    cCellSVM.se.trap.trapEdge=cCellSVM.cTrap.contour;
+    cCellSVM.se.trap.trapEdge=double(cCellSVM.cTrap.contour);
     cCellSVM.se.trap.trapEdge=imdilate(cCellSVM.se.trap.trapEdge,se1);   
     cCellSVM.se.trap.trapG=imfilter(cCellSVM.se.trap.trapEdge,cCellSVM.se.trap.f1);
     cCellSVM.se.trap.trapG=cCellSVM.se.trap.trapG/max(cCellSVM.se.trap.trapG(:));
@@ -255,7 +255,7 @@ for i=1:(size(filt_im,3)+(size(filt_im2,3)))
     % es_im=filt_im2(:,:,i);
     %     es_im=es_im-min(es_im(:));
     es_im=es_im/max(es_im(:));
-    r=size(es_im,2)/2;c=size(es_im,1)/2;
+    r=size(es_im,1)/2;c=size(es_im,2)/2;
     for j=1:1
         temp_im=es_im(:,:,j);
 %         if i~=3

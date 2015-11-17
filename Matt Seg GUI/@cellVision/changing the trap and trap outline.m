@@ -16,10 +16,13 @@ cCellVision.cTrap.trap1=im;
 trap=1;
 im=cTimelapse.returnSegmenationTrapsStack(trap,tp);
 im=max(im{1},[],3);
+
+%%
+im=cCellVision.cTrap.trap2;
 figure;imshow(im,[])
 bw=edge(im,'canny');
 figure;imshow(bw,[]);
-bwfill=imfill(bw,'holes');
+bwfill=imfill(bw);
 
 bwfill=imopen(bwfill,strel('disk',1));
 figure;imshow(bwfill,[])
