@@ -391,7 +391,8 @@ for channel=1:length(channels)
                                         flPeak=conv2(double(trapIm),convMatrix);
                                         flPeak=flPeak(cellLoc);
                                         
-                                        extractedData(channel).smallmax5(dataInd,timepoint)=max(flPeak(:));
+                                        ratioOverlap=ceil(extractedData(channel).area(dataInd,timepoint)*.025);
+                                        extractedData(channel).smallmax5(dataInd,timepoint)=mean(flsorted(1:ratioOverlap));
                                         extractedData(channel).smallmean(dataInd,timepoint)=mean(cellFLsmall(:));
                                         extractedData(channel).smallmedian(dataInd,timepoint)=median(cellFLsmall(:));
                                         
