@@ -186,7 +186,7 @@ if image_rotation~=0
     tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
     tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
     tpImtemp(tpImtemp==0)=medVal;
-        timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+        timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN,:);
 
     
 end
