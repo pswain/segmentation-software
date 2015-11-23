@@ -1,6 +1,9 @@
-function provideErrorModel(cExperiment,ErrorModel,channel,positionsToIdentify)
-%provideErrorModel(cExperiment,ErrorModel,channel,positionsToIdentify) %ErrorModel is an object of
-%the ErrorModel class - rest is straightforward.
+function setErrorModel(cExperiment,ErrorModel,channel,positionsToIdentify)
+% setErrorModel(cExperiment,ErrorModel,channel,positionsToIdentify) 
+%
+% ErrorModel is an object of the ErrorModel class
+% chanel is an array of channels for which it applies
+% rest is straightforward.
    
 if nargin<2 ||isempty(ErrorModel)
     fprintf('\n\n Error Model must be provided\n\n')
@@ -17,8 +20,7 @@ end
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-    
+    cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
     if i==1 && (nargin<3 || isempty(channel))
         [channel,ok] = listdlg('ListString',cTimelapse.channelNames,...
             'SelectionMode','single',...

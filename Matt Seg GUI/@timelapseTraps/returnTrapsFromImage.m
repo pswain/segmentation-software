@@ -15,6 +15,7 @@ function trapsTimepoint=returnTrapsFromImage(cTimelapse,image,timepoint,traps)
 %                   mode this the trap positions are used to make the
 %                   extraction. If in 'strip image' mode then they are
 %                   counted along the width from the left hand side.
+%                   Defaults to all traps if empty.
 %
 % if there are not traps present in this timelapse it just gives the image
 % back.

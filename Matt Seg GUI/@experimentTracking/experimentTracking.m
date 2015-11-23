@@ -35,6 +35,7 @@ classdef experimentTracking<handle
         
         cCellVision;
         ActiveContourParameters
+        
     end
     
     methods

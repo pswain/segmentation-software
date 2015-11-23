@@ -129,8 +129,8 @@ if isempty(cTimelapse.OmeroDatabase)
             
             %change if want things other than maximum projection
             switch type
-            case 'min'
-                timepointIm=min(timepointIm,[],3);
+                case 'min'
+                    timepointIm=min(timepointIm,[],3);
                 case 'max'
                     timepointIm=max(timepointIm,[],3);
                 case 'stack'
@@ -236,11 +236,11 @@ medVal=median(timepointIm(:));
     
     if image_rotation~=0
         bbN=200;
-        tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
-        tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-        tpImtemp(tpImtemp==0)=medVal;
-        timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
-        
+        for slicei = 1:size(timepointIm,3)
+            tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
+            tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
+            timepointIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+        end
         
     end
     
@@ -250,9 +250,8 @@ medVal=median(timepointIm(:));
         TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
         LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
         HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
-        timepointIm = padarray(timepointIm,abs(TimepointBoundaries),medVal);
+        timepointIm = padarray(timepointIm,[abs(TimepointBoundaries) 0],medVal);
         timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
-        
     end
     
 

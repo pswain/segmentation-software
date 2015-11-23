@@ -97,7 +97,7 @@ classdef cTrapSelectDisplay<handle
                     [[cDisplay.trapLocations(:).xcenter]' [cDisplay.trapLocations(:).ycenter]'],'rows');
             
                 for trapi = TrapsToPutBack'
-                    cDisplay.trapLocations(end+1) = cTimelapse.cTimepoint(timepoint).trapLocations(trapi);
+                    cDisplay.trapLocations(end+1) = PreExistingTrapLocations(trapi);
                 end
             end
             

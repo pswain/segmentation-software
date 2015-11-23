@@ -90,6 +90,16 @@ cCellVision = cExperiment_test.cCellVision;
 
 
 %% test cell identification, tracking and identification on very short timelapse
+
+% set to extract Matt's way so that they are comparable with old results.
+extractionParameters = timelapseTraps.defaultExtractParameters;
+extractionParameters.extractFunction = @extractCellDataMatt;
+extractionParameters.functionParameters = struct('channels',channels_to_extract,'cellSegType','segmented','type','max');
+
+cExperiment_test.setExtractParameters(1:2,extractionParameters);
+
+cExperiment_test.selectTPToProcess(1:2,1:4)
+
 cExperiment_test.trackTrapsOverwrite = true;
 cExperiment_test.segmentCellsDisplay(cExperiment_test.cCellVision,poses)
 cExperiment_test.trackTrapsOverwrite = false;
@@ -120,7 +130,7 @@ params.framesToCheckEnd=1;
 params.maximumNumberOfCells = Inf;
 cExperiment_test.selectCellsToPlotAutomatic(poses,params);
 
-cExperiment_test.extractCellInformation(poses,'max',channels_to_extract);
+cExperiment_test.extractCellInformation(poses,false);
 
 cExperiment_test.compileCellInformation(poses);
 
@@ -260,7 +270,12 @@ params.maximumNumberOfCells = Inf;
 
 cExperiment_test.selectCellsToPlotAutomatic(poses,params);
 
-cExperiment_test.extractCellInformation(poses,'max',[5 6 7]);
+extractionParameters = timelapseTraps.defaultExtractParameters;
+extractionParameters.channels = [5 6 7];
+cExperiment_test.setExtractParameters(poses,extractionParameters);
+
+cExperiment_test.selectTPToProcess(poses,1:50);
+cExperiment_test.extractCellInformation(poses,false);
 
 cExperiment_test.compileCellInformation(poses);
 
@@ -468,7 +483,8 @@ for diri=1:length(cExperiment_true.dirs)
     
     cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
-    
+    cTimelapse_true.ActiveContourObject = [];
+    cTimelapse_test.ActiveContourObject = [];
     if isequaln(cTimelapse_test,cTimelapse_true)
         
         fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)
@@ -525,5 +541,113 @@ TrackingCurator=curateCellTrackingGUI(cTimelapse,1,2,7,[1 3]);
 
 disp = experimentTrackingGUI
 
+%% test extraction and compilation with Matt's code
+
+l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_true/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+
+l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_test/cExperiment.mat');
+cExperiment_test = l2.cExperiment;
+cExperiment_test.cCellVision = l2.cCellVision;
+
+cTimelapse = cExperiment_true.loadCurrentTimelapse(1);
+cCellVision = cExperiment_true.cCellVision;
+
+poses = 1:2;
+% Matt parameters
+%extractionParameters.extractFunction = @extractCellDataMatt
+%extractionParameters.functionParameters = struct('type','max','cellSegType','segmented','channels',[5 6 7 8])
+
+if false
+for posi = 1:2
+    
+    cTimelapse = cExperiment_test.loadCurrentTimelapse(posi);
+    cTimelapse.channelNames{8} = 'GFP';
+    cExperiment_test.saveTimelapseExperiment(posi);
+    
+end
+end
+
+cExperiment_test.extractCellInformation(1:2)
+cExperiment_test.compileCellInformation(1:2)
+report_differences(cExperiment_true.cellInf(1:3),cExperiment_test.cellInf(1:3),sprintf('cExperiment_true_'),sprintf('cExperiment_test'));
+    
+for posi = 1:2
+    
+    cTimelapse_test = cExperiment_test.loadCurrentTimelapse(posi);
+    cTimelapse_true = cExperiment_true.loadCurrentTimelapse(posi);
+    report_differences(cTimelapse_true.extractedData(1:3),cTimelapse_test.extractedData(1:3),sprintf('cTimelapse_true_%d',posi),sprintf('cTimelapse_test_%d',posi));
+        
+    
+end
 
 
+%% test default extraction
+
+
+l1 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/tests_cExperiment_extraction_default_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+cExperiment_test.extractCellInformation(1:2)
+cExperiment_test.compileCellInformation(1:2)
+
+
+
+%% compare with Matt's ground truth in a few relevant fields.
+
+
+l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_test/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+
+fields_to_check = {'mean',...
+    'median',...
+    'max5',...
+    'std',...
+    'smallmean',...
+    'smallmedian',...
+    'smallmax5',...
+    'min',...
+    'imBackground',...
+    'area',...
+    'radius',...
+    'xloc',...
+    'yloc',...
+    'membraneMax5',...
+    'membraneMedian',...
+    'pixel_sum'...
+};
+
+%fields_to_check = {'area','xloc','yloc','radius'};
+for chi=1:4
+    for fi = 1:length(fields_to_check)
+        fi = fields_to_check{fi};
+        diff_mat = cExperiment_test.cellInf(chi).(fi)(:,11:50) - cExperiment_true.cellInf(chi).(fi)(:,11:50);
+        if any(diff_mat~=0)
+            fprintf('field %s, channel %d\n',fi,chi)
+            %display(diff_mat)
+        end
+    end
+end
+
+%% check all possible standard extraction methods for function, though no real check on result.
+l1 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/tests_cExperiment_extraction_default_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+
+
+extractionParameters = timelapseTraps.defaultExtractParameters;
+
+extractionParameters.functionParameters.channels = [7,8];
+
+type = {'max','max','min','min','std','std','sum','sum'};
+
+nuclear_channel = [8,NaN,8,NaN,8,NaN,8,NaN];
+
+for i = 2:length(type)
+    extractionParameters.functionParameters.type= type{i};
+    extractionParameters.functionParameters.nuclearMarkerChannel = nuclear_channel(i);
+    cExperiment_test.extractCellInformation(1:2,false,extractionParameters);
+    cExperiment_test.compileCellInformation(1:2);
+end

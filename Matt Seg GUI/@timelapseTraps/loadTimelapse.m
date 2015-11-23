@@ -64,6 +64,7 @@ if isempty(cTimelapse.omeroImage)
     end
     
     cTimelapse.timepointsToProcess = 1:largestTimepoint;
+    cTimelapse.timepointsProcessed = false(1,largestTimepoint);
     
     
     if nargin>=6 && ~isempty(timepointsToLoad)

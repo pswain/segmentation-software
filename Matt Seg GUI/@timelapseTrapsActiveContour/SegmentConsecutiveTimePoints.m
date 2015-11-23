@@ -374,8 +374,8 @@ for TP = Timepoints
     CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
     AnglesToWrite = CellRadiiToWrite;
     
-         fprintf('change back to parfor!!!! - segmentconsecutiveTP\n\n')
-    for CNi = 1:length(CellsToSegment)
+         %fprintf('change back to parfor!!!! - segmentconsecutiveTP\n\n')
+    parfor CNi = 1:length(CellsToSegment)
         %divided loop into parallel slow part and relatively fast write
         %part.
         

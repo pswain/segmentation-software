@@ -29,7 +29,7 @@ if sum(cell_data_index == 1)
     
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;
     
-    p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint_index),'ob');
+    p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint),'ob');
     p.MarkerFaceColor = p.Color;
     
     % mother plotting stuff
