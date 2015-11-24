@@ -13,14 +13,12 @@ function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,traps
 %etc. etc. this is probably not desired, and as such only a single entry
 %should be provided for searchString (e.g. searchString = {'DIC'})).
 %
-% filenames are stored with fill path but this is not necessarily used in
-% loading the file (see returnSingleTimepoint method for more details in
-% image loading).
-%
 %expects images to be png,tif or TIF format.
 %
 % other fields (imScale,rotation,trapsPresent etc.) are also populated, by
 % GUI if necessary.
+%
+% imScale can be set to the string 'gui' to populate it via user interface.
 
 cTimelapse.channelNames=searchString;
 if isempty(cTimelapse.omeroImage)
@@ -140,7 +138,7 @@ if (nargin<4 || isempty(image_rotation))
 else
     cTimelapse.image_rotation=image_rotation;
 end
-if nargin<7
+if nargin<7 || strcmp(imScale,'gui')
     
     prompt = {'Enter desired image rescaling value'};
     dlg_title = 'Scaling';

@@ -1,4 +1,6 @@
 function compileCellInformationSparse(cExperiment,channel, positionsToExtract)
+% has been superceded by compileCellInformation which is now general. Left
+% in because I couldn't be sure matt didn't still use it.
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved

@@ -31,10 +31,16 @@ classdef timelapseTraps<handle
                   % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
                   % empty if there are not traps
         image_rotation % to ensure that it lines up with the cCellVision Model
-        imScale %used to scale down images if needed
-        magnification=60; % magnification of the objective used (exercise caution, changes in magnification is very poorly maintained in the code) 
+        imScale % used to scale down images if needed
+                % this isn't used much so the GUI sets it to a default of
+                % empty.
+        magnification=60; % magnification of the objective used 
                           % used to generate a scaling factor in
                           % segmentCellDisplay/cTrapDisplayProcessing/identifyCellCentres
+                          % (exercise caution, changes in magnification is
+                          % very poorly maintained in the code) and as such
+                          % the experiment Tracking GUI sets it to a default of 60.
+                          
         trapsPresent % a boolean whether traps are present or not in the image
         pixelSize % the real size of pixels in the image (again, exercise caution in changing this)
         cellsToPlot %Array indicating which cells to extract data for. row = trap num, col is cell tracking number

@@ -334,9 +334,9 @@ clc
 
 cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01',...
     '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_test');
-createTimelapsePositions(cExperiment_test,{'DIC'},'all',[],0,[]);
-%createTimelapsePositions(cExperiment_test);
+createTimelapsePositions(cExperiment_test,{'DIC'},'all',[],0,[],60,[],true);
 
+%createTimelapsePositions(cExperiment_test);
 l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_true/cExperiment.mat');
 cExperiment_true = l1.cExperiment;
 cExperiment_true.cCellVision = l1.cCellVision;
