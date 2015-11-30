@@ -51,7 +51,8 @@ end
 for i=1:length(positionsToExtract)
     i
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse=cExperiment.returnTimelapse(experimentPos);
+    %load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     %
     cTimelapse.extractLineageInfo(params);
 

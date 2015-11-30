@@ -1,7 +1,9 @@
 function selectCellsToPlot(cExperiment,cCellVision,positionsToIdentify,channel,trap_by_trap)
 % function selectCellsToPlot(cExperiment,cCellVision,positionsToIdentify,channel,trap_by_trap)
-% all fairly self evident. trap_by_trap will only show traps one at a time,
-% only showing those with cells already auto selected.
+%
+% all fairly self evident. trap_by_trap is a boolean. if true will only
+% show traps one at a time, only showing those with cells already auto
+% selected. Can be a little easier on the eye when selecting cells.
 if nargin<3 || isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
 end

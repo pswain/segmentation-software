@@ -3,7 +3,7 @@ function RunActiveContourEperimentGUI(cExpGUI)
 %active contour methods on the experimentTracking Object.
 
 posVals=get(cExpGUI.posList,'Value');
-cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cCellVision,posVals);
+cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cExperiment.cCellVision,posVals);
 
 end
 

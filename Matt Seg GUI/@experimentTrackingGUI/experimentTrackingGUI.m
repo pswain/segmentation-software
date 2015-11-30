@@ -5,6 +5,7 @@ classdef experimentTrackingGUI<handle
         processingPanel
         
         createExperimentButton
+        createFromOmeroButton
         loadSavedExperimentButton
         loadCellVisionButton
         posList
@@ -42,10 +43,16 @@ classdef experimentTrackingGUI<handle
     methods
         function cExpGUI=experimentTrackingGUI()
             
+            %Add Omero code to the path
+            if ispc
+                addpath(genpath('C:\Omero code\Omero code'));
+            else
+                addpath(genpath(['/Users/' char(java.lang.System.getProperty('user.name')) '/Documents/Omero code']));
+            end
             
+
             scrsz = get(0,'ScreenSize');
             cExpGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(3)/2 scrsz(4)/2]);
-            
             cExpGUI.expPanel = uipanel('Parent',cExpGUI.figure,...
                 'Position',[.015 .02 .47 .95 ]);
             cExpGUI.processingPanel = uipanel('Parent',cExpGUI.figure,...
@@ -53,6 +60,12 @@ classdef experimentTrackingGUI<handle
             
             cExpGUI.createExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Create New Experiment',...
                 'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)createExperiment(cExpGUI));
+            thisPath=mfilename('fullpath');
+            k=strfind(thisPath,'Matt Seg GUI');
+            omeroIcon=imread([thisPath(1:k+12) 'OmeroIcon.jpg']);
+            cExpGUI.createFromOmeroButton = uicontrol('Parent', cExpGUI.expPanel,'Style','pushbutton','CData',omeroIcon...
+               ,'Units','normalized','Position',[.75 .87 .17 .11],'Callback',@(src,event)createFromOmero(cExpGUI),'TooltipString','Create experiment from Omero dataset');
+
             cExpGUI.loadSavedExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load Experiment File',...
                 'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)loadSavedExperiment(cExpGUI));
             cExpGUI.loadCellVisionButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load CellVision Model',...
@@ -110,33 +123,5 @@ classdef experimentTrackingGUI<handle
             
         end
 
-        % Other functions 
-        
-
-        
-        createExperiment(cExpGUI)
-        loadSavedExperiment(cExpGUI)
-        loadCellVision(cExpGUI)
-        
-        
-        addSecondaryChannel(cExpGUI)
-        saveTimelapse(cExpGUI)
-        cropTimepoints(cExpGUI)
-        
-        selectChannel(cExpGUI)
-
-        displayWholeTimelapse(cExpGUI)
-        
-        selectTrapsToProcess(cExpGUI)
-        identifyCells(cExpGUI)
-        editProcessTimelapse(cExpGUI)
-        trackCells(cExpGUI)
-        selectCellsPlot(cExpGUI)
-        autoSelect(cExpGUI)
-        select(cExpGUI)
-        extractData(cExpGUI)
-        compileData(cExpGUI)
-        
-        processIndTimelapse(cExpGUI)
     end
 end

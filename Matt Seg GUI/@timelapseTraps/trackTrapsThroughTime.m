@@ -1,8 +1,42 @@
 function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints,isCont)
-
-% isCont is a new true/false in case the segmentation is continuous, so
-% don't overwrite the traps
-
+% trackTrapsThroughTime(cTimelapse,cCellVision,timepoints,isCont)
+% 
+% cTimelapse   :  an object of the timelapseTraps class.
+% cCellVision  :  an object of cellvision class.
+% timepoints   :  (optional) an array of timepoint to track. Default is
+%                 cTimelapse.timepointsToProcess.
+% isCont       :  (optional) boolean: false to replace the
+%                 trapInfo structure of cTimelapse.cTimepoint with the
+%                 blank trapInfo structure. Default false - so replaces by
+%                 default.
+%
+% 
+% uses cross correlation to track the location of the traps at each
+% timepoint. Start with timpoints(1) and cross correlates with this image
+% until either the traps have moved half a trap width or 80 timpoints have
+% elapsed. Then resets to the current timepoint and uses cross correlation
+% of images with this timpoint to estimate image drift. This image drift is
+% added to the location of the traps at timepoints(1) to get the location
+% of the traps at each timpoint.
+%
+% The locations of the traps at each timepoint in each image are stored in
+% the trapLocation field of the cTimepoint structure. They are stored as a
+% structure array with fields xcenter and ycenter: one element of the
+% structure array for each trap.
+% preexisting trapLocations are overwritten unless isCont is true.
+%
+% If isCont is set to false then it also instantiated the trapInfo
+% structures (one for each trap) at each timpoint tracked.
+%
+% always uses first channel in channelNames.
+%
+% If traps are not present (cTimelapse.trapsPresent = false) then no drift
+% is measured and it just instantiates the trapInfo structure, setting the
+% cTimpoint structure to have just one trapInfo structure and a
+% trapLocation of [0,0]
+%
+% WARNING: if the drift is less than 1 pixel it will not be detected, so if
+% it is drifting very slowly the value of 80 may have to be increased. 
 if nargin<3 || isempty(timepoints)
     timepoints=cTimelapse.timepointsToProcess;
 end
@@ -20,8 +54,7 @@ else
     data_template = sparse(false(cTimelapse.imSize));
 end
 
-trapInfo_struct=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-    'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
+trapInfo_struct = cTimelapse.createTrapInfoTemplate(data_template);
 
 if cTimelapse.trapsPresent
     
@@ -34,7 +67,9 @@ if cTimelapse.trapsPresent
     regIm=regIm(bb:end-bb,bb:end-bb);
     regImFft=fft2(regIm);
     timepointReg=timepoints(1);
-    
+        
+        %make trapInfo_struct the size of the the number of traps at size
+        %cTimelapse.cTimepoint(timpoint(1))
         trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
     
     for i=2:length(timepoints)
@@ -47,16 +82,16 @@ if cTimelapse.trapsPresent
         newIm=double(newIm);
         newIm=newIm/median(newIm(:))*median(regIm(:));
         newIm=newIm(bb:end-bb,bb:end-bb);
-        %     newIm=padarray(newIm,[bb bb],median(newIm(:)));
-        [output ~] = dftregistration(regImFft,fft2(newIm),1);
-        %     [output ~] = dftregistration(fft2(regIm),fft2(newIm),1);
+        [output, ~] = dftregistration(regImFft,fft2(newIm),1);
         
         
         
         colDif=output(4);
         rowDif=output(3);
         
-        %correction for case of huge (innacurate moves)
+        %If a huge move is deteected at a single timepoint it is taken to
+        %be inaccurate and the correction from the previous timepoint used
+        %(this might be common if there is a focus loss for example).
         if abs(colDif-accumCol)>cTimelapse.cTrapSize.bb_width*1/2
             colDif=accumCol;
         end
@@ -71,25 +106,38 @@ if cTimelapse.trapsPresent
         xloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).xcenter]-colDif;
         yloc=[cTimelapse.cTimepoint(timepointReg).trapLocations(:).ycenter]-rowDif;
         
+        %keep traps located on the image.
         xloc(xloc<1) = 1;
         xloc(xloc>cTimelapse.imSize(2)) = cTimelapse.imSize(2);
         yloc(yloc<1) = 1;
         yloc(yloc>cTimelapse.imSize(1)) = cTimelapse.imSize(1);
         
-        cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
-        
-        xlocCELL=num2cell(xloc);
-        ylocCELL = num2cell(yloc);
-        
-        
-        [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
-        [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
+        % attempt to ensure pre existing trap locations will no be
+        % overwritten by new trapLocations in a continuous segmentation.
+        % Important for continuous segmentation.
+        if ~isCont || ~isfield(cTimelapse.cTimepoint(timepoint),'trapLocations') || isempty(cTimelapse.cTimepoint(timepoint).trapLocations)
+            cTimelapse.cTimepoint(timepoint).trapLocations= cTimelapse.cTimepoint(timepointReg).trapLocations;
+            
+            xlocCELL=num2cell(xloc);
+            ylocCELL = num2cell(yloc);
+            
+            [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
+            [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
+        end
         
         if ~isCont
             cTimelapse.cTimepoint(timepoint).trapInfo = trapInfo_struct;
         end
         
-        if rem(i,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
+        % If the drift is very large then eventually the cross correlation
+        % will get the wrong answer when it 'pings back' a whole trap
+        % width. 
+        % similarly, if the image is changing slowly over time then the
+        % cross correlation will eventually become inaccurate for finding
+        % drift. To prevent this, the image is replaced with the current
+        % image if either 80 timpoints have passed or the drift is larger
+        % than half a trap width.
+        if rem(timepoint-timepoints(1) +1,80)==0 || abs(accumRow)>cTimelapse.cTrapSize.bb_height*1/2 || abs(accumCol)>cTimelapse.cTrapSize.bb_width*1/2
             regIm=newIm;
             regImFft=fft2(regIm);
             timepointReg=timepoints(i);
@@ -97,118 +145,26 @@ if cTimelapse.trapsPresent
             accumRow = 0;
         end
         
-        waitbar(timepoint/timepoints(end));
+        waitbar(i/length(timepoints));
         
-        %     if rem(timepoint,1e3)==0
-        %         regIm=newIm;
-        %         accumCol=output(4)+accumCol;
-        %         accumRow=output(3)+accumRow;
-        %         timepointReg=timepoint;
-        %     end
     end
     
 else
     [cTimelapse.cTimepoint(timepoints).trapLocations] = deal(struct('xcenter',0,'ycenter',0));
-    [cTimelapse.cTimepoint(timepoints).trapInfo] = deal(trapInfo_struct);
-    
+    if ~isCont
+        [cTimelapse.cTimepoint(timepoints).trapInfo] = deal(trapInfo_struct);
+    end
 end
 
-[cTimelapse.cTimepoint(timepoints).trapMaxCell] = deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
-[cTimelapse.cTimepoint(timepoints).trapMaxCellUTP] =  deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
-
+if ~isCont
+    [cTimelapse.cTimepoint(timepoints).trapMaxCell] = deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
+    [cTimelapse.cTimepoint(timepoints).trapMaxCellUTP] =  deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
+end
 toc
 close(h)
 
 
 end
-function old2()
-
-
-%% Identify the same traps throughout time.
-%Use the nearestneighbor function and the x and y locations of traps for
-%image t and t+1 to track traps throughput time. Because of stage drift,
-%there is the possibility that traps could leave the field of view. To
-%correct for that check to see if any traps in image t+1 have the same
-%label. If so, the trap with the greatest distance measurement must be
-%relabeled as numb_traps+1;
-if nargin<3 || isempty(timepoints)
-    timepoints=1:length(cTimelapse.cTimepoint);
-end
-
-h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
-for i=2:length(timepoints)
-    
-    timepoint=timepoints(i);
-    cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cTimelapse.cTimepoint(timepoints(i-1)).trapLocations);
-    waitbar(timepoint/timepoints(end));
-    
-    xval(1,:)=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).xcenter];
-    xval(2,:)=[cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter];
-    yval(1,:)=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).ycenter];
-    yval(2,:)=[cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter];
-    xdiff=diff(xval,1,1);
-    ydiff=diff(yval,1,1);
-    % xdiff=diff(xval,1,1);
-    % ydiff=diff(yval,1,1);
-    
-    [~, ix]=sort(abs(xdiff),'ascend');
-    meanDX=mean(xdiff(ix(1:round(length(ix)*.8))),2);
-    [~, ix]=sort(abs(ydiff),'ascend');
-    meanDY=mean(ydiff(ix(1:round(length(ix)*.8))),2);
-    
-    xloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).xcenter]+meanDX;
-    yloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).ycenter]+meanDY;
-    
-    xlocCELL=num2cell(xloc);
-    cTimelapse.cTimepoint(timepoint).trapLocations=cTimelapse.cTimepoint(timepoint-1).trapLocations;
-    
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
-    ylocCELL = num2cell(yloc);
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
-    
-    
-end
-close(h)
-
-end
-
-function old
-xval=[];yval=[];
-for i=1:length(timepoints)
-    timepoint=timepoints(i);
-    xval(timepoint,:)=[cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter];
-    yval(timepoint,:)=[cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter];
-end
-
-% xvalsmooth=[];
-% yvalsmooth=[];
-% for i=1:size(xval,2)
-%     xvalsmooth(:,i)=smooth(xval(:,i),1);
-%     yvalsmooth(:,i)=smooth(yval(:,i),1);
-% end
-
-xdiff=diff(xval,1,1);
-ydiff=diff(yval,1,1);
-% xdiff=diff(xval,1,1);
-% ydiff=diff(yval,1,1);
-
-meanDX=median(xdiff,2);
-meanDY=median(ydiff,2);
-
-for i=2:length(timepoints)
-    timepoint=timepoints(i);
-    xloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).xcenter]+meanDX(timepoint-1);
-    yloc=[cTimelapse.cTimepoint(timepoint-1).trapLocations(:).ycenter]+meanDY(timepoint-1);
-    
-    xlocCELL=num2cell(xloc);
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).xcenter]=deal(xlocCELL{:});
-    ylocCELL = num2cell(yloc);
-    [cTimelapse.cTimepoint(timepoint).trapLocations(:).ycenter]=deal(ylocCELL{:});
-end
-end
-
-
-
 
 function [output Greg] = dftregistration(buf1ft,buf2ft,usfac)
 % function [output Greg] = dftregistration(buf1ft,buf2ft,usfac);
