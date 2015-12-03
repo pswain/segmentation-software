@@ -12,6 +12,13 @@ function [px,py] = get_full_points_from_radii(radii,angles,center,image_size)
 % px           -   x coordinates of resultant end points.
 % py           -   y coordinates of resultant end points.
 
+if size(angles,1) < size(angles,2)
+    angles = angles';
+end
+
+if size(radii,1) < size(radii,2)
+    radii = radii';
+end
 pixel_diff = 0.1;
 angle_diff = pixel_diff/max(radii);
 steps = (0:angle_diff:(2*pi))';

@@ -23,6 +23,9 @@ classdef cTrapDisplay<handle
     methods
         function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
             %function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
+            
+            timepoints=cTimelapse.timepointsToProcess;
+            
             if nargin<3 || isempty(overlay)
                 cDisplay.trackOverlay=false;
             else
@@ -36,7 +39,7 @@ classdef cTrapDisplay<handle
             end
             if nargin<5 || isempty(traps)  
                 if cTimelapse.trapsPresent 
-                    traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                    traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
                 elseif ~cTimelapse.trapsPresent
                     traps=1;
                 end
@@ -46,10 +49,9 @@ classdef cTrapDisplay<handle
                 trackThroughTime=false;
             end
             
-            timepoints=cTimelapse.timepointsToProcess;
             
             try
-                isempty(cTimelapse.cTimepoint(1).trapInfo);
+                isempty(cTimelapse.cTimepoint(timepoints(1)).trapInfo);
                 b=0;
             catch
                 b=1;
@@ -68,7 +70,7 @@ classdef cTrapDisplay<handle
             if cTimelapse.trapsPresent
                 %In case the traps haven't been tracked through time
                 if trackThroughTime %isempty(cTimelapse.cTimepoint(end).trapLocations) && trackThroughTime
-                    trapImagesPrevTp=cTimelapse.returnTrapsTimepoint();
+                    trapImagesPrevTp=cTimelapse.returnTrapsTimepoint([],timepoints(1));
                     h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
                     for i=2:length(timepoints)
                         i
@@ -83,7 +85,7 @@ classdef cTrapDisplay<handle
                 %commented by elco to allow display of 1 trap at a time.
                 %traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
             elseif b
-                image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
+                image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
                 %                 if isempy(
                 for timepoint=timepoints
                     cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',zeros(size(image))>0,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0));
@@ -105,7 +107,7 @@ classdef cTrapDisplay<handle
                 dis_w=dis_w+1;
             end
             dis_h=max(ceil(length(traps)/dis_w),1);
-            image=cTimelapse.returnTrapsTimepoint(traps,1,cDisplay.channel);
+            image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
             
             t_width=.9/dis_w;
             t_height=.9/dis_h;
@@ -139,10 +141,10 @@ classdef cTrapDisplay<handle
                         
             cDisplay.slider=uicontrol('Style','slider',...
                 'Parent',gcf,...
-                'Min',1,...
+                'Min',min(timepoints),...
                 'Max',max(timepoints),...
                 'Units','normalized',...
-                'Value',1,...
+                'Value',min(timepoints),...
                 'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
                 'SliderStep',SliderStep,...
                 'Callback',@(src,event)slider_cb(cDisplay));

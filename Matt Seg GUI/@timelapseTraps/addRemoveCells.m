@@ -5,7 +5,7 @@ function addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, meth
 %
 
 if nargin<7
-    method='hough'
+    method='hough';
 end
 
 if nargin<8
@@ -47,7 +47,7 @@ switch selection
                         cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc)=[];
                         
                     end
-                else
+                elseif length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)==1
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);
@@ -64,7 +64,7 @@ switch selection
                 %                     cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented(:,:,1)))>1;
                 %                 end
             else
-                cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented=zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented(:,:,1)))>1;
+                cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented=false(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).segmented));
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellCenter=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).cellRadius=[];
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented=sparse(zeros(size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented))>0);

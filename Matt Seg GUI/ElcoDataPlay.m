@@ -1,14 +1,68 @@
 %% GENERAL DATA PLAY FILE
 
 Data = disp.cExperiment.cellInf;
-channels = [3 4];
+channels = [1];
 channeli =1;
 channel = channels(channeli);
-timepoints = [17 108;1 108];
+timepoints = [1 240];
 analysis_timepoint1 = max(timepoints(:,1));
 analysis_timepoint2 = min(timepoints(:,2));
 total_timepoints = (analysis_timepoint2 - analysis_timepoint1)+1;
 
+
+
+%% pick cells present than a certain duration
+
+threshold = 100;
+
+data1 = full(Data(channel).mean);
+data1(data1==0)=NaN;
+
+cell_of_interest = sum(isnan(data1),2)<threshold;
+pos_of_interest = Data.posNum(cell_of_interest);
+
+
+data1_cut = data1(cell_of_interest,:);
+
+
+%% plotting some data by position
+
+data_by_pos = [];
+
+for i=1:length(cExperiment.dirs)
+    
+    data_by_pos = [data_by_pos ; nanmean(full(data_matrix(Data.posNum==i,:)))];
+    
+end
+
+plot(data_by_pos')
+legend(cExperiment.dirs)
+heatmap(data_by_pos,[],cExperiment.dirs)
+
+
+%% find weird peak
+
+
+small_data = data1_cut(:,1:100);
+[maxes,index_of_max] = nanmax(small_data,[],2);
+cells_good = index_of_max>50;
+cells_good = nanmax(data1_cut(:,1:50),[],2)./nanmax(data1_cut(:,70:90),[],2)<1;
+
+cells_good = nanmax(data1_cut(:,1:50),[],2)<3.5e5;
+
+%% plot without weird cells
+
+true_pos_nums = cExperiment.extractProperPosNums({1:20,21:37});
+g1 = ismember(pos_of_interest',true_pos_nums{1});
+g2 = ismember(pos_of_interest',true_pos_nums{2});
+
+
+
+plot(nanmean(data1_cut(cells_good & g1,:)),'-b')
+hold on
+
+plot(nanmean(data1_cut(cells_good & g2,:)),'-r')
+hold off
 
 %% sort data by some property
 which_timepoint = 2; %1 for first, 2 for last.

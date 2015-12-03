@@ -1,4 +1,4 @@
-function extractCellInformation(cExperiment,positionsToExtract,type,channels)
+function extractCellInformation(cExperiment,positionsToExtract,type,channels, cellSegType)
 % extractCellInformation(cExperiment,positionsToExtract,type,channels)
 
 
@@ -25,10 +25,14 @@ if nargin<3
     type=answer{1};
 end
 
+if nargin<5 || isempty(cellSegType)
+    cellSegType='segmented';
+end
+
 %% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
     %
     
     if nargin<4 || isempty(channels)
@@ -37,7 +41,7 @@ for i=1:length(positionsToExtract)
     
     switch type
         case {'max','all','std'} 
-            cTimelapse.extractCellData(type,channels);
+            cTimelapse.extractCellData(type,channels,cellSegType);
         case {'b','basic'}
             cTimelapse.extractCellParamsOnly();
     end

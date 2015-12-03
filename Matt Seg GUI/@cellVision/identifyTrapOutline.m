@@ -9,6 +9,8 @@ function identifyTrapOutline(cCellVision,cTimelapse,trapNum)
 %median value through time to determine the location of the traps.
 
 
+edit_manual = true;
+
 if ~isempty(cCellVision.cTrap)
     im=double(cCellVision.cTrap.trap1);
     im=stdfilt(im);
@@ -41,9 +43,9 @@ if ~isempty(cCellVision.cTrap)
         [xx yy] = meshgrid(1:Wide,1:Height);
         
         if i==1
-        fprintf('please select the centre of one of the two traps\n')
+        fprintf('please select the centre of one of the two traps and press enter\n')
         else
-            fprintf('please select the ceontre of the other trap\n')
+            fprintf('please select the centre of the other trap and press enter\n')
         end
         
         [loc(1) loc(2)]=getpts(gca);
@@ -82,17 +84,21 @@ if ~isempty(cCellVision.cTrap)
             imflat(:,:,i)=tempFlat;
         else %use elco's active contour stuff
             ImageTransformParameters = struct('postprocessing','invert');
-             ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',size(im,1)/3,'opt_points',6,...
-                'visualise',3,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500);
+             ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',max(size(im)),'opt_points',12,...
+                'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',4);
             
-            ForcingImage = double(cCellVision.cTrap.trap1);
-            ForcingImage = ForcingImage/median(ForcingImage(:));
-            TrapImage = ACBackGroundFunctions.get_cell_image(ForcingImage,min(size(ForcingImage),[],2),[PntX PntY]);
-            TrapImage = ACImageTransformations.radial_gradient(TrapImage,ImageTransformParameters);
-           
-            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(TrapImage,ACparameters,floor(size(TrapImage)/2));
+            TrapImage = double(cCellVision.cTrap.trap1);
+            TrapImage = TrapImage/median(TrapImage(:));
+            ForcingImage = ACBackGroundFunctions.get_cell_image(TrapImage,min(size(TrapImage),[],2),[PntX PntY]);
+            ForcingImage = ACImageTransformations.radial_gradient(ForcingImage,ImageTransformParameters);
+            %fprintf('\nTrap Image for trap outline set to no transformation\n')
+            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(TrapImage)/2));
             
-            [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiRes',AngleRes',[PntX PntY],size(ForcingImage));
+            fprintf('\n\n please edit the outline by clicking on the image and press enter when you are satisfied \n\n ')
+            
+            [RadiiRes,AngleRes] = ACBackGroundFunctions.edit_AC_manual(TrapImage,[PntX PntY],RadiiRes',AngleRes');
+            
+            [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiRes,AngleRes,[PntX PntY],size(TrapImage));
             
             %fudge factor : somewhere in the process the outlines are being
             %shifted by 1. I'm not sure why.
@@ -114,6 +120,10 @@ if ~isempty(cCellVision.cTrap)
     h=figure;imshow(imflat,[]);title('Final Trap Outline');
 %     uiwait();
     cCellVision.cTrap.trapOutline=imflat>0;
+    cCellVision.se.trap = []; 
+    % this field is a slightly mysterious structure added by matt that has
+    % blurry edge pixels in it. Setting it to zero causes it to be
+    % reconstructed
     
 else
     errordlg('There are no traps in this timelapse');

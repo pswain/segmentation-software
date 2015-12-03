@@ -24,7 +24,8 @@ classdef cTrapDisplayPlot<handle
     %image to display either the primary or secondary information.
     methods
         function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
-            
+            %cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
+            %displaying traps for cell selection.
             if nargin<3 || isempty(traps)
                 traps=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
             end

@@ -1,5 +1,5 @@
-function [px,py] = get_full_points_from_radii(radii,angles,center,point_number,image_size)
-%function [px,py] = get_full_points_from_radii(radii,angles,center,point_number,image_size)
+function [px,py] = get_points_from_radii(radii,angles,center,point_number,image_size)
+%function [px,py] = get_points_from_radii(radii,angles,center,point_number,image_size)
 
 % function to take a set of radii,angles,a center and return an unbroken
 % edge of the cell with no repeats.

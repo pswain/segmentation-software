@@ -69,12 +69,12 @@ classdef experimentTracking<handle
         selectTPToProcess(cExperiment,positions);
         combineTracklets(cExperiment,positions,params);
         
-        selectCellsToPlot(cExperiment,cCellVision,position);
+        selectCellsToPlot(cExperiment,cCellVision,position,channel);
         selectCellsToPlotAutomatic(cExperiment,positionsToCheck,params);
         
         correctSkippedFramesInf(cExperiment,type);
         
-        extractCellInformation(cExperiment,positionsToExtract,type,channels);
+        extractCellInformation(cExperiment,positionsToExtract,type,channels,cellSegType);
         compileCellInformation(cExperiment,positions);
         compileCellInformationParamsOnly(cExperiment,positions);
         
@@ -82,6 +82,7 @@ classdef experimentTracking<handle
         saveTimelapseExperiment(cExperiment,currentPos);
         saveExperiment(cExperiment,fileName);
         plotCellInformation(cExperiment,position);
+        copyExperiment(cExperiment,new_location)
     end
 end
 

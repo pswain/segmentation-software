@@ -25,7 +25,7 @@ classdef cTrapDisplayProcessing<handle
             end
             
             if (nargin<4 || isempty(traps)) && cTimelapse.trapsPresent
-                traps=1:length(cTimelapse.cTimepoint(1).trapLocations);
+                traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
             elseif (nargin<4 || isempty(traps)) && ~cTimelapse.trapsPresent
                 traps=1;
             end
@@ -115,10 +115,13 @@ classdef cTrapDisplayProcessing<handle
                 if length(cTimelapse.channelsForSegment)>1
                     if strcmp(segType,'whole')
                         identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(i),'trap');
+                        cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
+                    else
+                        cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],identification_image_stacks,d_im);
                     end
-                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
                 else
-                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+%                     cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'hough',[],trap_images);
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
                 end
                 
                 for j=1:length(traps)

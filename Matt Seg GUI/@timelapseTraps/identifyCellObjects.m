@@ -37,20 +37,21 @@ switch method
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
     case 'active_contour'
         linear_segmentation(cTimelapse,cCellVision,traps,channel)
+    case 'elcoAC'
+        elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw);
 end
 end
 
 function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
-% s1=strel('disk',0);
-% for i=1:length(cTimelapse.cTrapsLabelled(traps(1)).timepoint)
-% disp(['Timepoint ',int2str(timepoint)])
+%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
+%Not sure exactly, written by Matt, but is a somewhat legacy way of
+%identifying cell outlines in the image using the hough transform without
+%consideration for past timepoints. trap_image no longer used since it was
+%changed to a cell array. Basically certainly uses channel 1 so if using
+%this code make sure channel 1 is centre DIC image.
 
-%     image=cTimelapse.returnTrapsTimepoint(traps,i,channel);
-if isempty(trap_image)
-    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
-else
-    image=trap_image;
-end
+
+image = cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
 image=double(image);
 
 f1=fspecial('gaussian',7,2);
@@ -544,7 +545,44 @@ end
 
 
 
+function elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw)
+% elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw)
+%
+% to add a cell centre by Elco's active contour method. basically adds a
+% centre at the average of the bw and then 
 
+trap = traps(1);
+[Iy,Ix] = find(bw);
+ycell = round(mean(Iy));
+xcell = round(mean(Ix));
+
+if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
+    newIndex = length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)+1;
+else
+    newIndex = 1;
+    cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = true;
+end
+
+newCellLabel = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(trap) +1;
+cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(trap) = newCellLabel;
+
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellCenter = [xcell ycell] ;
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(newIndex) = newCellLabel;
+
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadius = 5;
+[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented));
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented)));
+
+cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);
+
+
+for TP = timepoint:cTimelapse.timepointsToProcess(end);
+    cTimelapse.cTimepoint(TP).trapMaxCellUTP(trap) = newCellLabel;
+end
+
+
+
+end
 
 
 
@@ -1063,7 +1101,12 @@ for k = 1 : size(accumAOI, 1),
             candgrp_acmsum;
         cc_y = sum( candgrp_IdxI .* accum(candgrp_idx2acm) ) / ...
             candgrp_acmsum;
-        circen = [circen; cc_x, cc_y];
+        % added by Elco to try and stop strange edge cases where the centre
+        % of the cells is an NaN. Hopefully shouldn't break downstream
+        % code.
+        if ~isnan(cc_x) && ~isnan(cc_y)
+            circen = [circen; cc_x, cc_y];
+        end
     end
 end
 

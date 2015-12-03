@@ -46,9 +46,16 @@ for slicei = 1:size(image,3)
     %local median
     %may be very slow - consider removing.
     %tempim = tempim./medfilt2nearest(tempim,[31 31]);
-    temp_im = temp_im/median(temp_im(:));
+    
+    med = median(temp_im(:));
+    if med ~=0
+        temp_im = temp_im/med;
+    end
     %temp_im=temp_im*imScale;
-    temp_im = temp_im/(iqr(temp_im(:)));
+    im_iqr = iqr(temp_im(:));
+    if im_iqr ~=0
+        temp_im = temp_im/(im_iqr);
+    end
     im(:,:,slicei)=temp_im;
     
 end

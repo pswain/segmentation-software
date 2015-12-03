@@ -9,32 +9,40 @@ if nargin<2
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=5; %number of frames cells must be present
 %     params.cellsToCheck=4;
-    params.framesToCheck=length(cTimelapse.timepointsProcessed);
-    params.framesToCheckEnd=1;
+    params.framesToCheck=find(cTimelapse.timepointsProcessed,1,'last');
+    params.framesToCheckEnd=find(cTimelapse.timepointsProcessed,1,'first');
+    params.maximumNumberOfCells = Inf;
     
     num_lines=1;clear prompt; clear def;
     prompt(1) = {'Fraction of whole timelapse a cell must be present'};
     prompt(2) = {'OR - number of frames a cell must be present'};
     prompt(3) = {'Cell must appear in the first X frames'};
     prompt(4) = {'Cell must be present after frame X'};
+    prompt(5) = {'Select a maximum of X cells (useful if you want to check cells and not spend ages)'};
 
     dlg_title = 'Tracklet params';    
     def(1) = {num2str(params.fraction)};
     def(2) = {num2str(params.duration)};
     def(3) = {num2str(params.framesToCheck)};
     def(4) = {num2str(params.framesToCheckEnd)};
+    def(5) = {num2str(params.maximumNumberOfCells)};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     params.fraction=str2double(answer{1});
     params.duration=str2double(answer{2});
     params.framesToCheck=str2double(answer{3});
     params.framesToCheckEnd=str2double(answer{4});
-
+    params.maximumNumberOfCells = str2double(answer{5});
 end
 
 cTimelapse.cellsToPlot(:)=0;
+if ~isfield(params, 'maximumNumberOfCells')
+    params.maximumNumberOfCells = Inf;
+end
 
 
-
+%keep track of number of cells found to ensure you don't go over
+%maxmimumNumberOfCells.
+cellsLeft = params.maximumNumberOfCells;
 
 cTimepoint=cTimelapse.cTimepoint;
 for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
@@ -73,6 +81,12 @@ for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapI
     
     if ~isempty(cellsSeen) && ~isempty(locs)
         locs=locs(locs<=cellsSeen);
+        if length(locs)>cellsLeft
+            locs = locs(1:cellsLeft);
+            cellsLeft = 0;
+        else
+            cellsLeft = max((cellsLeft - length(locs)),0);        
+        end
         if ~isempty(locs)
             for cellsForPlot=1:length(locs)
                 cTimelapse.cellsToPlot(trap,locs(cellsForPlot))=1;

@@ -13,7 +13,8 @@ classdef curateCellTrackingGUI<handle
         subAxesIndex = [];
         Channels = 1;
         PermuteVector = []; %vector of permutations of cel labels to make colours more different and visualisation easier.
-        ColourScheme = 'trackedCellOnly';
+        ColourScheme = curateCellTrackingGUI.allowedColourSchemes{2};%'trackedCellOnly';
+        dilate = false;
         
         %a boolean of whether to show the other channels in the
         %timelapse. Decide what to do with this later.
@@ -23,23 +24,30 @@ classdef curateCellTrackingGUI<handle
         DataObtained = []; %vector of whether the data has been obtained for each timepoint.
         StripWidth = 5;
         TimepointsInStrip;
+        keyPressed = [];
+        outlineEditKey = 'o'; %the key to be pressed activate outline editing functionality
+        addRemoveKey = 'p'; %the key to be pressed to use add/remove functionality
     end % properties
     
-    % A GUI written by Elco to edit the outline of cells segmented by the
-    % radial active contour methods.
-    % Currently written to show the contour on all the available channels
-    % and the transformed image.
+    properties(Constant)
+        allowedColourSchemes = { 'multicoloured' 'trackedCellOnly' }
+    end
+    
     
     methods
         function TrackingCurator=curateCellTrackingGUI(cTimelapse,Timepoint,TrapIndex,StripWidth,ShowOtherChannels,ColourScheme)
             % TrackingCurator=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional),ShowOtherChannels(optional),ColourScheme(optional))
-            
-            AllowedColourSchemes = {'multicoloured' 'trackedCellOnly'}; % a cell array of allowed colour scheme strings
+            % A GUI written by Elco to edit the outline of cells segmented by the
+            % radial active contour methods.
+            % Currently written to show the contour on all the available channels
+            % and the transformed image.
+    
+            AllowedColourSchemes = curateCellTrackingGUI.allowedColourSchemes; % a cell array of allowed colour scheme strings
             
             TrackingCurator.cTimelapse = cTimelapse;
             
             if nargin<2 || isempty(Timepoint)
-                Timepoint = 1;
+                Timepoint = min(TrackingCurator.cTimelapse.timepointsToProcess);
             end
             
             if ~(nargin<3 || isempty(TrapIndex))
@@ -71,13 +79,13 @@ classdef curateCellTrackingGUI<handle
             
             MiddleOfStripWidth = ceil(TrackingCurator.StripWidth/2);
             
-            maxTimepoint =length(cTimelapse.cTimepoint);
+            maxTimepoint =max(TrackingCurator.cTimelapse.timepointsToProcess);
             
             if TrackingCurator.StripWidth>maxTimepoint
                 TrackingCurator.StripWidth = maxTimepoint;
             end
             
-            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex));
+            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex));
             
             if TrackingCurator.ShowOtherChannels
                 
@@ -135,8 +143,8 @@ classdef curateCellTrackingGUI<handle
                 
                 TrackingCurator.slider=uicontrol('Style','slider',...
                     'Parent',gcf,...
-                    'Min',MiddleOfStripWidth,...
-                    'Max',maxTimepoint-MiddleOfStripWidth,...
+                    'Min',min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth - 1,...
+                    'Max',1+maxTimepoint-MiddleOfStripWidth,...
                     'Units','normalized',...
                     'Value',Timepoint,...
                     'Position',[bb*2/3 bb 1-bb/2 bb*1.5],...
@@ -147,10 +155,10 @@ classdef curateCellTrackingGUI<handle
                 %of TrackingCurator.slider changes the callback slider_cb is run.
                 hListener = addlistener(TrackingCurator.slider,'Value','PostSet',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
                 
-                if Timepoint<MiddleOfStripWidth
-                    Timepoint = ceil(MiddleOfStripWidth);
+                if Timepoint<min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth
+                    Timepoint = floor(min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth);
                 elseif Timepoint>maxTimepoint-MiddleOfStripWidth
-                    Timepoint = floor(maxTimepoint-MiddleOfStripWidth);
+                    Timepoint = ceil(maxTimepoint-MiddleOfStripWidth);
                 end
                 set(TrackingCurator.slider,'Value',Timepoint);
                 curateCellTrackingGUI_slider_cb(TrackingCurator);
@@ -166,7 +174,10 @@ classdef curateCellTrackingGUI<handle
                 
             end
             
-            set(TrackingCurator.figure,'WindowKeyPressFcn',@(src,event)curateCellTrackingGUI_KeyPress_cb(TrackingCurator,src,event));
+            %keydown function
+            set(TrackingCurator.figure,'WindowKeyPressFcn',@(src,event)curateCellTrackingGUI_KeyPress_cb(TrackingCurator,src,event));            
+            %key release function
+            set(TrackingCurator.figure,'WindowKeyReleaseFcn',@(src,event)KeepKey_Release_cb(TrackingCurator,'keyPressed',src,event));
 
                 
         end
@@ -185,7 +196,7 @@ classdef curateCellTrackingGUI<handle
             
             DoAWaitBar = false;
             if nargin<2
-                Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+                Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
                 DoAWaitBar = true;
                 
             end
@@ -206,9 +217,10 @@ classdef curateCellTrackingGUI<handle
             
             ProgressCounter = 0;
             TotalTime = length(TrackingCurator.Channels)*length(Timepoints);
-            for CH = TrackingCurator.Channels
+            for CHi = 1:length(TrackingCurator.Channels)
+                CH = TrackingCurator.Channels(CHi);
                 for TPi = 1:length(Timepoints)
-                    Images{CH}(:,:,TPi) = double(TrackingCurator.cTimelapse.returnTrapsTimepoint(TrapIndex,Timepoints(TPi),CH));
+                    Images{CHi}(:,:,TPi) = double(TrackingCurator.cTimelapse.returnTrapsTimepoint(TrapIndex,Timepoints(TPi),CH));
                     if DoAWaitBar
                         ProgressCounter = ProgressCounter+1;
                         waitbar(ProgressCounter/TotalTime,h);
@@ -230,7 +242,7 @@ classdef curateCellTrackingGUI<handle
             
             %Return empty cells for the images
             
-            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
@@ -245,7 +257,7 @@ classdef curateCellTrackingGUI<handle
             
             %Return empty cells for the images
             
-            Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+            Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
             CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
             
@@ -268,7 +280,7 @@ classdef curateCellTrackingGUI<handle
             
             
             if nargin<2
-                Timepoints = 1:length(TrackingCurator.cTimelapse.cTimepoint);
+                Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             end
             
             
@@ -292,9 +304,17 @@ classdef curateCellTrackingGUI<handle
                         tempCellOutline = CellOutlines(:,:,TPi);
                         for CI = 1:length(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell)
                             
+                            if length(TrackingCurator.PermuteVector)<TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI)
+                                TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI)) = TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI);
+                            end
+                            if TrackingCurator.dilate
                             tempCellOutline(imdilate(full(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell(CI).segmented),[0 1 0;1 1 1;0 1 0],'same')) =...
                                 TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI));
-                            
+                            else
+                                
+                            tempCellOutline(full(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cell(CI).segmented)) =...
+                                TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(Timepoints(TPi)).trapInfo(TrapIndex).cellLabel(CI));
+                            end
                         end
                         
                         CellOutlines(:,:,TPi) = tempCellOutline(:,:);
@@ -344,20 +364,20 @@ classdef curateCellTrackingGUI<handle
                     %make the outline of cells coloured according to cell
                     %label
                     switch TrackingCurator.ColourScheme
-                        case 'multicoloured'
+                        case TrackingCurator.allowedColourSchemes{1} %'multicoloured'
                             tempImage = 0.3*tempImage;
                             tempImage = cat(3,tempImage,tempImage,tempImage);
                             [tempIndexI, tempIndexJ] = find(tempOutline==0,1);
-                            tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell(TrackingCurator.trapIndex);
+                            tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex);
                             
                             tempOutline = label2rgb(tempOutline,'jet','w','noshuffle');
                             tempOutline(tempIndexI,tempIndexJ,:) = 255;
                             tempOutline = (0.95/0.3)*double(tempOutline)/255;
                             tempImage = tempImage.*double(tempOutline);
                             
-                        case 'trackedCellOnly'
+                        case TrackingCurator.allowedColourSchemes{2}%'trackedCellOnly'
                             
-                            tempImage = 0.7*tempImage; 
+                            tempImage = 0.9*tempImage; 
                             RedandGreen = tempImage;
                             Blue = tempImage;
                             Blue(tempOutline~=0 & tempOutline ~= TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
@@ -418,7 +438,9 @@ classdef curateCellTrackingGUI<handle
             
             
         end
-        
+        %set property to make sure a channel change results in new image
+        %being obtained.
         
     end %methods
+     
 end%function

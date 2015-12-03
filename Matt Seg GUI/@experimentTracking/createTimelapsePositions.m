@@ -30,7 +30,7 @@ traps_present = [];
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);
-    cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder '/' cExperiment.dirs{currentPos}]);
+    cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
     cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,traps_present,cExperiment.timepointsToLoad,cExperiment.imScale);
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.imScale=cExperiment.cTimelapse.imScale;

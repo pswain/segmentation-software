@@ -28,7 +28,8 @@ for channel=1:1%length(cTimelapse.channelNames)
     extractedData(channel).min=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).imBackground=sparse(numCells,length(cTimelapse.timepointsToProcess));
 
-    
+    extractedData(channel).distToNuc=sparse(numCells,length(cTimelapse.timepointsToProcess));
+    extractedData(channel).nucArea=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).radius=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).xloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).yloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
@@ -53,6 +54,15 @@ for channel=1:1%length(cTimelapse.channelNames)
                     extractedData(channel).xloc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(1);
                     extractedData(channel).yloc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).cellCenter(2);
 
+                    if isfield(trapInfo(currTrap).cell(temp_loc),'nucArea');
+                        if isempty(trapInfo(currTrap).cell(temp_loc).nucArea)
+                            extractedData(channel).nucArea(j,timepoint)=NaN;
+                            extractedData(channel).distToNuc(j,timepoint)=NaN;
+                        else
+                            extractedData(channel).nucArea(j,timepoint)=trapInfo(currTrap).cell(temp_loc).nucArea;
+                            extractedData(channel).distToNuc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).distToNuc;
+                        end
+                    end
                     
                 end
             end

@@ -14,13 +14,14 @@ classdef cellResultsViewingGUI<handle
         SelectPlotChannelButton; %handle for plot channel selection button
         SelectPlotFieldButton; %handle for plot field selection button
         ResetImageScaleButton; %handle for image channel selection button
-        CellSelected; %a field to hold the index of the cell selected for plotting and imaging - updated by the cell selection call back
+        CellSelected = 0; %a field to hold the index of the cell selected for plotting and imaging - updated by the cell selection call back
         TimepointSelected; %a field to hold the index of the timepoint selected for plotting and imaging - updated by the slider call back
         CellImageHandle; % handle for the axis on which the cell is drawn
         PlotHandle; % handle for the axes on which the data is plotted
         slider; %slider object
         TimepointSpacing = 5; % time between consecutive timepoints. Used in plotting to make a proper x axis
         ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
+        cellImageSize = []; % can set to be the size of the cell image to show. Useful if there are not traps and it will show a smaller area
         
     end % properties
 
@@ -56,9 +57,9 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellSelectListInterface = uicontrol(CellResGUI.TopPanel,'Style','listbox','String',{'no cells selected'},...
                 'Units','normalized','Position',[.33 .015 .3 .97],'Max',1,'Min',1,'Callback',@(src,event)SelectCell(CellResGUI));
             
-            CellResGUI.CellsForSelection = [cExperiment.cellInf.posNum' cExperiment.cellInf.trapNum' cExperiment.cellInf.cellNum'];
+            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum' cExperiment.cellInf(1).trapNum' cExperiment.cellInf(1).cellNum'];
             
-            CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf.posNum(1));
+            CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
                 
@@ -156,7 +157,7 @@ classdef cellResultsViewingGUI<handle
             %keydown function
             set(CellResGUI.figure,'WindowKeyPressFcn',@(src,event)CellRes_key_press_cb(CellResGUI,src,event));
 
-            CellResGUI.SelectCell();
+            %CellResGUI.SelectCell();
             
         end
 
@@ -191,6 +192,51 @@ classdef cellResultsViewingGUI<handle
             
         end
         
+        function setCellsWithLogical(CellResGUI,logical_of_cells)
+        %function setCellsWithLogical(CellResGUI,logical)
+        % set cells to look at as a subset of the whole of cExperiment just
+        % by providing a logical or an index vector.
+        
+        CellResGUI.CellsForSelection = [CellResGUI.cExperiment.cellInf(1).posNum(logical_of_cells)' ...
+                                        CellResGUI.cExperiment.cellInf(1).trapNum(logical_of_cells)'...
+                                        CellResGUI.cExperiment.cellInf(1).cellNum(logical_of_cells)'];
+        
+        end
+        
+        function setCellsWithLogicalFromCellSelected(CellResGUI,logical_of_cells)
+        %function setCellsWithLogicalFromCellSelected(CellResGUI,logical)
+        % set cells to look at as a subset of the whole of those currently
+        % selected. 
+        
+        CellResGUI.CellsForSelection = CellResGUI.CellsForSelection(logical_of_cells,:);
+        
+        end
+        
+        
+        function setCellsAsMothers(CellResGUI)
+        % setCellsAsMothers(CellResGUI)
+        % sets the cells to only the mother cells of the cvells already selected.
+        if ~isempty(CellResGUI.cExperiment.lineageInfo)
+            
+            mother_cell_logical = ismember(CellResGUI.CellsForSelection,...
+                [CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum' ...
+                CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap' ...
+                CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel'],'rows');
+            
+            setCellsWithLogicalFromCellSelected(CellResGUI,mother_cell_logical);
+        else
+            fprintf('\n\n  No Mother Info for this experiment \n\n')
+        end
+            
+        end
+        
+        function setCellsToAll(CellResGUI)
+        % setCellsToAll(CellResGUI)
+        % returns selection to all cells in cExperiment
+
+        setCellsWithLogical(CellResGUI,true(size(CellResGUI.cExperiment.cellInf(1).posNum)));
+        
+        end
         
     end
 end
