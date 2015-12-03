@@ -25,12 +25,12 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 % stack. This stack is then treated accoding to the 'type' argument, with
 % either a projection ('min','max' etc.) being made or the whole stack
 % being returned. The default is max.
-% A number of operations are then applied to the image. 
+% A number of operations are then applied to the image.
 %
 % scaling - if the imScale field of cTimelapse is not empty the image is
 %           rescaled using the imresize command imresize(image, imScale)
 %
-% background correction - if the field cTimelapse.BackgroundCorrection{channel} 
+% background correction - if the field cTimelapse.BackgroundCorrection{channel}
 %                         is not empty it is taken to be a flat field
 %                         correction and is appplied to the image by
 %                         element wise multiplication.
@@ -46,7 +46,7 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 %          be registered properly. Any extra values are padded by the
 %          median value of the image.
 %
-% These corrections are applied in this order. 
+% These corrections are applied in this order.
 %
 % The function also takes a number of other liberties. If the timelapseDir
 % is set to 'ignore' it takes the filenames to be absolute (this can be
@@ -54,9 +54,14 @@ function timepointIm=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
 % constructs the file name from timelapseDir and filename{i}. In doing so
 % it takes the liberty of resaving the file name with only the relative
 % path (i.e. it throws away anything behind the last / or \). 
-% Loading is done in a try catch loop and if it fails the user is
-% requested to provide a new timelapseDir. For cExperiments this is best
-% done using the changeRootDirsAll method.
+%
+% before loading the existence if the putative file is checked, and if it
+% doesn't exist the user is asked to specify a new file location. This is
+% done using a special GUI that rechecks whether the file has been found
+% every 5 seconds, this is done in case the disk was just temporarily
+% disconnected. For cExperiments this is best done using the
+% changeRootDirsAll method.This is not done if the timelapseDir is 'ignore'
+% and filenames are absolute.
 %
 % If there is no filename matching the channel at the timepoint requested
 % an image of the appropriate size of all zeros is returned and a warning
@@ -73,7 +78,7 @@ end
 tp=timepoint;
 
 if isempty(cTimelapse.OmeroDatabase)
-
+    
     fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
     %loc= ~cellfun('isempty',fileNum);
 	% changed from above in case someone uses the channel name in the
@@ -102,34 +107,62 @@ if isempty(cTimelapse.OmeroDatabase)
             end
             
         end
-        
-        try
             
             ind=find(loc);
-            file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-            if strcmp(cTimelapse.timelapseDir,'ignore')
-                ffile=file;
-            else
-                ffile=fullfile(cTimelapse.timelapseDir,file);
-            end
-            if ~isempty(cTimelapse.imSize)
-                timepointIm=[];
+            for i=1:sum(loc)
+                file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
+                if strcmp(cTimelapse.timelapseDir,'ignore')
+                    ffile=file;
+                else
+                    ffile=fullfile(cTimelapse.timelapseDir,file);
+                end
+                
+                %this code checks if the file is still where it is suppose
+                %to be and resets the timelapseDir by user interface if it
+                %is not. It doesn't work if the timelapseDir is set to
+                %'ignore',but this is something of a niche case only really
+                %used by Elco in training cellVision models.
+                while ~exist(ffile,'file')
+                    if ~strcmp(cTimelapse.timelapseDir,'ignore')
+                    select_new_directory = selectGUIWithWait(5,...
+                        sprintf('The file \n\n %s \n\n could not be found. Would you like to select a new location for the images in this timelapse?',ffile),...
+                        'select new directory',...
+                        'yes',...
+                        'retry old location');
+                    if select_new_directory==1
+                        fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
+                        folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
+                        cTimelapse.timelapseDir=folder;
+                        file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
+                        if strcmp(cTimelapse.timelapseDir,'ignore')
+                            ffile=file;
+                        else
+                            ffile=fullfile(cTimelapse.timelapseDir,file);
+                        end
+                    end
+                    else
+                        fprintf('\n file not found:\n\n %s \n\n',ffile)
+                        error('your files are absolute (timelapseDir is ignore) and they have also not been found, need to sort out carefully.')
+                    end
+                end
+                
                 %look for TIF at end of filename and change load method
                 %appropriately.
                 if ~isempty(regexp(ffile,'TIF$'))
-                    timepointIm=imread(ffile,'Index',1);
-                    timepointIm=timepointIm(:,:,1);
-                else
-                    timepointIm(:,:,1)=imread(ffile);
+                    timepointIm(:,:,i)=imread(ffile,'Index',i);
+                    else
+                    timepointIm(:,:,i)=imread(ffile);
                 end
-            else
-                timepointIm=imread(ffile);
-                cTimelapse.imSize=size(timepointIm);
-            end
-            for i=2:sum(loc)
-                file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-                ffile=fullfile(cTimelapse.timelapseDir,file);
-                timepointIm(:,:,i)=imread(ffile);
+                %if it is a stack, preallocate. Done in this strange way to
+                %preserve data type without making single slices unduly
+                %slow.
+                if i==1 && sum(loc)>1
+                    timepointIm(:,:,2:sum(loc)) = 0;
+                end
+                if isempty(cTimelapse.imSize)
+                    cTimelapse.imSize = size(timepointIm);
+                end
+                
             end
             
             %change if want things other than maximum projection
@@ -144,34 +177,6 @@ if isempty(cTimelapse.OmeroDatabase)
                     timepointIm=sum(timepointIm,3);
             end
             
-            
-        catch
-            folder =[];
-            h=errordlg('Directory seems to have changed');
-            uiwait(h);
-            attempts=0;
-            while isempty(folder) && attempts<3
-                fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
-                folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
-                cTimelapse.timelapseDir=folder;
-                attempts=attempts+1;
-            end
-            ind=find(loc);
-            file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-            ffile=fullfile(cTimelapse.timelapseDir,file);
-            if ~isempty(cTimelapse.imSize)
-                timepointIm=zeros([cTimelapse.imSize sum(loc)]);
-                timepointIm(:,:,1)=imread(ffile);
-            else
-                timepointIm=imread(ffile);
-            end
-            for i=2:sum(loc)
-                file=cTimelapse.cTimepoint(timepoint).filename{ind(1)};
-                ffile=fullfile(cTimelapse.timelapseDir,file);
-                timepointIm(:,:,i)=imread(ffile);
-            end
-            timepointIm=max(timepointIm,[],3);
-        end
     else
         if cTimelapse.imSize
             timepointIm=zeros(cTimelapse.imSize);
@@ -193,28 +198,28 @@ if isempty(cTimelapse.OmeroDatabase)
         cTimelapse.imSize = size(timepointIm);
     end
     
-%used for padding data
-medVal=median(timepointIm(:));
-        
-
-%This was a correction instigated by Matt but seems like a really bad
-%idea to just include without any kind of check. have commented out for
-%now.
-
-%correction for stupid thing where the first couple columns sometimes turn
-%REALLY bright .... why???? some camera issue.
-% firstColMean=mean(timepointIm(:,1));
-% medVal=median(timepointIm(:));
-% meanVal=medVal;
-% if firstColMean>meanVal*1.5
-%     timepointIm(:,1)=meanVal;
-%     firstColMean=mean(timepointIm(:,2));
-%     if firstColMean>meanVal*1.5
-%         timepointIm(:,2)=meanVal;
-%     end
-% end
-
-
+    %used for padding data
+    medVal=median(timepointIm(:));
+    
+    
+    %This was a correction instigated by Matt but seems like a really bad
+    %idea to just include without any kind of check. have commented out for
+    %now.
+    
+    %correction for stupid thing where the first couple columns sometimes turn
+    %REALLY bright .... why???? some camera issue.
+    % firstColMean=mean(timepointIm(:,1));
+    % medVal=median(timepointIm(:));
+    % meanVal=medVal;
+    % if firstColMean>meanVal*1.5
+    %     timepointIm(:,1)=meanVal;
+    %     firstColMean=mean(timepointIm(:,2));
+    %     if firstColMean>meanVal*1.5
+    %         timepointIm(:,2)=meanVal;
+    %     end
+    % end
+    
+    
     if ~isempty(cTimelapse.imScale)
         timepointIm=imresize(timepointIm,cTimelapse.imScale);
         %to correct for black lines
@@ -222,7 +227,7 @@ medVal=median(timepointIm(:));
         timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
     end
     
-
+    
     
     if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
         %first part of this statement is to guard against cases where channel
@@ -259,7 +264,7 @@ medVal=median(timepointIm(:));
         timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
     end
     
-
+    
 else
     %Code for returning image from Omero database
     %The channel input refers to the channels list in cTimelapse - not in
@@ -295,7 +300,7 @@ else
     timepointIm=zeros(sizeY, sizeX, sizeZ);
     for z=1:sizeZ
         try
-        plane=store.getPlane(z-1, chNum-1, timepoint-1);
+            plane=store.getPlane(z-1, chNum-1, timepoint-1);
         catch
             %Fix upload script to prevent the need for this debug
             disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
@@ -329,7 +334,7 @@ else
         
         
     end
-
-                    
+    
+    
     
 end
