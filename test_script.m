@@ -651,3 +651,43 @@ for i = 2:length(type)
     cExperiment_test.extractCellInformation(1:2,false,extractionParameters);
     cExperiment_test.compileCellInformation(1:2);
 end
+
+
+
+%% test missing images stuff
+
+% copied images to my UUN directory and switch the experiment location
+% between that and the local copy.
+
+cExperiment_test = experimentTracking('/Volumes/s1135844/microscope_images/str81_GT_timelapse_01_curtailed_1-4',...
+    '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/tests_cExperiment_missing_files_test');
+createTimelapsePositions(cExperiment_test,{'DIC'},'all',[],0,[],60,[],true);
+
+cExperiment_test.addSecondaryChannel('field_001');
+
+cExperiment_test.addSecondaryChannel('GFP');
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+
+
+im1 = cTimelapse.returnSingleTimepoint(2,2,'stack');
+im2 = cTimelapse.returnSingleTimepoint(2,3,'stack');
+
+
+cTimelapseDisplay(cTimelapse,2)
+uiwait()
+cTimelapseDisplay(cTimelapse,3)
+uiwait()
+
+
+im1_after = cTimelapse.returnSingleTimepoint(2,2,'stack');
+im2_after = cTimelapse.returnSingleTimepoint(2,3,'stack');
+
+
+if ~isequal(im1,im1_after) || ~isequal(im2,im2_after)
+    
+    fprintf('failed changing image location test\n\n')
+else
+    fprintf('passedf changing image location test\n\n')
+
+end
