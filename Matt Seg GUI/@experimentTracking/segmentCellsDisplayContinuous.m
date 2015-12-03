@@ -48,7 +48,7 @@ while min_tp<expected_final_timepoint
         newTP=tempy|newTP;
         if cExperiment.trackTrapsOverwrite & newTP
             max_new_tp = length(cTimelapse.cTimepoint);
-            max_old_tp = max(cTimelapse.timepointsToProcess);
+            max_old_tracked = find(~cellfun('isempty',{cTimelapse.cTimepoint(:).trapInfo}),1,'first');
             tp=1:max_new_tp;
             %track only over a subset of old timepoint, those already
             %tracked will not have their timepoints changed and are just
@@ -56,7 +56,8 @@ while min_tp<expected_final_timepoint
             %40 is an arbitrary number- high enough that tracking doesn't
             %take ages, low enough that images will not get confused by
             %high drift.
-            tp_to_track = [1:40:(max_old_tp) (max_old_tp+1):max_new_tp];
+            
+            tp_to_track = [1:40:(max_old_tracked) (max_old_tracked+1):max_new_tp];
             isCont=true;
             cTimelapse.trackTrapsThroughTime(cCellVision,tp_to_track,isCont);
             
@@ -64,6 +65,7 @@ while min_tp<expected_final_timepoint
                 cTimelapse.magnification=60;
             end
             cTimelapse.timepointsToProcess=tp;
+            cTimelapse.timepointsProcessed((end+1):max_new_tp) = 0;
             tp(cTimelapse.timepointsProcessed>0)=[];
             cTrapDisplayProcessing(cTimelapse,cCellVision,tp);
             cExperiment.posSegmented(currentPos)=1;
