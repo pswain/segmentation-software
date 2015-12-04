@@ -69,7 +69,11 @@ radiusFLData=isfield(cTimelapse.cTimepoint(1).trapInfo(1).cell,'cellRadiusFL');
 
 
 for channel=1:length(channels)
-    channel_number = channels(channel);
+    %channel_number = channels(channel);Ivan replaced this line because it
+    %causes an error - channel input to returnSingleTimepoint should be a
+    %number, not a string (in this case 'N')
+    channel_number=channel;
+    
     BGextracted = false;
     
     if numStacks<2

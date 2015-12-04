@@ -78,7 +78,7 @@ else
             else
                 error('No dataset selected')
             end
-            matchedExp=find(strcmp(['cExperiment_' expName '.mat'],faNames));
+            matchedExp=find(strcmp(['cExperiment_' expName '.mat'],faNames)); 
             matchedExp=matchedExp(1);
             %Download then load the cExperiment file
             disp('Downloading cExperiment file');

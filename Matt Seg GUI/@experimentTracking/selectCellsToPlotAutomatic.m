@@ -6,7 +6,6 @@ end
 
 if nargin<3 || isempty(params)
     cTimelapse=cExperiment.returnTimelapse(1);
-    %load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
     
     params.fraction=.8; %fraction of timelapse length that cells must be present or
     params.duration=3;%length(cTimelapse.cTimepoint); %number of frames cells must be present
@@ -59,8 +58,7 @@ end
 for i=1:length(positionsToCheck)
     %if params.maximumNumberOfCells
         experimentPos=positionsToCheck(i);
-    cTimelapse=cExperiment.returnTimelapse(experimentPos);
-    %load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+        cTimelapse=cExperiment.returnTimelapse(experimentPos);
         cTimelapse.automaticSelectCells(params);
         params.maximumNumberOfCells = max(params.maximumNumberOfCells - full(sum(cTimelapse.cellsToPlot(:))),0);
         cExperiment.cTimelapse=cTimelapse;

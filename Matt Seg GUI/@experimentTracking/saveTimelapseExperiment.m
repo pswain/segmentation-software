@@ -51,21 +51,23 @@ else
  
     if ~isempty(faIndex)
         faIndex=faIndex(1);
+        disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
         fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
     else%The file is not yet attached to the dataset
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
             
     %cCellVision file
-    fileName=[cExperiment.saveFolder filesep 'cCellVision_' cExperiment.rootFolder '.mat'];
+    fileName=[cExperiment.saveFolder filesep dsName 'cCellVision_' cExperiment.rootFolder '.mat'];
     cCellVision=cExperiment.cCellVision;
     save(fileName,'cCellVision');
-    faIndex=strcmp(['cCellVision_' cExperiment.rootFolder '.mat'],faNames);
+    faIndex=strcmp([dsName 'cCellVision_' cExperiment.rootFolder '.mat'],faNames);
     faIndex=find(faIndex);
    
     if ~isempty(faIndex)
          faIndex=faIndex(1);
-        fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
+         disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
+         fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
     else%The file is not yet attached to the dataset
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
@@ -88,7 +90,8 @@ else
         faIndex=find(faIndex);
         if ~isempty(faIndex)
              faIndex=faIndex(1);
-            fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(faIndex), fileName);
+             disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
+             fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(faIndex), fileName);
         else%The file is not yet attached to the dataset
             omeroDatabase.uploadFile(fileName, omeroDs, 'cExperiment file uploaded by @experimentTracking.saveTimelapseExperiment');
         end
