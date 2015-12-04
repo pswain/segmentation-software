@@ -136,9 +136,9 @@ for j=1:length(image)
     %dilate so that if there are a few cells found within a big old cell,
     %that all of those 'cells' are removed.
     bwl=bwlabel(imdilate(bw_mask,se2));
-    d_imTrap=d_im(:,:,trapIndex);
-    if ~isempty(trapInfom1) && trapInfom1(trapIndex).cellsPresent
-        prevCellRad=[trapInfom1(trapIndex).cell(:).cellRadius];
+    d_imTrap=d_im(:,:,trapj);
+    if ~isempty(trapInfom1) && trapInfom1(trapj).cellsPresent
+        prevCellRad=[trapInfom1(trapj).cell(:).cellRadius];
         
         %If there are cells >= radius 10 in the previous tp, then assume that
         %they will be sticking around, and just search from them at the
@@ -147,7 +147,7 @@ for j=1:length(image)
         
         for bigCellIndex=1:length(locBigCell)
             %MAGNIFICATION
-            prevTpCell=trapInfom1(trapIndex).cell(locBigCell(bigCellIndex)).segmented;
+            prevTpCell=trapInfom1(trapj).cell(locBigCell(bigCellIndex)).segmented;
             prevTpCell=imfill(full(prevTpCell),'holes');
             prevTpCell=imerode(prevTpCell,se3);
             cPredictThere=d_imTrap(prevTpCell);
@@ -159,7 +159,7 @@ for j=1:length(image)
                 %removed from the analysis
                 tempBigCenter=prevTpCell;
                 
-                tempR=trapInfom1(trapIndex).cell(locBigCell(bigCellIndex)).cellRadius;
+                tempR=trapInfom1(trapj).cell(locBigCell(bigCellIndex)).cellRadius;
                 tempRadiusSearch(1)=tempR-1;tempRadiusSearch(2)=tempR+2;
                 [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
                 circen(end+1:end+size(circen1,1),:)=circen1;
