@@ -11,3 +11,4 @@ cExpGUI.cExperiment.createTimelapsePositions([],'all',...
                                             60,[],[]);
 
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);

@@ -10,5 +10,6 @@ if isfield(l1,'cCellVision')
 end
 
 
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
 
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);

@@ -11,6 +11,10 @@ classdef experimentTrackingGUI<handle
         posList
         saveExperimentButton
         
+        selectChannelText
+        selectChannelButton
+        
+        
         addSecondaryChannelButton
         displayWholeTimelapseButton
         selectTrapsToProcessButton
@@ -29,12 +33,13 @@ classdef experimentTrackingGUI<handle
         compileDataButton
         RunActiveContourButton
         
+        openCellResButton
         currentGUI;
 
         cExperiment;
         cTimelapse=[]
         cCellVision=[];
-        channel=1;
+        channel;
     end % properties
     %% Displays timelapse for a single trap
     %This can either dispaly the primary channel (DIC) or a secondary channel
@@ -50,6 +55,7 @@ classdef experimentTrackingGUI<handle
                 addpath(genpath(['/Users/' char(java.lang.System.getProperty('user.name')) '/Documents/Omero code']));
             end
             
+            cExpGUI.channel=1;
 
             scrsz = get(0,'ScreenSize');
             cExpGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(3)/2 scrsz(4)/2]);
@@ -80,29 +86,35 @@ classdef experimentTrackingGUI<handle
             cExpGUI.addSecondaryChannelButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Add Channel',...
                 'Units','normalized','Position',[.025 .85 .47 .15],'Callback',@(src,event)addSecondaryChannel(cExpGUI));
             cExpGUI.displayWholeTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Disp Timelapse',...
-                'Units','normalized','Position',[.505 .85 .25 .15],'Callback',@(src,event)displayWholeTimelapse(cExpGUI));
+                'Units','normalized','Position',[.505 .85 .47 .1],'Callback',@(src,event)displayWholeTimelapse(cExpGUI));
+            cExpGUI.selectChannelText = uicontrol(cExpGUI.processingPanel,'Style','text','String','Channel',...
+                'Units','normalized','Position',[.515 .95 .22 .05]);            
+            cExpGUI.selectChannelButton = uicontrol(cExpGUI.processingPanel,'Style','popupmenu','String','None',...
+                'Units','normalized','Position',[.715 .85 .28 .15],'Callback',@(src,event)selectChannel(cExpGUI));
+
             cExpGUI.timepointsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Tp to Proc',...
-                'Units','normalized','Position',[.755 .85 .22 .15],'Callback',@(src,event)timepointsToProcess(cExpGUI));
+                'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)timepointsToProcess(cExpGUI));
+            cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Traps',...
+                'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
+
 
             %
-            cExpGUI.cropTimepointsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Crop Timepoints',...
-                'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)cropTimepoints(cExpGUI));            
-            cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Traps',...
-                'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
+%             cExpGUI.cropTimepointsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Crop Timepoints',...
+%                 'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)cropTimepoints(cExpGUI));            
             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
-                'Units','normalized','Position',[.025 .55 .3 .15],'Callback',@(src,event)identifyCells(cExpGUI));
-            cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
-                'Units','normalized','Position',[.325 .55 .175 .15],'Callback',@(src,event)extractSegAreaFl(cExpGUI));
+                'Units','normalized','Position',[.025 .55 .47 .15],'Callback',@(src,event)identifyCells(cExpGUI));
 
             cExpGUI.trackCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Track Cells',...
-                'Units','normalized','Position',[.505 .55 .25 .15],'Callback',@(src,event)trackCells(cExpGUI));
+                'Units','normalized','Position',[.025 .45 .47 .10],'Callback',@(src,event)trackCells(cExpGUI));
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
                 'Units','normalized','Position',[.755 .55 .22 .15],'Callback',@(src,event)combineTracklets(cExpGUI));
 
-             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
-                'Units','normalized','Position',[.025 .45 .47 .10],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
+             cExpGUI.editProcessedTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
+                'Units','normalized','Position',[.505 .45 .47 .1],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
-            
+            cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
+                'Units','normalized','Position',[.505 .55 .25 .15],'Callback',@(src,event)extractSegAreaFl(cExpGUI));
+% [.505 .45 .47 .1]
             
             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
                 'Units','normalized','Position',[.025 .35 .47 .10],'Callback',@(src,event)autoSelect(cExpGUI));
@@ -112,13 +124,14 @@ classdef experimentTrackingGUI<handle
             cExpGUI.extractDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
                 'Units','normalized','Position',[.025 .25 .47 .10],'Callback',@(src,event)extractData(cExpGUI));
             cExpGUI.compileDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Compile Data',...
-                'Units','normalized','Position',[.505 .25 .47 .10],'Callback',@(src,event)compileData(cExpGUI));
+                'Units','normalized','Position',[.025 .15 .47 .10],'Callback',@(src,event)compileData(cExpGUI));
 
-            cExpGUI.processIndTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Process Ind Timelapse',...
-                'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)processIndTimelapse(cExpGUI));
+            cExpGUI.openCellResButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Open CellResGUI',...
+                'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)openCellResGUI(cExpGUI));
             
+            %,'BackgroundColor',[.6 .6 .6]
             cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
-                'Units','normalized','Position',[.025 .15 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
+                'Units','normalized','Position',[.505 .25 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
             
             
         end

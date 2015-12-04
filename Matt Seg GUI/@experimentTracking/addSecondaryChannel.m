@@ -9,6 +9,8 @@ if nargin<2 || isempty(searchString)
     searchString = searchString{1};
 end
 
+cExperiment.channelNames{end+1}=searchString;
+
 for i=1:length(cExperiment.dirs)
     cExperiment.loadCurrentTimelapse(i);
     cExperiment.cTimelapse.addSecondaryTimelapseChannel(searchString);
