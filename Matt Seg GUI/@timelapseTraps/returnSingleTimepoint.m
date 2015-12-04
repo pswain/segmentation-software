@@ -160,6 +160,9 @@ if isempty(cTimelapse.OmeroDatabase)
                 
             end
             
+            %necessary for background correction and just makes life easier
+            timepointIm = double(timepointIm);
+            
             %change if want things other than maximum projection
             switch type
                 case 'min'
