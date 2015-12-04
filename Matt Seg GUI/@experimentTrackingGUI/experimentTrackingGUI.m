@@ -22,12 +22,14 @@ classdef experimentTrackingGUI<handle
         editProcessedTimelapseButton
         trackCellsButton
         combineTrackletsButton
+        extractBirthsButton
         
         autoSelectButton
         selectButton
         extractDataButton
         compileDataButton
         RunActiveContourButton
+        editSegmentationButton
         
         currentGUI;
 
@@ -99,7 +101,7 @@ classdef experimentTrackingGUI<handle
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
                 'Units','normalized','Position',[.755 .55 .22 .15],'Callback',@(src,event)combineTracklets(cExpGUI));
 
-             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
+             cExpGUI.editSegmentationButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
                 'Units','normalized','Position',[.025 .45 .47 .10],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
             
@@ -119,7 +121,8 @@ classdef experimentTrackingGUI<handle
             
             cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
                 'Units','normalized','Position',[.025 .15 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
-            
+            cExpGUI.extractBirthsButton=uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract births info',...
+                'Units','normalized','Position',[.505 .45 .47 .10],'Callback',@(src,event)extractBirths(cExpGUI),'TooltipString','Extract data on budding events undergone by mother cells');
             
         end
 

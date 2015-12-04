@@ -6,4 +6,5 @@ end
 
 posVals=get(cExpGUI.posList,'Value');
 
+
 cExpGUI.cExperiment.selectCellsToPlotAutomatic(posVals);
