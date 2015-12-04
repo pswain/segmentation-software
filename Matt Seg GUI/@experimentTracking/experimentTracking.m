@@ -14,27 +14,41 @@ classdef experimentTracking<handle
         saveFolder %folder to save the timelapse objects
         dirs % cell array of directories in rootFolder. 
         posSegmented % logical array of position already segmented.
-        posTracked
-        cellsToPlot
-        currentDir
-        searchString;
+        posTracked %logical of positions tracked
+        cellsToPlot % Doesn't actually seem to be used anywhere
+        %currentDir 
+        %the following all match their equivalents in timelapseTraps and
+        %are popualted and used to populate the timelapseTrap fields when calling
+        %loadTimelapse
+        searchString; 
         pixelSize
         magnification
         trapsPresent;
         image_rotation;
-        cTimelapse;
-        cellInf
-        experimentInformation
         timepointsToLoad
         timepointsToProcess
         trackTrapsOverwrite
-        cellVisionThresh
         imScale
+        
+        cTimelapse; %populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
+        cellInf % cell data compuled from extractedData in each of the individual timelapseTrap objects
+        experimentInformation %currently not really used
+        cellVisionThresh % used to overwrite the twoStageThresh of cellVision in 
+                         %      experimentTrackingGUI.identifyCells
+                         %importantly, not used in the experimentTracking
+                         %method:
+                         %  segmentCellDisplay.
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
-        cCellVision;
-        ActiveContourParameters
+        cCellVision; % cellvision model applied throughout the segmentation, 
+                     % particularly in segmentCellDisplay and
+                     % identifyTrapsTimelapses.
+        ActiveContourParameters % parameters used in the ActiveContour 
+                                % methods, copied to each timelapseTraps
+                                % object when this is run (if parameters
+                                % selected appropriately)
+        
     end
     
     methods

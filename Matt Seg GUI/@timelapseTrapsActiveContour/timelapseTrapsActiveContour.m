@@ -81,9 +81,13 @@ classdef timelapseTrapsActiveContour<handle
             if ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cellsPresent
                 
                 if ~ttacObject.Parameters.ImageSegmentation.CellsToPlotGiven
-                    %Cells to Plot not given so just return all the cells at
-                    %that timepoint
-                    CellIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell,2);
+                   %Cells to Plot not given so just return all the cells at
+                   %that timepoint
+                   % CellIndicesToSegment = 1:size(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cell,2);
+                   %should return the same result but sometimes craps out
+                   %because cell structure has a single entry when things
+                   %as a space filler sometimes
+                   CellIndicesToSegment = find(ttacObject.TimelapseTraps.cTimepoint(Timepoint).trapInfo(TrapIndex).cellLabel ~=0);
                 else
                     CellsToSegment = full(ttacObject.TimelapseTraps.cellsToPlot);
                     LabelsOfCellsToSegment = find(CellsToSegment(TrapIndex,:));
@@ -618,11 +622,11 @@ classdef timelapseTrapsActiveContour<handle
         
         function CellIndices = ReturnCellIndex(ttacObject,Timepoints,TrapIndices,CellLabels)
             % CellIndices = ReturnCellIndex(ttacObject,Timepoint,Trapindex,CellLabel)
-            
+            %
             %returns the index of a cell from it's label,timepoint and
             %trapindex. Returns zero if no cell with those identifiers is
             %present at that timepoint.
-            
+            %
             %Timepoints,Trapindices,CellLabels are all 1 x n vectors.
             
             CellIndices = zeros(size(Timepoints));

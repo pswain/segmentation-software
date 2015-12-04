@@ -1,4 +1,9 @@
 function trackCells(cExperiment,positionsToTrack,cellMovementThresh)
+%trackCells(cExperiment,positionsToTrack,cellMovementThresh)
+%-------------------------------------------------------------
+%uses the trackCells method of timelapseTraps to track identified cells and
+%to populate the field:
+%       timelapseTraps.lineageInfo.motherIndex
 
 if isempty(cExperiment.saveFolder)
     cExperiment.saveFolder=cExperiment.rootFolder;
@@ -25,7 +30,6 @@ end
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
     cTimelapse=loadCurrentTimelapse(cExperiment,experimentPos);
-    %load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     cTimelapse.trackCells(cellMovementThresh);
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;

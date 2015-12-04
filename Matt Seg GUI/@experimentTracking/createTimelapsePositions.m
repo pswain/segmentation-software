@@ -1,11 +1,14 @@
-function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad)
-% createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad)
+function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,magnification,imScale,traps_present)
+% createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,magnification,imScale,traps_present)
 %
 % goes through the folders in the rootDir of cExperiment and creates a
 % timelapseTraps object for each one, instantiating the cTimepoint
 % structure array using the files containing the string searchStrinf (see
 % timelapseTraps.loadTimelapse for details). Any input not provided is
 % defined by GUI.
+%
+% inputs are all those passed to loadTimelapse method of timelapseTraps in
+% creating each timelapse.
 %
 %cExperiment.OmeroDatabase is empty when using a dataset from a file folder
 if ~isempty(cExperiment.OmeroDatabase)
@@ -47,12 +50,28 @@ if nargin<6
     timepointsToLoad=[];
 end
 
+if nargin<7
+    magnification = [];
+end
+
+if nargin<8
+    imScale = 'gui';
+end
+
+if nargin<9
+    traps_present = cExperiment.trapsPresent;
+end
+
+
+
 cExperiment.searchString=searchString;
 cExperiment.pixelSize=pixelSize;
 cExperiment.image_rotation=image_rotation;
 cExperiment.timepointsToLoad=timepointsToLoad;
+cExperiment.magnification = magnification;
+cExperiment.imScale = imScale;
+cExperiment.trapsPresent = traps_present;
 
-traps_present = [];
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);
@@ -61,20 +80,15 @@ for i=1:length(positionsToLoad)
     else
         cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
     end
+
+    cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.imScale);
     
-    %slightly annoying construction because imScale will be set to empty of
-    %imScale is empty - not necessarily desired.
-    if i==1
-        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,traps_present,cExperiment.timepointsToLoad);
-    else
-        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,traps_present,cExperiment.timepointsToLoad,cExperiment.imScale);
-    end
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.imScale=cExperiment.cTimelapse.imScale;
 
     cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
     cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-    traps_present = cExperiment.cTimelapse.trapsPresent;
+    cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
     cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
     
     cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit

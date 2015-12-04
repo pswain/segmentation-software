@@ -59,14 +59,9 @@ for j=1:size(alltraps,3)
         image(:,:,1)=t_im;
     end
     set(cDisplay.subImage(j),'CData',image);
-    if cDisplay.trackOverlay
-        set(cDisplay.subImage(j),'HitTest','on'); %now image button function will work
-    else
-        set(cDisplay.subImage(j),'HitTest','on'); %now image button function will work
-    end
-   
+    set(cDisplay.subImage(j),'HitTest','on'); %now image button function will work
     
-    
+ 
 end
 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint)]);
 

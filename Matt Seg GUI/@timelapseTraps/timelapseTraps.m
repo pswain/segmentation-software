@@ -31,10 +31,16 @@ classdef timelapseTraps<handle
                   % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
                   % empty if there are not traps
         image_rotation % to ensure that it lines up with the cCellVision Model
-        imScale %used to scale down images if needed
-        magnification=60; % magnification of the objective used (exercise caution, changes in magnification is very poorly maintained in the code) 
+        imScale % used to scale down images if needed
+                % this isn't used much so the GUI sets it to a default of
+                % empty.
+        magnification=60; % magnification of the objective used 
                           % used to generate a scaling factor in
                           % segmentCellDisplay/cTrapDisplayProcessing/identifyCellCentres
+                          % (exercise caution, changes in magnification is
+                          % very poorly maintained in the code) and as such
+                          % the experiment Tracking GUI sets it to a default of 60.
+                          
         trapsPresent % a boolean whether traps are present or not in the image
         pixelSize % the real size of pixels in the image (again, exercise caution in changing this)
         cellsToPlot %Array indicating which cells to extract data for. row = trap num, col is cell tracking number
@@ -49,10 +55,15 @@ classdef timelapseTraps<handle
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
-        ErrorModel = {[]};
+        ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
+        extractionParameters = timelapseTraps.defaultExtractParameters;
+        %parameters for the extraction of cell Data, a function handle and
+        %a parameter structure which the function makes use of.
+        
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
+
     end
     
     properties(SetAccess = immutable)
@@ -62,9 +73,13 @@ classdef timelapseTraps<handle
         trapInfoTemplate = struct('segCenters',[],...
             'cell',struct('cellCenter',[],'cellRadius',[],'segmented',[]), ...
         'cellsPresent',0,'cellLabel',[],'segmented',[],'trackLabel',[]);
+        
+    end
     
-        %struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
-        %'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+    properties(Constant)
+    defaultExtractParameters = struct('extractFunction',@extractCellDataStandard,...
+        'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
+    
     end
     
     methods
@@ -160,7 +175,7 @@ classdef timelapseTraps<handle
             for i = 1:numel(FieldNames)
                 
                 m = findprop(cTimelapse,FieldNames{i});
-                if ~strcmp(m.SetAccess,'immutable')
+                if ~ismember(m.SetAccess,{'immutable','none'})
                     cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
                 end
                 
@@ -192,9 +207,7 @@ classdef timelapseTraps<handle
             end
             
             if ~isempty(cTimelapse.ActiveContourObject)
-                if ~isempty(cTimelapse.ActiveContourObject.TimelapseTraps)
                     cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-                end
             end
         end
     end

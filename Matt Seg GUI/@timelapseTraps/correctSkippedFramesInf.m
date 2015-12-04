@@ -1,5 +1,12 @@
 function correctSkippedFramesInf(cTimelapse)
-
+% correctSkippedFramesInf(cTimelapse)
+%
+% strange function from matt, not entirely clear what it does. check if
+% change in xloc is positive before and after a 0 point and then
+% fills in the data using the average of the points either side?
+% why does change in xloc have to be positive in both cases?
+%
+% called in combineTracklets code.
 
 
 for j=1:length(cTimelapse.extractedData)

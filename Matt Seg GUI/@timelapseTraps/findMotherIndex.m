@@ -4,6 +4,7 @@ function motherIndex=findMotherIndex(cTimelapse)
 %1) use the distance to the "center"
 %2) if closest cell is <1/4 of trap dimensions away from it, it is the
 %mother
+%stores the result in cTimelapse.lineageInfo.motherIndex
 
 
 %identify the center of the trap by finding the mode of the x and y

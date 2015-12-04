@@ -1,5 +1,8 @@
-function selectTPToProcess(cExperiment,positionsToCrop)
+function selectTPToProcess(cExperiment,positionsToCrop,tpToProcess)
 % selectTPToProcess(cExperiment,positionsToCrop)
+%
+% tpToprocess  -  an array of timepoints to process. If empty selected by
+%                 GUI. Best if it is continuous (i.e. x:y)
 %
 % sets the timepointsToProcess field of both cExperiment object and all its
 % children cTimelapse objects. also sets their timepointsProcessed field to
@@ -14,10 +17,11 @@ if nargin<2
     positionsToCrop=1:length(cExperiment.dirs);
 end
 
+if nargin<3 || isempty(tpToProcess);
+
 if ~isempty(cExperiment.timepointsToProcess)
-    loc=find(cExperiment.timepointsToProcess);
-    params.framesToCheckStart=loc(1);
-    params.framesToCheckEnd=loc(end);
+    params.framesToCheckStart=(cExperiment.timepointsToProcess(1));
+    params.framesToCheckEnd=cExperiment.timepointsToProcess(end);
 else
     params.framesToCheckStart=1;
     params.framesToCheckEnd=length(cTimelapse.cTimepoint);
@@ -36,16 +40,24 @@ startTP=str2double(answer{1});
 endTP=str2double(answer{2});
 
 cExperiment.timepointsToProcess=startTP:endTP;
-
+else
+    cExperiment.timepointsToProcess= tpToProcess;
+    startTP = min(tpToProcess);
+    endTP = max(tpToProcess);
+end
 cExperiment.saveExperiment();
 
 for i=1:length(positionsToCrop)
     currentPos=positionsToCrop(i);
-    cExperiment.cTimelapse=cExperiment.returnTimelapse(currentPos);
-    cExperiment.cTimelapse.timepointsToProcess = cExperiment.timepointsToProcess;
+    cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
+    cTimelapse.timepointsToProcess = cExperiment.timepointsToProcess;
     % set any elements of the timepointsProcessed field outside the range
-    % of timepoints to be processed to false
-    cExperiment.cTimelapse.timepointsProcessed(~ismember(1:length(cExperiment.cTimelapse.timepointsProcessed),cExperiment.cTimelapse.timepointsToProcess)) = false;
+    % of timepoints to be processed to false. and ensure its length is
+    % endTP.
+    cTimelapse.timepointsProcessed(end+1:endTP) = false;
+    cTimelapse.timepointsProcessed(endTP+1:end) = [];
+    cTimelapse.timepointsProcessed(~ismember(1:length(cTimelapse.timepointsProcessed),cTimelapse.timepointsToProcess)) = false;
+    cExperiment.cTimelapse = cTimelapse;
     cExperiment.saveTimelapseExperiment(currentPos);   
     clear cTimelapse;
 end

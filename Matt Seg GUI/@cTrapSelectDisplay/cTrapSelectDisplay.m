@@ -31,7 +31,11 @@ classdef cTrapSelectDisplay<handle
 
     methods
         function cDisplay=cTrapSelectDisplay(cTimelapse,cCellVision,timepoint,channel,ExclusionZones)
-            
+            % cDisplay=cTrapSelectDisplay(cTimelapse,cCellVision,timepoint,channel,ExclusionZones)
+            %
+            % automatically find traps at timepoint and remove those in
+            % Exclusion zones (unless thewy were already in the timelapse),
+            % then show a GUI interface to correct the result.
             if isempty(cCellVision.cTrap)
                 errordlg('This cCellVision Model was made to work for timelapses without traps');
                 return;
@@ -93,7 +97,7 @@ classdef cTrapSelectDisplay<handle
                     [[cDisplay.trapLocations(:).xcenter]' [cDisplay.trapLocations(:).ycenter]'],'rows');
             
                 for trapi = TrapsToPutBack'
-                    cDisplay.trapLocations(end+1) = cTimelapse.cTimepoint(timepoint).trapLocations(trapi);
+                    cDisplay.trapLocations(end+1) = PreExistingTrapLocations(trapi);
                 end
             end
             

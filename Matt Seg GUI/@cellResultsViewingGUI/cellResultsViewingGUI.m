@@ -63,7 +63,10 @@ classdef cellResultsViewingGUI<handle
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
                 
-                
+                if ~isfield(cExperiment.cellInf,'extractionParameters')...
+                        | ~isfield(cExperiment.cellInf(1).extractionParameters,'functionParameters') ...
+                        | ~isfield(cExperiment.cellInf(1).extractionParameters.functionParameters,'channels')
+                    
                 dialog_struct = struct('title','Data Channel Assignment',...
                     'Description',['Please select which channels each dataset in the cellInf array corresponds to']);
                 for ci = 1:length(cExperiment.cellInf)
@@ -88,6 +91,13 @@ classdef cellResultsViewingGUI<handle
                     
                     CellResGUI.ChannelDataCode{channeli} = settings.(sprintf('sc%d',channeli));
                     
+                end
+                else
+                    if strcmp(cExperiment.cellInf(1).extractionParameters.functionParameters.channels,'all')
+                        CellResGUI.ChannelDataCode = cExperiment.cTimelapse.channelNames;
+                    else
+                        CellResGUI.ChannelDataCode = cExperiment.cTimelapse.channelNames(cExperiment.cellInf(1).extractionParameters.functionParameters.channels);
+                    end
                 end
  
             else

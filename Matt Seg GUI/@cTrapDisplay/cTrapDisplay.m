@@ -14,14 +14,11 @@ classdef cTrapDisplay<handle
         subImage = []; 
         subAxes=[];
         slider = [];
-        pause_duration=[];
         cTimelapse=[]
         traps=[];
         channel=[]
         cCellVision=[];
         trackOverlay=[]; %boolean. stores overlay input and determines whether to color cells by label.
-        tracksDisplayBox=[]; %remove??
-        trapNum; % remove???
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = [];%stores value of key being held down while it is pressed
         
@@ -111,10 +108,9 @@ classdef cTrapDisplay<handle
                         break;
                     end
                     cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*3 t_width t_height]);
-                    cDisplay.trapNum(index)=traps(index);
                     cDisplay.subImage(index)=subimage(image(:,:,i));
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
-                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
+                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.traps(index))); % Set the motion detector.
                     set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     
                     index=index+1;
