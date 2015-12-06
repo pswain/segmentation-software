@@ -41,9 +41,12 @@ else
         %Update existing file
         faIndex=find(faIndex);
         faIndex=faIndex(1);
+        disp(['Uploading modified file ' expFileName]);
         fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(faIndex), [cExperiment.saveFolder filesep expFileName]);
     else
         %Save a new cExperiment file
+        disp(['Uploading file ' expFileName]);
+
         if ismac
             if ~strcmp(cExperiment.saveFolder,'/')
                 if ~strcmp(cExperiment.saveFolder,'\')
@@ -69,8 +72,10 @@ else
         faIndex=find(faIndex);
         if ~isempty(faIndex)
             faIndex=faIndex(1);
+            disp(['Uploading file cCellVision_' cExperiment.rootFolder '.mat']);
             fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), visFilePath);
         else%The file is not yet attached to the dataset
+            disp(['Uploading file cCellVision_' cExperiment.rootFolder '.mat']);
             cExperiment.OmeroDatabase.uploadFile(visFilePath, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
         end
     end

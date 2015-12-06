@@ -22,16 +22,17 @@ classdef experimentTrackingGUI<handle
         cropTimepointsButton
         identifyCellsButton
         extractSegAreaFlButton
-        processIndTimelapseButton
         editProcessedTimelapseButton
         trackCellsButton
         combineTrackletsButton
+        extractBirthsButton
         
         autoSelectButton
         selectButton
         extractDataButton
         compileDataButton
         RunActiveContourButton
+        editSegmentationButton
         
         openCellResButton
         currentGUI;
@@ -109,7 +110,7 @@ classdef experimentTrackingGUI<handle
             cExpGUI.combineTrackletsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Combine Tracks',...
                 'Units','normalized','Position',[.755 .55 .22 .15],'Callback',@(src,event)combineTracklets(cExpGUI));
 
-             cExpGUI.editProcessedTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
+             cExpGUI.editSegmentationButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
                 'Units','normalized','Position',[.505 .45 .47 .1],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
             cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
@@ -132,7 +133,9 @@ classdef experimentTrackingGUI<handle
             %,'BackgroundColor',[.6 .6 .6]
             cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
                 'Units','normalized','Position',[.505 .25 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
-            
+            cExpGUI.extractBirthsButton=uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract births info',...
+                'Units','normalized','Position',[.505 .45 .47 .10],'Callback',@(src,event)extractBirths(cExpGUI),'TooltipString','Extract data on budding events undergone by mother cells');
+
             
         end
 

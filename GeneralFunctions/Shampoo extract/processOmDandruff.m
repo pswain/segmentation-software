@@ -1,4 +1,5 @@
 cExperiment.compileCellInformation;
+%START HERE
 params.motherDurCutoff=180;
 params.motherDistCutoff=8;
 params.budDownThresh=0;
