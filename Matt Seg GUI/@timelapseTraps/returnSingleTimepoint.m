@@ -28,6 +28,9 @@ loc= ~cellfun('isempty',fileNum);
 % rootfolder
 loc= cellfun('length',fileNum);
 loc=loc>=max(loc);
+if channel>1
+    loc(1)=0;
+end
 if sum(loc)>0
     file=cTimelapse.cTimepoint(timepoint).filename{loc};
     
