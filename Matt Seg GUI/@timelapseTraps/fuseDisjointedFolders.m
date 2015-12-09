@@ -1,4 +1,7 @@
 function fuseDisjointedFolders(cTimelapse,newFolder)
+% Elco - not sure what this function does.Looks like it adds timepoints
+% from one folder to a timelapse made in another folder. Probably doesn't
+% work very well anymore and should probably be ignored.
 
 if nargin<2
     newFolder=uigetdir(cTimelapse.timelapseDir,'Please Select the directory you want to add to this one');

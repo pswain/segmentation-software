@@ -1,4 +1,18 @@
 classdef cTrapSelectDisplay<handle
+% cTrapSelectDisplay
+%
+% a GUI used for identifying the traps in an image at a single timepoint
+% and user curation of the result. A single timepoint is provided and the
+% traps identified at that timpoint by the method
+%
+%   identifyTrapLocationsSingleTP
+%
+% This method always uses channel 1 of the cTimelapse to identify the
+% traps.
+% The user then adds and removes traps by left and right clicks on the
+% image respectively (selected traps are shown as a brighter square) and
+% the result is stored at the given timepoint of the cTIimslapse object
+% used to instantiate the object.
     properties
         figure = [];
         imHandle = [];
@@ -10,17 +24,20 @@ classdef cTrapSelectDisplay<handle
         cCellVision=[];
         channel=[];
         ExclusionZones = []; %zones in which to not look for traps automatically stored as 4 vector [xStart1 yStart1 xend1 yend1;xStart2 yStart2 xend2 yend2]
+                             %traps in these zones before the GUI is
+                             %initialised will not be removed.
         
         cc %cross correlation from identifyTrapLocationsSingleTP. Storing this prevents having to recalculate it each time the user adds or removes a trap. Much faster
         wholeIm %the whole image from returnSingleTimepoint so that each click doesn't require reloading the image
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+
     methods
         function cDisplay=cTrapSelectDisplay(cTimelapse,cCellVision,timepoint,channel,ExclusionZones)
-            
+            % cDisplay=cTrapSelectDisplay(cTimelapse,cCellVision,timepoint,channel,ExclusionZones)
+            %
+            % automatically find traps at timepoint and remove those in
+            % Exclusion zones (unless thewy were already in the timelapse),
+            % then show a GUI interface to correct the result.
             if isempty(cCellVision.cTrap)
                 errordlg('This cCellVision Model was made to work for timelapses without traps');
                 return;
@@ -82,7 +99,7 @@ classdef cTrapSelectDisplay<handle
                     [[cDisplay.trapLocations(:).xcenter]' [cDisplay.trapLocations(:).ycenter]'],'rows');
             
                 for trapi = TrapsToPutBack'
-                    cDisplay.trapLocations(end+1) = cTimelapse.cTimepoint(timepoint).trapLocations(trapi);
+                    cDisplay.trapLocations(end+1) = PreExistingTrapLocations(trapi);
                 end
             end
             
@@ -91,14 +108,24 @@ classdef cTrapSelectDisplay<handle
             im_mask=cDisplay.image;
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
             cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
-%             cDisplay.subImage(index)=subimage(image);
-            %                     colormap(gray);
-            %                     set(cDisplay.subAxes(index),'CLimMode','manual')
+            
+            if ~isempty(cTimelapse.omeroImage)
+                figHandle=get(cDisplay.axesHandle,'Parent');
+                set(figHandle,'Name',char(cTimelapse.omeroImage.getName.getValue));
+            end
+            
             set(cDisplay.imHandle,'ButtonDownFcn',@(src,event)addRemoveTraps(cDisplay)); % Set the motion detector.
             set(cDisplay.imHandle,'HitTest','on'); %now image button function will work
         end
         
         function addRemoveTraps(cDisplay)
+        % addRemoveTraps(cDisplay)
+        % 
+        % function add and remove traps from cTimelapse. If SelectionType is
+        % 'alt' this is a right click and the trap is removed, if not then
+        % it is a left click and it is added. In both cases the
+        % identifyTrapLocationsSingleTP method of timelapseTraps is used to
+        % fix the location of the traps and produce the overlap image.
             cp=get(cDisplay.axesHandle,'CurrentPoint');
             cp=round(cp);
             Cx=cp(1,1);
@@ -121,7 +148,6 @@ classdef cTrapSelectDisplay<handle
                 [cDisplay.trapLocations trap_mask ]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc,cDisplay.wholeIm);
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-%                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
                 set(cDisplay.imHandle,'CData',im_mask);
                 set(cDisplay.axesHandle,'CLim',[min(im_mask(:)) max(im_mask(:))])
 
@@ -133,7 +159,6 @@ classdef cTrapSelectDisplay<handle
                 [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations),cDisplay.cc,cDisplay.wholeIm);
                 im_mask=cDisplay.image;
                 im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-%                 cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
                 set(cDisplay.imHandle,'CData',im_mask);
                 set(cDisplay.axesHandle,'CLim',[min(im_mask(:)) max(im_mask(:))])
                 

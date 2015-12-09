@@ -1,5 +1,7 @@
 function extractNucAreaFL(cTimelapse, channelStr, type,flThresh)
-
+% extractNucAreaFL(cTimelapse, channelStr, type,flThresh)
+% 
+% written by Matt, no idea.
 if nargin<3
     type='sum';
 end

@@ -1,4 +1,52 @@
-function d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
+function d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+% d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
+%
+% - calculates the decision image - the image in which negative pixels
+%   indicate a pixel likely to be a cell centre 
+% - resets the trapInfo field  cTimelapse.cTimepoint(timepoint).trapInfo(trap) to be blank with
+%   segCentres populated with a sparse logical array of the areas under the
+%   two stage threshold.
+% 
+% cTimelapse    :   object of the timelapseTraps class
+% cCellVision   :   object of the cellVision class
+% timepoint     :   timepoint at which the segmentation is occurring.
+%                   defaults to 1.
+% trap          :   array of indices of traps at which segmentation should
+%                   be performed. defaults to 1.
+% image         :   optional. cell array of stacks of images to be used in
+%                   the segmentation procedure. Exact size of cell array
+%                   and images is different depending on the
+%                   cCellVision.method, but defaults to the output from 
+%                   cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.method)
+%                   and it should follow the convention given in that
+%                   method.
+%                   
+% old_d_im      :   optional. The decision image from the previous
+%                   timepoint, which if provided is smoothed with a
+%                   gaussian transform and then 1/6th added to the
+%                   calculated decision image to try and provide temporal
+%                   information. defaults to zeros of appropriate size.
+%
+% Behaviour is dependent on cCellVision.method, but basically amounts to
+% running the same function either in a parfor loop over individual trap
+% image stacks (if method is 'linear' or 'twostage') or running the
+% segmentation outside a for loop over the whole image ('wholeIm') or over
+% a strip of trap image ('wholeTrap')
+% This affects the size of the decision image (d_im) returned but does not
+% affect the way the segCentres field is populated. 
+%
+% these methods will be differentially efficient depending on the way the
+% transformed image is calculated. 
+%
+% The decision image is also smoothed with a gaussian before being
+% returned, and if the magnification of the cTimelapse and the cCellVision
+% are different it will also be a different size from the input image, as
+% will the segCentres field.
+%
+% Also populates the:
+%       cCellVision.cTrap.currentTpOutline=trapOutline
+% field with the logical trapOutline (filled) of all the trap pixels in the
+% image. Important for the wholeIm/wholeTrap methods.
 
 if nargin<3
     timepoint=1;
@@ -9,14 +57,13 @@ if nargin<4
 end
 
 
-if nargin<5 ||isempty(trap_image)
-    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint);
-else
-    image=trap_image;
+if nargin<5 ||isempty(image)
+    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.method);
+
 end
 
 if cCellVision.magnification/cTimelapse.magnification ~= 1
-image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
+    image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
 end
 
 if nargin<6 || isempty(old_d_im)
@@ -24,28 +71,38 @@ if nargin<6 || isempty(old_d_im)
 end    
 
 
-% This goes through all images of the traps to determine the min/max
-% intensity value and the best threshold to use for all traps
 switch cCellVision.method
-    case 'medfilt2'
-        fluorescence_medfilt(cTimelapse,timepoint,trap,image,old_d_im);
-    case 'linear'
-        [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
-    case 'twostage'
-        [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
-    case 'wholeIm'
-        [d_im bw]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
-
+    case {'linear','twostage'}
+        [d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
+    case {'wholeIm','wholeTrap'}
+        [d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
 end
 
 end
 
 
 
-function [d_im bw]=linear_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+function [d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+%[d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+%
+% This function now does both linear and two stage segmentation.
+% The decision image (an image of the likliness of each pixel to be a cell
+% centre - lower values being more likely - is calculated for each trap
+% using the classifyImage2Stage method of cCellVision.
+% This method does linear or two stage classification depending whether the
+% cCellVision model is capable of two stage classification.
+%
+% A number of post processing steps are then performed:
+%       - dilation with a gaussian filter
+%       - addition of the one sixth of the old_d_im, after gaussian
+%         filtering. this is to try and include temporal information.
+%
+% This is filtered using the twoStageThresh of cCellVision and stored in
+% the trapInfo structure in segCentres. this is used for the cell
+% identification by the identifyCellObjects method.
+
 % This preallocates the segmented images to speed up execution
-tPresent=cTimelapse.trapsPresent;
-new_dim=zeros(size(old_d_im));
+d_im=zeros(size(old_d_im));
 
 if cTimelapse.trapsPresent
     trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
@@ -53,193 +110,95 @@ else
     trapOutline = false(size(image{1},1),size(image{1},2));
 end
 
-%fprintf('change back to parfor  - line 56 identifyCellCentresTrap\n')
-parfor k=1:length(trap) %CHANGE BACK to PARFOR
-    [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline);
-    
-    % combined_d_im=d_im+old_d_im/5;
-    if cTimelapse.magnification<100
-        t_im=imfilter(d_im,fspecial('gaussian',4,1.1),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',3,1))/6; %
-        bw=t_im<cCellVision.twoStageThresh;
-        new_dim(:,:,k)=d_im;
-    else
-        t_im=imfilter(d_im,fspecial('disk',4),'symmetric'); %+imfilter(old_d_im,fspecial('gaussian',3,1))/6; %
-        bw=t_im<cCellVision.twoStageThresh;
-        if ~cTimelapse.trapsPresent
-            bw=imerode(bw,strel('disk',2));
-        end
-    end
-    segCenters{k}=sparse(bw>0); 
-end
+%calculate the decisions image, do some transformations on it, and
+%threshold it to give segCentres.
 
-for k=1:length(trap)
-    j=k;
-    data_template = sparse(zeros(size(image{j},1),size(image{j},2))>0);
-    if tPresent
-        cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-            'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-    else
-        cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',data_template,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=data_template;
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
-    end
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=segCenters{k};
-end
-d_im=new_dim;
-bw=1;
-end
-
-
-function [d_im bw]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-% This preallocates the segmented images to speed up execution
-tPresent=cTimelapse.trapsPresent;
-new_dim=zeros(size(old_d_im));
-
-if cTimelapse.trapsPresent
-    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
-else
-    trapOutline = false(size(image{1},1),size(image{1},2));
-end
-
-%fprintf('not parfor!!!\n')
+%uncomment when you change parfor to for for debugginf
+%fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
 parfor k=1:length(trap) %CHANGE BACK TO parfor
-    [p_im d_im]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
-    new_dim(:,:,k)=d_im;
-    t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %  
+    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
+    d_im(:,:,k)=d_im_temp;
+    t_im=imfilter(d_im_temp,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5;  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
 
+cCellVision.cTrap.currentTpOutline=trapOutline>0;
+
+
+% store the segmentation result (segCenters) in the cTimelapse object.
 for k=1:length(trap)
-    j=k;
-    data_template = sparse(zeros(size(image{j},1),size(image{j},2))>0);
-    if tPresent
-        if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
-            cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-            'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-        end
-        cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-            'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
+    if cTimelapse.trapsPresent
+    data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
     else
-        cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',data_template,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=data_template;
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
+    data_template = sparse(zeros(size(image{k},1),size(image{k},2))>0);
     end
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=segCenters{k};
+    if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
+        cTimelapse.cTimepoint(timepoint).trapInfo = cTimelapse.createTrapInfoTemplate(data_template);
+    end
+    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
+    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
 end
-d_im=new_dim;
-bw=1;
 end
 
-function [d_im bw]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-% This preallocates the segmented images to speed up execution
+
+function [d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+%[d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+%
+% handles two types of cCellVision.method : wholeIm and wholeTrap. 
+%
+% In the case of wholeIm the whole image is used and the trap pixels
+% constructed accordingly using returnWholeTrapImage method of cTimelapse.
+%
+% In the case of wholeTrap the trap images are arranged in a strip and the
+% segmented all together. The trapOutline is constructed accordingly as a
+% strip of trap outline images. This may produce funny results if a half
+% cell from one trap causes a low decision image values in an adjacent
+% trap.
+%
+% wholeIm method is probably not recommended if traps are present since a
+% large number of trapPixels (untracked traps) will still be present.
+%
+% the same post processing steps of gaussian smoothing and population of
+% the:
+%       cTimelapse.cTimepoint(timepoint).cTrapInfo(trap).segCentres 
+% field are performed as above, and the cCellVision.method does not affect
+% the size of this stored segCentres.
 tPresent=cTimelapse.trapsPresent;
-% bb=max(size(new_dim));
-% trapCenters=zeros([2*bb+size(old_d_im,1) 2*bb+size(old_d_im,2)]);
-% trapCentersNum=zeros([2*bb+size(old_d_im,1) 2*bb+size(old_d_im,2)]);
-% for k=1:length(trap)
-%     trapCenters(round(cTimelapse.cTimepoint(timepoint).trapLocations(k).ycenter)+bb,round(cTimelapse.cTimepoint(timepoint).trapLocations(k).xcenter)+bb)=1;
-% end
-% tempTrap=zeros(size(cCellVision.cTrap.trapOutline));
-% tempTrap(ceil(size(tempTrap,1)),ceil(size(tempTrap,2)))=1;
-trapOutline=repmat(cCellVision.cTrap.trapOutline,[1 length(trap)]);
-currentTpOutline=trapOutline;
-% dilateOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
-% trapSquare=ones(size(cCellVision.cTrap.trapOutline));
-% 
-% trapOutline=conv2(trapCenters,single(dilateOutline),'same');  
-% trapEdges=conv2(trapCenters,ones(size(cCellVision.cTrap.trapOutline)),'same');
-% currentTpOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
-% trapOutline(trapEdges==0)=1;
-% trapOutline=trapOutline(bb+1:bb+size(old_d_im,1),bb+1:bb+size(old_d_im,2));
+if tPresent
+    if strcmp(cCellVision.method,'wholeTrap')
+        trapOutline=repmat(cCellVision.cTrap.trapOutline,[1 length(trap)]);
+    elseif strcmp(cCellVision.method,'wholeIm')
+        trapOutline = cTimelapse.returnWholeTrapImage(cCellVision,timepoint);
+    else
+        error('cCellVision.method should one of {wholeIm  wholeTrap linear twostage}');
+    end
+else
+    trapOutline = zeros(cTimelapse.imSize);
+end
 
-cCellVision.cTrap.currentTpOutline=currentTpOutline>0;
+trapOutline = trapOutline>0;
+cCellVision.cTrap.currentTpOutline=trapOutline;
 
-k=1;
-[p_im d_im]=cCellVision.classifyImage2StageWhole(image{k},trapOutline>0);
-% [p_im d_im]=cCellVision.classifyImageLinear(image{k},trapOutline>0);
+[~,d_im]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
 
-new_dim=d_im;
-t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5; %
+t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im,fspecial('gaussian',4,2),'symmetric')/5; %
 bw=t_im<cCellVision.twoStageThresh;
 segCenters=cTimelapse.returnTrapsFromImage(bw,timepoint,trap);
 
+% store the segmentation result (segCenters) in the cTimelapse object.
 for k=1:length(trap)
-
-    j=k;
-    data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
     if tPresent
-        if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
-            cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-            'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-        end
-        cTimelapse.cTimepoint(timepoint).trapInfo(j)=struct('segCenters',data_template,'cell',struct('cellCenter',[],'cellRadius',[],'segmented',data_template), ...
-            'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
+    data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
     else
-        cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',data_template,'cell',[],'cellsPresent',0,'cellLabel',[],'segmented',data_template,'trackLabel',data_template);
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellCenter=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.cellRadius=[];
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cell.segmented=data_template;
-        cTimelapse.cTimepoint(timepoint).trapInfo(1).cellsPresent=0;
+    data_template = sparse(zeros(size(image{k},1),size(image{k},2))>0);
     end
-    cTimelapse.cTimepoint(timepoint).trapInfo(j).segCenters=sparse(segCenters(:,:,j)>0);
-end
-d_im=new_dim;
-bw=1;
+    if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
+        cTimelapse.cTimepoint(timepoint).trapInfo = cTimelapse.createTrapInfoTemplate(data_template);
+    end
+    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
+    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters(:,:,k);
 end
 
-
-
-
-
-
-
-function fluorescence_medfilt(cTimelapse,traps,channel,old_d_im)
-        if length(traps)<11
-        trapTimelapse=cTimelapse.returnTrapsTimelapse(traps,channel);
-        trapTimelapse=double(trapTimelapse);
-        %     minTrapTimelapse=min(trapTimelapse(:));
-        maxTrapTimelapse=max(trapTimelapse(:));
-        % trapTimelapse=trapTimelapse-minTrapTimelapse;
-        trapTimelapse=trapTimelapse/maxTrapTimelapse;
-        thresh=graythresh(trapTimelapse(:));
-    else
-        trapTimelapse=cTimelapse.returnTrapsTimelapse(traps(1:10),channel);
-        trapTimelapse=double(trapTimelapse);
-        minTrapTimelapse=min(trapTimelapse(:));
-        maxTrapTimelapse=max(trapTimelapse(:));
-        % trapTimelapse=trapTimelapse-minTrapTimelapse;
-        trapTimelapse=trapTimelapse/maxTrapTimelapse;
-        thresh=graythresh(trapTimelapse(:));
-    end
-    
-    % This preallocates the segmented images to speed up execution
-    image=cTimelapse.returnSingleTrapTimepoint(traps(1),1,channel);
-    for j=1:length(traps)
-        cTimelapse.cTrapsLabelled(traps(j)).segmented=zeros(size(image,1),size(image,2),length(cTimelapse.cTrapsLabelled(traps(j)).timepoint))>0;
-    end
-    
-    % This uses the threshold to
-    imf=fspecial('disk',3);
-    for i=1:length(cTimelapse.cTrapsLabelled(traps(1)).timepoint)
-        disp(['Timepoint ',int2str(i)])
-        
-        image=cTimelapse.returnTrapsTimepoint(traps,i,channel);
-        image=double(image);
-        %     image=image-minTrapTimelapse;
-        image=image/maxTrapTimelapse;
-        for j=1:size(image,3)
-            temp_im=image(:,:,j);
-            temp_im=imfilter(temp_im,imf);
-            % temp_im=medfilt2(temp_im);
-            bw=im2bw(temp_im,thresh*1);
-            %         figure(1);imshow(bw,[]);pause(.1);
-            cTimelapse.cTrapsLabelled(traps(j)).segmented(:,:,i)=bw>0;
-            %         cTimelapse.cTrapsLabelled(traps(j)).segmented(:,:,i)=cCellVision.segment(image(:,:,j));
-        end
-    end
 end
+

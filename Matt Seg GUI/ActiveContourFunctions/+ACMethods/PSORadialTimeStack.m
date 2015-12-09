@@ -388,13 +388,8 @@ if visualise>=3
         pause
         close(figure_handle_2)
     end
-<<<<<<< HEAD
-else
-    drawnow;
-=======
 elseif visualise>=1
-    pause(0.1)
->>>>>>> b76012856906a08b4b9af022677149dd6cc83af2
+    drawnow;
 end
 
 

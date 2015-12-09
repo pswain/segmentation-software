@@ -55,8 +55,7 @@ end
 if strcmp(button,'OK')
     for i=1:length(positionsToAlter)
         currentPos=positionsToAlter(i);
-        load([cExperiment.saveFolder '/' cExperiment.dirs{currentPos},'cTimelapse']);
-        
+        cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
         cTimelapse.channelsForSegment = channels_for_segment;
         
         cExperiment.cTimelapse=cTimelapse;

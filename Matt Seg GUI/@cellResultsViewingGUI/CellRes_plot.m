@@ -34,10 +34,11 @@ if sum(cell_data_index == 1)
     set(p,'MarkerFaceColor',get(p,'Color'));
     
     % mother plotting stuff
-    
+    if ~isempty(CellResGUI.cExperiment.lineageInfo)
     cell_mother_index = (CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum == cell_position) &...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap == trap_number) & ...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
+
               if any(cell_mother_index)
                   
                   switch CellResGUI.birthTypeUse
@@ -67,6 +68,7 @@ if sum(cell_data_index == 1)
                   end
                   
               end
+    end
     
     
     hold off

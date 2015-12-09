@@ -7,11 +7,10 @@ function setChannelOffset(cExperiment,positionsToExtract,offset)
 
 if nargin<2
     positionsToExtract=1:length(cExperiment.dirs);
-%     positionsToTrack=1:length(cExperiment.dirs);
 end
 
 if nargin<3
-    load([cExperiment.saveFolder '/' cExperiment.dirs{1},'cTimelapse']);
+    cTimelapse = cExperiment.loadCurrentTimelapse(positionsToExtract(1));
 
     num_lines=1;
     dlg_title = 'ChannelOffsets?';
@@ -27,10 +26,9 @@ if nargin<3
     end
 end
 
-%% Run the tracking on the timelapse
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder filesep cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse = cExperiment.loadCurrentTimelapse(experimentPos);
     %
     cTimelapse.offset=offset;
 

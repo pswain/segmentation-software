@@ -1,5 +1,39 @@
 function extractSegAreaFl(cTimelapse, channelStr, type,replaceOldSegmented)
-
+% extractSegAreaFl(cTimelapse, channelStr, type,replaceOldSegmented)
+%
+% cTimelapse            :   object of the timelapseTraps class
+% channelStr            :   string of which channel to use for getting
+%                           fluorescent area - should be one of those in
+%                           cTimelapse.channelNames
+% type                  :   type to handle stacks passed to returnTrapsTimepoint (min/max/std)
+% replaceOldSegmented   :   boolean :
+%                           true - replace the cell outline
+%                           with the one found from this method running
+%                           active contour method on fluorescent image.
+%                           false - keep original cell outline and just
+%                           calculate radiusFL.
+%
+% The method was written by Matt and I don't follow all the steps(Elco) it
+% applies the matlab activecontour function with chan Vese method to the
+% fluorescent images specified by channelStr to get an active contour outline.
+% Depending on the value of replaceOldSegmented it will replace the outline
+% with the trapInfo.cell.segmented with the one found or simply fill in the
+% radiusFL field of cell, which is taken to be a more reliable estimate of
+% size. 
+%
+% applies some other heuristics such as checking the overlap between old
+% and new segmentations is above a threshold before replacing. Check code
+% for more details.
+%
+% It also resets cTimelapse.offset to zero, so if you are using a channel
+% for the segmentation that is not aligned with a channel you wish to
+% extract you will need to reset cTimelapse.offset
+% this is particularly strange since it doesn't do this before doing the
+% chan vese - so I would guess it would offset the image relative to its
+% own image.
+%
+% only runs on cellsToPlot - so cells need to be selected before running
+% the method.
 
 if nargin<3
     type='max';
@@ -21,18 +55,6 @@ end
 
 if nargin<4 
     replaceOldSegmented=true;
-end
-
-switch type
-    case 'all'
-        numStacks=3;
-    case 'max'
-        numStacks=1;
-    case 'mean'
-        numStacks=1;
-        
-    case 'std'
-        numStacks=1;
 end
 
 
@@ -135,7 +157,7 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
                         
                         % get the segmented area
                         if min(size(bwCirc.radii))>0
-                            [seg oldSeg]= returnSegmentedArea(im,bw{trapIndex},cc,circen,cirrad,bwCirc);
+                            [seg, oldSeg]= returnSegmentedArea(im,bw{trapIndex},cc,circen,cirrad,bwCirc);
                         else
                             seg=[];
                         end

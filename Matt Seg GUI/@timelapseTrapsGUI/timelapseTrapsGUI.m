@@ -1,4 +1,9 @@
 classdef timelapseTrapsGUI<handle
+    % timelapseTrapsGUI
+    %
+    % for editing individual timelapse. Not as well maintained as the
+    % experimentTrackingGUI so better to use that one with a single
+    % position selected.
     properties
         figure = [];
         timelapsePanel

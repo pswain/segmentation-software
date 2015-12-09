@@ -1,4 +1,22 @@
 function automaticSelectCells(cTimelapse,params)
+% automaticSelectCells(cTimelapse,params)
+% ----------------------------------------------------------
+% automatically select cells to populate cTimelapse.cellsToPlot based on a
+% number of criterion encapsulated in params (which are chosen by GUI if
+% not provided). cellsToPlot is a sparse matrix with a 1 at 
+% (trapNUM,cellLabel) when a cell in trap trapNUM and with label
+% cellLabel meets the criteria specified by params.
+%
+% param fields:
+%   params.fraction      -   fraction cells must be present
+%     params.duration      -   duration for which cell must be present (same as above but number)
+%     params.framesToCheck      -   cells must appear in first X frames
+%     params.framesToCheckEnd      -   cells must be present in last X frames
+%     params.maximumNumberOfCells      -   limit to this number of cells (handy if curating).
+%
+% used for selecting cells to extract data for and also in the
+% combineTracklets code. 
+
 
 if isempty(cTimelapse.timepointsProcessed)
     tempSize=[cTimelapse.cTimepoint.trapInfo];
@@ -27,11 +45,11 @@ if nargin<2
     def(4) = {num2str(params.framesToCheckEnd)};
     def(5) = {num2str(params.maximumNumberOfCells)};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
-    params.fraction=str2double(answer{1});
-    params.duration=str2double(answer{2});
-    params.framesToCheck=str2double(answer{3});
-    params.framesToCheckEnd=str2double(answer{4});
-    params.maximumNumberOfCells = str2double(answer{5});
+    params.fraction=str2double(answer{1}); %fraction cells must be present
+    params.duration=str2double(answer{2}); %duration for which cell must be present (same as above but number)
+    params.framesToCheck=str2double(answer{3}); % cells must appear in first X frames
+    params.framesToCheckEnd=str2double(answer{4}); % cells must be present in last X frames
+    params.maximumNumberOfCells = str2double(answer{5}); % limit to this number of cells (handy if curating).
 end
 
 cTimelapse.cellsToPlot(:)=0;
@@ -48,16 +66,16 @@ cTimelapse.cellsToPlot=zeros(length(cTimelapse.cTimepoint(cTimelapse.timepointsT
 cTimepoint=cTimelapse.cTimepoint;
 for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
     disp(['Trap Number ' int2str(trap)]);
-    cellLabels=zeros(1,100*sum(cTimelapse.timepointsProcessed));
-    cellLabelsEnd=zeros(1,100*sum(cTimelapse.timepointsProcessed));
-    cellsSeen=[];
+    cellLabels=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel upto timepoint params.framesToCheck
+    cellLabelsEnd=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel after timepoint params.framesToCheckEnd
+    cellsSeen=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel before timepoint params.framesToCheckEnd
     index=0;
     for timepoint=cTimelapse.timepointsToProcess
         if cTimelapse.timepointsProcessed(timepoint)
             tempLabels=cTimepoint(timepoint).trapInfo(trap).cellLabel;
             cellLabels(1,index+1:index+length(tempLabels))=tempLabels;
             if timepoint<=params.framesToCheck
-                cellsSeen=max(cellLabels);
+                cellsSeen(1,index+1:index+length(tempLabels))=tempLabels;
             end
             if timepoint>=params.framesToCheckEnd
                 cellLabelsEnd(1,index+1:index+length(tempLabels))=tempLabels;
@@ -65,23 +83,26 @@ for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapI
             index=index+length(tempLabels);
         end
     end
-    tempLabels=cellLabels(1:index);
-%     cellLabelsEnd=cellLabelsEnd(1:index);
+    cellLabels=cellLabels(1:index);
     cellLabelsEnd(cellLabelsEnd==0)=[];
-    cellLabels=tempLabels;
+    cellsSeen(cellsSeen==0) = [];
+    
+    % tabulate the number of times (and therefore timepoints) each
+    % cell label occurs. n(1) is an artifact of the hist call and is
+    % removed.
     n=hist(cellLabels,0:max(cellLabels));
     if ~isempty(n)
         n(1)=[];
-        nEnd=hist(cellLabelsEnd,0:max(cellLabels));
-        nEnd(1)=[];
-        cellsSeenEnd=min(cellLabelsEnd);
-        
-        n(nEnd<1)=0;
     end
+    cellsSeen = unique(cellsSeen);
+    cellLabelsEnd = unique(cellLabelsEnd);
     locs=find(n>=sum(cTimelapse.timepointsProcessed)*params.fraction | n>=params.duration);
     
     if ~isempty(cellsSeen) && ~isempty(locs)
-        locs=locs(locs<=cellsSeen);
+        % pick out those cells (locs) that are in both cellSeen (those
+        % cells in the first n timepoints) and cellLabelEnd (those in the
+        % last m timepoints).
+        locs=locs(ismember(locs,intersect(cellsSeen,cellLabelsEnd)));
         if length(locs)>cellsLeft
             locs = locs(1:cellsLeft);
             cellsLeft = 0;

@@ -1,4 +1,6 @@
 function compileCellInformationParamsOnly(cExperiment,positionsToExtract)
+% has been superceded by compileCellInformation which is now general. Left
+% in because I couldn't be sure matt didn't still use it.
 
 %method is either 'overwrite' or 'update'. If overwrite, it goes through
 %all of the cellsToPlot and extracts the information from the saved
@@ -15,13 +17,15 @@ end
 
 %% Run the tracking on the timelapse
 experimentPos=positionsToExtract(1);
-load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+cTimelapse=cExperiment.returnTimelapse(experimentPos);
+%load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
 cExperiment.cellInf=struct(cTimelapse.extractedData);
 % [cExperiment.cellInf(:).posNum]=[];
 [cExperiment.cellInf(:).posNum]=deal(repmat(1,[size(cExperiment.cellInf(1).trapNum)]));
 for i=2:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
-    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
+    cTimelapse=cExperiment.returnTimelapse(experimentPos);
+%    load([cExperiment.saveFolder '/' cExperiment.dirs{experimentPos},'cTimelapse']);
     i
     if max(cTimelapse.timepointsProcessed)>0
         if ~isempty(cTimelapse.extractedData(1).radius)

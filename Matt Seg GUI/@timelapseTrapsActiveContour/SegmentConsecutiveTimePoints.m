@@ -318,17 +318,16 @@ for TP = Timepoints
             NumberOfCellsUpdated = NumberOfCellsUpdated+1;
             
             CellRegionLabel = SegCentresTrap(CellTrapCentre(2),CellTrapCentre(1));
-            if CellRegionLabel~=0;
-                CellExcludeImage = SegCentresTrap;
-                CellExcludeImage(CellExcludeImage == CellRegionLabel) = 0;
-                CellExcludeImage = CellExcludeImage>0;
-                CellInfo(CellEntry).(ExcludeImageStrings{end}) = ACBackGroundFunctions.get_cell_image(CellExcludeImage,...
-                                                                                                       SubImageSize,...
-                                                                                                       CellTrapCentre,...
-                                                                                                       false);
-            end
             
-            %checksum = sum([CellInfo(:).UpdatedThisTimepoint],2);
+            CellExcludeImage = SegCentresTrap;
+            if CellRegionLabel~=0;
+                CellExcludeImage(CellExcludeImage == CellRegionLabel) = 0;
+            end
+            CellExcludeImage = CellExcludeImage>0;
+            CellInfo(CellEntry).(ExcludeImageStrings{end}) = ACBackGroundFunctions.get_cell_image(CellExcludeImage,...
+                SubImageSize,...
+                CellTrapCentre,...
+                false);
         end   
         
         
@@ -375,7 +374,7 @@ for TP = Timepoints
     CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
     AnglesToWrite = CellRadiiToWrite;
     
-%         fprintf('change back to parfor!!!! - segmentconsecutiveTP\n\n')
+         %fprintf('change back to parfor!!!! - segmentconsecutiveTP\n\n')
     parfor CNi = 1:length(CellsToSegment)
         %divided loop into parallel slow part and relatively fast write
         %part.
