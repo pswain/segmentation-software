@@ -1,4 +1,4 @@
-function loc=returnMotherIndicesCellInf(cExperiment,channel,durThresh,motherLongEnough)
+function [loc motherLongEnough]=returnMotherIndicesCellInf(cExperiment,channel,durThresh,motherLongEnough,mStEnd)
 
 if nargin<2 || isempty(channel)
     channel=1;
@@ -12,6 +12,14 @@ end
 
 if nargin<4 || isempty(motherLongEnough)
     motherLongEnough=motherDur>=durThresh;
+end
+
+if nargin>=5 
+    if ~isempty(mStEnd)
+        t1=cExperiment.lineageInfo.motherInfo.motherStartEnd(:,1)<=mStEnd(1);
+        t2=cExperiment.lineageInfo.motherInfo.motherStartEnd(:,2)>=mStEnd(2);
+        motherLongEnough=motherLongEnough & t1 & t2;
+    end
 end
 
 mTrap=cExperiment.lineageInfo.motherInfo.motherTrap;

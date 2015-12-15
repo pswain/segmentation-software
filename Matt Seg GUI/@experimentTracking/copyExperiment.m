@@ -1,7 +1,8 @@
-function copyExperiment(cExperiment,new_location)
-% copyExperiment(cExperiment,fileName)
-%copies all the cTimelapse files to a new file, changing the saveFolder of
-%cExperiment so that it won't overwrite the original.
+function new_location = copyExperiment(cExperiment,new_location)
+% new_location = copyExperiment(cExperiment,new_location)
+%
+% copies all the cTimelapse files to a new locaiton, changing the
+% saveFolder of cExperiment so that it won't overwrite the original.
     
 
 if nargin<2 || isempty(new_location)
@@ -11,8 +12,8 @@ end
 
 for diri=1:length(cExperiment.dirs)
     
-    load([cExperiment.saveFolder filesep cExperiment.dirs{diri} 'cTimelapse.mat'],'cTimelapse');
-    save([new_location filesep cExperiment.dirs{diri} 'cTimelapse.mat'],'cTimelapse');
+    copyfile([cExperiment.saveFolder filesep cExperiment.dirs{diri} 'cTimelapse.mat'],...
+        [new_location filesep cExperiment.dirs{diri} 'cTimelapse.mat']);
     
 end
 

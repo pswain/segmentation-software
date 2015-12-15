@@ -1,22 +1,40 @@
-function new=addTimepoints(cTimelapse)
+function new=addTimepoints(cTimelapse,image_acquire_time_wait)
+% new=addTimepoints(cTimelapse,image_acquire_time_wait)
+%
+% method to search cTimelapse.timelapseDir for new images currently not
+% included in the cTimelapse and add them to the filename field. This will
+% add new timpoints to the cTimelapse.cTimepoints array in accordance with
+% the usual file format.
+% 
+% only updates filenames, not timepointsToProcess or timepointsProcessed.
+% 
+% has one optional input - image_acquire_time_wait. Time in seconds it
+%                          should enforce between an image being saved and
+%                          it being added to the cTimelapse. This is to try
+%                          and ensure images are not added in the middle of
+%                          a z stack, and should be longer than the
+%                          interslice perioud but much shorter than the
+%                          inter timepoint period. Given in seconds.
+%                          Default is 10.
 
-%% Read images into timelapse class
-% Timelapse is a seletion of images from a file. These images must be
-% loaded in the correct order from low to high numbers to ensure that the
-% cell tracking performs correctly, and they must be rotated to ensure the
-% trap correctly aligns with the images
+% time to wait after image acquisition before program is allowed to update
+% the cTimelapse object.
+% should be significantly larger than the time between slices but not as
+% large as the time between points. Given in seconds
+if nargin<2 || isempty(image_acquire_time_wait)
+    image_acquire_time_wait = 10;
+end
 
 tooSoon=true;
 while tooSoon
     folder=cTimelapse.timelapseDir;
     tempdir=dir(folder);
-    names=cell(1);
-    timeDif=[];
-    for i=1:length(tempdir)
-        names{i}=tempdir(i).name;
-        timeDif(i)=now-tempdir(i).datenum;
-    end
-    if min(timeDif)>.0005
+    
+    names = {tempdir(:).name};
+    timeDif = now - [tempdir(:).datenum];
+    
+    % in timeDif, 1 seconds is approximately 1.1608e-05
+    if (min(timeDif)/1.1608e-05)>image_acquire_time_wait
         tooSoon=false;
     else
         tooSoon=true;
@@ -26,50 +44,35 @@ end
 
 files=sort(names);
 
-timepoint_index=0;
-folder=[folder '/'];
-% cTimelapse=cell(1)
-for i=1:length(cTimelapse.cTimepoint)
-    pattern='\d{5,9}';%CHANGE BACK TO {5,6}!!!!!!!!!
-    fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
-    
-    for j=1:length(cTimelapse.channelNames)
-        match1=regexp(files(:),fileNum{end},'match');
-        match2=regexp(files(:),cTimelapse.channelNames{j},'match');
-        loc1= ~cellfun('isempty',match1);
-        loc2= ~cellfun('isempty',match2);
-        loc=loc1&loc2;
-        files(loc)=[];
-    end
-
-    
-%     
-%     for j=1:length(cTimelapse.channelNames)
-%         p1=[fileNum{1} '_' cTimelapse.channelNames{j}];
-%         match=regexp(files(:),p1,'match');
-%         loc= ~cellfun('isempty',match);
-%         files(loc)=[];
-%     end
-end
+files_already_added = [cTimelapse.cTimepoint(:).filename];
+files = setdiff(files,files_already_added);
 
 new=false;
 if ~isempty(files)
-    pattern='\d{5,9}';%CHANGE BACK TO {5,6}!!!!!!!!!
+    pattern='\d{5,9}';
     fileNum=regexp(files,pattern,'match');
     loc= ~cellfun('isempty',fileNum);
     for i=1:length(loc)
         if loc(i)
-            if length(fileNum{i}{1})>8
-                timepointNum=str2num(fileNum{i}{1})+1;
-            else
-                timepointNum=str2num(fileNum{i}{1});
-            end
+            
+            %have left this here since it seems important but I'm not sure
+            %why it is necessary, so have commented it.
+            
+%             if length(fileNum{i}{1})>8
+%                 timepointNum=str2num(fileNum{i}{1})+1;
+%             else
+%                 timepointNum=str2num(fileNum{i}{1});
+%             end
+            timepointNum=str2num(fileNum{i}{1});
             match=regexp(files{i},cTimelapse.channelNames,'match');
             channelLoc=~cellfun('isempty',match);
             
+            if timepointNum>length(cTimelapse.cTimepoint)
+                cTimelapse.cTimepoint(timepointNum) = cTimelapse.cTimepointTemplate;
+            end
+            
             if any(channelLoc)
-                fluor=find(channelLoc);
-                cTimelapse.cTimepoint(timepointNum).filename{fluor}=files{i};
+                cTimelapse.cTimepoint(timepointNum).filename{end+1}=files{i};
                 new=true;
             end
         end

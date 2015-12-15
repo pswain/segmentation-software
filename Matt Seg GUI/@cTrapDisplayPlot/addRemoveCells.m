@@ -35,25 +35,11 @@ else
     disp(['add circle at ', num2str([Cx,Cy])]);
     selection=1;
 end
-method='hough';
-cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,timepoint,trap,selection,cellPt, method, cDisplay.channel)
 
-%
 
-pts=[];
-cellCenters=[cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(:).cellCenter];
-cellCenters=reshape(cellCenters,2,length(cellCenters)/2)';
+loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
+cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
 
-pts(:,1)=cellCenters(:,1);
-pts(:,2)=cellCenters(:,2);
-if size(pts,1)
-    aPointMatrix = repmat(cellPt,size(pts,1),1);
-    D = (sum(((aPointMatrix-pts).^2), 2)).^0.5;
-
-%     D = pdist2(pts,cellPt,'euclidean');
-    [minval loc]=min(D);
-    cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
-end
 
 
 end

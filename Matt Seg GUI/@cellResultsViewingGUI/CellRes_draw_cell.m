@@ -19,13 +19,22 @@ else
     cell_outline = false([CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_width CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_height]*2 + 1);
 end
 
-%mother stuff
 
-mother_info = CellResGUI.cExperiment.lineageInfo.motherInfo;
-%check if it is a mother cell
-mother_index = ismember([mother_info.motherPosNum' mother_info.motherTrap' mother_info.motherLabel'], ...
-    CellResGUI.CellsForSelection(CellResGUI.CellSelected,:), ...
-        'rows');
+%mother stuff
+if ~isempty(CellResGUI.cExperiment.lineageInfo)
+    mother_info = CellResGUI.cExperiment.lineageInfo.motherInfo;
+    %check if it is a mother cell
+    if ~isempty(mother_info.motherPosNum)
+        mother_index = ismember([mother_info.motherPosNum' mother_info.motherTrap' mother_info.motherLabel'], ...
+            CellResGUI.CellsForSelection(CellResGUI.CellSelected,:), ...
+            'rows');
+    else
+        mother_index = [];
+    end
+else
+    mother_index = [];
+end
+
 if any(mother_index)
     daughter_cell_numbers = find(ismember(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel, ...
         mother_info.daughterLabelHMM(mother_index,:)) & ~(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel==0));

@@ -1,31 +1,41 @@
 classdef cTrapDisplayPlot<handle
+    %  cTrapDisplayPlot
+    %
+    % similar to the other cell selection GUI's shows each trap with a
+    % slider to move up and down through the timepoints. In this GUI,
+    % cells are added or removed from the timelapseTraps.cellsToPlot field
+    % by left and right clicking respectively. This is the collection of
+    % all cells for which data will be extracted when 'extractData' is run.
     properties
         figure = [];
         subImage = [];
         subAxes=[];
         slider = [];
-        pause_duration=[];
         cTimelapse=[]
         traps=[];
         channel=[]
         cCellVision=[];
-        cExperiment;
         trapNum;
         
-        trackOverlay=[];
-        tracksDisplayBox=[];
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = []; %stores value of key being held down while it is pressed
         
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+    
     methods
         function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
             %cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
-            %displaying traps for cell selection.
+            %
+            % 
+            % displaying traps for addition or removal of cells from
+            % cTimelapse.cellsToPlot. 
+            %
+            % cTimelapse        :   object of the timelapseTraps class
+            % cCellVision       :   object of the cellVision class
+            % channel           :   channel to show in the GUI. default 1.
+            % traps             :   array of trap indices for the traps to
+            %
+            % cDisplay          :   the GUI object
             if nargin<3 || isempty(traps)
                 traps=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
             end
@@ -40,13 +50,6 @@ classdef cTrapDisplayPlot<handle
                 cTimelapse.timepointsProcessed=ones(1,length(tempSize)/length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo));
             end
             
-%             for dirfind=1:length(cExperiment.dirs)
-%                 if strcmp([cExperiment.rootFolder '/' cExperiment.dirs{dirfind}],cTimelapse.timelapseDir)
-%                     cExperiment.currentDir=dirfind;
-%                     break
-%                 end
-%             end
-%             cDisplay.cExperiment=cExperiment;
             cDisplay.channel=channel;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
@@ -67,25 +70,19 @@ classdef cTrapDisplayPlot<handle
             for i=1:dis_w
                 for j=1:dis_h
                     if index>length(traps)
-                        break; end
+                        break; 
+                    end
                     
-                    %     h_axes(i)=subplot(dis_h,dis_w,i);
-                    %         h_axes(index)=subplot('Position',[t_width*(i-1)+bb t_height*(j-1)+bb t_width t_height]);
                     cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);
                     cDisplay.trapNum(index)=traps(index);
                     
                     cDisplay.subImage(index)=subimage(image(:,:,i));
-                    %                     colormap(gray);
+                    
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
-                    %                     set(cDisplay.subAxes(index),'CLimMode','manual')
+                    
                     set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
                     set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
-                    if cDisplay.trackOverlay
-                        set(cDisplay.subImage(index),'HitTest','off'); %now image button function will work
-                    else
-                        set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
-                    end
-
+                    
                     index=index+1;
                     
                 end
@@ -111,8 +108,6 @@ classdef cTrapDisplayPlot<handle
             
             
             hListener = addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
-%             cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
-%                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
 
 
             %generic scroll wheel function that changes slider value
@@ -131,7 +126,6 @@ classdef cTrapDisplayPlot<handle
         
         addRemoveCells(cDisplay,subAx,trap)
         slider_cb(cDisplay)
-        tracksDisplay(cDisplay);
-
+        
     end
 end

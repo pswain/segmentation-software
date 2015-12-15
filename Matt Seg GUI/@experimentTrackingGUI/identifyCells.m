@@ -1,7 +1,13 @@
 function identifyCells(cExpGUI)
+% identifyCells(cExpGUI)
+%
+% set parameters for cell Identification and perform the cell
+% identification.
+
+cCellVision = cExpGUI.cExperiment.cCellVision;
 
 if ~isempty(cExpGUI.cExperiment.cellVisionThresh)
-    cExpGUI.cCellVision.twoStageThresh=cExpGUI.cExperiment.cellVisionThresh;
+    cCellVision.twoStageThresh=cExpGUI.cExperiment.cellVisionThresh;
 end
 
 
@@ -19,21 +25,21 @@ prompt(2) = {['Track traps again (1=yes, 0=no)? (This goes through all timelapse
 prompt(3) = {['Would you like to segment an experiment as the images are being acquired, or has the acquisition been completed?' ...
     ' (enter completed or continuous). The continuous segmentation must be stopped by a control-c.']};
 dlg_title = 'Cell Segmentation';
-def(1) = {num2str(cExpGUI.cCellVision.twoStageThresh)};
+def(1) = {num2str(cCellVision.twoStageThresh)};
 def(2) = {num2str(cExpGUI.cExperiment.trackTrapsOverwrite)};
 def(3) = {'completed'};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 
-cExpGUI.cCellVision.twoStageThresh=str2double(answer{1});
+cCellVision.twoStageThresh=str2double(answer{1});
 cExpGUI.cExperiment.cellVisionThresh=cExpGUI.cCellVision.twoStageThresh;
 
 cExpGUI.cExperiment.trackTrapsOverwrite=str2double(answer{2})>0;
 
 switch answer{3}
     case 'completed'
-        cExpGUI.cExperiment.segmentCellsDisplay(cExpGUI.cCellVision,posVals);
+        cExpGUI.cExperiment.segmentCellsDisplay(cCellVision,posVals);
     case {'continuous','c','cont'}
-        cExpGUI.cExperiment.segmentCellsDisplayContinuous(cExpGUI.cCellVision,posVals);
+        cExpGUI.cExperiment.segmentCellsDisplayContinuous(cCellVision,posVals);
 end
 
         

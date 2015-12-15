@@ -29,14 +29,15 @@ if sum(cell_data_index == 1)
     
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;
     
-    p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint_index),'ob');
+    p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint),'ob');
     p.MarkerFaceColor = p.Color;
     
     % mother plotting stuff
-    
+    if ~isempty(CellResGUI.cExperiment.lineageInfo)
     cell_mother_index = (CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum == cell_position) &...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap == trap_number) & ...
                   (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
+
               if any(cell_mother_index)
                   
                   birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM(cell_mother_index,:);
@@ -56,6 +57,7 @@ if sum(cell_data_index == 1)
                   end
                   
               end
+    end
     
     
     hold off

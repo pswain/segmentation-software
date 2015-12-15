@@ -1,9 +1,21 @@
 function combineTracklets(cTimelapse,params)
+% combineTracklets(cTimelapse,params)
+%--------------------------------------------------------------------------
 % This combines the individual single tracklets into larger/longer tracks.
 % This relies on the tracklets being rather stringently tracked. It will
 % loop through until no additional tracklets have been removed in a single
 % run.
-
+%
+% default params structure:
+%     params.fraction=.1; %fraction of timelapse length that cells must be present or
+%     params.duration=3; %number of frames cells must be present
+%     params.framesToCheck=length(cTimelapse.timepointsProcessed);
+%     params.framesToCheckEnd=1;
+%     params.endThresh=3; %num tp after end of tracklet to look for cells
+%     params.sameThresh=3; %num tp to use to see if cells are the same
+%     params.classThresh=3; %classification threshold
+%   
+% uses 
 
 if nargin<2
     params.fraction=.1; %fraction of timelapse length that cells must be present or
@@ -49,7 +61,6 @@ while notdone
     cTimelapse.correctSkippedFramesInf;
         
     duration=sum(cTimelapse.extractedData(1).radius>0,2);
-    sameCell=[];
     sameTracklets=[];
 %     durThresh=max(median(duration)*.5,params.duration);
     durThresh=params.duration;
@@ -106,9 +117,8 @@ while notdone
                     %             sameDistance=sqrt(sum((pt1-pt2).^2));
                     sameDistance=alternativeDist(pt1, pt2);
                     if min(sameDistance)<params.classThresh
-                        [v loc]=min(sameDistance);
+                        [v, loc]=min(sameDistance);
                         cellLoc=find((cTimelapse.extractedData(1).trapNum==trap)& cTimelapse.extractedData(1).cellNum==potentialCells(loc));
-                        sameCell(cellsToLookAt(i),cellLoc)=1;
                         
                         sameTracklets(cTimelapse.extractedData(1).cellNum(cellsToLookAt(i)),currCellNum(potentialCells(loc)),trap)=1;
                         % need to go through and relabel all the cells based on
@@ -121,7 +131,6 @@ while notdone
         end
     end
     
-    sameCell=sparse(sameCell);
     
     %                 cTrapDisplay(cTimelapse,[],[],[],trap)
     

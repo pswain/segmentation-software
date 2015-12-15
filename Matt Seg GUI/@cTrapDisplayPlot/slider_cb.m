@@ -1,4 +1,10 @@
 function slider_cb(cDisplay)
+% slider_cb(cDisplay)
+%
+% slider call back for cTrapDisplayPlot. Shows cell outlines as green if
+% they are part of cDisplay.cTimelapse.cellsToPlot or red if they are not
+% (and will therefore not be extracted).
+
 timepoint = get(cDisplay.slider,'Value');
 timepoint=floor(timepoint);
 alltraps=cDisplay.cTimelapse.returnTrapsTimepoint(cDisplay.traps,timepoint,cDisplay.channel);
@@ -14,10 +20,8 @@ for j=1:size(alltraps,3)
     image=alltraps(:,:,j);
     image=double(image);
     image=image/max(image(:))*.95;
-% image=image/2000;
     image=repmat(image,[1 1 3]);
     
-    segLabel=[];
     if trapInfo(cDisplay.traps(j)).cellsPresent
         seg_areas=[trapInfo(cDisplay.traps(j)).cell(:).segmented];
         seg_areas=full(seg_areas);
@@ -26,35 +30,11 @@ for j=1:size(alltraps,3)
         seg_areas_tracked=max(seg_areas(:,:,tracked),[],3);
         
     else
-        seg_areas=zeros([size(image,1) size(image,2)])>0;
-        segLabel=zeros([size(image,1) size(image,2)])>0;
         seg_areas_not=zeros([size(image,1) size(image,2)])>0;
         seg_areas_tracked=zeros([size(image,1) size(image,2)])>0;
     end
     
-%     seg_areas_not=max(seg_areas(:,:,~tracked),[],3);
-%     seg_areas_tracked=max(seg_areas(:,:,tracked),[],3);
-    
-    %
-    if cDisplay.trackOverlay
-        if isempty(segLabel)
-            segLabel=full(trapInfo(cDisplay.traps(j)).trackLabel);
-        end
-        segLabel(1)=cDisplay.cTimelapse.cTimepoint(1).trapMaxCell(j);
-        trackLabel=label2rgb(segLabel,'jet','w','shuffle');
-        trackLabel=double(trackLabel);
-        trackLabel=trackLabel/255;
-        image=image.*trackLabel;
-%         image(trackLabel>0)=
-    else
-        %         t_im=image(:,:,1);
-        %         seg_areas=max(seg_areas,[],3);
-        %         t_im(seg_areas)=1; %t_im(seg_areas)*3;
-        %         image(:,:,1)=t_im;
-    end
 
-    
-    %
     t_im=image(:,:,1);
     t_im(seg_areas_not)=1;
     image(:,:,1)=t_im;
@@ -69,5 +49,3 @@ for j=1:size(alltraps,3)
     
 end
 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint)]);
-
-% title(cDisplay.subAxes(1),int2str(timepoint));

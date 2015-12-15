@@ -1,35 +1,38 @@
 classdef cTimelapseDisplay<handle
+% cTimelapseDisplay
+%
+% Displays the images for the cTimelapse object as a GUI with a slide bar,
+% allowing the user to look at all the full timelapse for that position.
+% Takes one additional input, channel, a number defining which channel of
+% the cTimelapse should be shown. 
+% WARNING: each timepoint is normalised individually, so brightness between
+% timepoints is not comparable.
+
     properties
         figure = [];
         subImage = [];
         subAxes=[];
         slider = [];
-        pause_duration=[];
         cTimelapse=[]
-        traps=[];
         channel=[]
-        cCellVision=[];
-        trackOverlay=[];
-        tracksDisplayBox=[];
         trapNum;
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+    
     methods
         function cDisplay=cTimelapseDisplay(cTimelapse,channel)
-                        
+              %cDisplay=cTimelapseDisplay(cTimelapse,channel)
+              %
+              % creates a display GUI with a slide bar to show each image
+              % in channel at each timepoint. channel defaults to 1 and can
+              % be changed after construction by changing the property
+              % channel.
             if nargin<2
                 cDisplay.channel=1;
             else
                 cDisplay.channel=channel;
             end
           
-            timepoints=1:length(cTimelapse.cTimepoint);
-            
-            
-%             cDisplay.channel=channel;
+                        
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.figure=figure('MenuBar','none');
             
@@ -57,16 +60,12 @@ classdef cTimelapseDisplay<handle
                 'SliderStep',SliderStep,...
                 'Callback',@(src,event)slider_cb(cDisplay));
             hListener = addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
-            
-%             cDisplay.tracksDisplayBox=uicontrol('Style','radiobutton','Parent',gcf,'Units','normalized',...
-%                 'String','Overlay Tracks','Position',[.8 bb*.5 .19 bb],'Callback',@(src,event)tracksDisplay(cDisplay));
-            
+
             cDisplay.slider_cb();
             set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
 
         end
 
-        % Other functions 
         slider_cb(cDisplay)
     end
 end

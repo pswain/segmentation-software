@@ -1,7 +1,7 @@
 function trackCells(cTimelapse,cellMovementThresh)
 %trackCells: Tracks individual cells over multiple images, and finds trapinfo
 %---------------------------------------------------------
-%       Function of timelapseTracks class to assign labels to the cells in
+%       Function of timelapseTraps class to assign labels to the cells in
 %       each timepoint, and so track the individual cells between the 
 %       timepoints. Also calculates if cells are present in each trap if
 %       traps are present.
@@ -23,14 +23,15 @@ function trackCells(cTimelapse,cellMovementThresh)
 %                     labels.
 %
 %INPUT:             cTimelapse
-%                   timelapseTrapsGUI
-%                     TimelapseTrapsGUI with all cells already segmented
+%                   timelapseTraps
+%                     TimelapseTraps object with all cells already segmented
 %
 %                   cellMovementThresh
 %                   Double
 %                     Number to indicate how far (in pixels) a cell can
 %                     move before it should be considered a new cell. 
-%                     Optional argument, if left blank defaults to inf.
+%                     Optional argument, if left blank it is assigned by
+%                     UI.
 if nargin<2
     prompt = {'Max change in position and radius before a cell is classified as a new cell'};
     dlg_title = 'Tracking Threshold';
@@ -58,7 +59,7 @@ for timepoint=cTimelapse.timepointsToProcess
         %Shuffles data around, trapinfo is data of current timepoint, 
         %trapinfom1 is data of previous timepoint,
         %trapinfom2 is data of timepoint before that.
-        if length(cTimelapse.timepointsToProcess)>1 && timepoint>cTimelapse.timepointsToProcess(2) 
+        if length(cTimelapse.timepointsToProcess)>2 && timepoint>cTimelapse.timepointsToProcess(2) 
             trapInfom2=trapInfom1;
         end
         if timepoint>cTimelapse.timepointsToProcess(1)

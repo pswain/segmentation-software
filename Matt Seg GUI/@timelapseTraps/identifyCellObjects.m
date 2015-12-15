@@ -1,5 +1,50 @@
 function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
+% identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
+% 
+% used in a number of places in the code to do slightly different things,
+% but in all cases it is intended to take some inputs and add a cell object
+% to the cTimelapse data structure with appropriate fields populated.
+%
+% cTimelapse    :   object of the timelapseTraps class
+% cCellVision   :   object of the cellVision class
+% timepoint     :   timepoint at which the segmentation is occurring.
+%                   defaults to 1.
+% traps         :   array of indices of traps at which segmentation should
+%                   be performed. defaults to 1.
+% channel       :   channel used to get images of the cells if they are not
+%                   provided
+% method        :   string determining which method to use to find cells.
+%                   Default is 'hough'
+% bw            :   a logical mask used in some methods to isolate area of
+%                   image in which to look for a cell like object.
+% trap_image    :   cell array of image stacks taken from
+%                           timelapseTraps.returnSegmentationTrapsStack
+%                   format depends on cCellVision.method
+% d_im          :   stack of decision images - one for each trap_image.
+%                   negative values indicate a location likely to be a cell
+%                   centre.
+%
+% Uses different methods depending on where it is being called from:
+%
+% from cTrapDisplayProcessing - the standard automated cell identifier - it
+% is called with the method 'trackUpdateObjects', which does identification
+% based on hough transform and cTimelapse.cTimepoint.trapInfo.segCentres,
+% giving preference and being more lenient to large cells found at previous
+% time point. It also removes cells with too great an overlap with either
+% other cells or the traps.
+%
+% from cTimelapse.addRemoveCells  -  addition and removal of cell at a
+% particular point in the image, this is used in the 'add' part. The
+% bw_mask is provided but not image, so that the trapImage is taken for the
+% channel provided. The hough transform is applied and the maxima within
+% the bw_mask area used to identify a cell. This is added to the trapInfo
+% with none of the other cells being affected. a cell Label is not
+% provided. alowedOverlap is ignored. 
+%
+% from curateCellTrackingGUI  - similar to above but using elcoAC.
 
+
+%allowed overlap with traps
 allowedOverlap=.3;
 
 if nargin<3
@@ -26,32 +71,48 @@ if nargin<8
     trap_image=[];
 end
 
-% This goes through all images of the traps to determine the min/max
-% intensity value and the best threshold to use for all traps
+
 switch method
-    case 'hough2'
+    case 'hough2' %not sure on this one
         hough_track2(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
-    case 'trackUpdateObjects'
-        cTimelapse.trackUpdateObjects(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
-    case 'hough'
+    case 'trackUpdateObjects' %maintained. Used for cTrapDisplayProcessing
+        cTimelapse.trackUpdateObjects(cCellVision,traps,timepoint,trap_image,allowedOverlap,d_im)
+    case 'trackUpdateObjectsGPU' % not sure on this one
+        cTimelapse.trackUpdateObjectsGPU(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_im)
+    case 'hough' %maintained for the part concerning when bw_mask is provided. used in cTrapDisplay
+        %NOTE
+        % for hough, image is a z stack of image, unlike in
+        % trackUpdateObject where it is a cell array. Elco has only seen it
+        % called without the trap_image given (and so set empty)
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
-    case 'active_contour'
-        linear_segmentation(cTimelapse,cCellVision,traps,channel)
-    case 'elcoAC'
+    case 'active_contour'%seems to not be maintained
+        linear_segmentation(cTimelapse,cCellVision,traps,channel) 
+    case 'elcoAC' %maintained. Used in curateCellTrackingGUI.
         elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw);
 end
 end
 
-function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
-%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,trap_image,allowedOverlap)
+function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)
+%function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)
 %Not sure exactly, written by Matt, but is a somewhat legacy way of
 %identifying cell outlines in the image using the hough transform without
 %consideration for past timepoints. trap_image no longer used since it was
 %changed to a cell array. Basically certainly uses channel 1 so if using
 %this code make sure channel 1 is centre DIC image.
 
-
-image = cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+% cTimelapse        :   object of the timelapseTraps class
+% cCellVision       :   object of the cellVision class
+% traps             :   array of trap Indices to identify cells in
+% channel           :   channel used to extract image if image is not
+%                       provided
+% timepoint         :   timepoint at which to identify cellObjects
+% bw_mask           :   
+% image             :   z stack of image of each trap to use for hough
+%                       identification of cells
+% allowedOverlap    :   allowed overlap between cells
+if isempty(image)
+    image=cTimelapse.returnTrapsTimepoint(traps,timepoint,channel);
+end
 image=double(image);
 
 f1=fspecial('gaussian',7,2);
@@ -60,35 +121,34 @@ se3=cCellVision.se.se3;
 
 
 if cTimelapse.trapsPresent
-    %blur/reduce the edges of the traps so they don't impact the hough
-    %transform as much
-    %     trapEdge=cCellVision.cTrap.contour;
-    %     trapEdge=imdilate(trapEdge,se1);
     trapEdge=double(cCellVision.cTrap.trapOutline);
     trapG=imfilter(trapEdge,f1);
     trapG=trapG/max(trapG(:));
     
-    cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
+    %MAGNIFICATION
+    if cTimelapse.magnification~=cCellVision.magnification
+        cellTrap=imresize(cCellVision.cTrap.trapOutline,cTimelapse.magnification/cCellVision.magnification)>0;
+    else
+        cellTrap =cCellVision.cTrap.trapOutline>0;
+    end
     cellTrap=bwlabel(cellTrap);
 end
 
+%MAGNIFICATION
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 searchRadius=round([cCellVision.radiusSmall cCellVision.radiusLarge]*(cTimelapse.magnification/cCellVision.magnification));
 searchRadius(1)=searchRadius(1)-1;
-% searchRadius(2)=searchRadius(2)+1;
 
+f1=fspecial('disk',2);
 
-if cTimelapse.magnification<100
-    %     f1=fspecial('gaussian',5,1);
-    f1=fspecial('disk',2 );
-else
-    f1=fspecial('disk',2);
-    %     f1=fspecial('gaussian',7,2);
-end
-% f2=fspecial('disk',3);
 
 if isempty(bw_mask)
-    %parfor j=1:size(image,3)
+    % empty bw_mask implies that the trapInfo.segCentres should be used to
+    % guide the identification of numerous cells in the image. These
+    % completely replace any exisitng cells.
+    % this part of the code is most likely not used and not well
+    % maintained.
+    
     for j=1:size(image,3)
         
         temp_im=image(:,:,j);
@@ -121,13 +181,12 @@ if isempty(bw_mask)
         fltr4accum(3,3) = 6;
         if cTimelapse.magnification<100
             fltr4accum=imresize(fltr4accum,1);
-            [accum, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.5,fltr4accum);
+            [accum, circen, cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.5,fltr4accum);
         else
             fltr4accum=imresize(fltr4accum,2);
-            [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.7,fltr4accum);
+            [~, circen, cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),max(temp_im(:))*.1,8,.7,fltr4accum);
         end
         
-        %         [~, circen cirrad] =CircularHough_Grd_matt(imresize(temp_im,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'));
         bw_mask=[];
         
         circen=circen/scale;
@@ -220,7 +279,9 @@ if isempty(bw_mask)
         end
         trapInfo(traps(j)).cellsPresent=~isempty(circen);
     end
-else %for the add/remove cells part of the GUI after processing is done
+else% bw_mask not empty
+    % for the add/remove cells part of the GUI after processing is done
+    % find a cell only at bw_mask and add it to the trapInfo.cell array.
     for j=1:size(image,3)
         temp_im=image(:,:,j);
         s2=strel('disk',2);
@@ -249,44 +310,41 @@ else %for the add/remove cells part of the GUI after processing is done
             cirrad=min(cirrad);
         end
         
-        numCells=1;
+        circen = circen(1,:);
+        cirrad = cirrad(1);
+        
         if isempty(trapInfo(traps(j)).cell(1).cellCenter)
             cellsThere=0;
         else
             cellsThere=length(trapInfo(traps(j)).cell);
         end
-        trapInfo(traps(j)).cell(cellsThere+1).cellCenter=uint16(round(circen(numCells,:)));
-        trapInfo(traps(j)).cell(cellsThere+1).cellRadius=uint16(round(cirrad(numCells)));
+        trapInfo(traps(j)).cell(cellsThere+1).cellCenter=round(circen);
+        trapInfo(traps(j)).cell(cellsThere+1).cellRadius=round(cirrad);
         trapInfo(traps(j)).cellsPresent=1;
+        
+        %arbitary number of steps used in making the spline.
+        nseg = 128;
+        
+        temp_im=zeros(size(temp_im))>0;
+        x=circen(1,1);
+        y=circen(1,2);
+        r=cirrad;
+        x=double(x);y=double(y);r=double(r);
+        theta = 0 : (2 * pi / nseg) : (2 * pi);
+        pline_x = round(r * cos(theta) + x);
+        pline_y = round(r * sin(theta) + y);
+        loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
+        pline_x(loc)=[];pline_y(loc)=[];
+        for i=1:length(pline_x)
+            temp_im(pline_y(i),pline_x(i),1)=1;
+        end
+        trapInfo(traps(j)).cell(cellsThere+1).segmented=sparse(temp_im);
+        
+        
     end
 end
 
-for j=1:size(image,3)
-    temp_im=image(:,:,j);
-    
-    if trapInfo(traps(j)).cellsPresent
-        circen=[trapInfo(traps(j)).cell(:).cellCenter];
-        circen=reshape(circen,2,length(circen)/2)';
-        cirrad=[trapInfo(traps(j)).cell(:).cellRadius];
-        nseg=128;
-        
-        for k=1:length(cirrad)
-            temp_im=zeros(size(temp_im))>0;
-            x=circen(k,1);y=circen(k,2);r=cirrad(k);
-            x=double(x);y=double(y);r=double(r);
-            theta = 0 : (2 * pi / nseg) : (2 * pi);
-            pline_x = round(r * cos(theta) + x);
-            pline_y = round(r * sin(theta) + y);
-            loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
-            pline_x(loc)=[];pline_y(loc)=[];
-            for i=1:length(pline_x)
-                temp_im(pline_y(i),pline_x(i),1)=1;
-            end
-            trapInfo(traps(j)).cell(k).segmented=sparse(temp_im);
-        end
-    end
-    
-end
+
 cTimelapse.cTimepoint(timepoint).trapInfo=trapInfo;
 
 end
@@ -549,7 +607,8 @@ function elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw)
 % elcoAddCellActiveContour(cTimelapse,traps,timepoint,bw)
 %
 % to add a cell centre by Elco's active contour method. basically adds a
-% centre at the average of the bw and then 
+% centre at the average of the bw and then performs the active contour
+% search.
 
 trap = traps(1);
 [Iy,Ix] = find(bw);
@@ -569,10 +628,13 @@ cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(trap) = new
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellCenter = [xcell ycell] ;
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(newIndex) = newCellLabel;
 
+% puts some inital data in the cell array in case there is an error in the
+% active contour code.
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadius = 5;
 [px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented));
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented)));
 
+% run active contour code on that particular trap and cell.
 cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);
 
 
@@ -1101,12 +1163,7 @@ for k = 1 : size(accumAOI, 1),
             candgrp_acmsum;
         cc_y = sum( candgrp_IdxI .* accum(candgrp_idx2acm) ) / ...
             candgrp_acmsum;
-        % added by Elco to try and stop strange edge cases where the centre
-        % of the cells is an NaN. Hopefully shouldn't break downstream
-        % code.
-        if ~isnan(cc_x) && ~isnan(cc_y)
-            circen = [circen; cc_x, cc_y];
-        end
+        circen = [circen; cc_x, cc_y];
     end
 end
 

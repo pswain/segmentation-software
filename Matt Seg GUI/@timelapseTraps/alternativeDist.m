@@ -1,4 +1,3 @@
-
 function distance= alternativeDist(cTimelapse,pt1,pt2)
 %Returns a 2x2 matrix of the distances between all the cells tracked in pt1&pt2
 %Rows denote previous timeframe cells, collumns denote current timeframe

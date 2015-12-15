@@ -1,37 +1,60 @@
-function [trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
-
-%% For each timepoint, identify the locations of the traps
-%Go trhough each image in the timepoint object, and extract the locations
-%of the traps using the identifyCellTrapsTimepoint function
-
-%pass the trapLocations matrix from t-1 for the calculation of t cc. Uses the mask of
-%the traps to increase the likelihood of finding the same trap again.
+function [trapLocations, trap_mask, trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
+% [trapLocations, trap_mask, trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
+%
+% function for identifying traps in the single timepoint using cross
+% correlation and producing:
+% trap_mask : a logical of all the areas defined as being parts of traps in
+%             an image (note, ot the pillars, but the trap areas)
+% trapImage : a stack of images of each trap.
+%
+% If trapLocations are provided then these images are simply generated
+% using those locations.
+%
+% If trapLocations are not provided (i.e. in a call like:
+%
+%           cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision)
+%
+% the trap1 field of cCellVision.cTrap is cross correlated with the first
+% channel of cTimelapse at timepoint 'timepoint' (note, the first channel
+% is always used, so this should correspond to the image in trap1 of
+% cCellVision). A normalised cross correlation is calculated, the absolute
+% taken (I'm not sure why, probably beccause DIC is often somewhat
+% variable), and local maxima chosen until all the points above a threhold
+% (0.65* the maximum of the cross correlation) have been selected. At each
+% new selection, the points in its immediate vicinity are rules out.
+%
+% If TrapLocationToCheck is the string 'none', it has no effect, if it is an
+% index then those trapLocations are shifted to their nearest maxima in the
+% cross correlation image. This is sort of a half way between the two
+% behaviours used in trap selection. Most of the trap Locations are left
+% unaffected, but only those in trapLocationsToCheck are changed.
+%
+% trapImagesPrevTp is no longer used, but don't want to remove it since it
+% will mess up calls to the function.
 
 if nargin<5 || isempty(trapImagesPrevTp)
     trapImagesPrevTp=[];
 end
 
 if nargin<6 || isempty(trapLocationsToCheck)
-    trapLocationsToCheck=1:length(trapLocations); %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
+    trapLocationsToCheck='none'; %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
 end
 
 
 
 
 cTrap=cCellVision.cTrap;
-% cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
-% cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
 
-% try
 if isempty(cTimelapse.magnification)
     cTimelapse.magnification=60;
 end
 
-
-% catch
-%     cTrap.trap1=imresize(cTrap.trap1,cCellVision.pixelSize/cTimelapse.pixelSize);
-% cTrap.trap2=imresize(cTrap.trap2,cCellVision.pixelSize/cTimelapse.pixelSize);
-% end
+% put something here about magnification of you want so that everything is
+% super consistent.
+%
+% cTrapSize should be cTrap with reverse magnification.
+% then reverse magnify cTrap.cTrap1 to get trapImages.
+% if you do this you need to change the editCellVisionTrapOutline code too.
 
 cTrap.bb_width=ceil((size(cTrap.trap1,2)-1)/2);
 cTrap.bb_height=ceil((size(cTrap.trap1,1)-1)/2);
@@ -51,28 +74,26 @@ end
 cTimelapse.cTrapSize.bb_width=cTrap.bb_width;
 cTimelapse.cTrapSize.bb_height=cTrap.bb_height;
 
-if nargin<4
-    trapLocations=[];
-end
-
 image=cTimelapse.returnSingleTimepoint(timepoint);
 
-if ~any(size(trapLocations))   
+if nargin<4
     trapLocations=predictTrapLocations(image,cTrap); 
 end
 
-% if isempty(trapImagesPrevTp)
-    [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck);
-% else
-% %     [trapLocations trap_mask trapImages]=updateTrapLocWithPrev(image,cTrap,trapLocations,trapImagesPrevTp);
-% end
+[trapLocations, trap_mask ,trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck);
+
 
 cTimelapse.cTimepoint(timepoint).trapLocations=trapLocations;
 
-cTimelapse.cTimepoint(timepoint).trapInfo=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
-        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
-cTimelapse.cTimepoint(timepoint).trapInfo(1:length(trapLocations))=struct('segCenters',sparse(zeros(size(image))>0),'cell',struct('cellCenter',[],'cellRadius',[],'segmented',sparse(zeros(size(image))>0)), ...
-        'cellsPresent',0,'cellLabel',[],'segmented',sparse(zeros(size(image))>0),'trackLabel',sparse(zeros(size(image))>0));
+trapInfo = cTimelapse.trapInfoTemplate;
+trapInfo.segCenters = sparse(zeros(size(image))>0);
+trapInfo.trackLabel = sparse(zeros(size(image))>0);
+trapInfo.segmented =sparse(zeros(size(image))>0);
+trapInfo.cell.segmented = sparse(zeros(size(image))>0);
+
+cTimelapse.cTimepoint(timepoint).trapInfo=trapInfo ;
+cTimelapse.cTimepoint(timepoint).trapInfo(1:length(trapLocations))= trapInfo;
+
 
 j=length(trapLocations);
 if j<length(cTimelapse.cTimepoint(timepoint).trapInfo)
@@ -83,7 +104,14 @@ end
 
 end
 
-function [trapLocations trap_mask]=predictTrapLocations(image,cTrap)
+function [trapLocations, trap_mask]=predictTrapLocations(image,cTrap)
+% [trapLocations trap_mask]=predictTrapLocations(image,cTrap)
+%
+% uses trap1 of cTrap (an image of the trap) to identify traps in the image
+% by normalised cross correlation. Takes 0.65*the maximum of the cross
+% correlation as a threshold and picks all values below this in order,
+% ruling out the area directly around each new trap Location.
+
 timepoint_im=double(image);
 timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
 image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],median(timepoint_im(:)));
@@ -121,7 +149,15 @@ end
 
 
 
-function [trapLocations trap_mask trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
+function [trapLocations, trap_mask ,trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
+% [trapLocations, trap_mask ,trapImages] = updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
+% 
+% confusing function. I think its purpose is to make a trap_mask (a logical
+% of all the trap pixels) and a trapImages stack (a stack of images of each
+% trap) and also to take the index of any trap and move it to be at the
+% closest local maxima of the cross correlation image. This is used in the
+% addRemove traps function to put the final trap location at a local
+% maxima in the vicinity of the point clicked.
 
 if nargin<4 || isempty(trapLocationsToCheck)
     trapLocations = 1:length(trapLocationsToCheck);
@@ -135,16 +171,12 @@ image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],'replicate');%
 
 cc=abs(normxcorr2(cTrap.trap1,image_temp))+abs(normxcorr2(cTrap.trap2,image_temp));
 cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
-cc_new=zeros(size(cc));%*median(cc(:));
+cc_new=zeros(size(cc));
 cc_new(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5)=cc(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5);
 cc=cc_new;
-% f1=fspecial('gaussian',4,.8);
 f1=fspecial('disk',1);
 cc=(imfilter((cc),f1));
 cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
-
-% cc=imfilter(cc,fspecial('log'));
-% figure(101);imshow(cc,[]);colormap(jet);
 
 cc=padarray(cc,[cTrap.bb_height,cTrap.bb_width]);
 trap_mask=false(size(cc,1),size(cc,2));
@@ -155,16 +187,17 @@ for i=1:length(trapLocations)
     xcurrent=trapLocations(i).xcenter+cTrap.bb_width;
     ycurrent=trapLocations(i).ycenter+cTrap.bb_height;
     
-    if ismember(i,trapLocationsToCheck) %if this is one of the trap locations to check, make it's location the nearest one to the 
+    if ismember(i,trapLocationsToCheck) 
+        %if this is one of the trap locations to check, make it's location
+        %the maximum cross correlation value within a sixth of a trap width
+        %of the point selected for the trap.
         temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
 
-        [maxval maxloc]=max(temp_im(:));
+        [maxval, maxloc]=max(temp_im(:));
         [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
 
         xcenter=(xcurrent+xpeak-cTrap.bb_width/3-1);
         ycenter=(ycurrent+ypeak-cTrap.bb_height/3-1);
-
-        %commented out by Elco. Didn't want trapLocations to change. 
 
         trapLocations(i).xcenter=xcenter-cTrap.bb_width;
         trapLocations(i).ycenter=ycenter-cTrap.bb_height;
@@ -183,71 +216,73 @@ end
 
 
 
-function [trapLocations trap_mask trapImages]=updateTrapLocWithPrev(image,cTrap,trapLocations,trapImPrevTp)
-timepoint_im=double(image);
-timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
-imagePad=padarray(timepoint_im,[2*cTrap.bb_height 2*cTrap.bb_width],median(timepoint_im(:)));
-
-xBorder=cTrap.bb_width*1.5;
-yBorder=cTrap.bb_height*1.5;
-
-trapImages=zeros(size(trapImPrevTp));
-f1=fspecial('gaussian',5,1);
-for i=1:length(trapLocations)
-
-    xcurrent=trapLocations(i).xcenter+2*cTrap.bb_width;
-    ycurrent=trapLocations(i).ycenter+2*cTrap.bb_height;
-    
-    tempImage=imagePad(ycurrent-yBorder:ycurrent+yBorder,xcurrent-xBorder:xcurrent+xBorder);
-    prevTpIm=trapImPrevTp(:,:,i);
-%     cc=normxcorr2(prevTpIm,tempImage);
-%     if max(cc(:))<.5
-        cc=normxcorr2(cTrap.trap1,tempImage)+normxcorr2(cTrap.trap2,tempImage)+normxcorr2(prevTpIm,tempImage);
-%     end
-
-    cc=imfilter(abs(cc),f1);
-%     figure(213);imshow(cc,[]);colormap(jet);
-%         figure(214);imshow(normxcorr2(cTrap.trap1,tempImage)+normxcorr2(cTrap.trap2,tempImage),[]);colormap(jet);
-
-%     waitforbuttonpress;
-    %
-%         temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
-%     
-%     [maxval maxloc]=max(temp_im(:));
-%     [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
-%     
-%     xcenter=round(xcurrent+xpeak-cTrap.bb_width/3-1);
-%     ycenter=round(ycurrent+ypeak-cTrap.bb_height/3-1);
+% NO LONGER USED AYWHERE
 % 
-%     trapLocations(i).xcenter=xcenter-cTrap.bb_width;
-%     trapLocations(i).ycenter=ycenter-cTrap.bb_height;
-
-    
-    %
-%     temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
-    ccTemp=zeros(size(cc));
-    xt=round(size(cc,2)/2);yt=round(size(cc,1)/2);
-    yd=round(cTrap.bb_height/3);xd=round(cTrap.bb_width/3);
-    ccTemp(yt-yd:yt+yd, xt-xd:xt+xd)=...
-        cc(yt-yd:yt+yd, xt-xd:xt+xd);
-    cc=ccTemp;
-    
-    [maxval maxloc]=max(cc(:));
-    [ypeak, xpeak] = ind2sub(size(cc),maxloc(1));
-    
-    xcenter=trapLocations(i).xcenter+xpeak-xBorder-1;
-    ycenter=trapLocations(i).ycenter+ypeak-yBorder-1;
-
-    trapLocations(i).xcenter=xcenter-1*cTrap.bb_width;
-    trapLocations(i).ycenter=ycenter-1*cTrap.bb_height;
-%     trap_mask(round(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height),round(xcenter-cTrap.bb_width:xcenter+cTrap.bb_width))=true(size(cTrap.trap1,1),size(cTrap.trap1,2));
-xcurrent=trapLocations(i).xcenter+2*cTrap.bb_width;
-    ycurrent=trapLocations(i).ycenter+2*cTrap.bb_height;
-    
-    tempImage=imagePad(ycurrent-cTrap.bb_height:ycurrent+cTrap.bb_height,xcurrent-cTrap.bb_width:xcurrent+cTrap.bb_width);
-trapImages(:,:,i)=tempImage;
-% trapImages(:,:,i)=imagePad(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height,xcenter-cTrap.bb_width:xcenter+cTrap.bb_width);
-end
-% trap_mask=trap_mask(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
-trap_mask=[];
-end
+% function [trapLocations trap_mask trapImages]=updateTrapLocWithPrev(image,cTrap,trapLocations,trapImPrevTp)
+% timepoint_im=double(image);
+% timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
+% imagePad=padarray(timepoint_im,[2*cTrap.bb_height 2*cTrap.bb_width],median(timepoint_im(:)));
+% 
+% xBorder=cTrap.bb_width*1.5;
+% yBorder=cTrap.bb_height*1.5;
+% 
+% trapImages=zeros(size(trapImPrevTp));
+% f1=fspecial('gaussian',5,1);
+% for i=1:length(trapLocations)
+% 
+%     xcurrent=trapLocations(i).xcenter+2*cTrap.bb_width;
+%     ycurrent=trapLocations(i).ycenter+2*cTrap.bb_height;
+%     
+%     tempImage=imagePad(ycurrent-yBorder:ycurrent+yBorder,xcurrent-xBorder:xcurrent+xBorder);
+%     prevTpIm=trapImPrevTp(:,:,i);
+% %     cc=normxcorr2(prevTpIm,tempImage);
+% %     if max(cc(:))<.5
+%         cc=normxcorr2(cTrap.trap1,tempImage)+normxcorr2(cTrap.trap2,tempImage)+normxcorr2(prevTpIm,tempImage);
+% %     end
+% 
+%     cc=imfilter(abs(cc),f1);
+% %     figure(213);imshow(cc,[]);colormap(jet);
+% %         figure(214);imshow(normxcorr2(cTrap.trap1,tempImage)+normxcorr2(cTrap.trap2,tempImage),[]);colormap(jet);
+% 
+% %     waitforbuttonpress;
+%     %
+% %         temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
+% %     
+% %     [maxval maxloc]=max(temp_im(:));
+% %     [ypeak, xpeak] = ind2sub(size(temp_im),maxloc);
+% %     
+% %     xcenter=round(xcurrent+xpeak-cTrap.bb_width/3-1);
+% %     ycenter=round(ycurrent+ypeak-cTrap.bb_height/3-1);
+% % 
+% %     trapLocations(i).xcenter=xcenter-cTrap.bb_width;
+% %     trapLocations(i).ycenter=ycenter-cTrap.bb_height;
+% 
+%     
+%     %
+% %     temp_im=cc(round(ycurrent-cTrap.bb_height/3:ycurrent+cTrap.bb_height/3),round(xcurrent-cTrap.bb_width/3:xcurrent+cTrap.bb_width/3));
+%     ccTemp=zeros(size(cc));
+%     xt=round(size(cc,2)/2);yt=round(size(cc,1)/2);
+%     yd=round(cTrap.bb_height/3);xd=round(cTrap.bb_width/3);
+%     ccTemp(yt-yd:yt+yd, xt-xd:xt+xd)=...
+%         cc(yt-yd:yt+yd, xt-xd:xt+xd);
+%     cc=ccTemp;
+%     
+%     [maxval maxloc]=max(cc(:));
+%     [ypeak, xpeak] = ind2sub(size(cc),maxloc(1));
+%     
+%     xcenter=trapLocations(i).xcenter+xpeak-xBorder-1;
+%     ycenter=trapLocations(i).ycenter+ypeak-yBorder-1;
+% 
+%     trapLocations(i).xcenter=xcenter-1*cTrap.bb_width;
+%     trapLocations(i).ycenter=ycenter-1*cTrap.bb_height;
+% %     trap_mask(round(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height),round(xcenter-cTrap.bb_width:xcenter+cTrap.bb_width))=true(size(cTrap.trap1,1),size(cTrap.trap1,2));
+% xcurrent=trapLocations(i).xcenter+2*cTrap.bb_width;
+%     ycurrent=trapLocations(i).ycenter+2*cTrap.bb_height;
+%     
+%     tempImage=imagePad(ycurrent-cTrap.bb_height:ycurrent+cTrap.bb_height,xcurrent-cTrap.bb_width:xcurrent+cTrap.bb_width);
+% trapImages(:,:,i)=tempImage;
+% % trapImages(:,:,i)=imagePad(ycenter-cTrap.bb_height:ycenter+cTrap.bb_height,xcenter-cTrap.bb_width:xcenter+cTrap.bb_width);
+% end
+% % trap_mask=trap_mask(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+% trap_mask=[];
+% end

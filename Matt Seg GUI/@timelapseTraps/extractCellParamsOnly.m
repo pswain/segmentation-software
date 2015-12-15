@@ -1,4 +1,15 @@
 function extractCellParamsOnly(cTimelapse)
+% extractCellParamsOnly(cTimelapse)
+%
+% very similar to extractData, just cut back. Extracts only those results
+% accessible with no image loading and stores them cTimelapse.extractedData
+% (which is then a 1x1 structure array).
+% 
+% lack of image loading nd processing makes it much faster.
+%
+% written not work if there is only one timepoint
+
+
 
 numCells=sum(cTimelapse.cellsToPlot(:));
 [trap cell]=find(cTimelapse.cellsToPlot);
@@ -16,7 +27,7 @@ if isempty(cTimelapse.timepointsProcessed) || length(cTimelapse.timepointsProces
 end
 
 
-for channel=1:1%length(cTimelapse.channelNames)
+for channel=1
     extractedData(channel).mean=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).median=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).max5=sparse(numCells,length(cTimelapse.timepointsToProcess));
@@ -31,6 +42,7 @@ for channel=1:1%length(cTimelapse.channelNames)
     extractedData(channel).distToNuc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).nucArea=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).radius=sparse(numCells,length(cTimelapse.timepointsToProcess));
+    extractedData(channel).radiusAC=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).xloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     extractedData(channel).yloc=sparse(numCells,length(cTimelapse.timepointsToProcess));
     
@@ -40,8 +52,6 @@ for channel=1:1%length(cTimelapse.channelNames)
     for timepoint=1:length(cTimelapse.timepointsToProcess)
         if cTimelapse.timepointsProcessed(timepoint)
             disp(['Timepoint Number ',int2str(timepoint)]);
-            %modify below code to use the cExperiment.searchString rather
-            %than just channel=2;
             
             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
             for j=1:length(extractedData(channel).cellNum)
@@ -63,7 +73,9 @@ for channel=1:1%length(cTimelapse.channelNames)
                             extractedData(channel).distToNuc(j,timepoint)=trapInfo(currTrap).cell(temp_loc).distToNuc;
                         end
                     end
-                    
+                    if isfield(trapInfo(currTrap).cell(temp_loc),'radiusAC');
+                        extractedData(channel).radiusAC(j,timepoint)=trapInfo(currTrap).cell(temp_loc).radiusAC;
+                    end
                 end
             end
         end

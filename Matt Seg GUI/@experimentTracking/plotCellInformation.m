@@ -1,1 +1,0 @@
-function plotCellInformation(cExperiment,position)

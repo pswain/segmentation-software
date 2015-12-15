@@ -1,39 +1,92 @@
 classdef timelapseTraps<handle
+    % class used to do the processing of the images for a particular
+    % positions. Each timepoint is stored as an entry in the cTimepoint
+    % structure array. This contains:
+    %
+    %filename:      cell array of the names of the files associated with that timepoint
+    %
+    %after processing it also stores:
+    %
+    %trapLocations: the location of the traps.
+    %trapInfo:      a structure that holds all the information about the
+    %               location, label and outline of each cell in each trap
+    %trapMaxCell :  the maximum cell label for the cells in that trap
     
     properties
         fileSoure = 'swain-batman' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
-        timelapseDir %set to 'ignore' to use absolute file names
-        cTimepoint
-%         cTrapsLabelled
-        cTrapSize
+        timelapseDir %Location in which files are stored. set to 'ignore' to use absolute file names
+        cTimepoint  %structure array. This contains:
+                    %
+                    %filename:      cell array of the names of the files associated with that timepoint
+                    %
+                    %after processing it also stores:
+                    %
+                    %trapLocations: the location of the traps.
+                    %trapInfo:      a structure that holds all the information about the
+                    %               location, label and outline of each cell in each trap
+                    %trapMaxCell :  the maximum cell label for the cells in that trap
+                    %
+        cTrapSize % size of the trap image - set during the identifyTrapLocationsSingleTP method. 
+                  % defines the size of the trap extracted in methods such
+                  % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
+                  % empty if there are not traps
         image_rotation % to ensure that it lines up with the cCellVision Model
-        imScale %used to scale down images if needed
-        magnification=60;
-        trapsPresent
-        pixelSize
-        cellsToPlot %row = trap num, col is cell tracking number
-        timepointsProcessed
+        imScale % used to scale down images if needed
+                % this isn't used much so the GUI sets it to a default of
+                % empty.
+        magnification=60; % magnification of the objective used 
+                          % used to generate a scaling factor in
+                          % segmentCellDisplay/cTrapDisplayProcessing/identifyCellCentres
+                          % (exercise caution, changes in magnification is
+                          % very poorly maintained in the code) and as such
+                          % the experiment Tracking GUI sets it to a default of 60.
+                          
+        trapsPresent % a boolean whether traps are present or not in the image
+        pixelSize % the real size of pixels in the image (again, exercise caution in changing this)
+        cellsToPlot %Array indicating which cells to extract data for. row = trap num, col is cell tracking number
+        timepointsProcessed %a logical array of timepoints which have been processed
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
-        extractedData
-        channelNames
-        imSize
+        extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
+        channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
+        imSize %the size of the images 
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
-        
-        lineageInfo
+        lineageInfo %structure array to hld everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
-        ErrorModel = {[]};
+        ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
+        extractionParameters = timelapseTraps.defaultExtractParameters;
+        %parameters for the extraction of cell Data, a function handle and
+        %a parameter structure which the function makes use of.
+        
         %stuff Ivan has added
-        omeroDs%The id number of the omero dataset from which the raw data was donwloaded. If the object was created from a folder of images this is zero.
+        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
+        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
+
+    end
+    
+    properties(SetAccess = immutable)
+        cTimepointTemplate = struct('filename',[],'trapLocations',[],...
+                            'trapInfo',[],'trapMaxCell',[],'trapMaxCellUTP',[]); %template for the cTimepoint structure
+        cellInfoTemplate = struct('cellCenter',[],'cellRadius',[],'segmented',[])
+        trapInfoTemplate = struct('segCenters',[],...
+            'cell',struct('cellCenter',[],'cellRadius',[],'segmented',[]), ...
+        'cellsPresent',0,'cellLabel',[],'segmented',[],'trackLabel',[]);
+        
+    end
+    
+    properties(Constant)
+    defaultExtractParameters = struct('extractFunction',@extractCellDataStandard,...
+        'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
+    
     end
     
     methods
         
 
         function cTimelapse=timelapseTraps(folder,varargin)
-            %% Read filenames from folder or Omero
+            % Read filenames from folder or Omero
             % varargin{1} is a logical that will make the constructor run
             % nothing if it is true. this was done to be able to write nice
             % load functions.
@@ -47,73 +100,20 @@ classdef timelapseTraps<handle
                     folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
                     fprintf('\n    Select the folder containing the images associated with this timelapse\n');
                 end
-                cTimelapse.timelapseDir=folder;
+                if ischar(folder)
+                    cTimelapse.timelapseDir=folder;
+                else
+                    cTimelapse.omeroImage=folder;
+                    cTimelapse.OmeroDatabase=varargin{1};
+                end
                 cTimelapse.cellsToPlot=sparse(100,1e3);
             end
         end
             
-        %functions for loading data and then processing to identify and
-        %track the traps
-        loadTimelapse(cTimelapse,searchString,pixelSize,image_rotation,trapsPresent,timepointsToLoad,imScale);
-        loadTimelapseScot(cTimelapse,timelapseObj);
         
-        %[trapLocations trap_mask trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp)
-        trackTrapsThroughTime(cTimelapse,cCellVision,timepoints);
-        trackCells(cTimelapse,cellMovementThresh);
-        [histCellDist bins]=trackCellsHistDist(cTimelapse,cellMovementThresh);
-        motherIndex=findMotherIndex(cTimelapse);
-        
-        %%
-        addSecondaryTimelapseChannel(cTimelapse,searchString)
-        new=addTimepoints(cTimelapse)
-        extractCellData(cTimelapse,type,channels,cellSegType);
-        extractCellParamsOnly(cTimelapse)
-        automaticSelectCells(cTimelapse,params);
-        
-        correctSkippedFramesInf(cTimelapse);
-        
-        %updated processing cell function
-        identifyCellCenters(cTimelapse,cCellVision,timepoint,channel, method)
-        d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
-        addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
-        identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, method,bw,trap_image,d_im)
-        identifyCellBoundaries(cTimelapse,cCellVision,timepoint,traps,channel, method,bw)
-        identifyCells(cTimelapse, cCellVision,traps, channel, method)
-        
-        
-        
-        
-        
-        identifyTrapLocations(cTimelapse,cCellVision,display,num_frames)
-        %I don't think the below functions work anymore
-        %functions to process individual cells within each of the traps
-        
-%         separateCells(cTimelapse,traps, channel, method)
-%         trackCells(cTimelapse,traps, channel, method)
-        
-        % functions for displaying data
-%         displayTimelapse(cTimelapse,channel,pause_duration)
-%         displaySingleTrapTimepoint(cTimelapse,trap_num_to_show,timepoint,channel)
-%         displaySingleTrapTimelapse(cTimelapse,trap_num_to_show,channel,pause_duration)
-%         displayTrapsTimelapse(cTimelapse,traps,channel,pause_duration)
-        
-        % functions for saving the timelapse
-        savecTimelapse(cTimelapse)
-        savecTimelapseVision(cTimelapse,cCellVision)
-        loadcTimelapse(cTimelapse)
-        setMagnification(cTimelapse,cCellVision);
-        
-        % functions for returning data
-        trapTimepoint=returnSingleTrapTimepoint(cTimelapse,trap_num_to_show,timepoint,channel)
-        trapTimelapse=returnSingleTrapTimelapse(cTimelapse,trap_num_to_show,channel)
-        timepoint=returnSingleTimepoint(cTimelapse,timepoint,channel,type)
-        trapTimepoint=returnTrapsTimepoint(cTimelapse,traps,timepoint,channel,type)
-        trapsTimelapse=returnTrapsTimelapse(cTimelapse,traps,channel)
-
-        timelapse=returnTimelapse(cTimelapse,channel)
-    
         function cTimelapseOUT = copy(cTimelapseIN)
-            
+        %cTimelapseOUT = copy(cTimelapseIN)
+        % make a new cTimelapse object with all the same field values.   
             cTimelapseOUT = timelapseTraps([],true);
             
             FieldNames = fields(cTimelapseIN);
@@ -124,6 +124,37 @@ classdef timelapseTraps<handle
                 
             end
             
+        end
+        
+        function trapInfo_struct = createTrapInfoTemplate(cTimelapse,data_template)
+            % trapInfo_struct =
+            % createTrapInfoTemplate(cTimelapse,data_template)
+            %
+            % create strandard empty trapInfo structure for use in
+            % intialising trapInfo.
+            %
+            % data template is optional. should be a sparse array. If not
+            % it throws an error. default is spares of size cTrapSize. If
+            % this is empty it juse uses an empty array.
+            
+            if nargin<2
+                if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
+                    data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
+                elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
+                    data_template = sparse(false(cTimelapse.imSize));
+                else
+                    data_template = [];
+                end
+            elseif ~issparse(data_template)
+                error('data_template should be a sparse array')
+                
+            end
+            trapInfo_struct = cTimelapse.trapInfoTemplate;
+            trapInfo_struct.cell = cTimelapse.cellInfoTemplate;
+            trapInfo_struct.segCenters = data_template;
+            trapInfo_struct.segmented = data_template;
+            trapInfo_struct.trackLabel = data_template;
+            trapInfo_struct.cell.segmented = data_template;
         end
         
         
@@ -137,14 +168,23 @@ classdef timelapseTraps<handle
             cTimelapse = timelapseTraps([],true);
             
             FieldNames = fieldnames(LoadStructure);
+            %only populate mutable fields occcuring in both the load object
+            %and the cTimelapse object.
+            FieldNames = intersect(FieldNames,fieldnames(cTimelapse));
             
             for i = 1:numel(FieldNames)
                 
-                cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
+                m = findprop(cTimelapse,FieldNames{i});
+                if ~ismember(m.SetAccess,{'immutable','none'})
+                    cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
+                end
                 
             end
             
             %% back compatibility checks and what not
+            %when a new field is added this load operation should be
+            %updated to populate the field appropriately and maintain back
+            %compatibility.
             
             if isempty(cTimelapse.timepointsToProcess)
                 
@@ -167,9 +207,7 @@ classdef timelapseTraps<handle
             end
             
             if ~isempty(cTimelapse.ActiveContourObject)
-                if ~isempty(cTimelapse.ActiveContourObject.TimelapseTraps)
                     cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-                end
             end
         end
     end

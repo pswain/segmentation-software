@@ -173,6 +173,21 @@ end
 %% loop through the rest of the timepoints
 for TP = Timepoints
     
+    % every 10th timepoint, update the trapOutline. This should help adjust
+    % for any stretching of the device over time or changes in the
+    % refractive index caused by things like sorbitol
+%     if rem(TP,10)==1
+%         channelTrap=ttacObject.Parameters.ActiveContour.ShowChannel
+%         temp_im=ttacObject.TimelapseTraps.returnTrapsTimepoint(channelTrap,TP);
+%         newTrapOutline=ACTrapFunctions.make_trap_pixels_from_image(temp_im,ttacObject.Parameters,0,oldTrapIm);
+%         ttacObject.cCellVision.cTrap.trapOutline=newTrapOutline;
+%         
+%         f2=fspecial('gaussian',8,5);
+%         f3=fspecial('average',8);
+%         f2=(f2+f3)/2;
+%         ttacObject.makeTrapPixelImage(f2);
+%     end
+    
     tic;
     fprintf('timepoint %d \n',TP)
     
@@ -303,17 +318,16 @@ for TP = Timepoints
             NumberOfCellsUpdated = NumberOfCellsUpdated+1;
             
             CellRegionLabel = SegCentresTrap(CellTrapCentre(2),CellTrapCentre(1));
-            if CellRegionLabel~=0;
-                CellExcludeImage = SegCentresTrap;
-                CellExcludeImage(CellExcludeImage == CellRegionLabel) = 0;
-                CellExcludeImage = CellExcludeImage>0;
-                CellInfo(CellEntry).(ExcludeImageStrings{end}) = ACBackGroundFunctions.get_cell_image(CellExcludeImage,...
-                                                                                                       SubImageSize,...
-                                                                                                       CellTrapCentre,...
-                                                                                                       false);
-            end
             
-            %checksum = sum([CellInfo(:).UpdatedThisTimepoint],2);
+            CellExcludeImage = SegCentresTrap;
+            if CellRegionLabel~=0;
+                CellExcludeImage(CellExcludeImage == CellRegionLabel) = 0;
+            end
+            CellExcludeImage = CellExcludeImage>0;
+            CellInfo(CellEntry).(ExcludeImageStrings{end}) = ACBackGroundFunctions.get_cell_image(CellExcludeImage,...
+                SubImageSize,...
+                CellTrapCentre,...
+                false);
         end   
         
         
@@ -360,7 +374,7 @@ for TP = Timepoints
     CellRadiiToWrite = zeros(size(TimePointsToWrite,1),OptPoints);
     AnglesToWrite = CellRadiiToWrite;
     
-    %fprintf('change back to parfor!!!!\n\n')
+         %fprintf('change back to parfor!!!! - segmentconsecutiveTP\n\n')
     parfor CNi = 1:length(CellsToSegment)
         %divided loop into parallel slow part and relatively fast write
         %part.
