@@ -94,4 +94,9 @@ for i=1:length(positionsToLoad)
     cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit
 end
 
+% load the default cellVision file.
+cCellVision = cExperiment.loadDefaultCellVision;
+cExperiment.cCellVision = cCellVision;
+
+
 cExperiment.saveExperiment;

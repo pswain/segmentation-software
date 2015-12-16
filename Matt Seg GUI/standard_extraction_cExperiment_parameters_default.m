@@ -36,3 +36,7 @@ paramsLineage.daughterGRateThresh=-1;
 
 params.paramsLineage = paramsLineage;
 
+% tracking
+
+params.trackingDistance = 5; % threshold of distance between cells at one timpoint and the next. Higher implies more lenient tracking.
+

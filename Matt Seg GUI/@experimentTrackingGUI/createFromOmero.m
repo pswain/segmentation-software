@@ -57,6 +57,7 @@ if isempty(matched)
     end
     cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase, inputName);
     cExpGUI.cExperiment.createTimelapsePositions();
+    cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
     cExpGUI.cExperiment.saveExperiment;%Uploads the cExperiment file to the database
 else
     %There is at least one existing cExperiment file

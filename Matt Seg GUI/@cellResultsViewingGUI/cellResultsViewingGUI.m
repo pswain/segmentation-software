@@ -193,7 +193,7 @@ classdef cellResultsViewingGUI<handle
             
             for celli =1:size(setting_array,1)
                 
-                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%3d  %3d  %3d',setting_array(celli,1),setting_array(celli,2),setting_array(celli,3));
+                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%s   trap: %3d   cell:  %3d',CellResGUI.cExperiment.dirs{setting_array(celli,1)},setting_array(celli,2),setting_array(celli,3));
                 
             end
             

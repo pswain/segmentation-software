@@ -227,6 +227,9 @@ paramsLineage.daughterGRateThresh=-1;
 
 params.paramsLineage = paramsLineage;
 
+params.trackingDistance = 5; % threshold of distance between cells at one timpoint and the next. Higher implies more lenient tracking.
+
+
 %% run extraction
 
 standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage,params);
