@@ -39,10 +39,11 @@ for seriesi = 1:size(im,1)%loop over image series
     fprintf('saving series %d of %d\n',seriesi,size(im,1))
     
     %get total number of timepoints
-    Tloc = regexp(im{1,1}{1,2},'T=.*/','end');
-    Tloc = Tloc(end);
-    TTotal = regexp(im{1,1}{1,2}((Tloc+1):end),'(\d)*','tokens');
-    TTotal = str2double(TTotal{1}{1});
+%     Tloc = regexp(im{1,1}{1,2},'T=.*/','end');
+%     Tloc = Tloc(end);
+%     TTotal = regexp(im{1,1}{1,2}((Tloc+1):end),'(\d)*','tokens');
+%     TTotal = str2double(TTotal{1}{1});
+TTotal= size(im{1},1);
     
     %number of channels
     
