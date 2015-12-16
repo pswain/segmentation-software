@@ -20,7 +20,8 @@ timepoint = TrackingCurator.subAxesTimepoints(SubAxesIndex);
 
 OutlinesToUpdate = [];
 TrapInfoMissing = [];
-
+UpdateMaxCell = false;
+    
 if isempty(TrackingCurator.keyPressed)
     % change tracking
     CellNumNearestCell = TrackingCurator.cTimelapse.ReturnNearestCellCentre(timepoint,TrackingCurator.trapIndex,cellPt);
@@ -116,9 +117,16 @@ elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.addRemoveKey)
         selection='add';
         TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(first_timepoint).trapMaxCell(TrackingCurator.trapIndex) +1) =...
             TrackingCurator.cTimelapse.cTimepoint(first_timepoint).trapMaxCell(TrackingCurator.trapIndex) +1;
+    
     end
-    method='elcoAC';
-    TrackingCurator.cTimelapse.addRemoveCells([],timepoint,TrackingCurator.trapIndex,selection,round(cellPt), method, 1);
+    if ~isempty(TrackingCurator.cTimelapse.ActiveContourObject)
+        method='elcoAC';
+        TrackingCurator.cTimelapse.addRemoveCells([],timepoint,TrackingCurator.trapIndex,selection,round(cellPt), method, 1);
+        
+    else
+        method='hough_and_track';
+        TrackingCurator.cTimelapse.addRemoveCells(TrackingCurator.cCellVision,timepoint,TrackingCurator.trapIndex,selection,round(cellPt),method,1)
+    end
     OutlinesToUpdate = timepoint;
     UpdateMaxCell = false;
     
