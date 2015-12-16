@@ -142,8 +142,8 @@ classdef cellResultsViewingGUI<handle
                 'Units','normalized','Position',[.015 y_bottom .97 setting_buttons_height],'Callback',@(src,event)ResetImageScale(CellResGUI));
             
             CellResGUI.CellImageHandle = axes('Parent',CellResGUI.TopPanel,'Position',[.685 .015 .3 .97 ]);
-            CellResGUI.CellImageHandle.XTick = [];
-            CellResGUI.CellImageHandle.YTick = [];
+            set(CellResGUI.CellImageHandle,'XTick',[]);
+            set(CellResGUI.CellImageHandle,'YTick',[]);
             
             
             CellResGUI.PlotHandle = axes('Parent',CellResGUI.PlotPanel,'Position',[.03 .05 .94 .9 ]);
