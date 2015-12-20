@@ -22,6 +22,12 @@ h = helpdlg('This is the new root folder containing all images of the timelapse 
 waitfor(h);
 
 newRootFolder=uigetdir(pwd,sprintf('Select the correct folder for: %s',oldRootFolder));
+if newRootFolder==0
+    
+    fprintf('\n\nchangeRootDirAll cancelled\n\n')
+    return
+    
+end
 end
 % cExperiment.saveFolder=uigetdir(pwd,['Select the folder where you want to save the timelapses: ',cExperiment.rootFolder]);
 

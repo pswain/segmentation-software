@@ -157,6 +157,12 @@ classdef timelapseTraps<handle
             trapInfo_struct.cell.segmented = data_template;
         end
         
+        function default_trap_indices = defaultTrapIndices(cTimelapse)
+            % default_trap_indices = defaultTrapIndices(cTimelapse)
+            % return the default trap indices to run anything over.
+            default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
+        end
+        
         
     end
     

@@ -10,6 +10,6 @@ if isfield(l1,'cCellVision')
 end
 
 
-
+set(cExpGUI.posList,'Value',1);
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
 set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);
