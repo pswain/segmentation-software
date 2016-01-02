@@ -17,7 +17,9 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 %debug_outputs is for debugging:
 %     debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
 
-ElcoWay = false; %boolean on whether to find training set Elco's way or Matt's way
+% DO NOT COMMIT
+ElcoWay = true; %boolean on whether to find training set Elco's way or Matt's way
+exclude_boundary_size = 10; % exclude pixels this close to the edge from consideration.
 
 debug_outputs = {};
 if nargin<3
@@ -173,7 +175,7 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             % how many (dilated) cells a pixel occurs in
             all_cell_im = zeros([size(image{trap},1) size(image{trap},2)]);
-            
+            all_cell_edge_im = all_cell_im;
             
             % exclude pixel from the edge in training.
             exclude_boundary = true(size(all_cell_im));
@@ -185,10 +187,11 @@ for timepoint=1:frame_ss:total_num_timepoints
                     if ~isempty(trapInfo.cell(num_cells).cellCenter)
                         cell_im =  imfill(full(trapInfo.cell(num_cells).segmented),'holes');
                         exclude_from_negs(:,:,num_cells) = imerode(cell_im,se2);
-                        dist_im = bwdist(cell_im);
+                        dist_im = bwdist(~cell_im);
                         dist_im = dist_im/max(dist_im(:));
-                        training_class(:,:,num_cells) = dist_im>0.85;
+                        training_class(:,:,num_cells) = dist_im>0.8;
                         training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
+                        all_cell_edge_im = all_cell_edge_im + imdilate(cell_im - imerode(cell_im,se1),se1);
                         all_cell_im = all_cell_im + imdilate(cell_im,se1);
                         
                     end
@@ -197,13 +200,21 @@ for timepoint=1:frame_ss:total_num_timepoints
             training_class=max(training_class,[],3);
             training_class=training_class>0;
             training_class(exclude_boundary) = false;
+            
+            % exclude pixels around right next to centre pixels to try and
+            % make classification more robust
             exclude_from_negs=max(exclude_from_negs,[],3);
             exclude_from_negs=exclude_from_negs>0;
             exclude_from_negs = exclude_from_negs | exclude_boundary;
-            fix_in_negs = all_cell_im>1;
+            % ensure pixels on cell boundary are included in negatives if
+            % the are not in exclusion zone
+            fix_in_negs = all_cell_edge_im>0;
+            fix_in_negs = fix_in_negs & ~exclude_from_negs;
+            
+            % ensure pixels between two cells are included in negatives in
+            % any case.
+            fix_in_negs(all_cell_im>1) = true;
             fix_in_negs(training_class | exclude_boundary) = false;
-            %exclude pixels around right next to centre pixels to try and
-            %make classification more robust
             % forcibly include pixels that separate two cells - very
             % important to classify correctly.
         end

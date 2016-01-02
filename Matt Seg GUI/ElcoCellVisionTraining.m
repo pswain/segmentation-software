@@ -226,7 +226,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=1000; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -255,7 +255,7 @@ while nTrT<=numTraps
         nTrT = nTrT + 1;
     end
     fprintf('timepoint nT of some\n')
-    nT = nT +1;
+    nT = nT +step_size;
     
     
 end
