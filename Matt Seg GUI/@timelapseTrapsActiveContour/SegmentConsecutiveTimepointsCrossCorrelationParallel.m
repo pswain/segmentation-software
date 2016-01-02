@@ -60,7 +60,6 @@ CrossCorrelationValueThreshold = ttacObject.Parameters.CrossCorrelation.CrossCor
 CrossCorrelationDIMthreshold = ttacObject.Parameters.CrossCorrelation.CrossCorrelationDIMthreshold;%  -0.3; %decision image threshold above which cross correlated cells are not considered to be possible cells
 PostCellIdentificationDilateValue = ttacObject.Parameters.CrossCorrelation.PostCellIdentificationDilateValue;% 2; %dilation applied to the cell outline to rule out new cell centres
 CrossCorrelationGradThresh = ttacObject.Parameters.CrossCorrelation.CrossCorrelationGradThresh;% {25}; %used to find the bound the gradient necessary for an edge to be considered an edge
-CrossCorrelationUseCanny = ttacObject.Parameters.CrossCorrelation.CrossCorrelationUseCanny;%true; % another parameter for cross correlation. If true cannies the image first so that intensity is unimportant, only edges and gradient direction.
 
 
 RadMeans = (ttacObject.Parameters.ActiveContour.R_min:ttacObject.Parameters.ActiveContour.R_max)';%(2:15)';
@@ -237,9 +236,9 @@ for TP = Timepoints
     TrapLocations = ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations;
     
     if ttacObject.TrapPresentBoolean
-        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false,CrossCorrelationUseCanny);
+        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false);
     else
-        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false,CrossCorrelationUseCanny);
+        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false);
     end
     WholeImageElcoHoughSum = sqrt(sum(WholeImageElcoHough.^2,3));
     WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;
@@ -255,6 +254,9 @@ for TP = Timepoints
         
         %get decision image for each trap from SVM
         %If the traps have not been previously segmented this also initialises the trapInfo field
+        
+        %%%%%%%  SORT OUT NOW THAT CELLVISION STUFF HAS CHANGED
+        % cCellVision.imageProcessingMethod
         if strcmp(ttacObject.cCellVision.method,'wholeIm')
             wholeImSegCh= ttacObject.TimelapseTraps.returnSegmenationTrapsStack(ttacObject.TrapsToCheck(TP),TP,'whole');
             DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,ttacObject.TrapsToCheck(TP),wholeImSegCh,[]);

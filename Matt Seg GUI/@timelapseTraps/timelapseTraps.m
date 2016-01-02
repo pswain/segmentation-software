@@ -119,8 +119,10 @@ classdef timelapseTraps<handle
             FieldNames = fields(cTimelapseIN);
             
             for i = 1:numel(FieldNames)
-                
-                cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
+                m = findprop(cTimelapseIN,FieldNames{i});
+                if ~ismember(m.SetAccess,{'immutable','none'})
+                    cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
+                end
                 
             end
             
@@ -155,6 +157,9 @@ classdef timelapseTraps<handle
             trapInfo_struct.segmented = data_template;
             trapInfo_struct.trackLabel = data_template;
             trapInfo_struct.cell.segmented = data_template;
+            trapInfo_struct.refinedTrapPixelsInner = data_template;
+            trapInfo_struct.refinedTrapPixelsBig = data_template;
+            
         end
         
         function default_trap_indices = defaultTrapIndices(cTimelapse)

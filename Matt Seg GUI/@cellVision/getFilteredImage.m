@@ -1,5 +1,5 @@
-function  filtered_image = getFilteredImage(cCellSVM,image,trapOutine)
-%  filtered_image = getFilteredImage(cCellSVM,image,trapOutine)
+function  filtered_image = getFilteredImage(cCellSVM,image,trapOutline)
+%  filtered_image = getFilteredImage(cCellSVM,image,trapOutline)
 %
 % cCellSVM      :   an object of the cellVision class.
 % image         :   a stack of images and cCellSVM is a cellVision model.
@@ -9,7 +9,7 @@ function  filtered_image = getFilteredImage(cCellSVM,image,trapOutine)
 
 
 
-if nargin<3 || isempty(trapOutine)
+if nargin<3 || isempty(trapOutline)
     trapOutline = zeros(size(image));
 end
 

@@ -58,7 +58,7 @@ end
 
 
 if nargin<5 ||isempty(image)
-    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.method);
+    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.imageProcessingMethod);
 
 end
 
@@ -104,10 +104,20 @@ function [d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,imag
 % This preallocates the segmented images to speed up execution
 d_im=zeros(size(old_d_im));
 
-if cTimelapse.trapsPresent
-    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
-else
-    trapOutline = false(size(image{1},1),size(image{1},2));
+
+trapOutline = zeros([size(image{1},1) size(image{1},2) length(image)]);
+
+% if cTimelapse.refinedTrapOutline has been run then use this for trap
+% outline.
+for k=1:length(trap)
+    if cTimelapse.trapsPresent
+        if isfield('refinedTrapPixelsInner',cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))) && isfield('refinedTrapPixelsBig',cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)))
+            trapOutline(:,:,k) = 0.5*full(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsBig) +...
+                0.5*full(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsInner);
+        else
+            trapOutline(:,:,k) = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+        end
+    end
 end
 
 %calculate the decisions image, do some transformations on it, and
@@ -116,14 +126,14 @@ end
 %uncomment when you change parfor to for for debugginf
 %fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
 parfor k=1:length(trap) %CHANGE BACK TO parfor
-    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
+    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline(:,:,k));
     d_im(:,:,k)=d_im_temp;
     t_im=imfilter(d_im_temp,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5;  
     bw=t_im<cCellVision.twoStageThresh; 
     segCenters{k}=sparse(bw>0); 
 end
 
-cCellVision.cTrap.currentTpOutline=trapOutline>0;
+cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
 
 
 % store the segmentation result (segCenters) in the cTimelapse object.
