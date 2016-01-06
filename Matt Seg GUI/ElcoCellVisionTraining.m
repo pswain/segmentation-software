@@ -304,24 +304,36 @@ cCellVision.generateTrainingSet2Stage(cTimelapse,step_size);
 
 cCellVision.trainingData.kernel_features = cCellVision.trainingData.features;
 cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
+
+%% attemps to find a refined set of features
+linear_weights = cCellVision.SVMModelLinear.w;
+
+[x,I] = sort(abs(linear_weights),'descend');
+
+features_to_keep = I(1:20);
+cCellVision.trainingData.kernel_features = cCellVision.trainingData.features(:,features_to_keep);
+cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
+
+
 %% two stage grid search
-maxTP= 20;
+maxTP= 2;
 
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %ws = round(ws./min(ws,[],2));
-cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
+cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
 
-step_size=max(1,floor(length(cTimelapse.cTimepoint)/maxTP)); 
+%step_size=max(1,floor(length(cTimelapse.cTimepoint)/maxTP)); 
+step_size = 100;
 tic
-cCellVision.runGridSearch(step_size);
+cCellVision.runGridSearch(step_size,cmd);
 toc
 
 fprintf('grid search complete \n')
-%
+%%
 maxTP = 100;
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
-step_size = 1;
+step_size = 10;
 cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trainingParams.cost,cCellVision.trainingParams.gamma);
 tic
 cCellVision.trainSVM(step_size,cmd);toc

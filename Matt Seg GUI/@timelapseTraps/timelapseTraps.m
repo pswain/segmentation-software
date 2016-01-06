@@ -157,8 +157,8 @@ classdef timelapseTraps<handle
             trapInfo_struct.segmented = data_template;
             trapInfo_struct.trackLabel = data_template;
             trapInfo_struct.cell.segmented = data_template;
-            trapInfo_struct.refinedTrapPixelsInner = data_template;
-            trapInfo_struct.refinedTrapPixelsBig = data_template;
+            trapInfo_struct.refinedTrapPixelsInner = [];
+            trapInfo_struct.refinedTrapPixelsBig = [];
             
         end
         

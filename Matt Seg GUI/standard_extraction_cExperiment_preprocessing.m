@@ -137,7 +137,7 @@ cExperiment.ActiveContourParameters.ImageSegmentation.channels = [lower_brightfi
 % following function, which would be called from the GUI if you press the
 % extract Data button.
 
-cExperiment.guiSetExtractParameters;
+cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 %% set cell identification threshold
 % two stage threshold sets the leneancy of cell identification. Higher is

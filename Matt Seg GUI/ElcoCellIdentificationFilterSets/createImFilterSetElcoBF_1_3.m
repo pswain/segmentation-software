@@ -94,7 +94,7 @@ for i=1:size(modified_image,3)
      
     
     %% hough on gradient magnitude
-    [temp_im] =  CircularHough_Grd_mod(grad_mag, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum);
+    [temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum,trapLogicalBIG);
     
     filt_feat(:,temp_index)=temp_im(:);
     temp_index=temp_index+1;
@@ -248,7 +248,13 @@ end
  
 vap_fltr4accum = 4; % filter for smoothing the accumulation array
 % Default filter (5-by-5)
-fltr4accum=varargin{end};
+fltr4accum=varargin{3};
+
+if nargin>5
+    exclude_mask = varargin{4};
+else
+    exclude_mask = false(size(img));
+end
 % fltr4accum = ones(5,5);
 % fltr4accum(2:4,2:4) = 2;
 % fltr4accum(3,3) = 6;
@@ -288,7 +294,8 @@ grdmag = sqrt(grdx.^2 + grdy.^2);
  
 % Get the linear indices, as well as the subscripts, of the pixels
 % whose gradient magnitudes are larger than the given threshold
-grdmasklin = find(grdmag > prm_grdthres);
+% also exclude any pixels in the exclude_mask (trap pixels)
+grdmasklin = find(grdmag > prm_grdthres & ~exclude_mask);
 [grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
  
 rr_4linaccum = double( prm_r_range );
