@@ -16,8 +16,8 @@ function filt_feat=createImFilterSetCellTrapStackDIC(cCellSVM,image)
  
 %% Normalize the image and traps
 image=double(image);
-n_filt=3;
-nHough=2*1;
+n_filt=4;
+nHough=2*2;
 nHoughIm=0;
 nBW=1;
 nSym=4;
@@ -34,7 +34,7 @@ se3=cCellSVM.se.se3;
  
 if ~isfield(cCellSVM.se,'trap')||isempty(cCellSVM.se.trap)
      
-    cCellSVM.se.trap.f1=fspecial('gaussian',8,5);
+    cCellSVM.se.trap.f1=fspecial('gaussian',cCellSVM.radiusSmall*1.5,5);
     cCellSVM.se.trap.f2=fspecial('gaussian',8,2);
      
     cCellSVM.se.trap.trapEdge=cCellSVM.cTrap.contour;
@@ -95,12 +95,13 @@ filt_im2=zeros(size(im,1),size(im,2),(size(im,3)*n_filt*nHoughIm),'double');
 % h(:,:,3) = fspecial('gaussian', 10, 75*sigma);
  
 %% The general pixel based features
+nHoodS=true(floor(cCellSVM.radiusSmall*1.5));
 for i=1:size(im,3)
     im_slice=im(:,:,i);
 %     filt_feat(:,(i-1)*n_filt+1)=im_slice(:);
 %     filt_im(:,:,(i-1)*n_filt+1)=im_slice;
      
-    temp_im=imfilter(temp_im,fspecial('gaussian',cCellSVM.radiusSmall,cCellSVM.radiusSmall/3),'replicate');
+    temp_im=imfilter(im_slice,fspecial('gaussian',cCellSVM.radiusSmall,cCellSVM.radiusSmall/3),'replicate');
     filt_feat(:,(i-1)*n_filt+2)=temp_im(:);
     filt_im(:,:,(i-1)*n_filt+2)=temp_im;
      
@@ -121,9 +122,9 @@ for i=1:size(im,3)
     filt_feat(:,(i-1)*n_filt+1)=grad_im(:);
     filt_im(:,:,(i-1)*n_filt+1)=grad_im;
 
-
-%     filt_feat(:,(i-1)*n_filt+4)=temp_im(:);
-%     filt_im(:,:,(i-1)*n_filt+4)=temp_im;
+    temp_im=stdfilt(im_slice,nHoodS);
+    filt_feat(:,(i-1)*n_filt+4)=temp_im(:);
+    filt_im(:,:,(i-1)*n_filt+4)=temp_im;
 %      
 %     for index=1:size(h,3)
 %         g(:,:,index)=imfilter(im_slice,h(:,:,index),'replicate');
@@ -158,18 +159,35 @@ dogIm=[];
 for i=1:size(filt_im,3)
     [grdx, grdy] = gradient(single(filt_im(:,:,i)));
 
-    [accum] =  CircularHough_Grd(filt_im(:,:,i),grdx,grdy, [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.5)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.01,6,fltr4accum);
+    [accum] =  CircularHough_Grd(filt_im(:,:,i),grdx,grdy, [cCellSVM.radiusSmall floor((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall],max(max(filt_im(:,:,i)))*.01,6,fltr4accum);
+    diffIm=accum.*trapG;
+    temp_im=accum-diffIm;
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
     temp_index=temp_index+1;
-    temp_im=accum;
     filt_im2(:,:,(i-1)*nHough+1)=temp_im;
+    filt_feat(:,temp_index)=temp_im(:);
+    
+    accum = imfilter((accum),f1,'replicate');
+    diffIm=accum.*trapG2;
+    temp_im=accum-diffIm;  
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
+    temp_index=temp_index+1;
     filt_feat(:,temp_index)=temp_im(:);
     
     [accum] =  CircularHough_Grd(filt_im(:,:,i),grdx,grdy, [ceil((cCellSVM.radiusLarge-cCellSVM.radiusSmall)*.4)+cCellSVM.radiusSmall cCellSVM.radiusLarge],max(max(filt_im(:,:,i)))*.01,11,fltr4accum2);
     temp_index=temp_index+1;
-    temp_im=accum;
+    diffIm=accum.*trapG;
+    temp_im=accum-diffIm;
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
     filt_feat(:,temp_index)=temp_im(:);
     filt_im2(:,:,(i-1)*nHough+2)=temp_im;
 
+    accum = imfilter((accum),f1,'replicate');
+    diffIm=accum.*trapG2;
+    temp_im=accum-diffIm;  
+    temp_im(cCellSVM.cTrap.trapOutline>0)=temp_im(cCellSVM.cTrap.trapOutline>0)/2;
+    temp_index=temp_index+1;
+    filt_feat(:,temp_index)=temp_im(:);
     
 %     for index=1:size(h,3)
 %         dogIm(:,:,index)=imfilter(temp_im,h(:,:,index),'replicate');
@@ -181,7 +199,10 @@ for i=1:size(filt_im,3)
 end
  
 %% Filters based on thresholding and distance transforms of the previous filters
-strelClose=strel('disk',cCellSVM.radiusSmall);
+strelClose=strel('disk',cCellSVM.radiusSmall-2);
+if strelClose<2
+    strelClose=2;
+end
 % tpDilated=cCellSVM.cTrap.trapOutline;
 tpDilated=imdilate(cCellSVM.cTrap.trapOutline,strelClose);
 r=floor(size(filt_im,1)/2);

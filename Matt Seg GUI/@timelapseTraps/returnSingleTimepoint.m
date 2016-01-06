@@ -204,7 +204,7 @@ end
     end
     
     %used for padding data
-    medVal=median(timepointIm(:));
+    medVal=1.3*mean(timepointIm(:));
     
     
     %This was a correction instigated by Matt but seems like a really bad
@@ -330,7 +330,7 @@ else
     end
     
     if image_rotation~=0
-        medVal=median(timepointIm(:));
+%         medVal=median(timepointIm(:));
         bbN=200;
         tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
         tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');

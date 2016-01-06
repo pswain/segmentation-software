@@ -119,9 +119,12 @@ classdef timelapseTraps<handle
             FieldNames = fields(cTimelapseIN);
             
             for i = 1:numel(FieldNames)
-                
-                cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
-                
+                a=strfind(FieldNames{i},'Template');
+                if isempty(a);
+                    if ~strcmp('defaultExtractParameters',FieldNames{i})
+                        cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
+                    end
+                end
             end
             
         end

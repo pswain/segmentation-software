@@ -45,7 +45,7 @@ for ci = 1:length(cTimelapse.channelsForSegment)
         % return a cell array with each element being an image stack for
         % the trap in the traps array provided
         temp_im = cTimelapse.returnTrapsTimepoint(traps,timepoint,cTimelapse.channelsForSegment(ci));
-        mval=mean(temp_im(:));
+        mval=1.3*mean(temp_im(:));
         if ci==1
             imagestack_out = cell(length(traps),1);
             [imagestack_out{:}] = deal(mval*ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment)));

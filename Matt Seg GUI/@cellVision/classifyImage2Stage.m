@@ -38,7 +38,7 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 %
 
 
-if nargin<2 || isempty(trapOutline)
+if nargin<3 || isempty(trapOutline)
     trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se1);
 end
 
@@ -49,13 +49,18 @@ filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.
 
 labels=ones(size(image,1)*size(image,2),1);
 dec_values=zeros(size(image,1)*size(image,2),1);
+dec_values2=zeros(size(image,1)*size(image,2),1);
+
 predict_label=zeros(size(image,1)*size(image,2),1);
 
 % mex file that does the linear prediction.
 [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
 
-dec_values(~trapOutline(:))=dec_valuesLin(:);
-dec_values(trapOutline(:))=2;
+dec_values(~trapOutline(:))=dec_valuesLin(:,3);
+dec_values(trapOutline(:))=0;
+dec_values2(~trapOutline(:))=dec_valuesLin(:,2);
+dec_values2(trapOutline(:))=2;
+
 
 predict_label(~trapOutline(:))=predict_labelLin(:);
 predict_label(trapOutline(:))=0;

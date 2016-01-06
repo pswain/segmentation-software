@@ -71,7 +71,7 @@ cExperiment.timepointsToLoad=timepointsToLoad;
 cExperiment.magnification = magnification;
 cExperiment.imScale = imScale;
 cExperiment.trapsPresent = traps_present;
-
+cExperiment.channelNames{end+1}=searchString{1};
 %% Load timelapses
 for i=1:length(positionsToLoad)
     currentPos=positionsToLoad(i);

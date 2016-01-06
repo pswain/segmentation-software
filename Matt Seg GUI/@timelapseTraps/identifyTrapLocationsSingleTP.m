@@ -90,8 +90,8 @@ else
     image=im;
 end
 
-if nargin<4
-    trapLocations=predictTrapLocations(image,cTrap); 
+if nargin<4 || isempty(trapLocations)
+    [trapLocations d cc]=predictTrapLocations(image,cTrap,[]); 
 end
 
     [trapLocations trap_mask trapImages cc]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck,cc);
@@ -125,9 +125,7 @@ function [trapLocations, trap_mask, ccCalc]=predictTrapLocations(image,cTrap,cc)
 % correlation as a threshold and picks all values below this in order,
 % ruling out the area directly around each new trap Location.
 
-timepoint_im=double(image);
-timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
-image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],median(timepoint_im(:)));
+image_temp=image;% image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],median(timepoint_im(:)));
 
 
 if isempty(cc)

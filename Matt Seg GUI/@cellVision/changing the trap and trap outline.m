@@ -1,15 +1,15 @@
 
-cTimelapse=disp.cExperiment.returnTimelapse(2);
+cTimelapse=disp.cExperiment.returnTimelapse(1);
 cCellVision=disp.cCellVision;
 
 %%
 tp=1;trap=4;
 % cTimelapse.cTimepoint(tp).trapLocations(trap).xcenter=cTimelapse.cTimepoint(tp).trapLocations(trap).xcenter-2;
-im=cTimelapse.returnTrapsTimepoint(trap,tp,3);
+im=cTimelapse.returnTrapsTimepoint(trap,tp,1);
 cCellVision.cTrap.trap2=im;
 trap=2;
 % cTimelapse.cTimepoint(tp).trapLocations(trap).xcenter=cTimelapse.cTimepoint(tp).trapLocations(trap).xcenter-2;
-im=cTimelapse.returnTrapsTimepoint(trap,tp,3);
+im=cTimelapse.returnTrapsTimepoint(trap,tp,1);
 cCellVision.cTrap.trap1=im;
 
 %%
@@ -18,7 +18,7 @@ im=cTimelapse.returnSegmenationTrapsStack(trap,tp);
 im=max(im{1},[],3);
 
 %%
-im=cCellVision.cTrap.trap2;
+im=cCellVision.cTrap.trap1;
 figure;imshow(im,[])
 bw=edge(im,'canny');
 figure;imshow(bw,[]);
