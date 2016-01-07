@@ -85,7 +85,7 @@ if ~isempty(cCellVision.cTrap)
         else %use elco's active contour stuff
             ImageTransformParameters = struct('postprocessing','invert');
              ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',max(size(im)),'opt_points',12,...
-                'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',4);
+                'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds_for_PSO',30,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',4);
             
             TrapImage = double(cCellVision.cTrap.trap1);
             TrapImage = TrapImage/median(TrapImage(:));
