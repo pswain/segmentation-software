@@ -64,6 +64,8 @@ end
 
 %% get image
 im = [];
+
+wh = waitbar(0,'refininf trap outline');
 for tp = timepoints
     if nargin<4
         
@@ -139,9 +141,9 @@ for tp = timepoints
         end
     end
     
-    fprintf('%d ',tp)
+waitbar(tp/max(timepoints(:)),wh);
 end
 close(f);
-fprintf('\\')
+
 
 end

@@ -15,6 +15,7 @@ function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
     cTimelapse=cExperiment.cTimelapse;
 if isempty(cExperiment.OmeroDatabase)
     save([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
     
     cExperiment.cTimelapse=[];
     cCellVision=cExperiment.cCellVision;
