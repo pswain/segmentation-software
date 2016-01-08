@@ -3,7 +3,7 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 %
 % runs the two stage classification, if the model is linear it will just run
 % the linear segmentation.
-% 
+%
 % cCellSVM          :   object of the cellVision class.
 % image             :   cell array of image stacks used in generating
 %                       decision image. Returned from
@@ -22,17 +22,17 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 % filtered_image    :   array of filter values used. Not reshaped, so each
 %                       row is the filter values for the corresponding
 %                       pixel.
-%                       
+%
 % calculates the transformation image using the getFilteredImage function
 % of the cellVision class. Applies the necessary transformations and then
 % the linear classification to all non trap pixels (trap pixels being set
 % to 2 in the decision image and 0 in the prediction image).
 % If the model is a two stage model, pixels within an absolute distance of
 % cCellSVM.linearToTwoStageParams.threshold of the twoStageThreshold are
-% subjected to the 2nd stage (SVM?). An upper bound 
+% subjected to the 2nd stage (SVM?). An upper bound
 %   cCellSVM.linearToTwoStageParams.upperBound
 % pixels, either defined as a fraction of non cell pixels or as an absolute
-% number is also applied to ensure a reasonable computational time. 
+% number is also applied to ensure a reasonable computational time.
 %       cCellSVM.linearToTwoStageParams.upperBoundType
 % is used to determine if the bound is 'fraction' or 'absolute'.
 %
@@ -56,10 +56,15 @@ predict_label=zeros(size(image,1)*size(image,2),1);
 % mex file that does the linear prediction.
 [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
 
-dec_values(~trapOutline(:))=dec_valuesLin(:,3);
+dec_values(~trapOutline(:))=dec_valuesLin(:,1);
 dec_values(trapOutline(:))=0;
-dec_values2(~trapOutline(:))=dec_valuesLin(:,2);
-dec_values2(trapOutline(:))=2;
+if size(dec_valuesLin,2)>2
+    dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
+    dec_values2(~trapOutline(:))=dec_valuesLin(:,3);
+    dec_values2(trapOutline(:))=0;
+else
+    dec_values2=[];
+end
 
 
 predict_label(~trapOutline(:))=predict_labelLin(:);
@@ -96,3 +101,7 @@ if ~isempty(cCellSVM.SVMModel) && ~strcmp(cCellSVM.method,'linear')
 end
 predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
 decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);
+if ~isempty(dec_values2)
+    decision_im2=reshape(dec_values2(:,1),[size(image,1) size(image,2)]);
+    decision_im(:,:,2)=decision_im2;
+end

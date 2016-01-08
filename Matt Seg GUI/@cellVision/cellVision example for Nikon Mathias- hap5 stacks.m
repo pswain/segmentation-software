@@ -124,30 +124,22 @@ cTimelapse.trackTrapsThroughTime();
 
 
 %%
+[d_imCenters, d_imEdges]=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,[],[]);
+%%
 % for i=1:45
-i=22
-trap_im=cTimelapseOut.returnSegmenationTrapsStack(i,30);
+i=15
+tp=1
+trap_im=cTimelapse.returnSegmenationTrapsStack(i,tp);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
 [p_im d_im]=cCellVision.classifyImage2Stage(trap_im{1},[]);toc
-
-% [p_im d_im]=cCellVision.classifyImageLinear(trap_im);toc
-toc
-% [p_im d_im]=cCellVision.classifyImage(trap_im);toc
-
-% figure(11);imshow(p_im,[]);
-% figure(2);imshow(imfilter(d_im,fspecial('disk',1)),[]);impixelinfo
-% figure(3);imshow(trap_im{1}(:,:,1),[]);pause(.01)
-% figure(4);imshow(d_im,[]);impixelinfo;colormap(jet)
+d_imCenters=d_im(:,:,1);
+d_im=d_im(:,:,2);
 figure(5);imshow(medfilt2(d_im),[]);impixelinfo;colormap(jet)
-% pause(1)
 tim=medfilt2(d_im);
-% tim=d_im;
 bwCell=tim<-1;
-%
 maskStart=(p_im==1);
 maskLabel=bwlabel(maskStart);
-% props=regionprops(maskLabel);
 bwl=bwlabel(bwCell);
 maskStart=zeros(size(maskStart));
 for i=1:max(maskLabel(:))
@@ -158,50 +150,68 @@ for i=1:max(maskLabel(:))
     maskStart(maskLabel==i)=1;
 end
 tic
-% maskStart=imdilate(maskStart,se1);
 figure(12);imshow(maskStart,[]);title('Mask Start')
-% figure(13);imshow(maskLabel,[]);
 
-b=1./(1+exp(-tim));
-figure(9);imshow(b,[]);colormap(jet)
+logisticIm=1./(1+exp(-tim));
+figure(9);imshow(logisticIm,[]);colormap(jet)
 tic
-% bw=activecontour(b,maskStart,10,'Edge','ContractionBias',-.2,'SmoothFactor',.2);toc
-bw=activecontour(b,maskStart,30,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',.3);toc
-
+% bw=activecontour(b,maskStart,10,'Edge','ContractionBias',-.1,'SmoothFactor',0);toc
+bw=activecontour(logisticIm,maskStart,5,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+bw=imfill(bw,'holes');toc
 drawnow
 figure(6);imshow(bw,[]);title('Cell End')
-im=trap_im{1}(:,:,1);
-im(bw>0)=im(bw>0)*2.0;
-figure(8);imshow(im,[],'InitialMagnification',200);pause(.1)
+maskStart=bw;
+bVar=[];
 %%
-close all
-  Options=struct;
-
-alpha=0.1;mu=0.3;
-iterations=10;
-beta=.9;
-gamma=5;
-kappa=-.1;
-wl=10
+se3=cCellVision.se.se3;
+se1=cCellVision.se.se1;
+se6=strel('disk',6);
+alpha=.1;mu=0.1;
+iterations=100;
+beta=.7;gamma=10;kappa=-.5;
+wl=10;
 we=5;
-wt=1;
+wt=.1;
 bwlN=bwlabel(maskStart>0);
-pInit=(bwlN==3);
-p=imdilate(pInit,se2);
-p=bwmorph(p,'remove');
-[pr pc]=find(p>0);
+pInit=(bwlN==2);
+p=imclose(pInit,se6);
+% p=bwmorph(p,'majority');
+D = bwdist(~p);
+D = -D;
+D(~p) = -Inf;
+figure(546);imshow(D,[]);
+L = watershed(D);
+figure(545);imshow(L,[]);
+bwlN=bwlabel(p);
+if max(L(:))>1
+    lPerim=(L==0);
+    bwP=imdilate(bwperim(p),se1);
+    bwLNotP=sum(lPerim(~bwP));
+    %only separate if things are barely joined
+    if sum(lPerim(:)) > (2*pi*bwLNotP)*1.5
+        pInit=L==4;
+        p=pInit;
+    end
+%     disp('Two Cells Joined')
+end
+pInit=imdilate(pInit,se3);
 figure(1);imshow(pInit,[]);
+p=bwmorph(pInit,'remove');
+[pr pc]=find(p>0);
 props=regionprops(pInit);
-nseg=32;
-cirrad=4;
+nseg=24;
+cirrad=sqrt(sum(pInit(:))/pi);
+cirrad=cirrad*1.3; %radius buffering in case cell is elliptical
 circen=props.Centroid;
 
-temp_im=b;
+figure(15);imshow(p,[]);
+%
+temp_im=logisticIm;
 temp_im=zeros(size(temp_im))>0;
 x=circen(1,1);y=circen(1,2);r=cirrad(1);
 x=double(x);y=double(y);r=double(r);
 if r<11
-    theta = 0 : (2 * pi / nseg) : (2 * pi);
+    theta = -.1 : (2 * pi / nseg) : (2 * pi);
 elseif r<18
     theta = 0 : (2 * pi / nseg/1.3) : (2 * pi);
 else
@@ -212,13 +222,16 @@ pline_y = round(r * sin(theta) + y);
 loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
 pline_x(loc)=[];pline_y(loc)=[];
 segLoc=[pc pr];
+bIm=zeros(size(p));
+segPts=[];
 for i=1:length(pline_x)
     pt=[pline_x(i) pline_y(i)];
-    [d ]=pdist2(pt,segLoc,'euclidean');
+    [d ]=pdist2(segLoc,pt,'euclidean');
     [v loc]=min(d);
     segPts(i,:)=segLoc(loc(1),:);
+    bIm(segPts(i,2),segPts(i,1))=1;
 end
-
+figure(123);imshow(bIm,[]);
 xs=segPts(:,1);
 ys=segPts(:,2);
 % bb=5
@@ -230,20 +243,33 @@ ys=segPts(:,2);
 % end
 % figure;imshow(b,[]);
 % [xs ys]=getpts;
-image=b;
-smth=interate(tim,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);
+image=logisticIm;
 
+figure(26);tic
+image(:,1)=0.5;
+image(:,end)=0.5;
+image(1,:)=0.5;
+image(end,:)=0.5;
+
+[bVar,bw]=snakeIterate(bVar,image,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);toc
+
+% cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
+
+% figure(5);imshow(bw,[]);
+im=trap_im{1}(:,:,1);
+im(bw>0)=im(bw>0)*2.0;
+figure(8);imshow(im,[],'InitialMagnification',200);pause(.1)
 %%
 
 % run GVF
 tic;
-[u,v] = GVF(b, alpha, mu, iter);
+[u,v] = GVF(logisticIm, alpha, mu, iter);
 t=toc;
 
 fprintf('Computing GVF uses %f seconds \n',t);
 
 figure;
-imshow(b);
+imshow(logisticIm);
 hold on;
 quiver(u,v);
 axis ij off;
