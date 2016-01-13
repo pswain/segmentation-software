@@ -99,21 +99,31 @@ end
 end
 
 function edgeACSnake(cTimelapse,cCellVision,traps,timepoint,d_imEdges)
+se1=cCellVision.se.se1;
 se2=cCellVision.se.se2;
 se3=cCellVision.se.se3;
-se6=strel('disk',6);
+% se6=strel('disk',6);
 trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 for k=1:length(traps)
     segCenters{k}=full(trapInfo(traps(k)).segCenters);
 end
 
+% fprintf('change back to parfor  - line 112 identifyCellObjects\n')
 parfor k=1:length(traps)
     tim=medfilt2(d_imEdges(:,:,k));
-    bwCell=tim<-1;
+    logisticIm=1./(1+exp(-tim));
+    bwCell=logisticIm<.25;
+    bwCellEdge=imclose(logisticIm>.5,se2);
+
     maskStart=segCenters{k};
     maskLabel=bwlabel(maskStart);
-    bwl=bwlabel(bwCell);
     maskStart=zeros(size(maskStart));
+    bwCell(bwCellEdge)=0;
+    bwl=bwlabel(bwCell);
+    trapInf{k}.segmented=zeros(size(maskLabel));
+    trapInf{k}.cellRad=[];
+    trapInf{k}.circen=[];
+
     if max(maskLabel(:))>0 %only run this if there is a cell present
         for i=1:max(maskLabel(:))
             t=max(bwl(maskLabel==i));
@@ -122,42 +132,54 @@ parfor k=1:length(traps)
             end
             maskStart(maskLabel==i)=1;
         end
-        %     figure(12);imshow(maskStart,[]);title('Mask Start')
-        
-        logisticIm=1./(1+exp(-tim));
-        
-        bw=activecontour(logisticIm,maskStart,5,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+        bw=activecontour(logisticIm,maskStart,17,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
         bw=imfill(bw,'holes');
         maskStart=bw;
         
         
-        alpha=.1;mu=0.1;
-        iterations=30;
-        beta=.7;gamma=10;kappa=-.5;
-        wl=10;we=5;wt=.1;
+        alpha=.001;mu=0.05;
+        iterations=80;
+        beta=1;gamma=3;kappa=-.2;
+        wl=10; we=5; wt=.1;
         
-        p=imdilate(maskStart>0,se2);
-        bwlN=bwlabel(p);
-        pInit=zeros(size(bwlN,1), size(bwlN,2), max(bwlN(:)));
-        for cellInd=1:max(bwlN(:))
-            pInit(:,:,cellInd)=imdilate(bwlN==cellInd,se2);
+        p=maskStart>0;
+        
+        D = bwdist(~p);
+        D = -D;
+        D(~p) = -Inf;
+%         figure(546);imshow(D,[]);
+        D(p & D<-4.5)=-4.5; % constrain so only the small things are cut by watershed
+        L = watershed(D);
+        L(imdilate(~p,se1))=0;
+        L=bwlabel(L>1);
+        
+        pInit=zeros(size(L,1), size(L,2), max(L(:)));
+        cPres=zeros(1,max(L(:)));
+%         figure(200);imshow(max(L,[],3),[]);
+
+        for cellInd=1:max(L(:))
+            tImL=imopen(L==cellInd,se1);
+            pInit(:,:,cellInd)=tImL;
+            cPres(cellInd)=max(tImL(:));
+            %below is if the background is accidentally selected (ie a
+            %super huge cell)
+            if sum(tImL(:))> .3*(size(L,1)*size(L,2))
+                cPres(cellInd)=0;
+            end
         end
-        %     pInit=imdilate(pInit,se2);
-        %     figure(1);imshow(pInit(:,:,cellInd),[]);
-        
+        pInit=pInit(:,:,cPres>0); %if no cell is present, delete that slice
+%         figure(201);imshow(max(pInit,[],3),[]);
         bVar=[];
         for cellInd=1:size(pInit,3)
             pInitTemp=imdilate(pInit(:,:,cellInd),se3);
             p=bwmorph(pInitTemp,'remove');
             [pr pc]=find(p>0);
-            props=regionprops(pInit);
-            nseg=24;
-            cirrad=sqrt(sum(pInit(:))/pi);
-            cirrad=cirrad*1.3; %radius buffering in case cell is elliptical
+            props=regionprops(pInitTemp);
+            nseg=30;
+            cirrad=sqrt(sum(pInitTemp(:))/pi);
+            cirrad=cirrad*1.8; %radius buffering in case cell is elliptical
             circen=props.Centroid;
             
-            %         figure(1);imshow(p,[]);
-            %
             temp_im=logisticIm;
             temp_im=zeros(size(temp_im))>0;
             x=circen(1,1);y=circen(1,2);r=cirrad(1);
@@ -165,14 +187,12 @@ parfor k=1:length(traps)
             if r<11
                 theta = -.1 : (2 * pi / nseg) : (2 * pi);
             elseif r<18
-                theta = 0 : (2 * pi / nseg/1.3) : (2 * pi);
+                theta = -.1 : (2 * pi / nseg/1.3) : (2 * pi);
             else
-                theta = 0 : (2 * pi / nseg/1.8) : (2 * pi);
+                theta = -.1 : (2 * pi / nseg/1.8) : (2 * pi);
             end
             pline_x = round(r * cos(theta) + x);
             pline_y = round(r * sin(theta) + y);
-            loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
-            pline_x(loc)=[];pline_y(loc)=[];
             segLoc=[pc pr];
             bIm=zeros(size(p));
             segPts=[];
@@ -185,12 +205,13 @@ parfor k=1:length(traps)
             end
             xs=segPts(:,1);
             ys=segPts(:,2);
-            
+%             figure(123);imshow(bIm,[]);
+
             [bVar,bw]=snakeIterate(bVar,logisticIm,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);
-            %         figure(82);imshow(bw,[]);uiwait;
+%                     figure(82);imshow(bw,[]);
             trapInf{k}.segmented(:,:,cellInd)=bwmorph(bw,'remove');
-            trapInf{k}.cellRad=sqrt(sum(bw(:))/pi);
-            trapInf{k}.circen=circen;
+            trapInf{k}.cellRad(cellInd)=sqrt(sum(bw(:))/pi);
+            trapInf{k}.circen(cellInd,:)=circen;
         end
     else
         trapInf{k}.segmented=zeros(size(maskLabel));
@@ -200,17 +221,19 @@ parfor k=1:length(traps)
 end
 for k=1:length(traps)
     for cellInd=1:size(trapInf{k}.segmented,3)
-        cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).segmented=sparse(trapInf{k}.segmented(:,:,cellInd));
-        cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellRadius=trapInf{k}.cellRad;
-        cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellCenter=trapInf{k}.circen;
+        cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).segmented=sparse(trapInf{k}.segmented(:,:,cellInd)>0);
         if isempty(trapInf{k}.cellRad)
             cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=0;
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellRadius=[];
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellCenter=[];
         else
             cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=1;
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellRadius=trapInf{k}.cellRad(cellInd);
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellCenter=trapInf{k}.circen(cellInd,:);
+            
         end
     end
 end
-toc
 end
 
 function hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw_mask,image,allowedOverlap)

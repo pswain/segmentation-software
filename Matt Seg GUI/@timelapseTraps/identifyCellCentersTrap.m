@@ -114,7 +114,7 @@ end
 %threshold it to give segCentres.
 
 %uncomment when you change parfor to for for debugginf
-%fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
+% fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
 parfor k=1:length(trap) %CHANGE BACK TO parfor
     [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
     d_imCenters(:,:,k)=d_im_temp(:,:,1);

@@ -127,8 +127,8 @@ cTimelapse.trackTrapsThroughTime();
 [d_imCenters, d_imEdges]=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,[],[]);
 %%
 % for i=1:45
-i=15
-tp=1
+i=91
+tp=72
 trap_im=cTimelapse.returnSegmenationTrapsStack(i,tp);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
@@ -137,9 +137,14 @@ d_imCenters=d_im(:,:,1);
 d_im=d_im(:,:,2);
 figure(5);imshow(medfilt2(d_im),[]);impixelinfo;colormap(jet)
 tim=medfilt2(d_im);
-bwCell=tim<-1;
+logisticIm=1./(1+exp(-tim));
+
+bwCell=logisticIm<.25;
+bwCellEdge=imclose(logisticIm>.5,se2);
+figure(4);imshow(p_im,[])
 maskStart=(p_im==1);
 maskLabel=bwlabel(maskStart);
+bwCell(bwCellEdge)=0;
 bwl=bwlabel(bwCell);
 maskStart=zeros(size(maskStart));
 for i=1:max(maskLabel(:))
@@ -152,46 +157,56 @@ end
 tic
 figure(12);imshow(maskStart,[]);title('Mask Start')
 
-logisticIm=1./(1+exp(-tim));
 figure(9);imshow(logisticIm,[]);colormap(jet)
 tic
-% bw=activecontour(b,maskStart,10,'Edge','ContractionBias',-.1,'SmoothFactor',0);toc
-bw=activecontour(logisticIm,maskStart,5,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+% bw=activecontour(logisticIm,maskStart,20,'Edge','ContractionBias',-.1,'SmoothFactor',0);toc
+bw=activecontour(logisticIm,maskStart,18,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
 bw=imfill(bw,'holes');toc
 drawnow
-figure(6);imshow(bw,[]);title('Cell End')
+figure(16);imshow(bw,[]);title('Cell End')
 maskStart=bw;
 bVar=[];
 %%
 se3=cCellVision.se.se3;
 se1=cCellVision.se.se1;
-se6=strel('disk',6);
-alpha=.1;mu=0.1;
-iterations=100;
-beta=.7;gamma=10;kappa=-.5;
+se4=strel('disk',4);
+alpha=.001;
+iterations=150;
+beta=1;gamma=3;kappa=-.25;
 wl=10;
 we=5;
 wt=.1;
-bwlN=bwlabel(maskStart>0);
-pInit=(bwlN==2);
-p=imclose(pInit,se6);
+% bwlN=bwlabel(maskStart>0);
+% pInit=(bwlN==2);
+% p=imclose(pInit,se1);
+% p=pInit;
+figure(99);imshow(p,[])
 % p=bwmorph(p,'majority');
+p=maskStart>0;
+%
 D = bwdist(~p);
 D = -D;
 D(~p) = -Inf;
 figure(546);imshow(D,[]);
+D(p & D<-4.5)=-4.5; % constrain so only the small things are cut by watershed
 L = watershed(D);
+L(imdilate(~p,se1))=0;
+
 figure(545);imshow(L,[]);
-bwlN=bwlabel(p);
-if max(L(:))>1
-    lPerim=(L==0);
-    bwP=imdilate(bwperim(p),se1);
-    bwLNotP=sum(lPerim(~bwP));
+%
+L=bwlabel(L>1);
+if max(L(:))>0
+    %     lPerim=(L==0);
+    %     bwP=imdilate(bwperim(p),se1);
+    %     bwLNotP=sum(lPerim(~bwP));
     %only separate if things are barely joined
-    if sum(lPerim(:)) > (2*pi*bwLNotP)*1.5
-        pInit=L==4;
-        p=pInit;
-    end
+    %     if sum(lPerim(:)) > (2*pi*bwLNotP)*1.5
+    pInit=L==4;
+            p=imopen(pInit,se1);
+    p=pInit;
+    figure(101);imshow(p,[]);
+    
+    %     end
 %     disp('Two Cells Joined')
 end
 pInit=imdilate(pInit,se3);
@@ -199,9 +214,9 @@ figure(1);imshow(pInit,[]);
 p=bwmorph(pInit,'remove');
 [pr pc]=find(p>0);
 props=regionprops(pInit);
-nseg=24;
+nseg=30;
 cirrad=sqrt(sum(pInit(:))/pi);
-cirrad=cirrad*1.3; %radius buffering in case cell is elliptical
+cirrad=cirrad*1.8; %radius buffering in case cell is elliptical
 circen=props.Centroid;
 
 figure(15);imshow(p,[]);
@@ -219,8 +234,9 @@ else
 end
 pline_x = round(r * cos(theta) + x);
 pline_y = round(r * sin(theta) + y);
-loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
-pline_x(loc)=[];pline_y(loc)=[];
+% loc=find(pline_x>size(temp_im,2) | pline_x<1 | pline_y>size(temp_im,1) | pline_y<1);
+% pline_x(loc)=[];pline_y(loc)=[];
+%
 segLoc=[pc pr];
 bIm=zeros(size(p));
 segPts=[];
@@ -251,6 +267,7 @@ image(:,end)=0.5;
 image(1,:)=0.5;
 image(end,:)=0.5;
 
+bVar=[];
 [bVar,bw]=snakeIterate(bVar,image,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);toc
 
 % cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
