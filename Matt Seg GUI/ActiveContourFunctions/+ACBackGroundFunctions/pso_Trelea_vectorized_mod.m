@@ -110,7 +110,7 @@ else
     functname_string = 'not sure what this function is?';
 end
     
-g_descent_param = 1;
+g_descent_param = 2;
 
 rand('state',sum(100*clock));
 if nargin < 2
@@ -205,6 +205,15 @@ ergrdep = P(10);
 errgoal = P(11);
 trelea  = P(12);
 PSOseed = P(13);
+
+%hacks by Elco to get gradient descent rubbish working better.
+%%%%%%%%%%%%
+ps_orig = ps;
+ps = ps+D+1;
+
+PSOseed = cat(1,PSOseed,repmat(PSOseed(1,:),D,1));
+%%%%%%%%%%%%%%
+
 
 % used with trainpso, for neural net training
 if strcmp(functname,'pso_neteval')
@@ -346,15 +355,15 @@ rstflg = 0; % for dynamic environment checking
  %ps = number of seeds
  %D = dimension of problem
  
+ 
 for i=1:me  % start epoch loop (iterations)
-
-     out        = feval(functname,[pos;gbest;(diag(ones(D,1)) + repmat(gbest,D,1)  )]);
-     outbestval = out(ps+1,:);
+    g_best_old = gbest;
+    
+     out        = feval(functname,pos);
      
-     gbest_gradient = (out(ps+2:end,:)-outbestval)';
+     gbest_gradient = (out(ps_orig+2:end,:)-gbestval)';
      
-     out        = out(1:ps,:);
-
+     
      tr(i+1)          = gbestval; % keep track of global best val
      te               = i; % returns epoch number to calling program when done
      bestpos(i,1:D+1) = [gbest,gbestval];
@@ -377,7 +386,7 @@ for i=1:me  % start epoch loop (iterations)
     % threshold value that determines dynamic environment 
     % sees if the value of gbest changes more than some threshold value
     % for the same location
-    chkdyn = 1;
+    chkdyn = 0;
     rstflg = 0; % for dynamic environment checking
 
     if chkdyn==1
@@ -545,8 +554,10 @@ for i=1:me  % start epoch loop (iterations)
                +ac22.*(repmat(gbest,ps,1)-pos);           % social 
            
            %vel(idx1,:) = vel(idx1,:)+g_descent_param*rand(1)*gbest_gradient; %added by elco - does a sort of gradient descent on the g best.
-           vel(idx1,:) = g_descent_param*rand(1)*gbest_gradient; %does only gradient descent on g best.
                
+       end
+       if max(abs(gbest_gradient(:)))>0
+            vel(ps_orig+1,:) = -g_descent_param*rand(1)*gbest_gradient/max(abs(gbest_gradient(:))); %does only gradient descent on g best.
        end
        
        % limit velocities here using masking
@@ -554,7 +565,9 @@ for i=1:me  % start epoch loop (iterations)
         vel = ( (vel >= velmaskmax).*velmaskmax ) + ( (vel < velmaskmax).*vel );     
         
        % update new position (PSO algo)    
+        pos(ps_orig+1,:) = g_best_old;
         pos = pos + vel;
+        pos(ps_orig+2:end,:) = diag(ones(D,1)) + repmat(gbest,D,1);
     
        % position masking, limits positions to desired search space
        % method: 0) no position limiting, 1) saturation at limit,
@@ -641,7 +654,7 @@ for i=1:me  % start epoch loop (iterations)
  %     pbest = pbest - repmat(gbestoffset,ps,1);
  %     gbest = gbest + gbestoffset;
   
-
+%fprintf('%d ',idx1)
 end  % end epoch loop
 
 %% clear temp outputs

@@ -45,6 +45,9 @@ classdef cellVision<handle
                                % radius above which it assumes the cells will
                                % be present at the next timepoint and adjusts
                                % cell object identification accordingly.
+        imageProcessingMethod = []  % used by timelapseTraps.returnSegmentationTrapStack
+                                    % generally the same as method but
+                                    % allows some processing.
 linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from twoStageThresh before twoStageModel is applied
                                 'upperBoundType','fraction',... either 'fraction' (fraction of total image size) or 'absolute' (absolute number of pixels) determining an upper bound of the number of pixels to apply the twoStage threshold to.
                                 'upperBound',0.015) % upper bound. Either the percentage or the total number of pixels to use.
@@ -140,6 +143,10 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
             
             if isempty(cCellVision.radiusKeepTracking)
                 cCellVision.radiusKeepTracking = 9;
+            end
+            
+            if isempty(cCellVision.imageProcessingMethod)
+                cCellVision.imageProcessingMethod = cCellVision.method;
             end
             
         end

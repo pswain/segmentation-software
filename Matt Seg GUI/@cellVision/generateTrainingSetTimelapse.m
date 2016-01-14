@@ -17,7 +17,9 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 %debug_outputs is for debugging:
 %     debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
 
-ElcoWay = false; %boolean on whether to find training set Elco's way or Matt's way
+% DO NOT COMMIT
+ElcoWay = true; %boolean on whether to find training set Elco's way or Matt's way
+exclude_boundary_size = 10; % exclude pixels this close to the edge from consideration.
 
 debug_outputs = {};
 if nargin<3
@@ -46,8 +48,13 @@ cCellVision.TrainDataGenerationDate = date;
 index=1;
 
 trap1 = cTimelapse.returnSegmenationTrapsStack(1,cTimelapse.timepointsToProcess(1));
-
-features=getFilteredImage(cCellVision,trap1{1});
+if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner')
+    trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
+        full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
+else
+    trapImage = cCellVision.cTrap.trapOutline*1;
+end
+features=getFilteredImage(cCellVision,trap1{1},trapImage);
 
 n_features=size(features,2);
 total_num_timepoints=length(cTimelapse.cTimepoint);
@@ -88,14 +95,22 @@ end
 % fig1=gca;
 for timepoint=1:frame_ss:total_num_timepoints
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
-    image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint);
+    image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.imageProcessingMethod);
     for trap=1:max(traps)
         elapsed_t=toc-time;
         disp(['Trap ', int2str(trap), 'Frame ', int2str(timepoint)])
         disp(['Time ', num2str(elapsed_t)])
         
+        if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner')
+            trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
+                full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
+            insideTraps = trapImage==1;
+            allTrapPixels = trapImage>0;
+        else
+            trapImage = cCellVision.cTrap.trapOutline*1;
+        end
         
-        features=getFilteredImage(cCellVision,image{trap});
+        features=getFilteredImage(cCellVision,image{trap},trapImage);
         
         
         
@@ -144,6 +159,7 @@ for timepoint=1:frame_ss:total_num_timepoints
             nearCenterTraining=max(nearCenterTraining,[],3);
             nearCenterTraining=nearCenterTraining>0;
             exclude_from_negs = nearCenterTraining;
+            fix_in_negs = false(size(exclude_from_negs));
             
             %exclude pixels around right next to centre pixels to try and
             %make classification more robust
@@ -154,40 +170,59 @@ for timepoint=1:frame_ss:total_num_timepoints
             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
             
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cell)+1]);
+            % not to include in negative training set (pixels near cells)
             exclude_from_negs = training_class;
+            
+            % how many (dilated) cells a pixel occurs in
+            all_cell_im = zeros([size(image{trap},1) size(image{trap},2)]);
+            all_cell_edge_im = all_cell_im;
+            
+            % exclude pixel from the edge in training.
+            exclude_boundary = true(size(all_cell_im));
+            exclude_boundary((exclude_boundary_size+1):(end - exclude_boundary_size),...
+                (exclude_boundary_size+1):(end - exclude_boundary_size)) = false;
+            
             if trapInfo.cellsPresent && ~isempty(trapInfo.cell) %shouldn't be necessary in future
                 for num_cells=1:length(trapInfo.cell)
                     if ~isempty(trapInfo.cell(num_cells).cellCenter)
+                        cell_im =  imfill(full(trapInfo.cell(num_cells).segmented),'holes');
+                        exclude_from_negs(:,:,num_cells) = imerode(cell_im,se2);
+                        dist_im = bwdist(~cell_im);
+                        dist_im = dist_im/max(dist_im(:));
+                        training_class(:,:,num_cells) = dist_im>0.8;
                         training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
-                        exclude_from_negs(:,:,num_cells) = imerode(imfill(full(trapInfo.cell(num_cells).segmented),'holes'),se2);
+                        all_cell_edge_im = all_cell_edge_im + imdilate(cell_im - imerode(cell_im,se1),se1);
+                        all_cell_im = all_cell_im + imdilate(cell_im,se1);
+                        
                     end
                 end
             end
             training_class=max(training_class,[],3);
             training_class=training_class>0;
+            training_class(exclude_boundary) = false;
+            
+            % exclude pixels around right next to centre pixels to try and
+            % make classification more robust
             exclude_from_negs=max(exclude_from_negs,[],3);
             exclude_from_negs=exclude_from_negs>0;
-            %exclude pixels around right next to centre pixels to try and
-            %make classification more robust
+            exclude_from_negs = exclude_from_negs | exclude_boundary;
+            % ensure pixels on cell boundary are included in negatives if
+            % the are not in exclusion zone
+            fix_in_negs = all_cell_edge_im>0;
+            fix_in_negs = fix_in_negs & ~exclude_from_negs;
+            
+            % ensure pixels between two cells are included in negatives in
+            % any case.
+            fix_in_negs(all_cell_im>1) = true;
+            fix_in_negs(training_class | exclude_boundary) = false;
+            % forcibly include pixels that separate two cells - very
+            % important to classify correctly.
         end
         
-        %             tempy=image(:,:,trap);
-        %             tempy(class)=tempy(class)*2;
-        %             imshow(tempy,[],'Parent',fig1);pause(.01);
         
-        
-        %             se=strel('disk',8);
-        %             edge_im=ones(size(image,1),size(image,2));
-        
-        %this is a bit of a fudge and one should probably do something
-        %more clever to find the pixels to pick from than this
-        
-        %edge_im=imdilate(training_class,se_edge);
-        
-        %another option
         edge_im_all = false(size(image{1},1), size(image{1},2));
         for i=1:size(image{trap},3)
-            [edge_im thresh]=edge(max(image{trap}(:,:,i),[],3),'canny');
+            [edge_im, thresh]=edge(image{trap}(:,:,i),'canny');
             edge_im=imdilate(edge_im,se_edge);
             edge_im_all = edge_im | edge_im_all;
         end
@@ -197,49 +232,48 @@ for timepoint=1:frame_ss:total_num_timepoints
         
         num_neg=cCellVision.negativeSamplesPerImage;
         % exclude regions that are inside the traps;
-        neg_index=find(exclude_from_negs==0 & edge_im & ~insideTraps);
-        %             neg_index=find(class==0 & ~insideTraps);
+        neg_logical = exclude_from_negs==0 & edge_im & ~allTrapPixels;
+        neg_logical = neg_logical & ~fix_in_negs;
+        neg_logical(training_class) = false;
+        neg_index_fixed=find(fix_in_negs);
+        neg_index_rest = find(neg_logical);
+        
         if debugging
             neg_exclude_stack = cat(3,neg_exclude_stack,exclude_from_negs);
             positive_stack = cat(3,positive_stack,training_class);
             entry_index = cat(1,entry_index,[timepoint trap]);
         end
-        if length(neg_index)>num_neg
-            neg_perm=randperm(length(neg_index));
-            class_temp=zeros(1,num_neg);
-            output=features(neg_index(neg_perm(1:num_neg)),:);
-            pos_index=find(training_class~=0);
-            class_temp(1,end+1:end+length(pos_index))=ones(1,length(pos_index));
-            output(end+1:end+length(pos_index),:)=features(pos_index,:);
-            
-            n_points=size(output,1);
-            cCellVision.trainingData.features(index:index+n_points-1,:)=output;
-            cCellVision.trainingData.class(1,index:index+n_points-1)=class_temp;
-            index=index+n_points;
-            if debugging
-                temp_neg = false(size(image{trap},1), size(image{trap},2));
-                temp_neg(neg_index(neg_perm(1:num_neg))) = true;
-                negatives_stack = cat(3,negatives_stack,temp_neg);
-            end
+        if length(neg_index_fixed)>num_neg
+            neg_perm=randperm(length(neg_index_fixed));
+            final_neg_index = neg_index_fixed(neg_perm(1:num_neg));
+        elseif length(neg_index_fixed)+length(neg_index_rest)>num_neg
+            neg_perm=randperm(length(neg_index_rest));
+            final_neg_index = [neg_index_fixed ; ...
+                neg_index_rest(neg_perm(1:(num_neg - length(neg_index_fixed))))];
         else
-            neg_perm=randperm(length(neg_index));
-            class_temp=zeros(1,length(neg_index));
-            output=features(neg_index,:);
-            
-            pos_index=find(training_class~=0);
-            class_temp(1,end+1:end+length(pos_index))=training_class(pos_index);
-            output(end+1:end+length(pos_index),:)=features(pos_index,:);
-            
-            n_points=size(output,1);
-            cCellVision.trainingData.features(index:index+n_points-1,:)=output;
-            cCellVision.trainingData.class(1,index:index+n_points-1)=class_temp';
-            index=index+n_points;
-            if debugging
-                temp_neg = false(size(image{trap},1), size(image{trap},2));
-                temp_neg(neg_index) = true;
-                negatives_stack = cat(3,negatives_stack,temp_neg);
-            end
+            final_neg_index = [neg_index_fixed ; ...
+                neg_index_rest];
         end
+        num_neg_temp = length(final_neg_index);
+        
+        
+        class_temp=zeros(1,num_neg_temp);
+        output=features(final_neg_index,:);
+        pos_index=find(training_class~=0);
+        class_temp(1,end+1:end+length(pos_index))=ones(1,length(pos_index));
+        output(end+1:end+length(pos_index),:)=features(pos_index,:);
+        
+        n_points=size(output,1);
+        cCellVision.trainingData.features(index:index+n_points-1,:)=output;
+        cCellVision.trainingData.class(1,index:index+n_points-1)=class_temp;
+        index=index+n_points;
+        if debugging
+            temp_neg = false(size(image{trap},1), size(image{trap},2));
+            temp_neg(final_neg_index) = true;
+            negatives_stack = cat(3,negatives_stack,temp_neg);
+        end
+        
+        
     end
 end
 
@@ -256,15 +290,13 @@ end
 non_entries=find(cCellVision.trainingData.class<0);
 cCellVision.trainingData.class(non_entries)=[];
 cCellVision.trainingData.features(non_entries,:)=[];
-[r c]=find(cCellVision.trainingData.features==Inf)
-[r c]=find(cCellVision.trainingData.features==NaN)
 
 
 
 cCellVision.scaling.min=min(cCellVision.trainingData.features);
 cCellVision.scaling.max=max(cCellVision.trainingData.features);
 
-loc=find(cCellVision.scaling.max==cCellVision.scaling.min)
+loc=find(cCellVision.scaling.max==cCellVision.scaling.min);
 cCellVision.scaling.max(loc)=cCellVision.scaling.max(loc)+1;
 %
 cCellVision.trainingData.features=(cCellVision.trainingData.features - repmat(cCellVision.scaling.min,size(cCellVision.trainingData.features,1),1));

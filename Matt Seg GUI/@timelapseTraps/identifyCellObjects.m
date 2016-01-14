@@ -632,6 +632,8 @@ trap = traps(1);
 [Iy,Ix] = find(bw);
 ycell = round(mean(Iy));
 xcell = round(mean(Ix));
+trap_size = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+
 
 if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
     newIndex = length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)+1;
@@ -649,8 +651,8 @@ cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(newIndex) = newCellLab
 % puts some inital data in the cell array in case there is an error in the
 % active contour code.
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadius = 5;
-[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented));
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented)));
+[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],trap_size);
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,trap_size));
 
 % run active contour code on that particular trap and cell.
 cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);
