@@ -190,6 +190,7 @@ if isempty(cTimelapse.OmeroDatabase)
             cTimelapse.imSize=size(timepointIm);
         end
         disp('There is no data in this channel at this timepoint');
+        return
     end
     
     if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
@@ -247,9 +248,15 @@ if isempty(cTimelapse.OmeroDatabase)
         for slicei = 1:size(timepointIm,3)
             tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
             tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-            timepointIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+            if slicei==1
+                timepointImtemp = tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+                timepointImtemp(:,:,2:size(timepointIm,3)) = 0;
+            else
+                timepointImtemp(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+            end
         end
-        
+        timepointIm = timepointImtemp;
+        clear timepointImtemp;
     end
     
     if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
