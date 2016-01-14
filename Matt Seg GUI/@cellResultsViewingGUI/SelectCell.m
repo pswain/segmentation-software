@@ -2,7 +2,7 @@ function SelectCell(CellResGUI)
 % function SelectCell(CellResGUI,src,event) Callback for when the cell
 % selection is changed in the cell selection list
 
-cell_to_be_selected = CellResGUI.CellSelectListInterface.Value;
+cell_to_be_selected = get(CellResGUI.CellSelectListInterface,'Value');
 
 
 %check if position has changed and update if necessary

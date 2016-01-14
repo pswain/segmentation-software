@@ -86,7 +86,6 @@ if cTimelapse.trapsPresent
         newIm=newIm(bb:end-bb,bb:end-bb);
         [output, ~] = dftregistration(regImFft,fft2(newIm),1);
         
-        
         colDif=output(4);
         rowDif=output(3);
         

@@ -133,5 +133,16 @@ classdef experimentTracking<handle
             
         
     end
+    
+    methods(Static)
+        
+        function cCellVision = loadDefaultCellVision
+            file_path = mfilename('fullpath');
+            filesep_loc = strfind(file_path,filesep);
+            cellVision_path = fullfile(file_path(1:(filesep_loc(end-1)-1)),  'cCellVisionFiles', 'CellVision_default.mat');
+            load(cellVision_path,'cCellVision');
+        end
+        
+    end
 end
 

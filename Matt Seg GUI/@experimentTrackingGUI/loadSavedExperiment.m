@@ -12,3 +12,4 @@ end
 
 
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
+set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);

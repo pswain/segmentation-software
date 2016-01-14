@@ -142,8 +142,8 @@ classdef cellResultsViewingGUI<handle
                 'Units','normalized','Position',[.015 y_bottom .97 setting_buttons_height],'Callback',@(src,event)ResetImageScale(CellResGUI));
             
             CellResGUI.CellImageHandle = axes('Parent',CellResGUI.TopPanel,'Position',[.685 .015 .3 .97 ]);
-            CellResGUI.CellImageHandle.XTick = [];
-            CellResGUI.CellImageHandle.YTick = [];
+            set(CellResGUI.CellImageHandle,'XTick',[]);
+            set(CellResGUI.CellImageHandle,'YTick',[]);
             
             
             CellResGUI.PlotHandle = axes('Parent',CellResGUI.PlotPanel,'Position',[.03 .05 .94 .9 ]);
@@ -193,7 +193,7 @@ classdef cellResultsViewingGUI<handle
             
             for celli =1:size(setting_array,1)
                 
-                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%3d  %3d  %3d',setting_array(celli,1),setting_array(celli,2),setting_array(celli,3));
+                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%s   trap: %3d   cell:  %3d',CellResGUI.cExperiment.dirs{setting_array(celli,1)},setting_array(celli,2),setting_array(celli,3));
                 
             end
             

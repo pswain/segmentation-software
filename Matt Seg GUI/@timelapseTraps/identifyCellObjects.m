@@ -1234,12 +1234,8 @@ for k = 1 : size(circen,1),
     end
     
     % Build the sgn. curve
-    try
     SgnCvMat_dx = repmat( (SCvR_J0:SCvR_J1) - circen(k,1) , ...
         [SCvR_I1 - SCvR_I0 + 1 , 1] );
-    catch err
-        fprintf('debug!')
-    end
     SgnCvMat_dy = repmat( (SCvR_I0:SCvR_I1)' - circen(k,2) , ...
         [1 , SCvR_J1 - SCvR_J0 + 1] );
     SgnCvMat_r = sqrt( SgnCvMat_dx .^2 + SgnCvMat_dy .^2 );
