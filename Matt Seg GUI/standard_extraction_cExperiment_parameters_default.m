@@ -1,3 +1,4 @@
+function params = standard_extraction_cExperiment_parameters_default(cExperiment,poses)
 %% parameter function for standard_extraction_cExperiment_preprocessing
 
 params = struct;

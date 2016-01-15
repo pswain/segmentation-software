@@ -1,5 +1,5 @@
 function standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage,params)
-%standard_extraction_cExperiment(cExperiment,maxTP,poses,do_AC,do_Extract,do_lineage)
+%standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage,params)
 %
 % function to do the most standard segmentation. Written so that
 % cExperiment files can be segmented in script
@@ -11,6 +11,7 @@ function standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_t
 %                           2=> do segmentation and tracking after
 %                           experiment
 %                           anything else => nothing
+% do_track      :   track cells and do 
 % do_AC         :   (boolean). do active contour method
 % do_extract    :   (boolean). extract data
 % do_lineage    :   (boolean). do lineage tracking
@@ -104,7 +105,7 @@ if do_lineage
     
     cExperiment.extractLineageInfo(poses,paramsLineage);
     
-    cExperiment.compileLineageInfo;
+    cExperiment.compileLineageInfo(poses);
     
     cExperiment.extractHMMTrainingStates;
     
