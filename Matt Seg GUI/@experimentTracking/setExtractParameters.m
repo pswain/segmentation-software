@@ -33,7 +33,7 @@ for posi = positionsToSet
     cTimelapse = cExperiment.loadCurrentTimelapse(posi);
     cTimelapse.extractionParameters = extractParameters;
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(posi)    
+    cExperiment.saveTimelapseExperiment(posi,false)    
 end
 
 end

@@ -144,6 +144,7 @@ for tp = timepoints
 waitbar(tp/max(timepoints(:)),wh);
 end
 close(f);
+close(wh);
 
 
 end
