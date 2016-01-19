@@ -39,7 +39,7 @@ if cTimelapse.trapsPresent
     bb=max([cTrap.bb_width cTrap.bb_height])+100;
     bb_image=padarray(image,[bb bb],mean(image(:)));
     
-    trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'uint16');
+    trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'like',image);
     for j=1:length(traps)
         y=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).ycenter + bb);
         x=round(cTimelapse.cTimepoint(timepoint).trapLocations(traps(j)).xcenter + bb);
