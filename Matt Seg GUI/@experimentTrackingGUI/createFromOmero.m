@@ -45,7 +45,7 @@ if isempty(matched)
             inputName='001';
         end
     end
-    cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase, inputName);
+    cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
     %Call createTimelapsePositions with default arguments - so that
     % magnification and imScale are not set in the GUI. These are generally
     % confusing arguments that are not widely used and necessarily supported.
