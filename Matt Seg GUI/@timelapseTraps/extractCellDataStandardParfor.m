@@ -269,6 +269,7 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     
                     %                     numberOverlapPixels = min(maxPixOverlap,length(cellFL));
                     ratioOverlap=ceil(length(cellFL(:))*.025);
+                    ratioOverlapCont=length(cellFL(:))*.025;
                     numberOverlapPixels = min(ratioOverlap,length(cellFL));
                     
                     
@@ -289,9 +290,9 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     convMatrix=zeros(3,3);
                     convMatrix(2,:)=1;
                     convMatrix(:,2)=1;
-                    convMatrix=imresize(convMatrix,numberOverlapPixels/5);
+                    convMatrix=imresize(convMatrix,ratioOverlapCont/5);
 
-                    flPeak=conv2(double(trapImage),convMatrix);
+                    flPeak=conv2(double(trapImage),convMatrix,'same');
                     flPeak=flPeak(cellLoc);
                     
                     ed_smallmax5(allIndex)=max(flPeak(:));
