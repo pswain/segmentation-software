@@ -39,7 +39,7 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 
 
 if nargin<3 || isempty(trapOutline)
-    trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se1);
+    trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se2);
 end
 
 filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
@@ -57,7 +57,7 @@ predict_label=zeros(size(image,1)*size(image,2),1);
 [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
 
 dec_values(~trapOutline(:))=dec_valuesLin(:,1);
-dec_values(trapOutline(:))=0;
+dec_values(trapOutline(:))=1;
 if size(dec_valuesLin,2)>2
     dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
     dec_values2(~trapOutline(:))=dec_valuesLin(:,3);

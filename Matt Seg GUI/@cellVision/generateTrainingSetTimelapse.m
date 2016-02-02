@@ -18,7 +18,7 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 %     debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
 
 ElcoWay = false; %boolean on whether to find training set Elco's way or Matt's way
-useSegEdge=false;
+useSegEdge=true;
 
 debug_outputs = {};
 if nargin<3
@@ -155,35 +155,57 @@ for timepoint=1:frame_ss:total_num_timepoints
             
             nearCenterTraining=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cellRadius)+1]);
             if size(trapInfo.cellRadius,1)>0
-                for num_cells=1:length(trapInfo.cellRadius)
-                    training_class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
-                    nearCenterTraining(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
-                    training_class(round(trapInfo.cellCenters(num_cells,2)),round(trapInfo.cellCenters(num_cells,1)),num_cells)=1;
-                    if false
-                        t=imdilate(full(trapInfo.cell(num_cells).segmented),se1);
+                for cellInd=1:length(trapInfo.cellRadius)
+                    training_class(round(trapInfo.cellCenters(cellInd,2)),round(trapInfo.cellCenters(cellInd,1)),cellInd)=1;
+                    nearCenterTraining(round(trapInfo.cellCenters(cellInd,2)),round(trapInfo.cellCenters(cellInd,1)),cellInd)=1;
+                    training_class(round(trapInfo.cellCenters(cellInd,2)),round(trapInfo.cellCenters(cellInd,1)),cellInd)=1;
+                    
+                    
+                    % This is in case the training images are not circles.
+                    % In this case, want to use the major axis, not a
+                    % single center point for training.
+                    
+                    currCellRadius=trapInfo.cellRadius(cellInd);
+                    fillIm=imfill(imdilate(full(trapInfo.cell(cellInd).segmented),se1),'holes');
+                    bwProps=regionprops(fillIm,'MajorAxisLength','MinorAxisLength','Orientation','EquivDiameter');
+                    if ~isempty(bwProps)
+                        if bwProps(1).MajorAxisLength ~= bwProps(1).MinorAxisLength
+                            convLine=ones(1,ceil((bwProps(1).MajorAxisLength-bwProps(1).MinorAxisLength)/2));
+                            convLine=imrotate(convLine,bwProps(1).Orientation)>0;
+                            training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),convLine);
+                            
+                            %b/c we are using the whole length of the elipse,
+                            %don't want to dilate it too much so don't use the
+                            %EquivRadius, instead use the minor axis length
+                            currCellRadius=(bwProps(1).MinorAxisLength/2);
+                        end
+                        
+                    end
+                    if useSegEdge
+                        t=imdilate(full(trapInfo.cell(cellInd).segmented),se1);
                         training_classEdge(t>0)=1;
                     end
-                    if trapInfo.cellRadius(num_cells)>4 & trapInfo.cellRadius(num_cells)<6
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius(num_cells)<7
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se1);
-                    elseif trapInfo.cellRadius(num_cells)<9
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius(num_cells)<14
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius(num_cells)<17
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se5);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                    elseif trapInfo.cellRadius(num_cells)<20
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se6);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                    if currCellRadius>4 && currCellRadius<6
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se1);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se1);
+                    elseif currCellRadius<7
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se1);
+                    elseif currCellRadius<9
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se3);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
+                    elseif currCellRadius<14
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se4);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
+                    elseif currCellRadius<17
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se5);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
+                    elseif currCellRadius<20
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se6);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
                     else
-                        training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se7);
-                        nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
+                        training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se7);
+                        nearCenterTraining(:,:,cellInd)=imdilate(training_class(:,:,cellInd),se2);
                     end
                 end
             end
@@ -194,9 +216,9 @@ for timepoint=1:frame_ss:total_num_timepoints
             nearCenterTraining=nearCenterTraining>0;
             
             %             training_class(training_classEdge>0)=2;
-            if useSegEdge
-                training_classEdge=imdilate(training_classEdge,se1);
-            end
+%             if useSegEdge
+%                 training_classEdge=imdilate(training_classEdge,se1);
+%             end
             training_classEdge(training_class>0)=0; %center pixels are more important
             training_classEdge(nearCenterTraining>0)=0; %center pixels are more important
 
@@ -213,10 +235,10 @@ for timepoint=1:frame_ss:total_num_timepoints
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cell)+1]);
             exclude_from_negs = training_class;
             if trapInfo.cellsPresent && ~isempty(trapInfo.cell) %shouldn't be necessary in future
-                for num_cells=1:length(trapInfo.cell)
-                    if ~isempty(trapInfo.cell(num_cells).cellCenter)
-                        training_class(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1)),num_cells)=1;
-                        exclude_from_negs(:,:,num_cells) = imerode(imfill(full(trapInfo.cell(num_cells).segmented),'holes'),se2);
+                for cellInd=1:length(trapInfo.cell)
+                    if ~isempty(trapInfo.cell(cellInd).cellCenter)
+                        training_class(round(trapInfo.cell(cellInd).cellCenter(2)),round(trapInfo.cell(cellInd).cellCenter(1)),cellInd)=1;
+                        exclude_from_negs(:,:,cellInd) = imerode(imfill(full(trapInfo.cell(cellInd).segmented),'holes'),se2);
                     end
                 end
             end

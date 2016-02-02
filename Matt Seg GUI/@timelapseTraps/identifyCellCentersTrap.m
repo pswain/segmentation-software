@@ -105,7 +105,7 @@ function [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,t
 d_imCenters=zeros(size(old_d_im));
 d_imEdges=zeros(size(old_d_im));
 if cTimelapse.trapsPresent
-    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
+    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se2);
 else
     trapOutline = false(size(image{1},1),size(image{1},2));
 end

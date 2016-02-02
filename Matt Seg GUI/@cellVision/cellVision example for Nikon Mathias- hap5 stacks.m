@@ -27,8 +27,9 @@ cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
 cTimelapseOut = fuseTimlapses({cTimelapse});
 
 
-load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos1 2015-12-21.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-10);
+% load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos1 2015-12-21.mat')
+load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos2 2015-12-21 - ellipse centers.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-5);
 cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
 cTimelapse.channelsForSegment=[1 2 3]
 cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
@@ -77,10 +78,10 @@ cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %%
 cmd='-s 2 -w0 1 -w1 1 -w2 1 -v 5 -c ';
-step_size=80;
+step_size=180;
 cCellVision.runGridSearchLinear(step_size,cmd);
 %%
-step_size=6;
+step_size=5;
 cCellVision.trainingParams.cost=1;
 cmd = ['-s 2 -w0 1 -w1 1 -w2 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
@@ -127,20 +128,23 @@ cTimelapse.trackTrapsThroughTime();
 [d_imCenters, d_imEdges]=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,[],[]);
 %%
 % for i=1:45
-i=91
-tp=72
+se1=cCellVision.se.se1;
+se2=cCellVision.se.se2;
+i=25
+tp=14
 trap_im=cTimelapse.returnSegmenationTrapsStack(i,tp);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
 [p_im d_im]=cCellVision.classifyImage2Stage(trap_im{1},[]);toc
 d_imCenters=d_im(:,:,1);
 d_im=d_im(:,:,2);
-figure(5);imshow(medfilt2(d_im),[]);impixelinfo;colormap(jet)
 tim=medfilt2(d_im);
-logisticIm=1./(1+exp(-tim));
 
-bwCell=logisticIm<.25;
-bwCellEdge=imclose(logisticIm>.5,se2);
+figure(5);imshow(tim,[]);impixelinfo;colormap(jet)
+logisticIm=2./(1+exp(-tim));
+
+bwCell=logisticIm<.5;
+bwCellEdge=imclose(logisticIm>1,se2);
 figure(4);imshow(p_im,[])
 maskStart=(p_im==1);
 maskLabel=bwlabel(maskStart);
@@ -154,16 +158,17 @@ for i=1:max(maskLabel(:))
     end
     maskStart(maskLabel==i)=1;
 end
-tic
+
 figure(12);imshow(maskStart,[]);title('Mask Start')
 
-figure(9);imshow(logisticIm,[]);colormap(jet)
+figure(9);imshow(logisticIm,[]);colormap(jet);impixelinfo
 tic
-% bw=activecontour(logisticIm,maskStart,20,'Edge','ContractionBias',-.1,'SmoothFactor',0);toc
-bw=activecontour(logisticIm,maskStart,18,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+bw=activecontour(logisticIm,maskStart,5,'Edge','ContractionBias',0,'SmoothFactor',0.9);
+bw=activecontour(logisticIm,bw,10,'Chan-Vese','ContractionBias',-.1,'SmoothFactor',.9);
 bw=imfill(bw,'holes');toc
 drawnow
 figure(16);imshow(bw,[]);title('Cell End')
+figure(17);imshow(trap_im{1}(:,:,1),[]);
 maskStart=bw;
 bVar=[];
 %%
@@ -171,7 +176,7 @@ se3=cCellVision.se.se3;
 se1=cCellVision.se.se1;
 se4=strel('disk',4);
 alpha=.001;
-iterations=150;
+iterations=120;
 beta=1;gamma=3;kappa=-.25;
 wl=10;
 we=5;
@@ -180,15 +185,16 @@ wt=.1;
 % pInit=(bwlN==2);
 % p=imclose(pInit,se1);
 % p=pInit;
-figure(99);imshow(p,[])
 % p=bwmorph(p,'majority');
 p=maskStart>0;
+figure(99);imshow(p,[])
+
 %
 D = bwdist(~p);
 D = -D;
 D(~p) = -Inf;
 figure(546);imshow(D,[]);
-D(p & D<-4.5)=-4.5; % constrain so only the small things are cut by watershed
+D(p & D<-3.5)=-3.5; % constrain so only the small things are cut by watershed
 L = watershed(D);
 L(imdilate(~p,se1))=0;
 
@@ -201,8 +207,8 @@ if max(L(:))>0
     %     bwLNotP=sum(lPerim(~bwP));
     %only separate if things are barely joined
     %     if sum(lPerim(:)) > (2*pi*bwLNotP)*1.5
-    pInit=L==4;
-            p=imopen(pInit,se1);
+    pInit=L==1;
+            p=imopen(pInit,se2);
     p=pInit;
     figure(101);imshow(p,[]);
     
@@ -210,7 +216,7 @@ if max(L(:))>0
 %     disp('Two Cells Joined')
 end
 pInit=imdilate(pInit,se3);
-figure(1);imshow(pInit,[]);
+figure(111);imshow(pInit,[]);
 p=bwmorph(pInit,'remove');
 [pr pc]=find(p>0);
 props=regionprops(pInit);

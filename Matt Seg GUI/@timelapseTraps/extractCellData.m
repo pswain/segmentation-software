@@ -10,9 +10,11 @@ function extractCellData(cTimelapse)
 %
 % sets the extractionParameters to be a field in the extractedData.
 
-
+disp('Using Parfor extraction - changeback in cTimelapse.extractCellData()')
+cTimelapse.extractionParameters.extractFunction=@extractCellDataStandardParfor;
 cTimelapse.extractionParameters.extractFunction(cTimelapse)
-   
+% cTimelapse.extractCellDataStandardParfor;
+
 [cTimelapse.extractedData(:).extractionParameters] = deal(cTimelapse.extractionParameters);
 
 end

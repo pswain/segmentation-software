@@ -15,7 +15,7 @@ xlocM=zeros(100,length(cTimelapse.timepointsProcessed));
 ylocM=zeros(100,length(cTimelapse.timepointsProcessed));
 
 ind=1;
-for timepoint=cTimelapse.timepointsToProcess
+for timepoint=1:length(cTimelapse.timepointsProcessed)
     indM=1;
     if cTimelapse.timepointsProcessed(timepoint)
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;

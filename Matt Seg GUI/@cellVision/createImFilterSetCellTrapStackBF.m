@@ -37,7 +37,7 @@ if ~isfield(cCellSVM.se,'trap')||isempty(cCellSVM.se.trap)
     cCellSVM.se.trap.f1=fspecial('gaussian',cCellSVM.radiusSmall*1.5,5);
     cCellSVM.se.trap.f2=fspecial('gaussian',8,2);
      
-    cCellSVM.se.trap.trapEdge=cCellSVM.cTrap.contour;
+    cCellSVM.se.trap.trapEdge=double(cCellSVM.cTrap.contour);
     cCellSVM.se.trap.trapEdge=imdilate(cCellSVM.se.trap.trapEdge,se1);   
     cCellSVM.se.trap.trapG=imfilter(cCellSVM.se.trap.trapEdge,cCellSVM.se.trap.f1);
     cCellSVM.se.trap.trapG=cCellSVM.se.trap.trapG/max(cCellSVM.se.trap.trapG(:));
@@ -199,7 +199,7 @@ for i=1:size(filt_im,3)
 end
  
 %% Filters based on thresholding and distance transforms of the previous filters
-strelClose=strel('disk',cCellSVM.radiusSmall-2);
+strelClose=strel('disk',floor(cCellSVM.radiusSmall-2)/2);
 if strelClose<2
     strelClose=2;
 end
@@ -226,7 +226,7 @@ for i=1:size(filt_im,3)%+size(filt_im2,3)
         end
         
         temp_im=es_im>thresh;
-        closeIm=imclose(temp_im,strelClose);
+        closeIm=imdilate(temp_im,strelClose);
 %         imbw=closeIm-imerode(temp_im,se2);    
         imbw=closeIm;
     else
@@ -407,8 +407,11 @@ grdmag = sqrt(grdx.^2 + grdy.^2);
  
 % Get the linear indices, as well as the subscripts, of the pixels
 % whose gradient magnitudes are larger than the given threshold
-grdmasklin = find(grdmag > prm_grdthres);
-[grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
+% grdmasklin = find(grdmag > prm_grdthres);
+[grdmask_IdxI, grdmask_IdxJ] = find(grdmag > prm_grdthres);
+% ind2sub(size(grdmag), grdmasklin);
+sgf=size(grdmag);
+grdmasklin = (grdmask_IdxJ-1)*(sgf(1))+grdmask_IdxI;
  
 rr_4linaccum = single( prm_r_range );
 linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
@@ -431,24 +434,27 @@ mask_valid_aJaI = ...
 mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
 lin2accum_aJ = lin2accum_aJ .* mask_valid_aJaI + mask_valid_aJaI_reverse;
 lin2accum_aI = lin2accum_aI .* mask_valid_aJaI + mask_valid_aJaI_reverse;
-clear mask_valid_aJaI_reverse;
+% clear mask_valid_aJaI_reverse;
  
 % Linear indices (of the votings) into the accumulation array
-lin2accum = sub2ind( size(grdmag), lin2accum_aI, lin2accum_aJ );
- 
+% lin2accum = sub2ind( size(grdmag), lin2accum_aI, lin2accum_aJ );
+% sgf=size(grdmag);
+lin2accum = (lin2accum_aJ-1)*(sgf(1))+lin2accum_aI;
+%  idx3 = da*[1; sgf(1)] - sgf(1);
+
 lin2accum_size = size( lin2accum );
 lin2accum = reshape( lin2accum, [numel(lin2accum),1] );
-clear lin2accum_aI lin2accum_aJ;
+% clear lin2accum_aI lin2accum_aJ;
  
 % Weights of the votings, currently using the gradient maginitudes
 % but in fact any scheme can be used (application dependent)
 weight4accum = ...
     repmat( single(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
-    mask_valid_aJaI(:);
-clear mask_valid_aJaI;
+    (mask_valid_aJaI(:));
+% clear mask_valid_aJaI;
  
 % Build the accumulation array using Matlab function 'accumarray'
-accum = accumarray( lin2accum , weight4accum );
+accum = accumarray( (lin2accum) , weight4accum );
 accum = [ accum ; zeros( numel(grdmag) - numel(accum) , 1 ) ];
 accum = reshape( accum, size(grdmag) );
  

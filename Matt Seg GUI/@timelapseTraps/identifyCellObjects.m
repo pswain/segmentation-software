@@ -111,9 +111,9 @@ end
 % fprintf('change back to parfor  - line 112 identifyCellObjects\n')
 parfor k=1:length(traps)
     tim=medfilt2(d_imEdges(:,:,k));
-    logisticIm=1./(1+exp(-tim));
-    bwCell=logisticIm<.25;
-    bwCellEdge=imclose(logisticIm>.5,se2);
+    logisticIm=2./(1+exp(-tim));
+    bwCell=logisticIm<.5;
+    bwCellEdge=imclose(logisticIm>1,se2);
 
     maskStart=segCenters{k};
     maskLabel=bwlabel(maskStart);
@@ -132,14 +132,17 @@ parfor k=1:length(traps)
             end
             maskStart(maskLabel==i)=1;
         end
-        bw=activecontour(logisticIm,maskStart,17,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+        %         bw=activecontour(logisticIm,maskStart,20,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
+        bw=activecontour(logisticIm,maskStart,5,'Edge','ContractionBias',-.05,'SmoothFactor',0.9);
+        bw=activecontour(logisticIm,bw,10,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0.9);
+
         bw=imfill(bw,'holes');
         maskStart=bw;
         
         
         alpha=.001;mu=0.05;
-        iterations=80;
-        beta=1;gamma=3;kappa=-.2;
+        iterations=150;
+        beta=1;gamma=3;kappa=-.25;
         wl=10; we=5; wt=.1;
         
         p=maskStart>0;
@@ -148,7 +151,7 @@ parfor k=1:length(traps)
         D = -D;
         D(~p) = -Inf;
 %         figure(546);imshow(D,[]);
-        D(p & D<-4.5)=-4.5; % constrain so only the small things are cut by watershed
+        D(p & D<-3.5)=-3.5; % constrain so only the small things are cut by watershed
         L = watershed(D);
         L(imdilate(~p,se1))=0;
         L=bwlabel(L>1);
@@ -163,13 +166,14 @@ parfor k=1:length(traps)
             cPres(cellInd)=max(tImL(:));
             %below is if the background is accidentally selected (ie a
             %super huge cell)
-            if sum(tImL(:))> .3*(size(L,1)*size(L,2))
+            if sum(tImL(:))> .25*(size(L,1)*size(L,2))
                 cPres(cellInd)=0;
             end
         end
         pInit=pInit(:,:,cPres>0); %if no cell is present, delete that slice
 %         figure(201);imshow(max(pInit,[],3),[]);
         bVar=[];
+        cPres=ones(1,size(pInit,3));
         for cellInd=1:size(pInit,3)
             pInitTemp=imdilate(pInit(:,:,cellInd),se3);
             p=bwmorph(pInitTemp,'remove');
@@ -207,11 +211,17 @@ parfor k=1:length(traps)
             ys=segPts(:,2);
 %             figure(123);imshow(bIm,[]);
 
-            [bVar,bw]=snakeIterate(bVar,logisticIm,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);
-%                     figure(82);imshow(bw,[]);
-            trapInf{k}.segmented(:,:,cellInd)=bwmorph(bw,'remove');
-            trapInf{k}.cellRad(cellInd)=sqrt(sum(bw(:))/pi);
-            trapInf{k}.circen(cellInd,:)=circen;
+            [bVar,bw]=cCellVision.snakeIterate(bVar,logisticIm,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);
+            %                     figure(82);imshow(bw,[]);
+            if sum(bw(:))< .21*(size(L,1)*size(L,2))
+                trapInf{k}.segmented(:,:,cellInd)=bwmorph(bw,'remove');
+                trapInf{k}.cellRad(cellInd)=sqrt(sum(bw(:))/pi);
+                trapInf{k}.circen(cellInd,:)=circen;
+            else
+                trapInf{k}.segmented(:,:,cellInd)=zeros(size(maskLabel));
+                trapInf{k}.cellRad(cellInd)=0;
+                trapInf{k}.circen(cellInd,:)=[0 0];
+            end
         end
     else
         trapInf{k}.segmented=zeros(size(maskLabel));
@@ -220,17 +230,27 @@ parfor k=1:length(traps)
     end
 end
 for k=1:length(traps)
+    cPres=[];
+    for i=1:size(trapInf{k}.segmented,3)
+        tIm=trapInf{k}.segmented(:,:,i);
+        cPres(i)=sum(tIm(:))>0;
+    end
     for cellInd=1:size(trapInf{k}.segmented,3)
-        cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).segmented=sparse(trapInf{k}.segmented(:,:,cellInd)>0);
-        if isempty(trapInf{k}.cellRad)
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=0;
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellRadius=[];
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellCenter=[];
-        else
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=1;
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellRadius=trapInf{k}.cellRad(cellInd);
-            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(cellInd).cellCenter=trapInf{k}.circen(cellInd,:);
-            
+        if cellInd==1
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).segmented=sparse(trapInf{k}.segmented(:,:,cellInd)>0);
+            if isempty(trapInf{k}.cellRad) || sum(cPres)==0
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=0;
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellRadius=[];
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellCenter=[];
+            else
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cellsPresent=1;
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellRadius=trapInf{k}.cellRad(cellInd);
+                cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellCenter=trapInf{k}.circen(cellInd,:);
+            end
+        elseif cPres(cellInd)
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end+1).segmented=sparse(trapInf{k}.segmented(:,:,cellInd)>0);
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellRadius=trapInf{k}.cellRad(cellInd);
+            cTimelapse.cTimepoint(timepoint).trapInfo(traps(k)).cell(end).cellCenter=trapInf{k}.circen(cellInd,:);
         end
     end
 end
@@ -342,7 +362,7 @@ if isempty(bw_mask)
         end
         
         cellsIndex=1;
-        nseg=80;
+        nseg=90;
         for numCells=length(cirrad):-1:1
             
             temp_im=zeros(size(temp_im))>0;
@@ -350,10 +370,13 @@ if isempty(bw_mask)
             x=double(x);y=double(y);r=double(r);
             if r<11
                 theta = 0 : (2 * pi / nseg) : (2 * pi);
-            elseif r<18
+            elseif r<17
                 theta = 0 : (2 * pi / nseg/2) : (2 * pi);
-            else
+            elseif r<21
                 theta = 0 : (2 * pi / nseg/4) : (2 * pi);
+            else 
+                theta = 0 : (2 * pi / nseg/6) : (2 * pi);
+
             end
             pline_x = round(r * cos(theta) + x);
             pline_y = round(r * sin(theta) + y);
