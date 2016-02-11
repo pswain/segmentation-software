@@ -21,6 +21,10 @@ function segmentCellsDisplayContinuous(cExperiment,cCellVision,positionsToSegmen
 % Decision image caculation will be slightly different at the 'junction'
 % timpoints, so that the result will not be exactly the same as that of a
 % completely acquired timelapse, but the effect is likely to be minimal.
+%
+% cExperiment.timepointsToProcess will correspond to the longest timeseries
+% found so far. May cause problems in later processing if different
+% positions have different number of timepoints
 
 if nargin<3
     positionsToSegment=1:length(cExperiment.dirs);
@@ -62,14 +66,15 @@ while min_tp<expected_final_timepoint
             cTimelapse.trackTrapsThroughTime(cCellVision,tp_to_track,isCont);
             
             if isempty(cTimelapse.magnification)
-                cTimelapse.magnification=60;
+                cTimelapse.magnification = 60;
             end
-            cTimelapse.timepointsToProcess=tp;
+            cTimelapse.timepointsToProcess = tp;
+            cExperiment.timepointsToProcess = tp;
             cTimelapse.timepointsProcessed((end+1):max_new_tp) = 0;
-            tp(cTimelapse.timepointsProcessed>0)=[];
+            tp(cTimelapse.timepointsProcessed>0) = [];
             cTrapDisplayProcessing(cTimelapse,cCellVision,tp);
-            cExperiment.posSegmented(currentPos)=1;
-            cExperiment.cTimelapse=cTimelapse;
+            cExperiment.posSegmented(currentPos) = 1;
+            cExperiment.cTimelapse = cTimelapse;
             cExperiment.saveTimelapseExperiment(currentPos);
         end
     end

@@ -9,7 +9,7 @@ timepoint = CellResGUI.TimepointSelected;
 
 cell_number = find(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel == cell_tracking_number);
 
-image_channel_number = CellResGUI.SelectImageChannelButton.Value;
+image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
 cell_image = CellResGUI.cExperiment.cTimelapse.returnSingleTrapTimepoint(trap_number,timepoint,image_channel_number);
 

@@ -370,7 +370,7 @@ classdef timelapseTrapsActiveContour<handle
         %% Do not refer to cTimelapse
         
         
-        function TrapImage = ReturnTrapImage(ttacObject,Timepoint)
+        function TrapImage = ReturnTrapImage(ttacObject,timepoint)
             % TrapImage = ReturnTrapImage(ttacObject,Timepoint)
             
             % returns the trap image (boolean with trap pixels) for a particular timepoint
@@ -381,9 +381,30 @@ classdef timelapseTrapsActiveContour<handle
             % method does not use this method - so may need to edit both.
             
             if ttacObject.TrapPresentBoolean
-                TrapImage = conv2(1*full(ttacObject.TrapLocation{Timepoint}),ttacObject.TrapPixelImage,'same');
+                
+                if isfield(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(1),'refinedTrapPixelsInner') &&...
+                        ~isempty(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(1).refinedTrapPixelsInner) &&...
+                        isfield(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(1),'refinedTrapPixelsBig') &&...
+                        ~isempty(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(1).refinedTrapPixelsBig)
+                    
+                    num_traps = length(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo);
+                    trapOutline = zeros([ttacObject.TrapImageSize num_traps]);
+                    trap_centres = zeros(num_traps,2);
+                    for k=1:num_traps
+                        trapOutline(:,:,k) = 0.5*full(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(k).refinedTrapPixelsBig) +...
+                            0.5*full(ttacObject.TimelapseTraps.cTimepoint(timepoint).trapInfo(k).refinedTrapPixelsInner);
+                        trap_centres(k,:) = [ttacObject.TimelapseTraps.cTimepoint(timepoint).trapLocations(k).xcenter ...
+                                                    ttacObject.TimelapseTraps.cTimepoint(timepoint).trapLocations(k).ycenter];
+
+                    end
+                    
+                    TrapImage = ACBackGroundFunctions.put_cell_image(zeros(ttacObject.ImageSize), trapOutline, trap_centres);
+
+                else
+                    TrapImage = conv2(1*full(ttacObject.TrapLocation{timepoint}),ttacObject.TrapPixelImage,'same');
+                end
             else
-                TrapImage = zeros(size(ttacObject.ReturnImage(Timepoint)));
+                TrapImage = zeros(size(ttacObject.ReturnImage(timepoint)));
             end
             
         end

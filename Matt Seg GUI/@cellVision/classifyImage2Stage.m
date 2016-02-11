@@ -10,7 +10,9 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 %                       timelapseTraps.returnSegmentationTrapStack
 % trapOutline       :   optional. grayscale or binary image of trap pixels
 %                       which are removed from analysis. Defaults to a
-%                       dialation of cCellSVM.cTrap.trapOutline. Any
+%                       dialation of cCellSVM.cTrap.trapOutline. If it is
+%                       greyscale then the grey scale image is passed to
+%                       the feature function but for classification any
 %                       non-zero pixel is considered a trap pixel.
 %
 % predicted_im      :   binary of whether a pixel is considered a cell
@@ -38,11 +40,12 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 %
 
 
-if nargin<2 || isempty(trapOutline)
+if nargin<3 || isempty(trapOutline)
     trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se1);
 end
 
 filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
+trapOutline = trapOutline>1;
 filtered_image=double(filtered_image);
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
 filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));

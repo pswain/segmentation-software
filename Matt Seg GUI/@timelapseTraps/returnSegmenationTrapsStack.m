@@ -11,7 +11,9 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 %                   image stack should be returned.
 % timepoint     :   timepoint from which to return images
 % type          :   optional. String determining which sort of image to
-%                   return. Written to match the cCellVision.method field.
+%                   return. Written to match the cCellVision.method field
+%                   and generally taken from the
+%                   cCellVision.imageProcessMethod field.
 %                   default is 'twostage'
 %                   'twostage' or 'linear' : return a cell array with each element
 %                                            being an image stack for
@@ -26,6 +28,9 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 %                                containing stack of trap images laid in a
 %                                long strip. Each slice is a strip of trap
 %                                images at a given channel.
+%                   twostage_norm   : as twostage by subtracts the median
+%                                     of each channel and divides by the
+%                                     interquartile range.
 %
 % imagestack_out : cell array of image stacks with the exact content being
 %                  determined by 'type' input as described above.
@@ -41,10 +46,19 @@ if ~cTimelapse.trapsPresent
 end
 
 for ci = 1:length(cTimelapse.channelsForSegment)  
-    if ismember(type,{'twostage','linear','trap'}) %trap option is for legacy reasons
+    if ismember(type,{'twostage','linear','trap','twostage_norm'}) %trap option is for legacy reasons
         % return a cell array with each element being an image stack for
         % the trap in the traps array provided
         temp_im = cTimelapse.returnTrapsTimepoint(traps,timepoint,cTimelapse.channelsForSegment(ci));
+        if ismember(type,{'twostage_norm'})
+            temp_im = temp_im - median(temp_im(:));
+            prctile_range = prctile(temp_im(:),[2 98]);
+            % using this percentile range was arbitrarily chosen to try and
+            % get a range defined by the trap pixels that would be somewhat
+            % robust to hot pixels. Seemed to work well even for crowded
+            % images.
+            temp_im = temp_im./(prctile_range(2) - prctile_range(1));
+        end
         mval=mean(temp_im(:));
         if ci==1
             imagestack_out = cell(length(traps),1);

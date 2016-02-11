@@ -47,6 +47,8 @@ if nargin<4 || isempty(isCont)
     isCont=false;
 end
 
+
+
 %for initialising trapInfo
 if cTimelapse.trapsPresent
     data_template = sparse(false(size(cCellVision.cTrap.trap1)));
@@ -83,8 +85,6 @@ if cTimelapse.trapsPresent
         newIm=newIm/median(newIm(:))*median(regIm(:));
         newIm=newIm(bb:end-bb,bb:end-bb);
         [output, ~] = dftregistration(regImFft,fft2(newIm),1);
-        
-        
         
         colDif=output(4);
         rowDif=output(3);

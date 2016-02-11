@@ -2,21 +2,11 @@ function createFromOmero(cExpGUI)
 %Creates a cExperiment from a user-selected Omero dataset and saves it as a
 %file attachment to the database.
 
-%Log out of any existing session - this preserves database resources - This
-%needs fixed - Client field replaced by service factory
-% if ~isempty(cExpGUI.cExperiment)
-%     if ~isempty(cExpGUI.cExperiment.OmeroDatabase)
-%         cExpGUI.cExperiment.OmeroDatabase.Client.closeSession;
-%         
-% 
-%     end
-% end
-
 %Get a dataset selection from the user:
 dsStruct=selectDatasetGUI('download','skye.bio.ed.ac.uk');
 
 %Make sure DataPath folder is correctly set and emptied. When segmenting
-%this property is used for the folder where cExperiment and cTimelapse
+%this property is used for the folder in which cExperiment and cTimelapse
 %files will be stored after downloading (must be the same as cExperiment.saveFolder).
 if ispc 
     dsStruct.OmeroDatabase.DataPath=['C:\Users\' getenv('USERNAME') '\OmeroTemp\'];
@@ -55,8 +45,15 @@ if isempty(matched)
             inputName='001';
         end
     end
-    cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase, inputName);
-    cExpGUI.cExperiment.createTimelapsePositions();
+    cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
+    %Call createTimelapsePositions with default arguments - so that
+    % magnification and imScale are not set in the GUI. These are generally
+    % confusing arguments that are not widely used and necessarily supported.
+    % This way they will not be used until again supported
+    cExpGUI.cExperiment.createTimelapsePositions([],'all',...
+                                            [],[],[],...
+                                            60,[],[]);
+    cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
     cExpGUI.cExperiment.saveExperiment;%Uploads the cExperiment file to the database
 else
     %There is at least one existing cExperiment file
@@ -197,7 +194,13 @@ else
             %input this is assumed to be ab omerodatabase construction. The
             %2nd input is then not used.
             cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
-            cExpGUI.cExperiment.createTimelapsePositions();
+            %Call createTimelapsePositions with default arguments - so that
+            % magnification and imScale are not set in the GUI. These are generally
+            % confusing arguments that are not widely used and necessarily supported.
+            % This way they will not be used until again supported
+            cExpGUI.cExperiment.createTimelapsePositions([],'all',...
+                [],[],[],...
+                60,[],[]);     
             %Upload the new cExperiment file to the database
             cExpGUI.cExperiment.saveExperiment;
     end

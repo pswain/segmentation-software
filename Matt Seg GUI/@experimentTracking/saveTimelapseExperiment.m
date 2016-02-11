@@ -10,17 +10,26 @@ function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
 % removing cExperiment.cCellVision, saving it as a separate object, then
 % putting it back.
 % 
-% Third input is only used by Omero code.It is saveCE: logical - if true,
+% Third input is boolean - saveCE: logical - if true,
 % save the cExperiment file as well as the timelapse,
-    cTimelapse=cExperiment.cTimelapse;
+
+if nargin<3
+    saveCE=true;
+end
+
+cTimelapse=cExperiment.cTimelapse;
 if isempty(cExperiment.OmeroDatabase)
     save([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
+    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
     
     cExperiment.cTimelapse=[];
-    cCellVision=cExperiment.cCellVision;
-    cExperiment.cCellVision=[];
-    save([cExperiment.saveFolder filesep 'cExperiment.mat'],'cExperiment','cCellVision');
-    cExperiment.cCellVision=cCellVision;
+    
+    if saveCE
+        cCellVision=cExperiment.cCellVision;
+        cExperiment.cCellVision=[];
+        save([cExperiment.saveFolder filesep 'cExperiment.mat'],'cExperiment','cCellVision');
+        cExperiment.cCellVision=cCellVision;
+    end
 else
     %Save code for Omero loaded cExperiments - upload cExperiment file to
     %Omero database. Use the alternative method saveExperiment if you want
@@ -72,9 +81,7 @@ else
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
     
-    if nargin<3
-        saveCE=true;
-    end
+
     if saveCE
         %cExperiment file
         %Before saving, replace OmeroDatabase object with the server name, make .cTimelapse empty and replace .omeroDs with its Id to avoid

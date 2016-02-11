@@ -46,7 +46,7 @@ else
     endTP = max(tpToProcess);
 end
 cExperiment.saveExperiment();
-
+waitbar_h = waitbar(0);
 for i=1:length(positionsToCrop)
     currentPos=positionsToCrop(i);
     cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
@@ -60,5 +60,6 @@ for i=1:length(positionsToCrop)
     cExperiment.cTimelapse = cTimelapse;
     cExperiment.saveTimelapseExperiment(currentPos);   
     clear cTimelapse;
+    waitbar(i/length(positionsToCrop),waitbar_h,sprintf('timepoints set for position %d of %d ...',i,length(positionsToCrop)));
 end
-
+close(waitbar_h)
