@@ -11,6 +11,9 @@ cell_number = find(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapI
 
 image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
+% only load the first channel into memory regardless
+CellResGUI.cExperiment.cTimelapse.loadChannelIntoMemory(1);
+
 cell_image = CellResGUI.cExperiment.cTimelapse.returnSingleTrapTimepoint(trap_number,timepoint,image_channel_number);
 
 if ~isempty(cell_number) && CellResGUI.ShowcellOutline

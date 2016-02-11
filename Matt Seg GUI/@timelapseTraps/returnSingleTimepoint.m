@@ -77,104 +77,253 @@ end
 
 tp=timepoint;
 ignoreRotateEtc=false;
-if isempty(cTimelapse.OmeroDatabase)
+
+
+if channel == cTimelapse.temporaryImageStorage.channel
+    timepointIm=cTimelapse.temporaryImageStorage.images(:,:,timepoint);
+else
     
-    fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
-    %loc= ~cellfun('isempty',fileNum);
-    % changed from above in case someone uses the channel name in the
-    % rootfolder
-    loc= cellfun('length',fileNum);
-    threshM=max([max(loc) 1]);
-    loc=loc>=threshM;
-    if channel>1
-        loc(1)=0;
-    end
-    if sum(loc)>0
-        file=cTimelapse.cTimepoint(timepoint).filename{loc};
+    if isempty(cTimelapse.OmeroDatabase)
         
-        if ~strcmp(cTimelapse.timelapseDir,'ignore')
-            
-            locSlash=strfind(file,'/');
-            
-            if isempty(locSlash)
-                locSlash=strfind(file,'\'); %in case file was made on a windows machine
-            end
-            
-            if locSlash
-                inds=find(loc);
-                for i=1:sum(loc)
-                    file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
-                    file=file(locSlash(end)+1:end);
-                    cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
-                end
-            end
-            
+        fileNum=regexp(cTimelapse.cTimepoint(timepoint).filename,cTimelapse.channelNames{channel},'match');
+        %loc= ~cellfun('isempty',fileNum);
+        % changed from above in case someone uses the channel name in the
+        % rootfolder
+        loc= cellfun('length',fileNum);
+        threshM=max([max(loc) 1]);
+        loc=loc>=threshM;
+        if channel>1
+            loc(1)=0;
         end
-        
-        ind=find(loc);
-        for i=1:sum(loc)
-            file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-            if strcmp(cTimelapse.timelapseDir,'ignore')
-                ffile=file;
-            else
-                ffile=fullfile(cTimelapse.timelapseDir,file);
-            end
+        if sum(loc)>0
+            file=cTimelapse.cTimepoint(timepoint).filename{loc};
             
-            %this code checks if the file is still where it is suppose
-            %to be and resets the timelapseDir by user interface if it
-            %is not. It doesn't work if the timelapseDir is set to
-            %'ignore',but this is something of a niche case only really
-            %used by Elco in training cellVision models.
-            while ~exist(ffile,'file')
-                if ~strcmp(cTimelapse.timelapseDir,'ignore')
-                    select_new_directory = selectGUIWithWait(5,...
-                        sprintf('The file \n\n %s \n\n could not be found. Would you like to select a new location for the images in this timelapse?',ffile),...
-                        'select new directory',...
-                        'yes',...
-                        'retry old location');
-                    if select_new_directory==1
-                        fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
-                        folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
-                        cTimelapse.timelapseDir=folder;
-                        file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
-                        if strcmp(cTimelapse.timelapseDir,'ignore')
-                            ffile=file;
-                        else
-                            ffile=fullfile(cTimelapse.timelapseDir,file);
-                        end
+            if ~strcmp(cTimelapse.timelapseDir,'ignore')
+                
+                locSlash=strfind(file,'/');
+                
+                if isempty(locSlash)
+                    locSlash=strfind(file,'\'); %in case file was made on a windows machine
+                end
+                
+                if locSlash
+                    inds=find(loc);
+                    for i=1:sum(loc)
+                        file=cTimelapse.cTimepoint(timepoint).filename{inds(i)};
+                        file=file(locSlash(end)+1:end);
+                        cTimelapse.cTimepoint(timepoint).filename{inds(i)}=file;
                     end
-                else
-                    fprintf('\n file not found:\n\n %s \n\n',ffile)
-                    error('your files are absolute (timelapseDir is ignore) and they have also not been found, need to sort out carefully.')
                 end
-            end
-                        
-            %look for TIF at end of filename and change load method
-            %appropriately.
-            if ~isempty(regexp(ffile,'TIF$'))
-                timepointIm(:,:,i)=imread(ffile,'Index',i);
-            else
-                timepointIm(:,:,i)=imread(ffile);
-            end
-            %if it is a stack, preallocate. Done in this strange way to
-            %preserve data type without making single slices unduly
-            %slow.
-            if i==1 && sum(loc)>1
-                timepointIm(:,:,2:sum(loc)) = 0;
-            end
-            if isempty(cTimelapse.imSize)
-                cTimelapse.imSize = size(timepointIm);
+                
             end
             
+            ind=find(loc);
+            for i=1:sum(loc)
+                file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
+                if strcmp(cTimelapse.timelapseDir,'ignore')
+                    ffile=file;
+                else
+                    ffile=fullfile(cTimelapse.timelapseDir,file);
+                end
+                
+                %this code checks if the file is still where it is suppose
+                %to be and resets the timelapseDir by user interface if it
+                %is not. It doesn't work if the timelapseDir is set to
+                %'ignore',but this is something of a niche case only really
+                %used by Elco in training cellVision models.
+                while ~exist(ffile,'file')
+                    if ~strcmp(cTimelapse.timelapseDir,'ignore')
+                        select_new_directory = selectGUIWithWait(5,...
+                            sprintf('The file \n\n %s \n\n could not be found. Would you like to select a new location for the images in this timelapse?',ffile),...
+                            'select new directory',...
+                            'yes',...
+                            'retry old location');
+                        if select_new_directory==1
+                            fprintf(['Select the correct folder for: \n',cTimelapse.timelapseDir '\n']);
+                            folder=uigetdir(pwd,['Select the correct folder for: ',cTimelapse.timelapseDir]);
+                            cTimelapse.timelapseDir=folder;
+                            file=cTimelapse.cTimepoint(timepoint).filename{ind(i)};
+                            if strcmp(cTimelapse.timelapseDir,'ignore')
+                                ffile=file;
+                            else
+                                ffile=fullfile(cTimelapse.timelapseDir,file);
+                            end
+                        end
+                    else
+                        fprintf('\n file not found:\n\n %s \n\n',ffile)
+                        error('your files are absolute (timelapseDir is ignore) and they have also not been found, need to sort out carefully.')
+                    end
+                end
+                
+                %look for TIF at end of filename and change load method
+                %appropriately.
+                if ~isempty(regexp(ffile,'TIF$'))
+                    timepointIm(:,:,i)=imread(ffile,'Index',i);
+                else
+                    timepointIm(:,:,i)=imread(ffile);
+                end
+                %if it is a stack, preallocate. Done in this strange way to
+                %preserve data type without making single slices unduly
+                %slow.
+                if i==1 && sum(loc)>1
+                    timepointIm(:,:,2:sum(loc)) = 0;
+                end
+                if isempty(cTimelapse.imSize)
+                    cTimelapse.imSize = size(timepointIm);
+                end
+                
+            end
+            
+            %necessary for background correction and just makes life easier
+            timepointIm = double(timepointIm);
+            
+            %change if want things other than maximum projection
+            switch type
+                case 'min'
+                    timepointIm=min(timepointIm,[],3);
+                case 'max'
+                    timepointIm=max(timepointIm,[],3);
+                case 'stack'
+                    timepointIm=timepointIm;
+                case 'sum'
+                    timepointIm=sum(timepointIm,3);
+            end
+            
+        else
+            if cTimelapse.imSize
+                timepointIm=zeros(cTimelapse.imSize);
+            else
+                file=cTimelapse.cTimepoint(timepoint).filename{1};
+                if strcmp(cTimelapse.timelapseDir,'ignore')
+                    ffile = file;
+                else
+                    ffile=fullfile(cTimelapse.timelapseDir,file);
+                end
+                timepointIm=imread(ffile);
+                timepointIm(:,:)=0;
+                cTimelapse.imSize=size(timepointIm);
+            end
+            disp('There is no data in this channel at this timepoint');
+            ignoreRotateEtc=true;
         end
         
-        %necessary for background correction and just makes life easier
-        timepointIm = double(timepointIm);
+        if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
+            cTimelapse.imSize = size(timepointIm);
+        end
         
-        %change if want things other than maximum projection
+        %used for padding data
+        medVal=1.3*mean(timepointIm(:));
+        
+        
+        %This was a correction instigated by Matt but seems like a really bad
+        %idea to just include without any kind of check. have commented out for
+        %now.
+        
+        %correction for stupid thing where the first couple columns sometimes turn
+        %REALLY bright .... why???? some camera issue.
+        % firstColMean=mean(timepointIm(:,1));
+        % medVal=median(timepointIm(:));
+        % meanVal=medVal;
+        % if firstColMean>meanVal*1.5
+        %     timepointIm(:,1)=meanVal;
+        %     firstColMean=mean(timepointIm(:,2));
+        %     if firstColMean>meanVal*1.5
+        %         timepointIm(:,2)=meanVal;
+        %     end
+        % end
+        
+        
+        if ~isempty(cTimelapse.imScale)
+            timepointIm=imresize(timepointIm,cTimelapse.imScale);
+            %to correct for black lines
+            timepointIm(1:2,:)=timepointIm(3:4,:);
+            timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
+        end
+        
+        
+        
+        if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel}) && ~ignoreRotateEtc
+            %first part of this statement is to guard against cases where channel
+            %has not been assigned
+            timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+        end
+        
+        
+        % Elco: I don't believe any timelapse has timpoint specific image rotation
+        % anymore. Left in just in case of legacy cases.
+        if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
+            image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
+        else
+            image_rotation=cTimelapse.image_rotation;
+        end
+        
+        if image_rotation~=0  && ~ignoreRotateEtc
+            bbN=200; tIm=[];
+            for slicei = 1:size(timepointIm,3)
+                tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
+                tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
+                tIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+            end
+            timepointIm=tIm;
+        end
+        
+        if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)  && ~ignoreRotateEtc
+            %first part of this statement is to guard against cases where channel
+            %has not been assigned
+            TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
+            LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
+            HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
+            timepointIm = padarray(timepointIm,[abs(TimepointBoundaries) 0],medVal);
+            timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
+        end
+        
+        
+    else
+        %Code for returning image from Omero database
+        %The channel input refers to the channels list in cTimelapse - not in
+        %the Omero version of the data - need to work that out.
+        
+        if iscell(cTimelapse.channelNames)
+            channelName=cTimelapse.channelNames{channel};
+        else
+            channelName=cTimelapse.channelNames;
+        end
+        chNum=find(strcmp(channelName,cTimelapse.OmeroDatabase.Channels));
+        
+        if isempty (cTimelapse.OmeroDatabase.Session)
+            cTimelapse.OmeroDatabase.login;
+        end
+        done=false;
+        while done==false
+            try
+                [store, pixels] = getRawPixelsStore(cTimelapse.OmeroDatabase.Session, cTimelapse.omeroImage);
+                done=true;
+            catch err
+                cTimelapse=cTimelapse.OmeroDatabase.login;
+                %server may be busy
+                disp(err.message);
+                done=false;
+            end
+        end
+        sizeZ = pixels.getSizeZ().getValue(); % The number of z-sections.
+        sizeT = pixels.getSizeT().getValue(); % The number of timepoints.
+        sizeC = pixels.getSizeC().getValue(); % The number of channels.
+        sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
+        sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
+        timepointIm=zeros(sizeY, sizeX, sizeZ);
+        for z=1:sizeZ
+            try
+                plane=store.getPlane(z-1, chNum-1, timepoint-1);
+            catch
+                %Fix upload script to prevent the need for this debug
+                disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
+                plane=store.getPlane(z-1, chNum-1, timepoint-2);
+                timepoint=timepoint-1;
+            end
+            timepointIm(:,:,z) = toMatrix(plane, pixels)';
+        end
+        store.close();
         switch type
-            case 'min'
-                timepointIm=min(timepointIm,[],3);
             case 'max'
                 timepointIm=max(timepointIm,[],3);
             case 'stack'
@@ -182,166 +331,19 @@ if isempty(cTimelapse.OmeroDatabase)
             case 'sum'
                 timepointIm=sum(timepointIm,3);
         end
-        
-    else
-        if cTimelapse.imSize
-            timepointIm=zeros(cTimelapse.imSize);
+        if isfield(cTimelapse.cTimepoint(timepoint),'image_rotation') && ~isempty(cTimelapse.cTimepoint(timepoint).image_rotation)
+            image_rotation=cTimelapse.cTimepoint(timepoint).image_rotation;
         else
-            file=cTimelapse.cTimepoint(timepoint).filename{1};
-            if strcmp(cTimelapse.timelapseDir,'ignore')
-                ffile = file;
-            else
-                ffile=fullfile(cTimelapse.timelapseDir,file);
-            end
-            timepointIm=imread(ffile);
-            timepointIm(:,:)=0;
-            cTimelapse.imSize=size(timepointIm);
+            image_rotation=cTimelapse.image_rotation;
         end
-        disp('There is no data in this channel at this timepoint');
-        ignoreRotateEtc=true;
-    end
-    
-    if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
-        cTimelapse.imSize = size(timepointIm);
-    end
-    
-    %used for padding data
-    medVal=1.3*mean(timepointIm(:));
-    
-    
-    %This was a correction instigated by Matt but seems like a really bad
-    %idea to just include without any kind of check. have commented out for
-    %now.
-    
-    %correction for stupid thing where the first couple columns sometimes turn
-    %REALLY bright .... why???? some camera issue.
-    % firstColMean=mean(timepointIm(:,1));
-    % medVal=median(timepointIm(:));
-    % meanVal=medVal;
-    % if firstColMean>meanVal*1.5
-    %     timepointIm(:,1)=meanVal;
-    %     firstColMean=mean(timepointIm(:,2));
-    %     if firstColMean>meanVal*1.5
-    %         timepointIm(:,2)=meanVal;
-    %     end
-    % end
-    
-    
-    if ~isempty(cTimelapse.imScale)
-        timepointIm=imresize(timepointIm,cTimelapse.imScale);
-        %to correct for black lines
-        timepointIm(1:2,:)=timepointIm(3:4,:);
-        timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
-    end
-    
-    
-    
-    if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel}) && ~ignoreRotateEtc
-        %first part of this statement is to guard against cases where channel
-        %has not been assigned
-        timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
-    end
-    
-    
-    % Elco: I don't believe any timelapse has timpoint specific image rotation
-    % anymore. Left in just in case of legacy cases.
-    if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation) 
-        image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
-    else
-        image_rotation=cTimelapse.image_rotation;
-    end
-    
-    if image_rotation~=0  && ~ignoreRotateEtc
-        bbN=200; tIm=[];
-        for slicei = 1:size(timepointIm,3)
-            tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
+        
+        if image_rotation~=0
+            %         medVal=median(timepointIm(:));
+            bbN=200;
+            tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
             tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-            tIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
-        end
-        timepointIm=tIm;
-    end
-    
-    if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)  && ~ignoreRotateEtc
-        %first part of this statement is to guard against cases where channel
-        %has not been assigned
-        TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
-        LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
-        HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
-        timepointIm = padarray(timepointIm,[abs(TimepointBoundaries) 0],medVal);
-        timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
-    end
-    
-    
-else
-    %Code for returning image from Omero database
-    %The channel input refers to the channels list in cTimelapse - not in
-    %the Omero version of the data - need to work that out.
-    
-    if iscell(cTimelapse.channelNames)
-        channelName=cTimelapse.channelNames{channel};
-    else
-        channelName=cTimelapse.channelNames;
-    end
-    chNum=find(strcmp(channelName,cTimelapse.OmeroDatabase.Channels));
-    
-    if isempty (cTimelapse.OmeroDatabase.Session)
-        cTimelapse.OmeroDatabase.login;
-    end
-    done=false;
-    while done==false
-        try
-            [store, pixels] = getRawPixelsStore(cTimelapse.OmeroDatabase.Session, cTimelapse.omeroImage);
-            done=true;
-        catch err
-            cTimelapse=cTimelapse.OmeroDatabase.login;
-            %server may be busy
-            disp(err.message);
-            done=false;
+            tpImtemp(tpImtemp==0)=medVal;
+            timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
         end
     end
-    sizeZ = pixels.getSizeZ().getValue(); % The number of z-sections.
-    sizeT = pixels.getSizeT().getValue(); % The number of timepoints.
-    sizeC = pixels.getSizeC().getValue(); % The number of channels.
-    sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
-    sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
-    timepointIm=zeros(sizeY, sizeX, sizeZ);
-    for z=1:sizeZ
-        try
-            plane=store.getPlane(z-1, chNum-1, timepoint-1);
-        catch
-            %Fix upload script to prevent the need for this debug
-            disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
-            plane=store.getPlane(z-1, chNum-1, timepoint-2);
-            timepoint=timepoint-1;
-        end
-        timepointIm(:,:,z) = toMatrix(plane, pixels)';
-    end
-    store.close();
-    switch type
-        case 'max'
-            timepointIm=max(timepointIm,[],3);
-        case 'stack'
-            timepointIm=timepointIm;
-        case 'sum'
-            timepointIm=sum(timepointIm,3);
-    end
-    if isfield(cTimelapse.cTimepoint(timepoint),'image_rotation') && ~isempty(cTimelapse.cTimepoint(timepoint).image_rotation)
-        image_rotation=cTimelapse.cTimepoint(timepoint).image_rotation;
-    else
-        image_rotation=cTimelapse.image_rotation;
-    end
-    
-    if image_rotation~=0
-        %         medVal=median(timepointIm(:));
-        bbN=200;
-        tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
-        tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-        tpImtemp(tpImtemp==0)=medVal;
-        timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
-        
-        
-    end
-    
-    
-    
 end

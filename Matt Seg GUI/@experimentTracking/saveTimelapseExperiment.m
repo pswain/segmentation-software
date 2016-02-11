@@ -12,7 +12,9 @@ function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
 % 
 % Third input is only used by Omero code.It is saveCE: logical - if true,
 % save the cExperiment file as well as the timelapse,
-    cTimelapse=cExperiment.cTimelapse;
+cTimelapse=cExperiment.cTimelapse;
+cTimelapse.temporaryImageStorage=[];
+
 if isempty(cExperiment.OmeroDatabase)
     save([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
     
