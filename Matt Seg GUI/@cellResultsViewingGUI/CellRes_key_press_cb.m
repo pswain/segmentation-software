@@ -8,10 +8,11 @@ function CellRes_key_press_cb(CellResGUI,src,event)
 cell_position = CellResGUI.CellsForSelection(CellResGUI.CellSelected,1);
 trap_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,2);
 cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
+if isfield(CellResGUI.cExperiment.lineageInfo,'motherInfo')
 cell_mother_index = (CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum == cell_position) &...
     (CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap == trap_number) & ...
     (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
-
+end
 
 switch event.Key
     case 'downarrow'

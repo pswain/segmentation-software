@@ -27,7 +27,7 @@ cTimelapse=cExperiment.returnTimelapse(positionsToExtract(1));
 
 cExperiment.cellInf=cTimelapse.extractedData;
 
-[cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
+[cExperiment.cellInf(:).posNum]=deal(positionsToExtract(1)*ones(size(cExperiment.cellInf(1).trapNum)));
 
 % list of fields that are not identically sized arrays
 fields_treated_special = {'posNum','trapNum','cellNum','extractionParameters'};
