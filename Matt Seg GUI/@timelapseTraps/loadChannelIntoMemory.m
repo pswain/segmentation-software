@@ -1,19 +1,29 @@
 function loadChannelIntoMemory(cTimelapse,channel)
 
-if channel ~= cTimelapse.temporaryImageStorage.channel
+if ~isfield(cTimelapse.temporaryImageStorage,'channel')
+    loadIn=true;
+elseif channel ~= cTimelapse.temporaryImageStorage.channel
+    loadIn=true;
+else
+    loadIn=false;
+end
+
+if loadIn
     h = waitbar(0,'Please wait as the channel is loaded ...');
 
-    cTimelapse.temporaryImageStorage.channel=channel;
     cTimelapse.temporaryImageStorage.images=cTimelapse.returnSingleTimepoint(1,channel);
     maxTP=length(cTimelapse.timepointsProcessed);
-    for timepoint=2:maxTP;
-        waitbar(timepoint/maxTP);
-        if timepoint>1
-            cTimelapse.temporaryImageStorage.images(:,:,2:maxTP) = 0;
-        end
-        cTimelapse.temporaryImageStorage.images=cTimelapse.returnSingleTimepoint(timepoint,channel);
+    if maxTP>1
+        cTimelapse.temporaryImageStorage.images(:,:,2:maxTP) = 0;
     end
     
+    for timepoint=2:maxTP;
+        waitbar(timepoint/maxTP);
+        cTimelapse.temporaryImageStorage.images(:,:,timepoint)=cTimelapse.returnSingleTimepoint(timepoint,channel);
+    end
+    
+    cTimelapse.temporaryImageStorage.channel=channel;
+
     close(h);
 end
 

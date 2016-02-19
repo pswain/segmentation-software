@@ -84,7 +84,7 @@ classdef timelapseTraps<handle
     end
     
     properties(Constant)
-    defaultExtractParameters = struct('extractFunction',@extractCellDataStandard,...
+    defaultExtractParameters = struct('extractFunction',@extractCellDataStandardParfor,...
         'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
     
     end

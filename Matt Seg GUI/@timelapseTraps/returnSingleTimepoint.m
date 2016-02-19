@@ -79,7 +79,7 @@ tp=timepoint;
 ignoreRotateEtc=false;
 
 
-if channel == cTimelapse.temporaryImageStorage.channel
+if isfield(cTimelapse.temporaryImageStorage,'channel') & channel == cTimelapse.temporaryImageStorage.channel
     timepointIm=cTimelapse.temporaryImageStorage.images(:,:,timepoint);
 else
     

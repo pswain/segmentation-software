@@ -23,9 +23,13 @@ if sum(cell_data_index == 1)
     cell_data = full(CellResGUI.cExperiment.cellInf(plot_channel).(plot_field)(cell_data_index,:));
     
     axes(CellResGUI.PlotHandle);
-    
-    plot(((1:size(cell_data,2)))*CellResGUI.TimepointSpacing,cell_data,'-r');
-    
+    xInc=((1:size(cell_data,2)))*CellResGUI.TimepointSpacing;
+    plot(xInc,cell_data,'-r');
+    tData=cell_data;
+    tData(tData==0)=[];
+    yMin=min(tData);yMax=max(tData);
+    ylim([yMin yMax]);
+    xlim([1 max(xInc(:))]);
     hold on
     
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;

@@ -1,4 +1,4 @@
-function extractCellDataStandard(cTimelapse)
+function extractCellDataParforBudMarker(cTimelapse)
 % extractCellDataStandard(cTimelapse)
 %
 % standard extraction function to extract all the commonly used
@@ -100,7 +100,8 @@ for channel=1:length(channels)
     extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     
-    extractedData(channel).budNeckMean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).budNeckSqMean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).budNeckMembMean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
 
     extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -158,6 +159,8 @@ for timepoint=find(cTimelapse.timepointsProcessed)
     cellLocAll=false([size(seg_areas) length(trap)]);
     cellLocAllSmall=false([size(seg_areas) length(trap)]);
     cellLocMembDilated=false([size(seg_areas) length(trap)]);
+    cellLocMembDilatedBig=false([size(seg_areas) length(trap)]);
+
     for allIndex =1:length(trap)
         temp_loc=find(trapInfo(trap(allIndex)).cellLabel==cells(allIndex));
         if ~isempty(temp_loc)
@@ -181,7 +184,8 @@ for timepoint=find(cTimelapse.timepointsProcessed)
     
     t=size(cellLocAllCellsBkg,3);
     parfor allIndex=1:size(cellLocAll,3)
-        cellLocMembDilated=imdilate(cellLocAll(:,:,allIndex),se3);
+        cellLocMembDilated(:,:,allIndex)=imdilate(cellLocAll(:,:,allIndex),se3);
+        cellLocMembDilatedBig(:,:,allIndex)=imdilate(cellLocMembDilated(:,:,allIndex),se2);
         cellLocAll(:,:,allIndex)=imfill(cellLocAll(:,:,allIndex),'holes');
         cellLocAllSmall(:,:,allIndex)=imerode(cellLocAll(:,:,allIndex),se2);
         if allIndex<=t
@@ -231,7 +235,8 @@ for timepoint=find(cTimelapse.timepointsProcessed)
             ed_eccentricity=tDatS;  ed_radiusFL=tDatS; ed_segmentedRadius=tDatS;
             ed_nucArea=tDatS;  ed_distToNuc=tDatS;  ed_radiusAC=tDatS;
             ed_xloc=tDatS;ed_yloc=tDatS;ed_pixel_variance_estimate=tDatS;
-            ed_budNeckMean=tDatS;
+            ed_budNeckSqMean=tDatS;
+            ed_budNeckMembMean=tDatS;
             tpImCh=tpStacks{channel};
             
             
@@ -248,17 +253,39 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                 % give the row in cellInf in which data for this cell
                 % shoud be inserted.
                 if ~isempty(temp_loc) && sum(cellLoc(:))
-%                     seg_areas=full(trapInfo(trap(allIndex)).cell(temp_loc).segmented);                    
+                    %                     seg_areas=full(trapInfo(trap(allIndex)).cell(temp_loc).segmented);
+                    
                     
                     %logical of membrane pixels
                     membraneLoc = cellLocMembDilated(:,:,allIndex) >0;
-                    [v membMaxLoc]=max(membraneLoc(:));
+                    tImMemb=trapImage;
+                    tImMemb(~membraneLoc)=0;
+                    [v membMaxLoc]=max(tImMemb(:));
                     membMaxIm=zeros(size(membraneLoc));
                     membMaxIm(membMaxLoc)=1;
-                    budConvIm=true(10);
+                    budConvIm=ones(10);
                     membMaxIm=conv2(membMaxIm,budConvIm,'same')>0;
-                    ed_budNeckMean(allIndex)=mean(trapImage(membMaxIm(:)));
+                    ed_budNeckSqMean(allIndex)=mean(trapImage(membMaxIm(:)));
 
+                    %instead of using a square, use the membrane
+                    membMaxIm=zeros(size(membraneLoc));
+                    membMaxIm(membMaxLoc)=1;
+                    membDist=bwdist(membMaxIm);
+                    membLocations=find(membraneLoc(:));
+                    [v memDistSortedInd]=sort(membDist(membraneLoc(:)),'ascend');
+                    maxNMemb=min([length(memDistSortedInd)-1 100]);
+                    memLoc=membLocations(memDistSortedInd(1:maxNMemb));
+                    newMembLoc=membLocations(memDistSortedInd(1:maxNMemb));
+                    memDistSortedInd(maxNMemb+1:end)=[];
+                    membMaxIm=false(size(trapImage));
+                    membMaxIm(memLoc)=1;
+%                     try
+                        ed_budNeckMembMean(allIndex)=mean(trapImage(membMaxIm(:)));
+%                     catch
+%                         b=1
+%                     end
+                    
+                    
                     %vector of cell pixels
                     cellFL=trapImage(cellLoc);
                     
@@ -373,6 +400,8 @@ for timepoint=find(cTimelapse.timepointsProcessed)
             extractedData(channel).max5(:,timepoint)=sparse(ed_max5);
             extractedData(channel).mean(:,timepoint)=sparse(ed_mean);
             extractedData(channel).median(:,timepoint)=sparse(ed_median);
+            extractedData(channel).budNeckSqMean(:,timepoint)=sparse(ed_budNeckSqMean);
+            extractedData(channel).budNeckMembMean(:,timepoint)=sparse(ed_budNeckMembMean);
 %             extractedData(channel).min(:,timepoint)=ed_min;
 %             extractedData(channel).std(:,timepoint)=ed_std;
 %             extractedData(channel).pixel_sum(:,timepoint)=ed_pixel_sum;

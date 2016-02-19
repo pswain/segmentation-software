@@ -18,7 +18,7 @@ function extractCellInformation(cExperiment,positionsToExtract,doParameterGUI,ex
 %                           see timelapseTraps.defaultExtractionParameters
 %
 % Basically just call cTimelapse.extractCellData for each timepoint.
-if nargin<2
+if nargin<2 || isempty(positionsToExtract)
     positionsToExtract=find(cExperiment.posTracked);
 end
 

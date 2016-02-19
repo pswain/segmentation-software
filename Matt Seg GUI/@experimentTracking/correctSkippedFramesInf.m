@@ -136,6 +136,18 @@ for nSkip=1:1
                 cellInf.nuclearTagLoc=sparse(b);
             end
             
+            if isfield(cellInf,'budNeckMembMean')
+                temp=(cExperiment.cellInf(channel).budNeckMembMean(locSkippedPre)+cExperiment.cellInf(channel).budNeckMembMean(locSkippedPost))./2;
+                b=full(cellInf.budNeckMembMean);
+                b(locSkipped)=temp;
+                cellInf.budNeckMembMean=sparse(b);
+                
+                temp=(cExperiment.cellInf(channel).budNeckSqMean(locSkippedPre)+cExperiment.cellInf(channel).budNeckSqMean(locSkippedPost))./2;
+                b=full(cellInf.budNeckSqMean);
+                b(locSkipped)=temp;
+                cellInf.budNeckSqMean=sparse(b);
+            end
+            
             %b/c the radiusFL may be skipped even though the 1st channel
             %wasn't, need to correct for it separately
             if isfield(cellInf,'radiusFL') 
