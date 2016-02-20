@@ -16,7 +16,7 @@ if nargin<2 || isempty(extractParameters)
     extractParameters = timelapseTraps.defaultExtractParameters;
 end
 
-if isequal(extractParameters.extractFunction,@extractCellDataStandard)
+if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor)
     functionParameters = extractParameters.functionParameters;
     
     list = {'max','mean','std','sum','basic'};
