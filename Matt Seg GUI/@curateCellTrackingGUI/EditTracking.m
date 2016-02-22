@@ -35,7 +35,11 @@ if isempty(TrackingCurator.keyPressed)
             OutlinesToUpdate = [];
         else
             UpdateMaxCell = false;
-            fprintf('modified cell with label %d in trap %d at timepoint %d to have label %d \n',TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell),TrackingCurator.trapIndex,timepoint,TrackingCurator.CellLabel)
+            % Update the log
+            logmsg(TrackingCurator.cTimelapse,'Modified cell with label %d in trap %d at timepoint %d to have label %d',...
+                TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell),...
+                TrackingCurator.trapIndex,timepoint,TrackingCurator.CellLabel);
+
             oldLabel = TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell);
             OutlinesToUpdate = [];
             TPsToUpdateMax = [];
@@ -110,10 +114,10 @@ elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.outlineEditKey)
 elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.addRemoveKey)
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
-        fprintf('remove circle at (%0.0f,%0.0f) in trap %d \n', Cx,Cy,TrackingCurator.trapIndex);
+        logmsg(TrackingCurator.cTimelapse,'Remove cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,TrackingCurator.trapIndex);
         selection='remove';
     else
-        fprintf('add circle at (%0.0f,%0.0f) in trap %d \n', Cx,Cy,TrackingCurator.trapIndex);
+        logmsg(TrackingCurator.cTimelapse,'Add new cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,TrackingCurator.trapIndex);
         selection='add';
         TrackingCurator.PermuteVector(TrackingCurator.cTimelapse.cTimepoint(first_timepoint).trapMaxCell(TrackingCurator.trapIndex) +1) =...
             TrackingCurator.cTimelapse.cTimepoint(first_timepoint).trapMaxCell(TrackingCurator.trapIndex) +1;

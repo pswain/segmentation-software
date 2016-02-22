@@ -48,7 +48,16 @@ classdef experimentTracking<handle
                                 % methods, copied to each timelapseTraps
                                 % object when this is run (if parameters
                                 % selected appropriately)
-        
+    end
+    
+    properties (Transient)
+        % Transient properties won't be saved
+        logger; % handle to an experimentLogging object to keep a log
+    end
+    
+    events
+        PositionChanged
+        LogMsg
     end
     
     methods
@@ -58,6 +67,9 @@ classdef experimentTracking<handle
             %Optional inputs 2-4 only used when creating objects using the
             %Omero database: OmeroDatabase - object of class OmeroDatabase
             %expName, a unique name for this cExperiment
+            
+            % Create a new logger to log changes for this cExperiment:
+            cExperiment.logger = experimentLogging(cExperiment);
             
             % Read filenames from folder
             if nargin<1
@@ -130,12 +142,17 @@ classdef experimentTracking<handle
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
             
         end
-            
         
     end
     
     methods(Static)
-        
+
+        function cExperiment = loadobj(obj)
+            cExperiment = obj;
+            % Create a new experimentLogging object when loading:
+            cExperiment.logger = experimentLogging(cExperiment);
+        end
+                
         function cCellVision = loadDefaultCellVision
             file_path = mfilename('fullpath');
             filesep_loc = strfind(file_path,filesep);

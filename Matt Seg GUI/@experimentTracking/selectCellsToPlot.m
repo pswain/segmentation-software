@@ -23,10 +23,14 @@ if nargin<5 || isempty(trap_by_trap)
 end
 
 %% Load timelapses
+
+% Start logging protocol
+cExperiment.logger.start_protocol('selecting cells',length(positionsToIdentify));
+try
+    
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    fprintf('selecting cells for position %s\n',cExperiment.dirs{currentPos})
-    load([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']);
+    cTimelapse=loadCurrentTimelapse(cExperiment,currentPos);
     if trap_by_trap
         [traps_to_show,~] = find(cTimelapse.cellsToPlot);
         traps_to_show = unique(traps_to_show);
@@ -43,4 +47,13 @@ for i=1:length(positionsToIdentify)
     end
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(currentPos);
+end
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

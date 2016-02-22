@@ -29,10 +29,12 @@ if strcmp(key,cDisplay.CurateTracksKey)
 else
 
 if strcmp(get(gcbf,'SelectionType'),'alt')
-    disp(['remove circle at ', num2str([Cx,Cy])]);
+    % Update the log
+    logmsg(cDisplay.cTimelapse,'Unselecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
     selection=0;
 else
-    disp(['add circle at ', num2str([Cx,Cy])]);
+    % Update the log
+    logmsg(cDisplay.cTimelapse,'Selecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
     selection=1;
 end
 

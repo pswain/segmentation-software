@@ -45,10 +45,12 @@ if strcmp(key,cDisplay.CurateTracksKey)
 elseif ~cDisplay.trackOverlay
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
-        disp(sprintf('remove circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
+        % Update the log
+        logmsg(cDisplay.cTimelapse,'Remove cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection='remove';
     else
-        disp(sprintf('add circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
+        % Update the log
+        logmsg(cDisplay.cTimelapse,'Add cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection='add';
     end
     method='hough';

@@ -17,8 +17,20 @@ for diri=1:length(cExperiment.dirs)
     
 end
 
+% Log the copy command to the old log:
+old_location = cExperiment.saveFolder;
+logmsg(cExperiment,'\n=====================');
+logmsg(cExperiment,'Experiment copied from:\n\t%s\n\tto:\n\t%s',old_location,new_location);
+logmsg(cExperiment,'---------------------');
+
+% Update the saveFolder and save the experiment:
 cExperiment.saveFolder = new_location;
 cExperiment.saveExperiment;
+
+% Log the copy command to a new log file in the new location:
+logmsg(cExperiment,'\n=====================');
+logmsg(cExperiment,'Experiment copied from:\n\t%s\n\tto:\n\t%s',old_location,new_location);
+logmsg(cExperiment,'---------------------');
 
 end
 

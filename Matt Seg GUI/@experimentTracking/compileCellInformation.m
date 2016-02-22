@@ -23,6 +23,10 @@ if nargin<3 || isempty(force)
     
 end
 
+% Start logging protocol
+cExperiment.logger.start_protocol('compiling cell information',length(positionsToExtract));
+try
+    
 cTimelapse=cExperiment.returnTimelapse(positionsToExtract(1));
 
 cExperiment.cellInf=cTimelapse.extractedData;
@@ -38,9 +42,8 @@ field_names = fieldnames(cExperiment.cellInf);
 fields_to_treat = field_names(~ismember(field_names,fields_treated_special));
 
 index = length(cExperiment.cellInf(1).posNum);
-fprintf('positions extracted of %d : 1 ',length(positionsToExtract))
 for posi=2:length(positionsToExtract)
-    
+
     if index>= length(cExperiment.cellInf(1).posNum) || posi==2
         %preallocate more space
         for chi = 1:length(cExperiment.cellInf)
@@ -58,19 +61,19 @@ for posi=2:length(positionsToExtract)
             cExperiment.cellInf(chi).trapNum((index+1):(index+tempLen)) = zeros(1,tempLen);
             cExperiment.cellInf(chi).cellNum((index+1):(index+tempLen)) = zeros(1,tempLen);
             cExperiment.cellInf(chi).posNum((index+1):(index+tempLen)) = zeros(1,tempLen);
-            
+
         end
-        
+
     end
-    
+
     pos = positionsToExtract(posi);
     cTimelapse=cExperiment.returnTimelapse(pos);
-    
+
     if ~isequaln(cTimelapse.extractedData.extractionParameters,cExperiment.cellInf(1).extractionParameters) && ~force
-        fprintf('\n not compiling data %d, extraction parameters do not match\n',pos)
+        logmsg(cExperiment,'Not compiling data %d, extraction parameters do not match.',pos);
         continue
     end
-    
+
     num_cells = length(cTimelapse.extractedData(1).cellNum);
     for chi = 1:length(cExperiment.cellInf)
         for fi = 1:length(fields_to_treat)
@@ -80,13 +83,12 @@ for posi=2:length(positionsToExtract)
         cExperiment.cellInf(chi).trapNum((index+1):(index+num_cells)) = cTimelapse.extractedData(chi).trapNum;
         cExperiment.cellInf(chi).cellNum((index+1):(index+num_cells)) = cTimelapse.extractedData(chi).cellNum;
         cExperiment.cellInf(chi).posNum((index+1):(index+num_cells)) = pos*ones(1,num_cells);
-        
+
     end
     index = index + num_cells;
-    
+
     cExperiment.cTimelapse = [];
-    
-    fprintf('%d ',posi)
+
 end
 
 %remove left over zeros from preallocation.
@@ -98,14 +100,21 @@ for chi=1:length(cExperiment.cellInf)
     cExperiment.cellInf(chi).trapNum((index+1):end) =[];
     cExperiment.cellInf(chi).cellNum((index+1):end) = [];
     cExperiment.cellInf(chi).posNum((index+1):end) = [];
-    
+
 end
 
 if force
     [cExperiment.cellInf(:).extractionParameters] = deal([]);
 end
 
-fprintf('\ncompilation done \n\n')
-
 cExperiment.saveExperiment();
+
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

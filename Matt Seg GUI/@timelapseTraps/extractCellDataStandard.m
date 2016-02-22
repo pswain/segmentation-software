@@ -113,7 +113,9 @@ end
 tpStacks = cell(size(channels));
 
 for timepoint=find(cTimelapse.timepointsProcessed)
-    disp(['Timepoint Number ',int2str(timepoint)]);
+    %disp(['Timepoint Number ',int2str(timepoint)]);
+    % Trigger the TimepointChanged event for experimentLogging
+    experimentLogging.changeTimepoint(cTimelapse,timepoint);
     
     for channel=1:length(channels)
         channel_number = channels(channel);

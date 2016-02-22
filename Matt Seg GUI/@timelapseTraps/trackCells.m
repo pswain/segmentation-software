@@ -55,7 +55,9 @@ end
 
 for timepoint=cTimelapse.timepointsToProcess
     if cTimelapse.timepointsProcessed(timepoint)
-        disp(['Timepoint ' int2str(timepoint)]);
+        % Trigger the TimepointChanged event for experimentLogging
+        experimentLogging.changeTimepoint(cTimelapse,timepoint);
+        
         %Shuffles data around, trapinfo is data of current timepoint, 
         %trapinfom1 is data of previous timepoint,
         %trapinfom2 is data of timepoint before that.

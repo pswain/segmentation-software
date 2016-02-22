@@ -63,7 +63,7 @@ classdef timelapseTraps<handle
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-
+        
     end
     
     properties(SetAccess = immutable)
@@ -80,6 +80,16 @@ classdef timelapseTraps<handle
     defaultExtractParameters = struct('extractFunction',@extractCellDataStandard,...
         'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
     
+    end
+    
+    properties (Transient)
+        % Transient properties won't be saved
+        logger; % *optional* handle to an experimentLogging object to keep a log
+    end
+    
+    events
+        LogMsg
+        TimepointChanged
     end
     
     methods
