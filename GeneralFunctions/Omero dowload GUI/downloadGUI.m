@@ -1,4 +1,4 @@
-function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
+function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server,user)
     %GUI function for downloading data from the Omero database. 'single' is a logical input.
     %If 'singleDs' is true - only one dataaset will be downloaded - to the folder specified by
     %the output variable 'folder', which is a string.
@@ -8,6 +8,13 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
     %The other output variable is the dataset Id or Ids of the datasets
     %that have been downloaded
     disp('Running Omero download GUI...');
+    %First define default input values
+    if nargin<4
+        user='upload';
+    end
+    if nargin<3
+        server='skye.bio.ed.ac.uk';
+    end
     handles.singleDs=false;
     handles.singlePos=false;
     if nargin>0
@@ -16,42 +23,21 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
           handles.singlePos=singlePos; 
        end
     end
-    %Prepare the path
-    addpath(genpath('/Volumes/AcquisitionData/Omero code master copy'));
-    %Load the latest version of the OmeroDatabase object - this has all the
-    %recorded contents of the database - much more convenient than querying the
-    %database itself
-    
-    SavePath='/Volumes/AcquisitionData/Swain Lab/Ivan/software in progress/omeroinfo_donottouch/dbInfoSkye.mat';%Path to the saved object representing the current state of the database
-    if nargin>2
-        if strcmp(server,'skye.bio.ed.ac.uk')
-            SavePath='/Volumes/AcquisitionData2/Swain Lab/Ivan/software in progress/omeroinfo_donottouch/dbInfoSkye.mat';%Path to the saved object representing the current state of the database
-        end
-    end
-    if ~exist(SavePath)==2
-        error('Omero code not found - make sure you are connected to the microscope computer (129.215.109.100)');
-    end
-    load(SavePath);
-    if exist('obj2')==0
-        obj2=obj;
-    end
-    obj2.preparePath;
-    obj2.User='upload';
-    obj2=obj2.login;
-    handles.obj=obj2;
+    %Create an OmeroDatabase object    
+    obj=OmeroDatabase(user, server);
+    handles.obj=obj;
 
     %Create the figure
     handles.downloadDialog=figure('Units','Normalized','Position',[0.2815 0.3444 0.5756 0.5263],'MenuBar','None', 'NumberTitle', 'Off', 'Name', 'Omero database download');
-    %set(handles.downloadDialog('WindowStyle','Modal'); %Uncomment this when finished
-    %writing this function
+    %set(handles.downloadDialog('WindowStyle','Modal'); %Uncomment this when finished writing this function
     
     %Define data structures for display - add an 'All' option to allow
     %reselection of all datasets in a certain category
-    handles.projNames=['All' obj2.getProjectNames];
-    dateArray=obj2.getDates;
+    handles.projNames=['All' obj.getProjectNames];
+    dateArray=obj.getDates;
     handles.dateArray=['All' dateArray(:,1)'];
-    handles.tagNames=['All' obj2.getTagNames(false)];
-    handles.userNames=['All' obj2.getUsers];
+    handles.tagNames=['All' obj.getTagNames(false)];
+    handles.userNames=['All' obj.getUsers];
     
     %Create the drop down selection lists
     handles.projList=uicontrol(handles.downloadDialog,'Units','Normalized','Position',[.05 .7 .4 .2],'Style','popupmenu','String',handles.projNames,'Callback',@changeProject,'TooltipString','Choose a project to see the list of datasets that you can download');
@@ -68,7 +54,7 @@ function  [folder omeroDs]=downloadGUI(singleDs, singlePos, server)
     
     
     %Get the info from the database
-    data=obj2.loadDbData;
+    data=obj.loadDbData;
     set(handles.dsTable,'data',data);
     handles.data=data;
     handles.subset=true(1,length(data));%This indicates which datasets to display (in this case all of them)
