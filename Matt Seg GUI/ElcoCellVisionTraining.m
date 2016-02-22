@@ -329,7 +329,7 @@ cCellVision.runGridSearch(step_size,cmd);
 toc
 
 fprintf('grid search complete \n')
-%%
+%
 maxTP = 100;
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
@@ -342,11 +342,11 @@ fprintf('two stage training complete \n')
 
 %% classify images and see
 
-for TP = 1:length(cTimelapse.cTimepoint);
+for TP = 1%:length(cTimelapse.cTimepoint);
 
 traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
 
-DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);
+tic;DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);toc
 TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
 
 DecisionImageStack = DecisionImageStack./(2*max(abs(DecisionImageStack(:))));

@@ -24,12 +24,12 @@ cExpGUI.cExperiment.extractBirthsInfo(params);
 
 
 
-cExperiment.extractLineageInfo(find(cExperiment.posTracked),params);
+cExpGUI.cExperiment.extractLineageInfo(find(cExpGUI.cExperiment.posTracked),params);
 
 
-cExperiment.compileLineageInfo;
+cExpGUI.cExperiment.compileLineageInfo;
 
-cExperiment.extractHMMTrainingStates;
+cExpGUI.cExperiment.extractHMMTrainingStates;
 %
 % cExperiment.trainBirthHMM;
 
@@ -40,6 +40,6 @@ cExperiment.extractHMMTrainingStates;
 
 load('birthHMM_robin.mat')
 
-cExperiment.classifyBirthsHMM(birthHMM);
+cExpGUI.cExperiment.classifyBirthsHMM(birthHMM);
 
 end

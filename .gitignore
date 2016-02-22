@@ -661,5 +661,4 @@ Scot/Fiji.app/update/jars/scijava-common-2.22.5.jar
 Scot/Fiji.app/update/jars/scripting-java-0.2.2.jar
 *.xls
 GeneralFunctions/Shampoo extract/ZpTnormplotting.m
-Matt Seg GUI/@experimentTracking/extractBirthsInfo.m
 GeneralFunctions/Shampoo extract/ZpTnormplotting_Omero.m

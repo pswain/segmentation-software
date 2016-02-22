@@ -247,5 +247,20 @@ standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_A
 cExperiment.saveFolder = uigetdir;
 cExperiment.changeRootDirAllTimelapses;
 
+%% refine trap Pixels (Elco)
+% uses the refinement_channel to make a refined trap outline that can
+% improve the illimination of traps. 
+% refinement_channel shoudl be out of focus bright field in which traps are
+% white surrounded by black outline.
+
+for diri=1:length(cExperiment.dirs)
+    
+    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
+    cTimelapse.refineTrapOutline(cExperiment.cCellVision.cTrap.trapOutline,2);
+    cExperiment.saveTimelapseExperiment(diri);
+    fprintf('%d ',diri)
+    
+end
+
 
 

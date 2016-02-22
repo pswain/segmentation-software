@@ -58,5 +58,5 @@ for i=1:length(positionsToExtract)
 
     
     cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(experimentPos);
+    cExperiment.saveTimelapseExperiment(experimentPos,false);
 end
