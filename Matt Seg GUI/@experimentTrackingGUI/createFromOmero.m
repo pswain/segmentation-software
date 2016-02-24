@@ -27,6 +27,22 @@ else
     end
 end
 
+%Set the channels field - add a separate channel for each section in case
+%they are required for data extraction or segmentation:
+%Get the number of Z sections
+ims=dsStruct.dataset.linkedImageList;
+im=ims.get(0);%the first image - assumes all images have the same dimensions
+pixels=im.getPrimaryPixels;
+sizeZ=pixels.getSizeZ.getValue;
+origChannels=dsStruct.OmeroDatabase.Channels;
+dsStruct.OmeroDatabase.MicroscopeChannels = origChannels;
+if sizeZ>1
+    for ch=1:length(origChannels)
+        for z=1:sizeZ
+            dsStruct.OmeroDatabase.Channels{length(dsStruct.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+        end
+    end
+end
 
 %First check if a cExperiment exists for this dataset:
 fileAnnotations=getDatasetFileAnnotations(dsStruct.OmeroDatabase.Session,dsStruct.dataset);
@@ -46,6 +62,11 @@ if isempty(matched)
         end
     end
     cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
+    
+    %Copy the channels lists to the cExperiment.
+    cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+    cExpGUI.cExperiment.experimentInformation.microscopeChannels=origChannels;
+
     %Call createTimelapsePositions with default arguments - so that
     % magnification and imScale are not set in the GUI. These are generally
     % confusing arguments that are not widely used and necessarily supported.
@@ -93,6 +114,11 @@ else
             cExperiment.OmeroDatabase=dsStruct.OmeroDatabase;
             cExperiment.omeroDs=dsStruct.dataset;
             cExpGUI.cExperiment=cExperiment;
+            
+            %Copy the channels lists to the cExperiment.
+            cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+            cExpGUI.cExperiment.experimentInformation.microscopeChannels=origChannels;
+
             %If the current user is not the creator of this cExperiment then they will be prevented from making changes
             %Make this clear before offering the option to make an editable copy
             if ispc
@@ -194,6 +220,11 @@ else
             %input this is assumed to be ab omerodatabase construction. The
             %2nd input is then not used.
             cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
+
+            %Copy the channels lists to the cExperiment.
+            cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+            cExpGUI.cExperiment.experimentInformation.microscopeChannels=origChannels;
+
             %Call createTimelapsePositions with default arguments - so that
             % magnification and imScale are not set in the GUI. These are generally
             % confusing arguments that are not widely used and necessarily supported.
@@ -206,24 +237,8 @@ else
     end
 end
 
-%Set the channels field - add a separate channel for each section in case
-%they are required for data extraction or segmentation
 
-%Get the number of Z sections
-ims=cExpGUI.cExperiment.omeroDs.linkedImageList;
-im=ims.get(0);%the first image - assumes all images have the same dimensions
-pixels=im.getPrimaryPixels;
-sizeZ=pixels.getSizeZ.getValue;
-origChannels=dsStruct.OmeroDatabase.Channels;
-if sizeZ>1
-    for ch=1:length(origChannels)
-        for z=1:sizeZ
-            cExpGUI.cExperiment.OmeroDatabase.Channels{length(cExpGUI.cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
-        end
-    end
-end
-%Copy the channels list to the cExperiment.
-cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+
 
 %Rename the figure - date and experiment folder name.
 set(cExpGUI.figure,'Name',[char(cExpGUI.cExperiment.omeroDs.getName.getValue) '  ' cExpGUI.cExperiment.OmeroDatabase.getDate(cExpGUI.cExperiment.omeroDs)])

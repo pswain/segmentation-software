@@ -191,7 +191,6 @@ else
     else
         channelName=cTimelapse.channelNames;
     end
-    chNum=find(strcmp(channelName,cTimelapse.OmeroDatabase.Channels));
     
     if isempty (cTimelapse.OmeroDatabase.Session)
         cTimelapse.OmeroDatabase.login;
@@ -214,7 +213,21 @@ else
     sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
     sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
     timepointIm=zeros(sizeY, sizeX, sizeZ);
-    for z=1:sizeZ
+    
+    if any(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels))
+        chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
+        zsections = 1:sizeZ;
+    else
+        chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.OmeroDatabase.MicroscopeChannels));
+        zstring = regexp(channelName,'_(.*)$','tokens');
+        if ~isempty(zstring)
+            zsections = str2double(zstring{1});
+        else
+            error('Invalid channel name - this is a bug see Julian/Ivan');
+        end
+    end
+        
+    for z=zsections
         folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];
         if exist(folderName)==0
             mkdir(folderName);
@@ -300,7 +313,7 @@ end
 
 
 
-if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
+if isfield(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
     %first part of this statement is to guard against cases where channel
     %has not been assigned
     timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
@@ -325,7 +338,7 @@ if image_rotation~=0
     
 end
 
-if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
+if isfield(cTimelapse,'BackgroundCorrection') && size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
     TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));

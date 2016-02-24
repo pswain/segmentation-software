@@ -18,8 +18,8 @@ end
 
 
 if ~isempty(cExperiment.OmeroDatabase)
-    chNames=cExperiment.OmeroDatabase.Channels;
-    ch = menu('Choose channel used in segmentation (brightfield/DIC images)',cExperiment.OmeroDatabase.Channels);
+    chNames=cExperiment.experimentInformation.channels;
+    ch = menu('Choose channel used in segmentation (brightfield/DIC images)',chNames);
     searchString=chNames{ch};
 else
     if nargin<2 || isempty(searchString)

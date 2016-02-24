@@ -32,7 +32,7 @@ classdef experimentTracking<handle
         
         cTimelapse; %populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
         cellInf % cell data compuled from extractedData in each of the individual timelapseTrap objects
-        experimentInformation %currently not really used
+        experimentInformation %used by omero to store channel information; fields are .channels and .microscopeChannels
         cellVisionThresh % used to overwrite the twoStageThresh of cellVision in 
                          %      experimentTrackingGUI.identifyCells
                          %importantly, not used in the experimentTracking
