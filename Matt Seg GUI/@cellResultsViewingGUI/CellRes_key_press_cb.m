@@ -14,6 +14,7 @@ cell_mother_index = (CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum 
     (CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel == cell_tracking_number);
 end
 
+% CellResGUI.slider.Enable='off';
 switch event.Key
     case 'downarrow'
         cell_value = get(CellResGUI.CellSelectListInterface,'Value')+1;
@@ -28,17 +29,23 @@ switch event.Key
         end
         set(CellResGUI.CellSelectListInterface,'Value',cell_value);
     case 'leftarrow'
-        slider_value =  get(CellResGUI.slider,'Value') - 1;
-        if slider_value<get(CellResGUI.slider,'Min')
-            slider_value = get(CellResGUI.slider,'Min');
+%         slider_value =  get(CellResGUI.slider,'Value') - 1;
+        slider_value =  CellResGUI.slider.Value - 1;
+        sMin=CellResGUI.slider.Min;
+        if slider_value<sMin%get(CellResGUI.slider,'Min')
+            slider_value = sMin;%get(CellResGUI.slider,'Min');
         end
-        set(CellResGUI.slider,'Value',slider_value);
+        %         set(CellResGUI.slider,'Value',slider_value);
+        CellResGUI.slider.Value=slider_value;
     case 'rightarrow'
-        slider_value =  get(CellResGUI.slider,'Value') + 1;
-        if slider_value>get(CellResGUI.slider,'Max')
-            slider_value = get(CellResGUI.slider,'Max');
+        %         slider_value =  get(CellResGUI.slider,'Value') + 1;
+        slider_value =  CellResGUI.slider.Value + 1;
+        sMax=CellResGUI.slider.Max;
+        if slider_value>sMax%get(CellResGUI.slider,'Max')
+            slider_value = sMax;%get(CellResGUI.slider,'Max');
         end
-        set(CellResGUI.slider,'Value',slider_value);
+        %         set(CellResGUI.slider,'Value',slider_value);
+        CellResGUI.slider.Value=slider_value;
     case 'b'
         currTP =  get(CellResGUI.slider,'Value');
         fprintf(['\nAdded a new birth at ' num2str(currTP)]);
@@ -83,6 +90,7 @@ switch event.Key
         CellResGUI.birthTypeUse='Manual';CellResGUI.CellRes_plot;
 
 end
+% CellResGUI.slider.Enable='on';
 
 
 end
