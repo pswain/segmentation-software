@@ -9,6 +9,7 @@ else
 end
 
 if loadIn
+    h1 = warndlg('Going to load next dataset ... may take a minute');  
     h = waitbar(0,'Please wait as the channel is loaded ...');
 
     cTimelapse.temporaryImageStorage.images=uint8(cTimelapse.returnSingleTimepoint(1,channel));
@@ -24,7 +25,13 @@ if loadIn
     
     cTimelapse.temporaryImageStorage.channel=channel;
 
-    close(h);
+    try
+        close(h);
+    end
+    try
+    close(h1);
+    end
+
 end
 
 

@@ -31,7 +31,7 @@ classdef experimentTracking<handle
         imScale
         
         channelNames %this has the list of the channel names  
-        
+        currentTimelapseFilename; %name of where the current timelapse was loaded from
         cTimelapse; %populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
         cellInf % cell data compuled from extractedData in each of the individual timelapseTrap objects
         experimentInformation %currently not really used

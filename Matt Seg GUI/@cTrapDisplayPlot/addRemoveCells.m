@@ -27,21 +27,21 @@ if strcmp(key,cDisplay.CurateTracksKey)
     
     
 else
-
-if strcmp(get(gcbf,'SelectionType'),'alt')
-    disp(['remove circle at ', num2str([Cx,Cy])]);
-    selection=0;
-else
-    disp(['add circle at ', num2str([Cx,Cy])]);
-    selection=1;
-end
-
-
-loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
-cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
-
-
-
+    
+    if strcmp(get(gcbf,'SelectionType'),'alt')
+        disp(['remove circle at ', num2str([Cx,Cy])]);
+        selection=0;
+    else
+        disp(['add circle at ', num2str([Cx,Cy])]);
+        selection=1;
+    end
+    
+    
+    loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
+    cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
+    
+    
+    
 end
 %
 slider_cb(cDisplay);

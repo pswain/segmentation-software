@@ -67,6 +67,6 @@ if ~isempty(CellResGUI.cellImageSize)
 end
 
 imshow(show_image,'Parent',CellResGUI.CellImageHandle);
-
+drawnow
 end
 

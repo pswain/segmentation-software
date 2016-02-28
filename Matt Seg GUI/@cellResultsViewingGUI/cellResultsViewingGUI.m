@@ -23,6 +23,7 @@ classdef cellResultsViewingGUI<handle
         ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
         cellImageSize = []; % can set to be the size of the cell image to show. Useful if there are not traps and it will show a smaller area
         
+        needToSave; %does the experiment need to be saved before continuing along - only if any edits have been made.
         birthTypeUse='HMM'; %which birthtime dataset should be shown. Can be 'HMM' or 'Manual';
     end % properties
 
@@ -46,7 +47,7 @@ classdef cellResultsViewingGUI<handle
             end
             
             CellResGUI.cExperiment = cExperiment;
-
+            CellResGUI.needToSave=false;
             scrsz = get(0,'ScreenSize');
             CellResGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(4) 2*scrsz(4)/3]);
             
@@ -159,15 +160,17 @@ classdef cellResultsViewingGUI<handle
                 'SliderStep',...
                 [1/(length(CellResGUI.cExperiment.timepointsToProcess)-1) ...
                 1/(max(round((CellResGUI.cExperiment.timepointsToProcess(end) - CellResGUI.cExperiment.timepointsToProcess(1))/10),1))],...
-                'Callback',@(src,event)CellRes_slider_cb(CellResGUI));
-            addlistener(CellResGUI.slider,'Value','PostSet',@(src,event)CellRes_slider_cb(CellResGUI));
-            addlistener(CellResGUI.CellSelectListInterface,'Value','PostSet',@(src,event)SelectCell(CellResGUI));
+                'Callback',@CellResGUI.CellRes_slider_cb);
+            addlistener(CellResGUI.slider,'Value','PostSet',@CellResGUI.CellRes_slider_cb);
+            addlistener(CellResGUI.CellSelectListInterface,'Value','PostSet',@CellResGUI.SelectCell);
 
+            set(CellResGUI.figure,'BusyAction','cancel');
+            
             %scroll wheel function
-            set(CellResGUI.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(CellResGUI,src,event));
+            set(CellResGUI.figure,'WindowScrollWheelFcn',@CellResGUI.Generic_ScrollWheel_cb);
             
             %keydown function
-            set(CellResGUI.figure,'WindowKeyPressFcn',@(src,event)CellRes_key_press_cb(CellResGUI,src,event));
+            set(CellResGUI.figure,'WindowKeyPressFcn',@CellResGUI.CellRes_key_press_cb);
 
             %CellResGUI.SelectCell();
             

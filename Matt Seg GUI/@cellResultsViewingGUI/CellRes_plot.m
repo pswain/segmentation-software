@@ -28,8 +28,10 @@ if sum(cell_data_index == 1)
     tData=cell_data;
     tData(tData==0)=[];
     yMin=min(tData);yMax=max(tData);
-    ylim([yMin yMax]);
-    xlim([1 max(xInc(:))]);
+    try
+        ylim([yMin yMax]);
+        xlim([1 max(xInc(:))]);
+    end
     hold on
     
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;
@@ -60,15 +62,19 @@ if sum(cell_data_index == 1)
                   
                   %weird quirk where birth times seems to be [1 0 0 0 ...]
                   %by default.
-                  if birth_times==1
-                      birth_times = [];
-                  end
+%                   if birth_times==1
+%                       birth_times = [];
+%                   end
                   ylim_plot = get(CellResGUI.PlotHandle,'Ylim');
                   for bi = 1:length(birth_times)
                       bt = birth_times(bi);
-                      
                       plot(CellResGUI.TimepointSpacing*(bt)*[1 1],ylim_plot,'-g')
-                      
+                  end
+                  if isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'deathTimeManual')
+                      deathTime=CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual(cell_mother_index);
+                      if deathTime>0
+                          plot(CellResGUI.TimepointSpacing*(deathTime)*[1 1],ylim_plot,'-b')
+                      end
                   end
                   
               end

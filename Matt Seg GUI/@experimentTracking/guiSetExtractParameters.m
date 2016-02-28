@@ -38,26 +38,29 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor)
     if ~strcmp(type,'basic')
         
         % Ivan's set channel stuff
-    if ~isempty(cExperiment.OmeroDatabase)
-        channel_list = cExperiment.OmeroDatabase.Channels;
-    else
-        cTimelapse = cExperiment.loadCurrentTimelapse(1);
-        channel_list = cTimelapse.channelNames;
-    end
-    
+        if ~isempty(cExperiment.OmeroDatabase)
+            channel_list = cExperiment.OmeroDatabase.Channels;
+        else
+            channel_list = cExperiment.channelNames;
+            if isempty(channel_list) %just in case it is old and doesn't have the channels in the cExperiment
+                cTimelapse = cExperiment.loadCurrentTimelapse(1);
+                channel_list = cTimelapse.channelNames;
+            end
+        end
+        
         dlg_title = 'Which channels to extract?';
         prompt = {['please select the channels for which you would like to extract data'],'',''};
         answer = listdlg('PromptString',prompt,'Name',dlg_title,'ListString',channel_list,'SelectionMode','multiple',...
-        'ListSize',[300 100]);
+            'ListSize',[300 100]);
         functionParameters.channels = answer;
         
         settings_dlg_struct = struct(...
-        'title', 'nuclear label?',...
-        'Description','If one of the channels is a nuclear label, please specify it here. This must be on of your extraction channels. If you have no particular marker please select '' not applicable '' ',...
-        'forgotten_field_1',struct('entry_name',{{'nuclear tag field','nuclearChannel'}},'entry_value',{[{'not applicable'} channel_list(functionParameters.channels)]}),...
-        'forgotten_field_2',struct('entry_name',{{'number of candidate nuclear pixels','maxAllowedOverlap'}},'entry_value',{25}),...
-        'forgotten_field_3',struct('entry_name',{{'number of final nuclear pixels','maxPixOverlap'}},'entry_value',{5})...
-        );
+            'title', 'nuclear label?',...
+            'Description','If one of the channels is a nuclear label, please specify it here. This must be on of your extraction channels. If you have no particular marker please select '' not applicable '' ',...
+            'forgotten_field_1',struct('entry_name',{{'nuclear tag field','nuclearChannel'}},'entry_value',{[{'not applicable'} channel_list(functionParameters.channels)]}),...
+            'forgotten_field_2',struct('entry_name',{{'number of candidate nuclear pixels','maxAllowedOverlap'}},'entry_value',{25}),...
+            'forgotten_field_3',struct('entry_name',{{'number of final nuclear pixels','maxPixOverlap'}},'entry_value',{5})...
+            );
         
         answer_struct = settingsdlg(settings_dlg_struct);
         
