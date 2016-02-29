@@ -242,8 +242,10 @@ else
             %Get the image from the Omero Database
             try
                 plane=store.getPlane(z-1, chNum-1, timepoint-1);
-                %cache the plane to make retrieval faster next time
-                imwrite(toMatrix(plane, pixels)', fileName);
+                %cache the plane to make retrieval faster next time - this
+                %doesn't work very well hence commented - need a better way
+                %to speed up image browsing
+                %imwrite(toMatrix(plane, pixels)', fileName);
             catch
                 %Fix upload script to prevent the need for this debug
                 disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');

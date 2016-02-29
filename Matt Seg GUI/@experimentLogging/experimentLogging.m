@@ -8,7 +8,7 @@ classdef experimentLogging<handle
         cExperiment
 
         file_handle = []
-        file_name = 'cExperiment_log.txt'
+        file_name
         file_dir
         
         start_time = [] % Also used to identify if a protocol is running
@@ -35,6 +35,12 @@ classdef experimentLogging<handle
         function this = experimentLogging(cExperiment)
             %Constructor Construct an experimentLogging object
             %   Pass in an experimentTracking object to intialise
+            
+            if isempty(cExperiment.OmeroDatabase);
+                this.file_name = 'cExperiment_log_.txt';
+            else
+                this.file_name = ['cExperiment_log_',cExperiment.rootFolder,'.txt'];
+            end
             
             % Save a handle to the cExperiment, since it will be used to
             % update the log file name and find the loaded timeLapse:
