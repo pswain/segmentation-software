@@ -9,9 +9,10 @@ else
 end
 
 if loadIn
+    h1 = warndlg('Going to load next dataset ... may take a minute');  
     h = waitbar(0,'Please wait as the channel is loaded ...');
 
-    cTimelapse.temporaryImageStorage.images=cTimelapse.returnSingleTimepoint(1,channel);
+    cTimelapse.temporaryImageStorage.images=uint8(cTimelapse.returnSingleTimepoint(1,channel));
     maxTP=length(cTimelapse.timepointsProcessed);
     if maxTP>1
         cTimelapse.temporaryImageStorage.images(:,:,2:maxTP) = 0;
@@ -19,12 +20,18 @@ if loadIn
     
     for timepoint=2:maxTP;
         waitbar(timepoint/maxTP);
-        cTimelapse.temporaryImageStorage.images(:,:,timepoint)=cTimelapse.returnSingleTimepoint(timepoint,channel);
+        cTimelapse.temporaryImageStorage.images(:,:,timepoint)=uint8(cTimelapse.returnSingleTimepoint(timepoint,channel));
     end
     
     cTimelapse.temporaryImageStorage.channel=channel;
 
-    close(h);
+    try
+        close(h);
+    end
+    try
+    close(h1);
+    end
+
 end
 
 

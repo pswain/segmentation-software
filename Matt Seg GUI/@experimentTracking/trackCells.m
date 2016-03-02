@@ -33,5 +33,9 @@ for i=1:length(positionsToTrack)
     cTimelapse.trackCells(cellMovementThresh);
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(experimentPos);
+    if i==length(positionsToTrack)
+        cExperiment.saveTimelapseExperiment(experimentPos);
+    else
+        cExperiment.saveTimelapse(experimentPos);
+    end
 end

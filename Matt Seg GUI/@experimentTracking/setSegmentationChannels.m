@@ -59,7 +59,11 @@ if strcmp(button,'OK')
         cTimelapse.channelsForSegment = channels_for_segment;
         
         cExperiment.cTimelapse=cTimelapse;
-        cExperiment.saveTimelapseExperiment(currentPos);
+        if i==length(positionsToAlter)
+            cExperiment.saveTimelapseExperiment(currentPos);
+        else
+            cExperiment.saveTimelapse(currentPos);
+        end
     end
     fprintf('\n channels for segmentation set \n\n')
 else
