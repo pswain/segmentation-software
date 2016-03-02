@@ -133,17 +133,17 @@ parfor k=1:length(traps)
             maskStart(maskLabel==i)=1;
         end
         %         bw=activecontour(logisticIm,maskStart,20,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0);
-        bw=activecontour(logisticIm,maskStart,5,'Edge','ContractionBias',-.05,'SmoothFactor',0.9);
-        bw=activecontour(logisticIm,bw,10,'Chan-Vese','ContractionBias',-.2,'SmoothFactor',0.9);
+        bw=activecontour(logisticIm,maskStart,6,'Edge','ContractionBias',-.15,'SmoothFactor',0.02);
+        bw=activecontour(logisticIm,bw,6,'Chan-Vese','ContractionBias',-.35,'SmoothFactor',0.02);
 
         bw=imfill(bw,'holes');
         maskStart=bw;
         
         
-        alpha=.001;mu=0.05;
+        alpha=.1;mu=0.05;
         iterations=150;
         beta=1;gamma=3;kappa=-.25;
-        wl=10; we=5; wt=.1;
+        wl=15; we=5; wt=.1;
         
         p=maskStart>0;
         

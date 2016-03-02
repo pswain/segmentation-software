@@ -1,12 +1,12 @@
 %% Create the ground truth data
 % file='C:\Users\Matt\SkyDrive\timelapses\13-Jun 2014 (robin)\1-Pos_000_000cTimelapse.mat';
 % file='C:\AcquisitionDataRobin\Swain Lab\Matt\RAW DATA\2015\Jun\05-Jun-2015\Hap5_3.0DRglu_00\pos27cTimelapse';
-load('E:\MSN2 Project\MSN2-GFP\SC_2%D\2015-12-21 msn2 Aging hapv3-4 62h\msn2 - 8ul-min_3\Pos1cTimelapse.mat')
+load('E:\MSN2 Project\Downstream Expression\PGM2-GFP\2016-02-11 SC2%D\pgm2- hap5 3-4 14ulmin -take2\Pos1cTimelapse.mat')
 % load(file);
 cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:35:650); 
 % cTimelapse.timepointsProcessed=cTimelapse.timepointsProcessed(1:length(cTimelapse.cTimepoint));
 cTimelapse.timepointsToProcess=cTimelapse.timepointsToProcess(1:length(cTimelapse.cTimepoint));
-cTrapDisplayProcessing(cTimelapse,cCellVision);
+cTrapDisplay(cTimelapse,cCellVision);
 %%
 disp=cTrapDisplay(cTimelapse,cCellVision);
 disp.channel=1;
@@ -18,18 +18,9 @@ cTimelapse.cTimepoint(i).trapMaxCell(51:end)=[];
 cTimelapse.cTimepoint(i).trapMaxCellUTP(51:end)=[];
 end
 %%
-load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos2 2015-12-21 - ellipse centers.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end);
-cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
-cTimelapse.channelsForSegment=[1 2 3]
-cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
-
-cTimelapseOut = fuseTimlapses({cTimelapse});
-
-
 % load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos1 2015-12-21.mat')
-load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos2 2015-12-21 - ellipse centers.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-5);
+load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos1 2015-12-21 - elipses and AC -50 traps.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-1);
 cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
 cTimelapse.channelsForSegment=[1 2 3]
 cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
@@ -38,7 +29,28 @@ cTimelapseOut = fuseTimlapses({cTimelapse});
 %
 
 load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos12 2015-12-18.mat')
-cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-0);
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-5);
+
+cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
+cTimelapse.channelsForSegment=[1 2 3]
+cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
+
+cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
+
+
+
+load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos1 2016-02-11 pgm2 ellipse.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-1);
+
+cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
+cTimelapse.channelsForSegment=[1 2 3]
+cTimelapse.timepointsProcessed=1:length(cTimelapse.cTimepoint);
+
+cTimelapseOut = fuseTimlapses({cTimelapseOut,cTimelapse});
+
+
+load('C:\Users\Kaeberlein\Documents\MATLAB\timelapse for cellvision\hapv5 3-4\pos14 2016-01-29 myo1 elipses and AC.mat')
+cTimelapse.cTimepoint=cTimelapse.cTimepoint(1:end-1);
 
 cTimelapse.timepointsToProcess=1:length(cTimelapse.cTimepoint);
 cTimelapse.channelsForSegment=[1 2 3]
@@ -78,14 +90,16 @@ cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %%
 cmd='-s 2 -w0 1 -w1 1 -w2 1 -v 5 -c ';
-step_size=180;
+step_size=240;
 cCellVision.runGridSearchLinear(step_size,cmd);
 %%
-step_size=5;
+step_size=11;
 cCellVision.trainingParams.cost=1;
 cmd = ['-s 2 -w0 1 -w1 1 -w2 1 -c ', num2str(cCellVision.trainingParams.cost)];
 tic
 cCellVision.trainSVMLinear(step_size,cmd);toc
+cCellVision.method='linear'
+
 %%
 %%
 
@@ -130,8 +144,8 @@ cTimelapse.trackTrapsThroughTime();
 % for i=1:45
 se1=cCellVision.se.se1;
 se2=cCellVision.se.se2;
-i=25
-tp=14
+i=22
+tp=19
 trap_im=cTimelapse.returnSegmenationTrapsStack(i,tp);
 % trap_im=cDictionary.cTrap(1).image(:,:,1);
 tic
@@ -163,8 +177,8 @@ figure(12);imshow(maskStart,[]);title('Mask Start')
 
 figure(9);imshow(logisticIm,[]);colormap(jet);impixelinfo
 tic
-bw=activecontour(logisticIm,maskStart,5,'Edge','ContractionBias',0,'SmoothFactor',0.9);
-bw=activecontour(logisticIm,bw,10,'Chan-Vese','ContractionBias',-.1,'SmoothFactor',.9);
+        bw=activecontour(logisticIm,maskStart,5,'Edge','ContractionBias',-.15,'SmoothFactor',0.02);
+        bw=activecontour(logisticIm,bw,5,'Chan-Vese','ContractionBias',-.25,'SmoothFactor',0.01);
 bw=imfill(bw,'holes');toc
 drawnow
 figure(16);imshow(bw,[]);title('Cell End')
@@ -175,12 +189,12 @@ bVar=[];
 se3=cCellVision.se.se3;
 se1=cCellVision.se.se1;
 se4=strel('disk',4);
-alpha=.001;
-iterations=120;
+alpha=.1;
+iterations=150;
 beta=1;gamma=3;kappa=-.25;
-wl=10;
+wl=15;
 we=5;
-wt=.1;
+wt=.10;
 % bwlN=bwlabel(maskStart>0);
 % pInit=(bwlN==2);
 % p=imclose(pInit,se1);
@@ -207,7 +221,7 @@ if max(L(:))>0
     %     bwLNotP=sum(lPerim(~bwP));
     %only separate if things are barely joined
     %     if sum(lPerim(:)) > (2*pi*bwLNotP)*1.5
-    pInit=L==1;
+    pInit=L==2;
             p=imopen(pInit,se2);
     p=pInit;
     figure(101);imshow(p,[]);
@@ -274,7 +288,7 @@ image(1,:)=0.5;
 image(end,:)=0.5;
 
 bVar=[];
-[bVar,bw]=snakeIterate(bVar,image,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);toc
+[bVar,bw]=cCellVision.snakeIterate(bVar,image,xs',ys',alpha,beta,gamma,kappa,wl,we,wt,iterations);toc
 
 % cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
 

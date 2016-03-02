@@ -19,7 +19,7 @@ function [debug_outputs] =  generateTrainingSetTimelapse(cCellVision,cTimelapse,
 
 ElcoWay = false; %boolean on whether to find training set Elco's way or Matt's way
 useSegEdge=true;
-
+onlyUseSomeDarkEdges=true; %use all dark background pixels or just a random some.
 debug_outputs = {};
 if nargin<3
     frame_ss=1;
@@ -145,11 +145,18 @@ for timepoint=1:frame_ss:total_num_timepoints
                 thresh=mean(timD(:))-.35*std(timD(:));
                 tim2=timD<thresh;
                 props=bwpropfilt(tim2,'area',[200 10000]);
-%                 tim2=imerode(props,se1);
+                tim2=imerode(props,se1);
 
 %                 tim2=props;
             end
 
+            if onlyUseSomeDarkEdges
+                darkEdgeLoc=find(tim2);
+                locNotUse=randperm(length(darkEdgeLoc));
+                locNotUse=locNotUse(1:floor(length(locNotUse)/2));
+                tim2(darkEdgeLoc(locNotUse))=0;
+            end
+            
             training_classEdge=tim2>0;
             
             
@@ -170,7 +177,7 @@ for timepoint=1:frame_ss:total_num_timepoints
                     bwProps=regionprops(fillIm,'MajorAxisLength','MinorAxisLength','Orientation','EquivDiameter');
                     if ~isempty(bwProps)
                         if bwProps(1).MajorAxisLength ~= bwProps(1).MinorAxisLength
-                            convLine=ones(1,ceil((bwProps(1).MajorAxisLength-bwProps(1).MinorAxisLength)/2));
+                            convLine=ones(1,ceil((bwProps(1).MajorAxisLength-bwProps(1).MinorAxisLength)/1.6));
                             convLine=imrotate(convLine,bwProps(1).Orientation)>0;
                             training_class(:,:,cellInd)=imdilate(training_class(:,:,cellInd),convLine);
                             
@@ -182,7 +189,7 @@ for timepoint=1:frame_ss:total_num_timepoints
                         
                     end
                     if useSegEdge
-                        t=imdilate(full(trapInfo.cell(cellInd).segmented),se1);
+                        t=imdilate(full(trapInfo.cell(cellInd).segmented),se2);
                         training_classEdge(t>0)=1;
                     end
                     if currCellRadius>4 && currCellRadius<6
