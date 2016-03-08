@@ -78,8 +78,9 @@ else
         fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
         %Save cCellVision as a seperate variable
         cCellVision=cExperiment.cCellVision;
-        cExperiment.cCellVision=[];   
-        save([cExperiment.saveFolder filesep expFileName],'cExperiment','cCellVision');
+        cExperiment.cCellVision=[];
+       
+        save(fileName,'cExperiment','cCellVision');
         %Update or upload the file - first need to find the file annotation
         %object
         faIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);

@@ -6,7 +6,7 @@ function createFromOmero(cExpGUI)
 dsStruct=omeroGUI('download','skye.bio.ed.ac.uk');
 %There are options other than selecting a dataset for segmentation in that
 %gui - so only create a dataset if the correct button has been pressed
-if strmp(dsStruct.action,'segment')
+if strcmp(dsStruct.action,'segment')
     %Make sure DataPath folder is correctly set and emptied. When segmenting
     %this property is used for the folder in which cExperiment and cTimelapse
     %files will be stored after downloading (must be the same as cExperiment.saveFolder).

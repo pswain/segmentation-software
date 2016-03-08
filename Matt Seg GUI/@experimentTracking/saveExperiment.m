@@ -18,7 +18,7 @@ if isempty(cExperiment.OmeroDatabase)
 else
     %Save code for cExperiments created from an Omero dataset - only call
     %with one input
-    expFileName=['cExperiment_' cExperiment.saveFolder '.mat'];
+    expFileName=['cExperiment_' cExperiment.rootFolder '.mat'];
     %Prepare for local save - need to remove Omero database objects to
     %avoid a non-serializable warning on saving
     cExperiment.cTimelapse=[];

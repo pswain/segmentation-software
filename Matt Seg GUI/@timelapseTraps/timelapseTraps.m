@@ -48,6 +48,7 @@ classdef timelapseTraps<handle
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
         extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
         channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
+        microscopeChannels%cell array of channel names as defined by the microscope software.
         imSize %the size of the images 
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         lineageInfo %structure array to hld everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
@@ -115,6 +116,8 @@ classdef timelapseTraps<handle
                 else
                     cTimelapse.omeroImage=folder;
                     cTimelapse.OmeroDatabase=varargin{1};
+                    cTimelapse.channelNames=varargin{1}.Channels;
+                    cTimelapse.microscopeChannels=varargin{1}.MicroscopeChannels;
                 end
                 cTimelapse.cellsToPlot=sparse(100,1e3);
             end
