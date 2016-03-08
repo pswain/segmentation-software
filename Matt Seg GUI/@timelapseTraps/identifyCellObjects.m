@@ -20,6 +20,8 @@ function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, met
 % trap_image    :   cell array of image stacks taken from
 %                           timelapseTraps.returnSegmentationTrapsStack
 %                   format depends on cCellVision.method
+%                   NOTE - when method is hough it should be an image, not
+%                   a cell array of images.
 % d_im          :   stack of decision images - one for each trap_image.
 %                   negative values indicate a location likely to be a cell
 %                   centre.
@@ -85,6 +87,22 @@ switch method
         % trackUpdateObject where it is a cell array. Elco has only seen it
         % called without the trap_image given (and so set empty)
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
+    
+    case 'hough_and_track' %maintained for use in curateCellTrackingGUI
+        % and other GUIs where cells are added after tracking.
+        % simply calls the hough_track but then assigns a tracking number
+        % and updates relevant fields.
+        % NOTE should only be called with a single trap (i.e. traps = one
+        % number) or it will get confused.
+        traps = traps(1);
+        hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
+        newCellLabel = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(traps) +1;
+        cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(traps) = newCellLabel;
+        cTimelapse.cTimepoint(timepoint).trapInfo(traps).cellLabel(end+1) = newCellLabel;
+        for TP = timepoint:cTimelapse.timepointsToProcess(end);
+            cTimelapse.cTimepoint(TP).trapMaxCellUTP(traps) = newCellLabel;
+        end
+
     case 'active_contour'%seems to not be maintained
         linear_segmentation(cTimelapse,cCellVision,traps,channel) 
     case 'elcoAC' %maintained. Used in curateCellTrackingGUI.

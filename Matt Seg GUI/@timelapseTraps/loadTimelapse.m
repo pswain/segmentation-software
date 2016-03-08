@@ -84,12 +84,10 @@ else
     sizeT=pixels.getSizeT().getValue();
     cTimelapse.cTimepoint(sizeT).filename=[];%This makes sure cTimepoint has the correct length
     cTimelapse.timepointsToProcess = 1:sizeT;
-    sizeZ = pixels.getSizeZ().getValue();
-    z=round(sizeZ/2);
-    %Correct channel - defined by searchString
-    c=find(strcmp(searchString,cTimelapse.OmeroDatabase.Channels));
-    t=1;
-    image=cTimelapse.OmeroDatabase.downloadSlice(cTimelapse.omeroImage,z,t,c);
+    
+    %Load first timepoint of this cTimelapse to fill out the remaining
+    %details
+    image=cTimelapse.returnSingleTimepoint(1,searchString);
 end
 
 cTimelapse.imSize=size(image);

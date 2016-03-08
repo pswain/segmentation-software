@@ -100,7 +100,8 @@ motherIndex=[];
 
 for timepoint=1:length(cTimelapse.timepointsProcessed)
     if cTimelapse.timepointsProcessed(timepoint)
-        disp(['Timepoint ' int2str(timepoint)]);
+        % Trigger the TimepointChanged event for experimentLogging
+        experimentLogging.changeTimepoint(cTimelapse,timepoint);
         
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
         

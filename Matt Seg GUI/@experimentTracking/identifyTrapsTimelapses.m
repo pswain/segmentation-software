@@ -46,6 +46,10 @@ if nargin<5 || isempty(ClearTrapInfo)
     ClearTrapInfo = false;
 end
 
+% Start logging protocol
+cExperiment.logger.start_protocol('selecting traps',length(positionsToIdentify));
+try
+
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
 
@@ -106,4 +110,13 @@ for i=1:length(positionsToIdentify)
     
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(currentPos);
+end
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

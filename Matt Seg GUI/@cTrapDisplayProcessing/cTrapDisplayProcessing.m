@@ -120,6 +120,9 @@ classdef cTrapDisplayProcessing<handle
             tic
             for i=1:length(timepoints)
                 timepoint=timepoints(i);
+                % Trigger the TimepointChanged event for experimentLogging
+                experimentLogging.changeTimepoint(cTimelapse,timepoint);
+
                 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
                 
                 if i>1

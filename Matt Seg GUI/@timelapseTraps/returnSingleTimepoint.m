@@ -177,7 +177,9 @@ if isempty(cTimelapse.OmeroDatabase)
             cTimelapse.imSize=size(timepointIm);
         end
         disp('There is no data in this channel at this timepoint');
+        return
     end
+
 
 else
     %Code for returning image from Omero database
@@ -189,7 +191,6 @@ else
     else
         channelName=cTimelapse.channelNames;
     end
-    chNum=find(strcmp(channelName,cTimelapse.OmeroDatabase.Channels));
     
     if isempty (cTimelapse.OmeroDatabase.Session)
         cTimelapse.OmeroDatabase.login;
@@ -212,7 +213,21 @@ else
     sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
     sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
     timepointIm=zeros(sizeY, sizeX, sizeZ);
-    for z=1:sizeZ
+    
+    if any(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels))
+        chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
+        zsections = 1:sizeZ;
+    else
+        chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.OmeroDatabase.MicroscopeChannels));
+        zstring = regexp(channelName,'_(.*)$','tokens');
+        if ~isempty(zstring)
+            zsections = str2double(zstring{1});
+        else
+            error('Invalid channel name - this is a bug see Julian/Ivan');
+        end
+    end
+        
+    for z=zsections
         folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];
         if exist(folderName)==0
             mkdir(folderName);
@@ -227,8 +242,10 @@ else
             %Get the image from the Omero Database
             try
                 plane=store.getPlane(z-1, chNum-1, timepoint-1);
-                %cache the plane to make retrieval faster next time
-                imwrite(toMatrix(plane, pixels)', fileName);
+                %cache the plane to make retrieval faster next time - this
+                %doesn't work very well hence commented - need a better way
+                %to speed up image browsing
+                %imwrite(toMatrix(plane, pixels)', fileName);
             catch
                 %Fix upload script to prevent the need for this debug
                 disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
@@ -298,7 +315,7 @@ end
 
 
 
-if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
+if isfield(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
     %first part of this statement is to guard against cases where channel
     %has not been assigned
     timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
@@ -323,7 +340,7 @@ if image_rotation~=0
     
 end
 
-if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
+if isfield(cTimelapse,'BackgroundCorrection') && size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)
     %first part of this statement is to guard against cases where channel
     %has not been assigned
     TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));

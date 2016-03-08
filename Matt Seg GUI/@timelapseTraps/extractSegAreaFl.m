@@ -71,7 +71,8 @@ end
 % h=figure
 for timepoint=1:length(cTimelapse.timepointsProcessed)
     if cTimelapse.timepointsProcessed(timepoint)
-        disp(['Timepoint Number ',int2str(timepoint)]);
+        % Trigger the TimepointChanged event for experimentLogging
+        experimentLogging.changeTimepoint(cTimelapse,timepoint);
         
         %     uniqueTraps=unique(traps);
         %modify below code to use the cExperiment.searchString rather

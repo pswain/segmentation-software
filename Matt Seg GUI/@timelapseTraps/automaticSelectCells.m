@@ -64,7 +64,7 @@ cellsLeft = params.maximumNumberOfCells;
 
 cTimepoint=cTimelapse.cTimepoint;
 for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
-    disp(['Trap Number ' int2str(trap)]);
+    %disp(['Trap Number ' int2str(trap)]); % SUPERSEDED BY experimentLogging
     cellLabels=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel upto timepoint params.framesToCheck
     cellLabelsEnd=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel after timepoint params.framesToCheckEnd
     cellsSeen=zeros(1,100*sum(cTimelapse.timepointsProcessed));% list of each occurrence of a cellLabel before timepoint params.framesToCheckEnd

@@ -53,3 +53,9 @@ else
     %Ensure the timelapse has the channels list for the dataset
     cTimelapse.channelNames=cExperiment.experimentInformation.channels;
 end
+
+% In either case, once the timelapse is successfully loaded, trigger a
+% PositionChanged event to notify experimentLogging
+experimentLogging.changePos(cExperiment,timelapseNum,cTimelapse);
+
+end
