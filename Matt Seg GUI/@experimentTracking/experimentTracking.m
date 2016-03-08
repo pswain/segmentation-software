@@ -110,7 +110,11 @@ classdef experimentTracking<handle
                 cExperiment.omeroDs=folder;
                 cExperiment.OmeroDatabase=OmeroDatabase;
             end
-            cExperiment.creator=getenv('USERNAME');
+            if ispc
+                cExperiment.creator=getenv('USERNAME');
+            else
+                [~, cExperiment.creator] = system('whoami');
+            end
             cExperiment.posSegmented=0;
             cExperiment.posTracked=0;
             if isempty(cExperiment.OmeroDatabase)
@@ -150,8 +154,15 @@ classdef experimentTracking<handle
                 im=ims.get(0);%the first image - assumes all images have the same dimensions
                 pixels=im.getPrimaryPixels;
                 sizeZ=pixels.getSizeZ.getValue;
-                origChannels=cExperiment.OmeroDatabase.Channels;
+                %Get the list of channels from the microscope log
+                origChannels=cExperiment.OmeroDatabase.getChannelNames(cExperiment.omeroDs);
                 cExperiment.OmeroDatabase.MicroscopeChannels = origChannels;
+                cExperiment.experimentInformation.MicroscopeChannels=origChannels;
+                %The first entries in
+                %cExperiment.experimentInformation.channels are the
+                %original channels - then followed by a channel for each
+                %section.
+                cExperiment.experimentInformation.Channels=origChannels;
                 if sizeZ>1
                     for ch=1:length(origChannels)
                         for z=1:sizeZ
@@ -159,6 +170,8 @@ classdef experimentTracking<handle
                         end
                     end
                 end
+                cExperiment.experimentInformation.channels=cExperiment.OmeroDatabase.Channels;
+
             end
             
         end

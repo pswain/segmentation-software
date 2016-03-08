@@ -65,23 +65,7 @@ else
     else%The file is not yet attached to the dataset
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
-            
-    %cCellVision file
-    fileName=[cExperiment.saveFolder filesep dsName 'cCellVision_' cExperiment.rootFolder '.mat'];
-    cCellVision=cExperiment.cCellVision;
-    save(fileName,'cCellVision');
-    faIndex=strcmp([dsName 'cCellVision_' cExperiment.rootFolder '.mat'],faNames);
-    faIndex=find(faIndex);
-   
-    if ~isempty(faIndex)
-         faIndex=faIndex(1);
-         disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
-         fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
-    else%The file is not yet attached to the dataset
-        cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
-    end
     
-
     if saveCE
         %cExperiment file
         %Before saving, replace OmeroDatabase object with the server name, make .cTimelapse empty and replace .omeroDs with its Id to avoid
@@ -92,7 +76,12 @@ else
         omeroDs=cExperiment.omeroDs;
         cExperiment.omeroDs=[];
         fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
-        save(fileName,'cExperiment');
+        %Save cCellVision as a seperate variable
+        cCellVision=cExperiment.cCellVision;
+        cExperiment.cCellVision=[];   
+        save([cExperiment.saveFolder filesep expFileName],'cExperiment','cCellVision');
+        %Update or upload the file - first need to find the file annotation
+        %object
         faIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
         faIndex=find(faIndex);
         if ~isempty(faIndex)
@@ -105,5 +94,6 @@ else
         %Restore the cExperiment object
         cExperiment.omeroDs=omeroDs;
         cExperiment.OmeroDatabase=omeroDatabase;
+        cExperiment.cCellVision=cCellVision;
     end
 end
