@@ -92,7 +92,7 @@ if ~isempty(cCellVision.cTrap)
             ForcingImage = ACBackGroundFunctions.get_cell_image(TrapImage,min(size(TrapImage),[],2),[PntX PntY]);
             ForcingImage = ACImageTransformations.radial_gradient(ForcingImage,ImageTransformParameters);
             %fprintf('\nTrap Image for trap outline set to no transformation\n')
-            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(TrapImage)/2));
+            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(ForcingImage)/2));
             
             fprintf('\n\n please edit the outline by clicking on the image and press enter when you are satisfied \n\n ')
             
@@ -105,7 +105,7 @@ if ~isempty(cCellVision.cTrap)
             px = px-1;
             py = py-1;
             
-            SegmentationBinary = zeros(size(ForcingImage));
+            SegmentationBinary = zeros(size(TrapImage));
             SegmentationBinary(py+size(ForcingImage,1)*(px-1))=1;
             imflat(:,:,i) = SegmentationBinary;
             

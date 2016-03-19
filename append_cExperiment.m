@@ -91,11 +91,13 @@ for di = 1:length(cExperiment_new.dirs)
     cTimelapse.timepointsToProcess = 1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess));
     if refine_trap_outline
         if channel==0
-            channel =  selectChannelGUI(cTimelapse,'Trap Refine Channel',...
-                'please select a channel with which to refine the trap outline. Traps are expected to be bright with a dark halo.',...
+            [channel,OK_response] =  selectChannelGUI(cTimelapse,'Trap Refine Channel',...
+                'please select a channel with which to refine the trap outline. Traps are expected to be bright with a dark halo. Cancel will prevent trap refinement',...
                 false);
         end
+        if OK_response
         cTimelapse.refineTrapOutline(cExperiment_new.cCellVision.cTrap.trapOutline,channel,[],[]);
+        end
     end
     cExperiment_orig.dirs{end+1} = [append_name,cExperiment_new.dirs{di}];
     save(fullfile(cExperiment_orig.saveFolder , [append_name,cExperiment_new.dirs{di},'cTimelapse']),'cTimelapse')

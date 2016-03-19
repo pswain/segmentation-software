@@ -1,4 +1,4 @@
-function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints)
+function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output)
 % refineTrapOutline(cTimelapse,starting_trap_outline,channel,traps,timepoints)
 %
 % calculate a refined trap outline by simple thresholding and store it in
@@ -30,16 +30,26 @@ end
 
 if nargin<4 || isempty(traps)
     traps = cTimelapse.defaultTrapIndices;
+    all_traps = true;
 end
 
 if nargin<5 || isempty(timepoints)
     timepoints = cTimelapse.timepointsToProcess;   
 end
 
+if nargin<6 || isempty(show_output)
+    show_output = false;
+end
+
 %% get labelled trap
 dilation_length =4;
 strel_1 = strel('disk',dilation_length);
-f= figure;
+%for enlarging large trap outline.
+strel_2 = strel('disk',1);
+
+if show_output
+    f= figure;
+end
 
 dilated_start_trap_im = imdilate(starting_trap_outline,strel_1);
 
@@ -67,7 +77,7 @@ im = [];
 
 wh = waitbar(0,'refininf trap outline');
 for tp = timepoints
-    if nargin<4
+    if all_traps
         
         traps = 1:length(cTimelapse.cTimepoint(tp).trapInfo);
         
@@ -94,7 +104,7 @@ for tp = timepoints
         temp_im = im(:,:,ti);
         medVal = median(temp_im(:));
         temp_im = temp_im - medVal;
-        trap_im_orig = temp_im>-medVal;
+        trap_im_orig = temp_im>prctile(temp_im(:),25);
         
         trap_im = trap_im_orig;
         trap_im(~dilated_start_trap_im) = false;
@@ -125,6 +135,7 @@ for tp = timepoints
         final_trap_pixels_big = imdilate(final_trap_pixels,strel_1);
         final_trap_pixels_big = final_trap_pixels | (~trap_im_orig & final_trap_pixels_big);
         final_trap_pixels_big = imfill(final_trap_pixels_big,'holes');
+        final_trap_pixels_big = imdilate(final_trap_pixels_big,strel_2);
         
         if sum(final_trap_pixels_big(:))==numel(final_trap_pixels)
             fprintf('debug');
@@ -135,7 +146,7 @@ for tp = timepoints
         cTimelapse.cTimepoint(tp).trapInfo(trap).refinedTrapPixelsBig = sparse(final_trap_pixels_big);
         
         %for inspection
-        if false
+        if show_output
             figure(f);imshow(OverlapGreyRed(im(:,:,ti),final_trap_pixels,false,final_trap_pixels_big,true),[]);
             pause(0.3);
         end
@@ -143,7 +154,9 @@ for tp = timepoints
     
 waitbar(tp/max(timepoints(:)),wh);
 end
-close(f);
+if show_output
+    close(f);
+end
 close(wh);
 
 

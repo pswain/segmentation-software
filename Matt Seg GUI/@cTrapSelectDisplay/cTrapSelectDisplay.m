@@ -63,6 +63,7 @@ classdef cTrapSelectDisplay<handle
                 cDisplay.ExclusionZones = ExclusionZones;
             end
             
+            
             cDisplay.cCellVision=cCellVision;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.figure=figure;

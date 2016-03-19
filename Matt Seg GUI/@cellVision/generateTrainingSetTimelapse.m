@@ -101,15 +101,15 @@ for timepoint=1:frame_ss:total_num_timepoints
         disp(['Trap ', int2str(trap), 'Frame ', int2str(timepoint)])
         disp(['Time ', num2str(elapsed_t)])
         
-        if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner')
+        if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner') && ~isempty(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner)
             trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
                 full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
             insideTraps = trapImage==1;
-            allTrapPixels = trapImage>0;
+            
         else
             trapImage = cCellVision.cTrap.trapOutline*1;
         end
-        
+        allTrapPixels = trapImage>0;
         features=getFilteredImage(cCellVision,image{trap},trapImage);
         
         

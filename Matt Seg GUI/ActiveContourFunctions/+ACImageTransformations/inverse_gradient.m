@@ -1,6 +1,6 @@
-function imageStack = radial_gradient(imageStack,parameters,varargin)
-%function image = radial_gradient_DICangle_and_radialaddition(imageStack,parameters,varargin)
-%
+function imageStack = inverse_gradient(imageStack,parameters,varargin)
+%function image = inverse_gradient(imageStack,parameters,varargin)
+
 %parameters.postprocessing    - a range of options: 'none','absolute' and
 %                               'invert' being hte most useful
 %
@@ -15,27 +15,11 @@ function imageStack = radial_gradient(imageStack,parameters,varargin)
 
 %% general setting up
 
-image_length = (size(imageStack,1)-1)/2;%half the length of the image
-
-xcoord = repmat(-image_length:image_length,(2*image_length +1),1);
-
-ycoord = repmat((-image_length:image_length)',1,(2*image_length +1));
-
-xcoord((image_length +1),(image_length +1)) = 1;
-
-ycoord((image_length +1),(image_length +1)) = 1;
-
-[R,angle] = ACBackGroundFunctions.xy_to_radial(xcoord(:),ycoord(:));
-
-R = reshape(R,(2*image_length+1),(2*image_length+1));
-
-angle = reshape(angle,(2*image_length+1),(2*image_length+1));
-
 if size(varargin,2)>=1
     
     TrapRemovealFunctionHandle = str2func(['ACImageTransformations.' parameters.TrapHandleFunction]);
     
-    if any(strfind(parameters.TrapHandleFunction,'preProc'))
+    if strfind(parameters.TrapHandleFunction,'preProc')
         imageStack = TrapRemovealFunctionHandle(imageStack,parameters.TrapHandleFunctionParameters,varargin{1});
     end
 end
@@ -48,7 +32,7 @@ for i=1:size(imageStack,3)
     [ximg,yimg] = gradient(image);
     
     %% radial gradient
-    image = -ximg.*cos(angle) -yimg.*sin(angle);
+    image = 1./(1+(ximg.^2 + yimg.^2));
     
     if isfield(parameters,'postprocessing')
         switch parameters.postprocessing
@@ -82,7 +66,7 @@ if size(varargin,2)>=1
     
     TrapRemovealFunctionHandle = str2func(['ACImageTransformations.' parameters.TrapHandleFunction]);
     
-    if isempty(strfind(parameters.TrapHandleFunction,'preProc'))
+    if ~strfind(parameters.TrapHandleFunction,'preProc')
         imageStack = TrapRemovealFunctionHandle(imageStack,parameters.TrapHandleFunctionParameters,varargin{1});
     end
     

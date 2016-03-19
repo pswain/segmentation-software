@@ -21,10 +21,10 @@ load(fullfile(path,file),'cCellVision');
 
 
 
-%% initialise
+%% initialise for cExperiment compilation
 
 cExperiment =[];
-num_timepoints = 20;
+num_timepoints = 5;
 
 %% select cExperiments you want to add to the gound truth set.
 % num_timpoints timepoints will be added from each one.
@@ -37,9 +37,6 @@ cExperiment = append_cExperiment(cExperiment,num_timepoints,[],[]);
 % best to delete cellInf before starting.
 
 
-%% compile cExperiments into big cExperiment for correcting ground truth
-num_timepoints = 20;
-cExperiment = [];
 
 %% open a GUI to edit the experiment
 
@@ -53,7 +50,7 @@ expGUI = experimentTrackingGUI;
 %load(fullfile(path,file),'cExperiment');
 
 
-for di = 1:length(cExperiment.dirs)
+for di =1:18% 1:length(cExperiment.dirs)
     
     cTimelapse = cExperiment.loadCurrentTimelapse(di);
         if di==1
@@ -127,25 +124,16 @@ SegMethod = @(CSVM,image) createImFilterSetNoTrapSlimGFP(CSVM,image);
 
 SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoBF_1_3(CSVM,image,trapOutline);
 
-%% for GFP segmentation, get mean_brightness
-pix_values = [];
-TPsRand = randperm(length(cTimelapse.cTimepoint));
-for i=1:30
-    im = cTimelapse.returnSingleTimepoint(TPsRand(i),cTimelapse.channelsForSegment(2));
-    pix_values = cat(1,pix_values,im(:));
-    
-end
+%% single GFP slice
 
-mean_brightness = mean(pix_values(pix_values>5*median(pix_values)));
+SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoGFP_1(CSVM,image);
 
-cCellVision.se = struct;
 
-cCellVision.se.se3=strel('disk',3);
-    cCellVision.se.se2=strel('disk',2);
-    cCellVision.se.se1=strel('disk',1);
+%% set normalisation method for cCellVision
 
-cCellVision.se.mean_brightness = mean_brightness;
+%%
 
+cCellVision.imageProcessingMethod = 'twostage_norm';
 
 %% check histrogram of images
 
@@ -226,7 +214,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=1000; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=1200; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -245,7 +233,7 @@ nT = 1;
 nTr = 1;
 nTrT = 1;
 while nTrT<=numTraps
-    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,2);
+    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,1);
     for iT = 1:size(TrapIm,3)
         image_to_show = repmat(double(TrapIm(:,:,iT)),[1,1,3]);
         image_to_show = image_to_show.*(1 + ...

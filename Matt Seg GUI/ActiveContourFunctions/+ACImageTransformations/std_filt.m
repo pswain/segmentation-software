@@ -1,5 +1,5 @@
-function imageStack = radial_gradient(imageStack,parameters,varargin)
-%function image = radial_gradient_DICangle_and_radialaddition(imageStack,parameters,varargin)
+function imageStack = std_filt(imageStack,parameters,varargin)
+% imageStack = std_filt(imageStack,parameters,varargin)
 %
 %parameters.postprocessing    - a range of options: 'none','absolute' and
 %                               'invert' being hte most useful
@@ -13,23 +13,7 @@ function imageStack = radial_gradient(imageStack,parameters,varargin)
 %With'invert' true it will give low scores for pixels at which radial change in
 %intensity is negative (from white to black)
 
-%% general setting up
 
-image_length = (size(imageStack,1)-1)/2;%half the length of the image
-
-xcoord = repmat(-image_length:image_length,(2*image_length +1),1);
-
-ycoord = repmat((-image_length:image_length)',1,(2*image_length +1));
-
-xcoord((image_length +1),(image_length +1)) = 1;
-
-ycoord((image_length +1),(image_length +1)) = 1;
-
-[R,angle] = ACBackGroundFunctions.xy_to_radial(xcoord(:),ycoord(:));
-
-R = reshape(R,(2*image_length+1),(2*image_length+1));
-
-angle = reshape(angle,(2*image_length+1),(2*image_length+1));
 
 if size(varargin,2)>=1
     
@@ -45,10 +29,11 @@ for i=1:size(imageStack,3)
     
     image = imageStack(:,:,i);
     
-    [ximg,yimg] = gradient(image);
-    
-    %% radial gradient
-    image = -ximg.*cos(angle) -yimg.*sin(angle);
+    if isfield(parameters,'nhood')
+        image = stdfilt(image,parameters.nhood);
+    else
+        image = stdfilt(image);
+    end
     
     if isfield(parameters,'postprocessing')
         switch parameters.postprocessing
@@ -57,19 +42,7 @@ for i=1:size(imageStack,3)
             case 'invert'
                 %invert the image
                 image = max(image(:))-image;
-            case 'absolute'
-                %take the absolute of the image
-                image = abs(image - median(image(:)));
-                image = max(image(:))-image;
-            case 'absolute+'
-                % negative of (absolute followed by addition of  half the original
-                % image)
-                image = abs(image - median(image(:))) + 0.5*(image - median(image(:)));
-                image = max(image(:))-image;
-            case 'absolute-'
-                %absolute followed by subtraction of  half the original image
-                image = abs(image - median(image(:))) - 0.5*(image - median(image(:)));
-                image = max(image(:))-image;
+            
         end
     end
     

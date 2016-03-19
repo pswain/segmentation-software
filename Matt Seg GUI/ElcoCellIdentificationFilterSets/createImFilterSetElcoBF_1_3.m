@@ -10,8 +10,8 @@ function filt_feat=createImFilterSetElcoBF_1_3(cCellSVM,image,trapOutline)
 % oversteps the mark)
 %
 % performs no normalisation, and expects the image to have been globally
-% normalised by the subtraction of the median and the division by the inter
-% quartile range (this should be done by setting the
+% normalised by the subtraction of the median and the division by the 
+% differenc between the 2nd and 98th percentile. 
 % cellVision.imageProcessingMethod = 'twostage_norm'
  
 %% Normalize the image and traps
