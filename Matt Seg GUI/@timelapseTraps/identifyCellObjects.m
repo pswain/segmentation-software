@@ -83,7 +83,7 @@ switch method
         cTimelapse.trackUpdateObjects(cCellVision,traps,timepoint,trap_image,allowedOverlap,d_imCenters)
     case 'trackUpdateObjectsGPU' % not sure on this one
         cTimelapse.trackUpdateObjectsGPU(cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap,d_imCenters)
-    case 'edgeACSnake'
+    case 'edgeACSnake' % new  - needs edge, center, other classifier
         edgeACSnake(cTimelapse,cCellVision,traps,timepoint,d_imEdges)
     case 'hough' %maintained for the part concerning when bw_mask is provided. used in cTrapDisplay
         %NOTE

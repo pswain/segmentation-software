@@ -142,8 +142,12 @@ classdef cTrapDisplayProcessing<handle
                 %       cTimelapse.cTimepoint(timepoint).trapInfo.segCenters
                 % field populated by above method to find cell objects
                 % (i.e. actually identify centres and outlines)
-                cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'edgeACSnake',[],identification_image_stacks,d_imCenters,d_imEdges);
-
+                if max(d_imEdges(:))>0
+                    disp('Using edgeACSnake')
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'edgeACSnake',[],identification_image_stacks,d_imCenters,d_imEdges);
+                else
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_imCenters,d_imEdges);
+                end
                 
                 for j=1:length(traps)
                     trap = traps(j);

@@ -1,4 +1,4 @@
-function extractCellDataStandard(cTimelapse)
+function extractCellDataStandardParfor(cTimelapse)
 % extractCellDataStandard(cTimelapse)
 %
 % standard extraction function to extract all the commonly used
@@ -78,30 +78,32 @@ se2=strel('disk',2);
 
 %preallocate cellInf
 for channel=1:length(channels)
-    
+    extractedData(channel).radius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).radiusAC=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).radiusFL=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).area=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).eccentricity=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+
     extractedData(channel).mean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).median=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).max5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).std=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).proteinLocalization=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).min=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).imBackground=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).nuclearTagLoc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+
     extractedData(channel).smallmean=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).smallmedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).smallmax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).min=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).imBackground=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).area=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).radius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).radiusAC=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).distToNuc=sparse(numCells,length(cTimelapse.timepointsProcessed));
     extractedData(channel).nucArea=sparse(numCells,length(cTimelapse.timepointsProcessed));
-    extractedData(channel).radiusFL=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).segmentedRadius=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).xloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).yloc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     
-    extractedData(channel).membraneMax5=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).membraneMedian=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    extractedData(channel).nuclearTagLoc=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     
     %for Elco's data extraction
     extractedData(channel).pixel_sum=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
@@ -116,6 +118,9 @@ end
 % cell array of images for each channel extracted at each timpoint
 tpStacks = cell(size(channels));
 
+% rearranged so that each cell is filled in at the same time at each
+% timepoint, this allows parfor use and reduces the extraction time
+% significantly
 for timepoint=find(cTimelapse.timepointsProcessed)
     disp(['Timepoint Number ',int2str(timepoint)]);
     
@@ -213,20 +218,7 @@ for timepoint=find(cTimelapse.timepointsProcessed)
             end
             %end elcos section
             
-            
-            uniqueTraps=unique(trap);
-            
-            extData=[];
-            %pre-allocate so parfor works
-            tDatS=sparse(1,length(trap));
-            ed_max5=tDatS; ed_mean=tDatS; ed_median=tDatS; ed_min=tDatS;
-            ed_std=tDatS;  ed_pixel_sum=tDatS;  ed_membraneMedian=tDatS;
-            ed_membraneMax5=tDatS;  ed_smallmax5=tDatS; ed_smallmedian=tDatS;
-            ed_smallmean=tDatS; ed_imBackground=tDatS; ed_area=tDatS;  ed_radius=tDatS;
-            ed_eccentricity=tDatS;  ed_radiusFL=tDatS; ed_segmentedRadius=tDatS;
-            ed_nucArea=tDatS;  ed_distToNuc=tDatS;  ed_radiusAC=tDatS;
-            ed_xloc=tDatS;ed_yloc=tDatS;ed_pixel_variance_estimate=tDatS;
-            
+                        
             tpImCh=tpStacks{channel};
             
             
@@ -244,14 +236,6 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                 % shoud be inserted.
                 if ~isempty(temp_loc) && sum(cellLoc(:))
                     seg_areas=full(trapInfo(trap(allIndex)).cell(temp_loc).segmented);
-                    
-                    %                     cellLoc=zeros(size(seg_areas));
-                    %                     loc=double(trapInfo(trap(allIndex)).cell(temp_loc).cellCenter);
-                    %                     if ~isempty(loc)
-                    %                         cellLoc=imfill(seg_areas(:,:,1),'holes');
-                    %                     end
-                    %logical of cell pixels
-                    
                     
                     %logical of membrane pixels
                     membraneLoc = seg_areas >0;
@@ -272,16 +256,14 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     ratioOverlapCont=length(cellFL(:))*.025;
                     numberOverlapPixels = min(ratioOverlap,length(cellFL));
                     
-                    
-                    %                         extData{j}.max5(cellIndex)=mean(flsorted(1:numberOverlapPixels));
-                    ed_max5(allIndex)=mean(flsorted(1:numberOverlapPixels));
-                    ed_mean(allIndex)=mean(cellFL(:));
-                    ed_median(allIndex)=median(cellFL(:));
-                    ed_std(allIndex)=std(cellFL(:));
-                    ed_min(allIndex)=min(cellFL(:));
-                    ed_pixel_sum(allIndex)=sum(cellFL(:));
-                    ed_membraneMedian(allIndex)=median(membraneFL(:));
-                    ed_membraneMax5(allIndex)=mean(mflsorted(1:numberOverlapPixels));
+                    extractedData(channel).max5(allIndex,timepoint)=mean(flsorted(1:numberOverlapPixels));
+                    extractedData(channel).mean(allIndex,timepoint)=mean(cellFL(:));
+                    extractedData(channel).median(allIndex,timepoint)=median(cellFL(:));
+                    extractedData(channel).std(allIndex,timepoint)=std(cellFL(:));
+                    extractedData(channel).min(allIndex,timepoint)=min(cellFL(:));
+                    extractedData(channel).pixel_sum(allIndex,timepoint)=sum(cellFL(:));
+                    extractedData(channel).membraneMedian(allIndex,timepoint)=median(membraneFL(:));
+                    extractedData(channel).membraneMax5(allIndex,timepoint)=mean(mflsorted(1:numberOverlapPixels));
                     
 %                     cellLocSmall=imerode(cellLoc,se2);
                     cellLocSmall=cellLocAllSmall(:,:,allIndex);
@@ -295,9 +277,9 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     flPeak=conv2(double(trapImage),convMatrix,'same');
                     flPeak=flPeak(cellLoc);
                     
-                    ed_smallmax5(allIndex)=max(flPeak(:));
-                    ed_smallmean(allIndex)=mean(cellFLsmall(:));
-                    ed_smallmedian(allIndex)=median(cellFLsmall(:));
+                    extractedData(channel).smallmax5(allIndex,timepoint)=max(flPeak(:));
+                    extractedData(channel).smallmean(allIndex,timepoint)=mean(cellFLsmall(:));
+                    extractedData(channel).smallmedian(allIndex,timepoint)=median(cellFLsmall(:));
                     
                     seg_areas=cellLocAllCellsBkg(:,:,allIndex);
                     seg_areas=~seg_areas;
@@ -307,42 +289,43 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     if isempty(bkg)
                         bkg=trapImage;
                     end
-                    ed_imBackground(allIndex)=median(bkg(:));
+                    extractedData(channel).imBackground(allIndex,timepoint)=median(bkg(:));
                     
                     % information common to all channels (basically
                     % shape information) is stored only in the
                     % channel 1 structure.
                     if channel==1
-                        ed_area(allIndex)=length(cellFL);
-                        ed_radius(allIndex)= trapInfo(trap(allIndex)).cell(temp_loc).cellRadius;
+                        extractedData(channel).area(allIndex,timepoint)=length(cellFL);
+                        extractedData(channel).radius(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).cellRadius;
                         tP=regionprops(cellLoc,'Eccentricity');
-                        ed_eccentricity(allIndex)= tP.Eccentricity;
+                        extractedData(channel).eccentricity(allIndex,timepoint)=tP.Eccentricity;
+                        
                         %radiusFL populated by extractSegAreaFl
                         %method.
                         if isfield(trapInfo(trap(allIndex)).cell(temp_loc),'cellRadiusFL');
-                            ed_radiusFL(allIndex)= trapInfo(trap(allIndex)).cell(temp_loc).cellRadiusFL;%trapInfo(trap(allIndex)).cell(temp_loc).cellRadius;
+                            extractedData(channel).radiusFL(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).cellRadiusFL;
                         end
-                        ed_segmentedRadius(allIndex)= sqrt(sum(cellLoc(:))/pi);%trapInfo(trap(allIndex)).cell(temp_loc).cellRadius;
+                        extractedData(channel).segmentedRadius(allIndex,timepoint)=sqrt(sum(cellLoc(:))/pi);
                         
                         % nucArea populated by extractNucAreaFL method.
                         if isfield(trapInfo(trap(allIndex)).cell(temp_loc),'nucArea');
                             if isempty(trapInfo(trap(allIndex)).cell(temp_loc).nucArea)
-                                ed_nucArea(allIndex)=NaN;
-                                ed_distToNuc(allIndex)=NaN;
+                                extractedData(channel).nucArea(allIndex,timepoint)=NaN;
+                                extractedData(channel).distToNuc(allIndex,timepoint)=NaN;
                             else
-                                ed_nucArea(allIndex)=trapInfo(trap(allIndex)).cell(temp_loc).nucArea;
-                                ed_distToNuc(allIndex)=trapInfo(trap(allIndex)).cell(temp_loc).distToNuc;
+                                extractedData(channel).nucArea(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).nucArea;
+                                extractedData(channel).distToNuc(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).distToNuc;
                             end
                         end
                         
                         % populated by the active contour methods
                         % run through timelapseTrapsActiveContour
                         if isfield(trapInfo(trap(allIndex)).cell(temp_loc),'radiusAC');
-                            ed_radiusAC(allIndex)=trapInfo(trap(allIndex)).cell(temp_loc).radiusAC;
+                            extractedData(channel).radiusAC(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).radiusAC;
                         end
-                        ed_xloc(allIndex)= trapInfo(trap(allIndex)).cell(temp_loc).cellCenter(1);
-                        ed_yloc(allIndex)=trapInfo(trap(allIndex)).cell(temp_loc).cellCenter(2);
                         
+                        extractedData(channel).xloc(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).cellCenter(1);
+                        extractedData(channel).yloc(allIndex,timepoint)=trapInfo(trap(allIndex)).cell(temp_loc).cellCenter(2);
                     end
                     
                     %for Elco's data extraction
@@ -361,42 +344,11 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                         estimatedVariance = zeros(size(cellFL));
                         
                     end
-                    ed_pixel_variance_estimate(allIndex) = sum(estimatedVariance);
+                    extractedData(channel).pixel_variance_estimate(allIndex,timepoint)=sum(estimatedVariance);
                     %end elcos section
                 end
                 
             end
-            
-            extractedData(channel).max5(:,timepoint)=ed_max5;
-            extractedData(channel).mean(:,timepoint)=ed_mean;
-            extractedData(channel).median(:,timepoint)=ed_median;
-            extractedData(channel).min(:,timepoint)=ed_min;
-            extractedData(channel).std(:,timepoint)=ed_std;
-            extractedData(channel).pixel_sum(:,timepoint)=ed_pixel_sum;
-            extractedData(channel).membraneMedian(:,timepoint)=ed_membraneMedian;
-            extractedData(channel).membraneMax5(:,timepoint)=ed_membraneMax5;
-            extractedData(channel).smallmax5(:,timepoint)=ed_smallmax5;
-            extractedData(channel).smallmedian(:,timepoint)=ed_smallmedian;
-            extractedData(channel).smallmean(:,timepoint)=ed_smallmean;
-            extractedData(channel).imBackground(:,timepoint)=ed_imBackground;
-            if channel==1
-                extractedData(channel).area(:,timepoint)=ed_area;
-                extractedData(channel).radius(:,timepoint)=ed_radius;
-                extractedData(channel).eccentricity(:,timepoint)=ed_eccentricity;
-                extractedData(channel).radiusFL(:,timepoint)=ed_radiusFL;
-                extractedData(channel).segmentedRadius(:,timepoint)=ed_segmentedRadius;
-                extractedData(channel).nucArea(:,timepoint)=ed_nucArea;
-                extractedData(channel).distToNuc(:,timepoint)=ed_distToNuc;
-                extractedData(channel).radiusAC(:,timepoint)=ed_radiusAC;
-                extractedData(channel).xloc(:,timepoint)=ed_xloc;
-                extractedData(channel).yloc(:,timepoint)=ed_yloc;
-            end
-            extractedData(channel).pixel_variance_estimate(:,timepoint)=ed_pixel_variance_estimate;
-            
-            
-            
-            
-            
         end
     end
 end
