@@ -16,7 +16,13 @@ end
 
 % CellResGUI.slider.Enable='off';
 switch event.Key
-    case 'downarrow'
+    case 'downarrow' 
+        cell_value = get(CellResGUI.CellSelectListInterface,'Value')+1;
+        if cell_value>length(get(CellResGUI.CellSelectListInterface,'String'))
+            cell_value = length(get(CellResGUI.CellSelectListInterface,'String'));
+        end
+        set(CellResGUI.CellSelectListInterface,'Value',cell_value);
+    case 'space' %so that space moves down one so you don't have to move your hands
         cell_value = get(CellResGUI.CellSelectListInterface,'Value')+1;
         if cell_value>length(get(CellResGUI.CellSelectListInterface,'String'))
             cell_value = length(get(CellResGUI.CellSelectListInterface,'String'));
