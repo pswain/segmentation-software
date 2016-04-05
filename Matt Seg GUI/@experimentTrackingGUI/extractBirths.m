@@ -1,6 +1,6 @@
 function extractBirths(cExpGUI)
 %Callback for the extract births button in the cExperimentTrackng GUI.
-%Runs code to define the mothers cells and detect their udding events.
+%Runs code to define the mothers cells and detect their budding events.
 
 %Cells must be segmented, tracked, and selected before this is run. Use
 %autoselect with a broad filter (eg cell present for 5 timepoints) to make
@@ -8,9 +8,9 @@ function extractBirths(cExpGUI)
 
 %Define params here or through a dialogue. So far only default params:
 
-params.mStartTime=12;%Only cells present from mStartTime to mEndTime will be included
+params.mStartTime=1;%Only cells present from mStartTime to mEndTime will be included
 params.mEndTime=cExpGUI.cExperiment.timepointsToProcess(end);%
-params.motherDurCutoff=180;
+params.motherDurCutoff=.4;
 params.motherDistCutoff=8;
 params.budDownThresh=0;
 params.birthRadiusThresh=7;
@@ -41,5 +41,11 @@ cExpGUI.cExperiment.extractHMMTrainingStates;
 load('birthHMM_robin.mat')
 
 cExpGUI.cExperiment.classifyBirthsHMM(birthHMM);
+
+%Compile the data into other useful forms for plotting. The function
+%compileBirthsForPlot is in the births plotting folder in General Functions
+%and is based on an old function called extractDandruffData
+cExpGUI.cExperiment.lineageInfo.dataForPlot=compileBirthsForPlot(cExpGUI.cExperiment);
+
 
 end

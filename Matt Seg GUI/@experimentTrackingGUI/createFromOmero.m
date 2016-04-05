@@ -149,7 +149,7 @@ if strcmp(dsStruct.action,'segment')
                         cExpGUI.cExperiment=cExperiment;
                         %Download the cTimelapse files
                         for pos=1:length(cExperiment.dirs)
-                            origName=[cExperiment.dirs{pos} 'cTimelapse' expName '.mat'];
+                            origName=[cExperiment.dirs{pos} 'cTimelapse_' expName '.mat'];
                             annotationMatch=strcmp(origName,faNames);
                             
                             if any(annotationMatch)
@@ -246,4 +246,6 @@ if strcmp(dsStruct.action,'segment')
     %Rename the figure - date and experiment folder name.
     set(cExpGUI.figure,'Name',[char(cExpGUI.cExperiment.omeroDs.getName.getValue) '  ' cExpGUI.cExperiment.OmeroDatabase.getDate(cExpGUI.cExperiment.omeroDs)])
     set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
+    set(cExpGUI.posList,'Value',1);
+
 end
