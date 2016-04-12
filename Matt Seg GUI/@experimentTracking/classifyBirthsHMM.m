@@ -5,11 +5,11 @@ function classifyBirthsHMM(cExperiment,birthHMM)
 % function has been called.
 
 if isempty(cExperiment.lineageInfo.motherInfo.daughterLabel)
-    errdlg('Must load a HMM or run trainBirthHMM');
+    errordlg('Must load a HMM or run trainBirthHMM');
 end
 
 if nargin<2 && isempty(cExperiment.lineageInfo.birthHMM.estTrans)
-    errdlg('Must load a HMM or run trainBirthHMM');
+    errordlg('Must load a HMM or run trainBirthHMM');
 end
 
 if nargin<2

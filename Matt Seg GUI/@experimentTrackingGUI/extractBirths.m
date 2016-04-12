@@ -14,7 +14,7 @@ prompt(3)={'motherDurCutoff'};
 prompt(4)={'motherDistCutoff'};
 prompt(5)={'budDownThresh'};
 prompt(6)={'birthRadiusThresh'};
-prompt(7)={'params.daughterGRateThresh'}:
+prompt(7)={'daughterGRateThresh'};
 
 dlg_title = 'Extract births info, define parameters';
 def(1) = {'1'};
