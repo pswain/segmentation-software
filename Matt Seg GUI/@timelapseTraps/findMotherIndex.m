@@ -1,4 +1,5 @@
-function motherIndex=findMotherIndex(cTimelapse,centre_method)
+function motherIndex=findMotherIndex(cTimelapse,centre_method,offset)
+% motherIndex=findMotherIndex(cTimelapse,centre_method,offset)
 %Identify the mother index ... cells that are closest to the center of the
 %trap, but based on their location on trapInfo.cell
 %1) use the distance to the "center"
@@ -14,13 +15,19 @@ function motherIndex=findMotherIndex(cTimelapse,centre_method)
 %                                        trap.
 %                       'refined_trap' - uses the centre of the refined
 %                                        trap pixel outline.
+% offset        -   if refined trap methd, and arbitary offset added in the
+% x direction (i.e. along the length of the trap).
 
-
-%identify the center of the trap by finding the mode of the x and y
+%identify the center of the trap by finding themode of the x and y
 %locations
 
 if nargin<2 || isempty(centre_method)
     centre_method = 'cell_centre';
+end
+
+
+if nargin<3 || isempty(offset)
+    offset = -3;
 end
 
 xloc=zeros(1,1e5);
@@ -74,7 +81,7 @@ trapCenterYTime = repmat(trapCenterYTime,1,length(traps));
                         % find centre as the mean of the trap pixels with
                         % an arbitrary x offset of -3;
                         [I,J] = find(trapInfo(trap).refinedTrapPixelsInner);
-                        trapCenterXTime(timepoint,trap) = mean(J)-3;
+                        trapCenterXTime(timepoint,trap) = mean(J)+offset;
                         trapCenterYTime(timepoint,trap) = mean(I);
                         
                     

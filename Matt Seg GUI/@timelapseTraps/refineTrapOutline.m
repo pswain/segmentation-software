@@ -1,4 +1,4 @@
-function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output)
+function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output,do_close)
 % refineTrapOutline(cTimelapse,starting_trap_outline,channel,traps,timepoints)
 %
 % calculate a refined trap outline by simple thresholding and store it in
@@ -41,11 +41,16 @@ if nargin<6 || isempty(show_output)
     show_output = false;
 end
 
+if nargin<7 || isempty(do_close)
+    do_close = false;
+end
+
 %% get labelled trap
 dilation_length =4;
 strel_1 = strel('disk',dilation_length);
 %for enlarging large trap outline.
 strel_2 = strel('disk',1);
+strel_close = strel('disk',5);
 
 if show_output
     f= figure;
@@ -126,6 +131,10 @@ for tp = timepoints
             
             if sum(feature_pixels(:))<0.5 * sum(feature_start_pixels(:))
                 feature_pixels = feature_start_pixels;
+            end
+            
+            if do_close
+                feature_pixels = imclose(feature_pixels,strel_close);
             end
             
             final_trap_pixels = final_trap_pixels | feature_pixels;

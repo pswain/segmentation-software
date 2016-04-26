@@ -209,8 +209,16 @@ for i=1:length(positionsToIdentify)
         cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
     end
     
-    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
+    % put in try catch since Andy's images kept screwing up the
+    % segmentation
+    try
+        cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
     
+    catch err
+        fprintf('\n\n error on position %s \n\n',cExperiment.dirs{currentPos})
+        display(err)
+        fprintf('\n\n saving position and continuing \n\n')
+    end
     cExperiment.saveTimelapseExperiment(currentPos);
     
     fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))

@@ -21,6 +21,19 @@ function extractSegAreaFl(cTimelapse, channelStr, type,replaceOldSegmented)
 % radiusFL field of cell, which is taken to be a more reliable estimate of
 % size. 
 %
+% *************************
+% Having dug into it a little moreI now think I know how it works (Elco) at
+% its heart - deep in its cavernous and labaryinthine chest - what it does
+% is to take the chanvese result, expand the hough circle found by the
+% original code by an arbitrary factor of 1.5 and then define the new
+% outline as those pixels which are in BOTH the expanded circle and the
+% chan-vese result. i.e. newSeg = chanvese & original_circle_seg
+%
+% this is in the returnSegmentedArea subfunction and I have labelled it as
+% heart of the code
+% *************************
+%
+%
 % applies some other heuristics such as checking the overlap between old
 % and new segmentations is above a threshold before replacing. Check code
 % for more details.
@@ -34,6 +47,8 @@ function extractSegAreaFl(cTimelapse, channelStr, type,replaceOldSegmented)
 %
 % only runs on cellsToPlot - so cells need to be selected before running
 % the method.
+%
+
 
 if nargin<3
     type='max';
@@ -270,7 +285,11 @@ if ~isempty(circen)
     
 
     bwNew=zeros(size(bw));
+    
+    %%%%% HEART OF THE CODE
     bwNew(temp_im)=bw(temp_im);
+    %%%%%%
+    
     bwT=double(bw);bwT(bwNew>0)=2;
     %figure;imshow(bwT,[]);impixelinfo;title(num2str(r-1));pause(.1);
     

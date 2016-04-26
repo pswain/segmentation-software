@@ -45,7 +45,7 @@ if nargin<3 || isempty(trapOutline)
 end
 
 filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
-trapOutline = trapOutline>1;
+trapOutline = trapOutline>=1;
 filtered_image=double(filtered_image);
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
 filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));
@@ -58,7 +58,7 @@ predict_label=zeros(size(image,1)*size(image,2),1);
 [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
 
 dec_values(~trapOutline(:))=dec_valuesLin(:);
-dec_values(trapOutline(:))=2;
+dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
 
 predict_label(~trapOutline(:))=predict_labelLin(:);
 predict_label(trapOutline(:))=0;
@@ -73,6 +73,7 @@ if ~isempty(cCellSVM.SVMModel) && ~strcmp(cCellSVM.method,'linear')
     % look at only pixels within a certain distance of the two stage
     % threshold.
     IX(B>cCellSVM.linearToTwoStageParams.threshold) = [];
+    IX(ismember(IX,find(trapOutline))) = [];
     
     % apply an upper boundary of the number of pixels to apply the two
     % stage model to

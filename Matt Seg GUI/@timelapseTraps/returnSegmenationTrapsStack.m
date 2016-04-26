@@ -31,6 +31,13 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 %                   twostage_norm   : as twostage by subtracts the median
 %                                     of each channel and divides by the
 %                                     interquartile range.
+%                   'twostage_norm_fluor'  : as two stage but subtracts the
+%                                            median and then divides by the
+%                                            mean of the pixels above 3*the
+%                                            75th percentile (attempt to
+%                                            rule out background pixels and
+%                                            normalised just fluorescent
+%                                            ones).
 %
 % imagestack_out : cell array of image stacks with the exact content being
 %                  determined by 'type' input as described above.
@@ -46,7 +53,7 @@ if ~cTimelapse.trapsPresent
 end
 
 for ci = 1:length(cTimelapse.channelsForSegment)  
-    if ismember(type,{'twostage','linear','trap','twostage_norm'}) %trap option is for legacy reasons
+    if ismember(type,{'twostage','linear','trap','twostage_norm','twostage_norm_fluor'}) %trap option is for legacy reasons
         % return a cell array with each element being an image stack for
         % the trap in the traps array provided
         temp_im = cTimelapse.returnTrapsTimepoint(traps,timepoint,cTimelapse.channelsForSegment(ci));
@@ -59,7 +66,19 @@ for ci = 1:length(cTimelapse.channelsForSegment)
             % images.
             temp_im = temp_im./(prctile_range(2) - prctile_range(1));
         end
-        mval=mean(temp_im(:));
+        if ismember(type,{'twostage_norm_fluor'})
+            % heuristic normalisation for fluorescent images intended to
+            % return them to a similar range whatever the brightness. Idea
+            % is that the median is always background (not too many cells)
+            % and that the upper 10 percent a fluorescent cells - so
+            % normalising to the standard deviation of the cells.
+            prcentiles = prctile(temp_im(:),[50, 90]);
+            s_upper = std(temp_im(temp_im>prcentiles(2)));
+            temp_im = (temp_im-prcentiles(1))/s_upper;
+            
+            
+        end
+        mval=median(temp_im(:));
         if ci==1
             imagestack_out = cell(length(traps),1);
             [imagestack_out{:}] = deal(mval*ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment)));

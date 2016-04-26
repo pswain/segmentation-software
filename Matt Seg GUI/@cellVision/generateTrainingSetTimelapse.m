@@ -74,7 +74,8 @@ n_points=[];
 tic; time=toc;
 
 if strcmp(cTimelapse.fileSoure,'swain-batman') && cTimelapse.magnification==60;
-    se_edge=strel('disk',9);
+    %se_edge=strel('disk',9);
+    se_edge=strel('disk',30);
 else
     se_edge=strel('disk',20);
 end

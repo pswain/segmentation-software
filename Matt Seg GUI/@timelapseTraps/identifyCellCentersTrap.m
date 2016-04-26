@@ -105,24 +105,13 @@ function [d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,imag
 d_im=zeros(size(old_d_im));
 
 
-trapOutline = zeros([size(image{1},1) size(image{1},2) length(image)]);
+%used if refineTrapOutline has not been used to populate
+%refinedTrapPixelInner/Big
+defaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
 
 % if cTimelapse.refinedTrapOutline has been run then use this for trap
 % outline.
-for k=1:length(trap)
-    if cTimelapse.trapsPresent
-        if isfield(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)),'refinedTrapPixelsInner') &&...
-                ~isempty(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsInner) &&...
-                isfield(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)),'refinedTrapPixelsBig') &&...
-                ~isempty(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsBig)
-            
-            trapOutline(:,:,k) = 0.5*full(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsBig) +...
-                0.5*full(cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).refinedTrapPixelsInner);
-        else
-            trapOutline(:,:,k) = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
-        end
-    end
-end
+trapOutline = cTimelapse.returnTrapsPixelsTimepoint(trap,timepoint,defaultTrapOutline);
 
 %calculate the decisions image, do some transformations on it, and
 %threshold it to give segCentres.

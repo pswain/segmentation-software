@@ -44,12 +44,6 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 
 % Notes:
 
-%just use the previous Priors to segement cells
-if nargin>5 & ~isempty(radii_previous_time_point) 
-    ACparameters.R_min=max(min(radii_previous_time_point)*.75-2,2);
-    ACparameters.R_max=max(radii_previous_time_point)*1.2+2;
-end
-
 
 forcing_images = double(forcing_images);
 

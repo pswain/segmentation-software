@@ -105,6 +105,9 @@ Recentering = false; %recalcluate the centre of the cells each time as the avera
 min_filt_size = 3; %filter DIM by square of this size
 
 f_dim = fspecial('disk',3);
+
+%multiplier od decision image added to Transformed image.
+DIMproportion = 0.2;
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
 %for debugging
@@ -172,11 +175,6 @@ PreviousTrapInfo = [];
 
 
 %visualising trackin
-if ttacObject.Parameters.ActiveContour.visualise>0;
-    dec_im_handle = figure;
-    cc_im_handle = figure;
-    outline_im_handle = figure;
-end
 
 if ttacObject.Parameters.ActiveContour.visualise>2;
     cc_gui = GenericStackViewingGUI;
@@ -197,6 +195,20 @@ end
  end
  
 disp = cTrapDisplay(ttacObject.TimelapseTraps,[],[],ttacObject.Parameters.ActiveContour.ShowChannel,TrapsToCheck);
+
+% gui\s for visualising outputs if that is desired.
+if ACparameters.visualise>1
+    guiDI = GenericStackViewingGUI;
+    guiTransformed = GenericStackViewingGUI;
+    guiOutline = GenericStackViewingGUI;
+    guiTrapIM = GenericStackViewingGUI;
+end
+
+% active contour code throws errors if asked to visualise in the parfor
+% loop.
+ACparametersPass = ACparameters;
+ACparametersPass.visualise = 0;
+                    
 
 %% loop through timepoints
 for TP = Timepoints
@@ -260,6 +272,12 @@ for TP = Timepoints
         TrapInfo = ttacObject.TimelapseTraps.cTimepoint(TP).trapInfo;
         DecisionImageStack = identifyCellCentersTrap(ttacObject.TimelapseTraps,ttacObject.cCellVision,TP,TrapsToCheck,[],[]);
         
+         TransformedImagesVIS = cell(length(TrapInfo));
+         OutlinesVIS = TransformedImagesVIS;
+        if ACparameters.visualise>1
+            DecisionImageStackVIS = DecisionImageStack;
+        end
+        
         %possible put this filtering stuff back later
         
         %min filtering to try and get rid of spurious points. May not want
@@ -270,7 +288,8 @@ for TP = Timepoints
         %DIM2(DecisionImageStack>CrossCorrelationDIMthreshold) = DecisionImageStack(DecisionImageStack>CrossCorrelationDIMthreshold);
         %DecisionImageStack = DIM2;
         
-        RawDecisionImageStack = DecisionImageStack;
+        RawDecisionImageStack = DecisionImageStack/iqr(DecisionImageStack(:));
+        
         %for use later in subimage getting
         
         %for holding trap images of trap pixels.
@@ -534,12 +553,17 @@ for TP = Timepoints
             TrapTrapImage = TrapTrapImageStack(:,:,TI);
             
             RawTrapDecisionImage(TrapTrapImage>0) = TwoStageThreshold;
-            RawTrapDecisionImage = RawTrapDecisionImage-TwoStageThreshold;
-            RawTrapDecisionImage(RawTrapDecisionImage>0) = 0;
+            
+%             %%%%%
+%             %temporarily removed to see if segmentation does well when
+%             %on just decisions image
+%             
+%             RawTrapDecisionImage = RawTrapDecisionImage-TwoStageThreshold;
+%             RawTrapDecisionImage(RawTrapDecisionImage>0) = 0;
+%             RawTrapDecisionImage = -RawTrapDecisionImage;
+%             RawTrapDecisionImage = RawTrapDecisionImage/max(RawTrapDecisionImage(:));
+%             %%%%%%
             RawTrapDecisionImage = -RawTrapDecisionImage;
-            RawTrapDecisionImage = RawTrapDecisionImage/max(RawTrapDecisionImage(:));
-            
-            
             
             ParCurrentTrapInfo = SliceableTrapInfo(TI);
             
@@ -562,6 +586,12 @@ for TP = Timepoints
             xnewcell = 0;
             CellTrapImage = [];
             CIpar = [];
+            
+            if  ACparameters.visualise >1
+                TransformedImagesVISTrap = [];
+                OutlinesVISTrap = [];
+            end
+            
             %look for new cells
             while CellSearch
                 
@@ -661,7 +691,7 @@ for TP = Timepoints
                     %multiplying by the 75th percentile of the
                     %TransformedCellImage for scaling.
                     
-                    TransformedCellImage = TransformedCellImage + (CellDecisionImage*prctile(TransformedCellImage(:),75));
+                    TransformedCellImage = TransformedCellImage + DIMproportion*(CellDecisionImage*iqr(TransformedCellImage(:)));
                     %%%%
                     
                     if TrapPresentBoolean
@@ -679,10 +709,10 @@ for TP = Timepoints
                         PreviousTimepointRadii = PreviousCurrentTrapInfo.cell(CIpar).cellRadii;
                     
                     [RadiiResult,AnglesResult] = ...
-                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparameters,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
+                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
                     else
                         [RadiiResult,AnglesResult] = ...
-                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparameters,FauxCentersStack,[],[],ExcludeLogical);
+                        ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,[],[],ExcludeLogical);
                     
                     end
                     %write active contour result and change cross
@@ -710,6 +740,16 @@ for TP = Timepoints
                     ParCurrentTrapInfo.cell(NCI).cellRadius = mean(RadiiResult);
                     
                     [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',double(ParCurrentTrapInfo.cell(NCI).cellCenter),TrapImageSize);
+                    
+                    if ACparameters.visualise>1
+                        
+                        TransformedImagesVISTrap = cat(3,TransformedImagesVISTrap,TransformedCellImage);
+                        [pxVIS,pyVIS] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',round(size(TransformedCellImage)/2),size(TransformedCellImage));
+                        SegmentationBinary = false(size(TransformedCellImage));
+                        SegmentationBinary(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
+                        OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinary);
+                        
+                    end
                     
                     SegmentationBinary = false(TrapImageSize);
                     SegmentationBinary(py+TrapImageSize(1,1)*(px-1))=true;
@@ -745,6 +785,13 @@ for TP = Timepoints
                 end %if ProceedWithCell
                 
             end %while cell search
+            
+            if ACparameters.visualise>1
+                
+                OutlinesVIS{TI} = OutlinesVISTrap;
+                TransformedImagesVIS{TI} = TransformedImagesVISTrap;
+                
+            end
             
             %create this new variable for writing before adding superflous
             %rubbis to ParCurrenttrapInfo which is only used in
@@ -807,7 +854,6 @@ for TP = Timepoints
             
         end %end traps loop
         
-        
         TrapMaxCell(TrapsToCheck) = SliceableTrapMaxCell;
         
         %write results to cTimelapse
@@ -841,7 +887,26 @@ for TP = Timepoints
     
     disp.slider.Value = TP;
     disp.slider_cb;
-    pause(.1);
+    if ACparameters.visualise>1
+            OutlinesStack = [];
+            TransformedImagesStack =[];
+            for TI = 1:length(TrapInfo)
+                OutlinesStack = cat(3,OutlinesStack,OutlinesVIS{TI});
+                TransformedImagesStack = cat(3,TransformedImagesStack,TransformedImagesVIS{TI});
+            end
+            guiDI.stack = DecisionImageStack;
+            guiDI.LaunchGUI;
+            guiTransformed.stack = TransformedImagesStack;
+            guiTransformed.LaunchGUI;
+            guiOutline.stack = OutlinesStack;
+            guiOutline.LaunchGUI;
+            guiTrapIM.stack = ttacObject.TimelapseTraps.returnTrapsTimepoint(TrapsToCheck,TP,ttacObject.Parameters.ActiveContour.ShowChannel);
+            guiTrapIM.LaunchGUI;
+            fprintf('press enter to continue . . . . \n')
+            pause;
+            
+        end
+    pause(.05);
 end %end TP loop
  
 close(disp.figure); 

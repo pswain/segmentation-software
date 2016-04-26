@@ -35,8 +35,9 @@ image=double(image);
 
 % project images and add to image stack so that they get used in filter
 % construction
-image = cat(3,image,image(:,:,1) - image(:,:,2));
-
+if size(image,3)>1
+    image = cat(3,image,image(:,:,1) - image(:,:,2));
+end
 
 % set large trap pixels to median to try and stop them influencing the
 % outcome.
@@ -48,7 +49,8 @@ for slicei = 1:size(image,3)
 end
 
 
-filt_feat=zeros(size(modified_image,1)*size(modified_image,2),size(modified_image,3)*n_filt,'double');
+filt_feat=zeros(size(modified_image,1)*size(modified_image,2),size(modified_image,3)*n_filt +1,'double');
+%filt_feat=zeros(size(modified_image,1)*size(modified_image,2),size(modified_image,3)*n_filt,'double');
 
 
 temp_index = 1;
@@ -94,7 +96,7 @@ for i=1:size(modified_image,3)
      
     
     %% hough on gradient magnitude
-    [temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum,trapLogicalBIG);
+    [temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum,trapLogicalBig);
     
     filt_feat(:,temp_index)=temp_im(:);
     temp_index=temp_index+1;
@@ -143,44 +145,9 @@ for i=1:size(modified_image,3)
     temp_index=temp_index+1;
     
     %% Elco tube filter
-if false
-    [IMxPOS,IMxNEG,IMyPOS,IMyNEG] = ElcoImageFilterTube(im_slice,cCellSVM.radiusSmall:cCellSVM.radiusLarge,0,false,trapLogicalBIG,false);
-    
-    % IMxPOS handling
-    temp_im = sum(IMxPOS,3);
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = imfilter((temp_im),f1,'replicate');
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = max(IMxPOS,[],3);
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = imfilter((temp_im),f1,'replicate');
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    % IMxNEG  handling
-    temp_im = sum(IMxNEG,3);
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = imfilter((temp_im),f1,'replicate');
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = max(IMxNEG,[],3);
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
-    
-    temp_im = imfilter((temp_im),f1,'replicate');
-    filt_feat(:,temp_index)=temp_im(:);
-    temp_index=temp_index+1;
+
 end
-end
+filt_feat(:,temp_index) = cCellSVM.cTrap.trapInner(:);
 
 
  
@@ -343,3 +310,4 @@ accum = reshape( accum, size(grdmag) );
 %%%%%%%% Locating local maxima in the accumulation array %%%%%%%%%%%%
 % Smooth the accumulation array
 accum = filter2( fltr4accum, accum );
+

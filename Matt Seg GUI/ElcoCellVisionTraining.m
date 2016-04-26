@@ -100,6 +100,41 @@ TrapPixelImage = ACTrapFunctions.make_trap_pixels_from_image(TrapIM);
 cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 
+%% make trap_inner region
+
+%%
+
+trap_im = cCellVision.cTrap.trapOutline;
+
+trap_inner = trap_im;
+
+for j = find(sum(trap_im,1)>2)
+    
+    trap_inner(min(find(trap_im(:,j))):max(find(trap_im(:,j))),j) = true;
+end
+
+trap_inner_log = trap_inner;
+if false
+open_elem = strel('disk',10);
+trap_inner = imdilate(trap_inner,open_elem);
+trap_inner(:,[1 end]) = false;
+trap_inner([1 end],:) = false;
+trap_inner = imerode(trap_inner,open_elem);
+end
+
+trap_inner_log = trap_inner;
+se = fspecial('gauss',[50,50],10);
+trap_inner = imfilter(1*(trap_inner & ~trap_im),se);
+
+%trap_inner= trap_inner>1;
+%trap_inner(trap_im)=false;
+imshow(trap_inner/max(trap_inner(:))+2*trap_im,[]);
+figure(2);
+imshow(trap_inner_log+2*trap_im,[]);
+
+cCellVision.cTrap.trapInner = trap_inner;
+
+
 %% set segmentation method
 
 %% Elcos BF filter set
@@ -214,7 +249,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=1200; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=750; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -233,7 +268,7 @@ nT = 1;
 nTr = 1;
 nTrT = 1;
 while nTrT<=numTraps
-    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,1);
+    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,2);
     for iT = 1:size(TrapIm,3)
         image_to_show = repmat(double(TrapIm(:,:,iT)),[1,1,3]);
         image_to_show = image_to_show.*(1 + ...
@@ -261,7 +296,7 @@ cCellVision.trainingParams.gamma=1
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
-maxTP = 30;
+maxTP = 1000;
 step_size=max(length(cTimelapse.cTimepoint),max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1])); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchLinear(step_size,cmd);
 %% linear training
@@ -293,6 +328,64 @@ cCellVision.generateTrainingSet2Stage(cTimelapse,step_size);
 cCellVision.trainingData.kernel_features = cCellVision.trainingData.features;
 cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
 
+%% classify linear data (taken from classify image 2 stage)
+
+classes = cCellVision.trainingData.class;
+
+normalised_features=(cCellVision.trainingData.features - repmat(cCellVision.scaling.min,size(cCellVision.trainingData.features,1),1));
+normalised_features=normalised_features*spdiags(1./(cCellVision.scaling.max-cCellVision.scaling.min)',0,size(normalised_features,2),size(normalised_features,2));
+
+labels=ones(size(normalised_features,1),1);
+dec_values=zeros(size(normalised_features,1),1);
+predict_label=zeros(size(normalised_features,1),1);
+
+% mex file that does the linear prediction.
+[~, ~, dec_valuesLin] = predict(labels, sparse(normalised_features), cCellVision.SVMModelLinear); % test the training data]\
+
+
+% report
+
+fprintf('non cell pixels: %2.2f %% correct \n cell pixels: %2.2f %% correct\n',...
+    100*sum(dec_valuesLin>0 & ~cCellVision.trainingData.class')/sum(~cCellVision.trainingData.class),...
+    100*sum(dec_valuesLin<0 & cCellVision.trainingData.class')/sum(cCellVision.trainingData.class));
+
+%% use to select kernel features
+
+kernel_features = [];
+kernel_classes = [];
+
+total_2stage_features = 60000;
+fraction_cell_selected = 0.05;
+fraction_non_cell_selected = 0.05;
+
+% cell pixels
+I = find(classes ==1);
+dec_valuesLin_cells = dec_valuesLin(I);
+[~,I2] = sort(abs(dec_valuesLin_cells));
+I = I(I2(1:floor(min(fraction_cell_selected*total_2stage_features,length(I)))));
+
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+%non cell pixels
+I = find(classes ==0);
+dec_valuesLin_non_cells = dec_valuesLin(I);
+[~,I2] = sort(abs(dec_valuesLin_non_cells));
+I = I(I2(1:floor(min(fraction_non_cell_selected*total_2stage_features,length(I)))));
+
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+%random pixels
+
+I = randperm(length(classes),ceil(min(total_2stage_features*(1- (fraction_cell_selected+ fraction_non_cell_selected)),length(classes))));
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+cCellVision.trainingData.kernel_features = kernel_features;
+cCellVision.trainingData.kernel_class = kernel_classes;
+
+
 %% attemps to find a refined set of features
 linear_weights = cCellVision.SVMModelLinear.w;
 
@@ -306,27 +399,62 @@ cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
 %% two stage grid search
 maxTP= 2;
 
-ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
+ws = [sum(cCellVision.trainingData.kernel_class==1)/sum(cCellVision.trainingData.kernel_class==0) 3];
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
 
 %step_size=max(1,floor(length(cTimelapse.cTimepoint)/maxTP)); 
-step_size = 100;
+step_size = 2;
 tic
 cCellVision.runGridSearch(step_size,cmd);
 toc
 
 fprintf('grid search complete \n')
 %
-maxTP = 100;
-ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
+maxTP = 1;
+%ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
-step_size = 10;
+step_size = 1;
 cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trainingParams.cost,cCellVision.trainingParams.gamma);
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 
 fprintf('two stage training complete \n')
+
+%% classify an image
+
+[predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellVision,A,trapOutline);
+
+figure;imshow(A,[]);
+imtool(decision_im,[]);
+
+
+%% classify with two stage
+
+% CRASHES MATLAB FOR SOME REASON - FIX
+n = 10;
+
+I = randperm(length(classes),n);
+
+normalised_2stage_features = normalised_features(I,:);
+classes_2stage = classes(I);
+
+labels=ones(size(normalised_2stage_features,1),1);
+dec_values=zeros(size(normalised_2stage_features,1),1);
+predict_label=zeros(size(normalised_2stage_features,1),1);
+
+% mex file that does the linear prediction.
+[a, ~, dec_values_2stage] = predict(labels, (normalised_2stage_features), cCellVision.SVMModel); % test the training data]\
+
+   
+% report
+
+fprintf('non cell pixels: %2.2f %% correct \n cell pixels: %2.2f %% correct\n',...
+    100*sum(dec_values_2stage>0 & ~classes_2stage')/sum(~class_2stage),...
+    100*sum(dec_values_2stage<0 & classes_2stage')/sum(classes_2stage));
+
+
+  
 
 %% classify images and see
 
