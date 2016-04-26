@@ -183,6 +183,7 @@ for i=1:length(positionsToIdentify)
             answer_array = sign(cellfun(@(x) str2double(x),answer,'UniformOutput',true));
             channels_to_use = find(~isnan(answer_array));
             cExperiment.ActiveContourParameters.ImageTransformation.channel = channels_to_use.*answer_array(channels_to_use);
+            cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = 1;
             end
         end
         
