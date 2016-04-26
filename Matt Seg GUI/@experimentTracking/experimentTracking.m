@@ -67,7 +67,7 @@ classdef experimentTracking<handle
             %Optional inputs 2-4 only used when creating objects using the
             %Omero database: OmeroDatabase - object of class OmeroDatabase
             %expName, a unique name for this cExperiment
-            
+                                               
             % Create a new logger to log changes for this cExperiment:
             cExperiment.logger = experimentLogging(cExperiment);
             
@@ -84,7 +84,7 @@ classdef experimentTracking<handle
             if ischar(folder)
                 cExperiment.rootFolder=folder;
                 cExperiment.saveFolder=saveFolder;
-            else
+            else%Experiment is being initialized from an Omero dataset - folder is an omero.model.DatasetI object
                 if nargin>3
                     if iscell(expName)
                         expName=expName{:};
@@ -110,7 +110,11 @@ classdef experimentTracking<handle
                 cExperiment.omeroDs=folder;
                 cExperiment.OmeroDatabase=OmeroDatabase;
             end
-            cExperiment.creator=getenv('USERNAME');
+            if ispc
+                cExperiment.creator=getenv('USERNAME');
+            else
+                [~, cExperiment.creator] = system('whoami');
+            end
             cExperiment.posSegmented=0;
             cExperiment.posTracked=0;
             if isempty(cExperiment.OmeroDatabase)
@@ -140,6 +144,35 @@ classdef experimentTracking<handle
             end
             cExperiment.cellsToPlot=cell(1);
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
+            
+            %Set the channels
+            if ~isempty(cExperiment.OmeroDatabase)                
+                %Set the channels field - add a separate channel for each section in case
+                %they are required for data extraction or segmentation:
+                %Get the number of Z sections
+                ims=cExperiment.omeroDs.linkedImageList;
+                im=ims.get(0);%the first image - assumes all images have the same dimensions
+                pixels=im.getPrimaryPixels;
+                sizeZ=pixels.getSizeZ.getValue;
+                %Get the list of channels from the microscope log
+                origChannels=cExperiment.OmeroDatabase.getChannelNames(cExperiment.omeroDs);
+                cExperiment.OmeroDatabase.MicroscopeChannels = origChannels;
+                cExperiment.experimentInformation.MicroscopeChannels=origChannels;
+                %The first entries in
+                %cExperiment.experimentInformation.channels are the
+                %original channels - then followed by a channel for each
+                %section.
+                cExperiment.experimentInformation.Channels=origChannels;
+                if sizeZ>1
+                    for ch=1:length(origChannels)
+                        for z=1:sizeZ
+                            cExperiment.OmeroDatabase.Channels{length(cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+                        end
+                    end
+                end
+                cExperiment.experimentInformation.channels=cExperiment.OmeroDatabase.Channels;
+
+            end
             
         end
         

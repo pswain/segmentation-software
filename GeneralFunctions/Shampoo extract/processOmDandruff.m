@@ -1,4 +1,4 @@
-cExperiment.compileCellInformation;
+%cExperiment.compileCellInformation;
 %START HERE
 params.motherDurCutoff=180;
 params.motherDistCutoff=8;

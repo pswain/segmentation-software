@@ -44,7 +44,10 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandard)
         cTimelapse = cExperiment.loadCurrentTimelapse(1);
         channel_list = cTimelapse.channelNames;
     end
-    
+    %temp fix
+    if isempty(channel_list);
+        channel_list={'DIC','GFP','pHluorin405'};
+    end
         dlg_title = 'Which channels to extract?';
         prompt = {['please select the channels for which you would like to extract data'],'',''};
         answer = listdlg('PromptString',prompt,'Name',dlg_title,'ListString',channel_list,'SelectionMode','multiple',...
