@@ -130,7 +130,7 @@ cExperiment.addSecondaryChannel('Brightfield_003');
 lower_brightfield_channel = 4; % lower z stack slice of brightfield
 upper_brightfield_channel = 5; % upper z stack slice of brightfield
 
-cExperiment.ActiveContourParameters.ImageSegmentation.channels = [lower_brightfield_channel -upper_brightfield_channel];
+cExperiment.ActiveContourParameters.ImageTransformation.channel = [lower_brightfield_channel -upper_brightfield_channel];
 
 %% adjust extraction parameter
 % there are a number of parameters for the extraction. These are set by the

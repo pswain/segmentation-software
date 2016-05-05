@@ -324,7 +324,7 @@ end
 
 % Elco: I don't believe any timelapse has timpoint specific image rotation
 % anymore. Left in just in case of legacy cases.
-if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
+if isfield(cTimelapse.cTimepoint(tp),'image_rotation') && ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
     image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
 else
     image_rotation=cTimelapse.image_rotation;
