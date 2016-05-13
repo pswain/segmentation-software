@@ -149,9 +149,12 @@ max_cc=max_im_cc;
 trap_index=1;
 trap_mask=false(size(cc,1),size(cc,2));
 
-while max_cc> .65*max_im_cc
+ccBounding=1.1;
+while max_cc> .5*max_im_cc
     [ypeak, xpeak] = ind2sub(size(cc),imax(1));
-    cc(ypeak-cTrap.bb_height*1:ypeak+cTrap.bb_height*1,xpeak-cTrap.bb_width*1:xpeak+cTrap.bb_width*1)=0;
+    bY=floor(cTrap.bb_height*ccBounding);
+    bX=floor(cTrap.bb_width*ccBounding);
+    cc(ypeak-bY:ypeak+bY,xpeak-bX:xpeak+bX)=0;
     xcenter=xpeak-cTrap.bb_width;
     ycenter=ypeak-cTrap.bb_height;
     trapLocations(trap_index).xcenter=xcenter;
