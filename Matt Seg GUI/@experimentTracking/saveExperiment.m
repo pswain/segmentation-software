@@ -1,5 +1,9 @@
 function saveExperiment(cExperiment,fileName)
 
+%
+% saves cExperiment to:
+%   [cExperiment.rootFolder '/cExperiment'],'cExperiment');
+
 if isempty(cExperiment.OmeroDatabase)
     %Original save code for experiments created from a folder full of image
     %files
