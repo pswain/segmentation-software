@@ -1,11 +1,9 @@
-function saveTimelapse(cExperiment,currentPos, saveCE)
+function saveTimelapse(cExperiment,currentPos)
 % 
 % saves cExperiment.cTimelapse to:
 %   [cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']
 %
-% 
-% Third input is only used by Omero code.It is saveCE: logical - if true,
-% save the cExperiment file as well as the timelapse,
+% cExperiment variable is not saved by this function.
 cTimelapse=cExperiment.cTimelapse;
 cTimelapse.temporaryImageStorage=[];
 
@@ -67,31 +65,4 @@ else
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
     
-    if nargin<3
-        saveCE=true;
-    end
-    if saveCE
-        %cExperiment file
-        %Before saving, replace OmeroDatabase object with the server name, make .cTimelapse empty and replace .omeroDs with its Id to avoid
-        %non-serializable errors.   
-        cExperiment.cTimelapse=[];
-        omeroDatabase=cExperiment.OmeroDatabase;
-        cExperiment.OmeroDatabase=cExperiment.OmeroDatabase.Server;
-        omeroDs=cExperiment.omeroDs;
-        cExperiment.omeroDs=[];
-        fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
-        save(fileName,'cExperiment');
-        faIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
-        faIndex=find(faIndex);
-        if ~isempty(faIndex)
-             faIndex=faIndex(1);
-             disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
-             fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(faIndex), fileName);
-        else%The file is not yet attached to the dataset
-            omeroDatabase.uploadFile(fileName, omeroDs, 'cExperiment file uploaded by @experimentTracking.saveTimelapseExperiment');
-        end
-        %Restore the cExperiment object
-        cExperiment.omeroDs=omeroDs;
-        cExperiment.OmeroDatabase=omeroDatabase;
-    end
 end
