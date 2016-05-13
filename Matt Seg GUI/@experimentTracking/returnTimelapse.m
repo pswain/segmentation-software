@@ -13,7 +13,8 @@ if isempty(cExperiment.OmeroDatabase)
     if isempty(cExperiment.saveFolder)
         cExperiment.saveFolder=cExperiment.rootFolder;
     end
-    load([cExperiment.saveFolder filesep cExperiment.dirs{timelapseNum},'cTimelapse']);
+    cExperiment.currentTimelapseFilename=[cExperiment.saveFolder filesep cExperiment.dirs{timelapseNum},'cTimelapse'];
+    load(cExperiment.currentTimelapseFilename);
     cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;%This should be already logged in (empty if experiment loaded from a folder
 else
     %Loading a cTimelapse from an Omero database

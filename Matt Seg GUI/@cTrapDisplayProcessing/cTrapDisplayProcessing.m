@@ -108,13 +108,13 @@ classdef cTrapDisplayProcessing<handle
             % just to get an image of the appropriate size - also used
             % later.
             identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(1),cCellVision.imageProcessingMethod);
-            d_im = zeros([size(identification_image_stacks{1},1) size(identification_image_stacks{1},2) length(identification_image_stacks)]);
+            d_imCenters = zeros([size(identification_image_stacks{1},1) size(identification_image_stacks{1},2) length(identification_image_stacks)]);
             
             % identifyCellCentres resizes the image if magnification do not
             % match, so need to do the same here.
             %MAGNIFICATION
             if cCellVision.magnification/cTimelapse.magnification ~= 1
-                d_im=imresize(d_im,cCellVision.magnification/cTimelapse.magnification);
+                d_imCenters=imresize(d_imCenters,cCellVision.magnification/cTimelapse.magnification);
             end
             trapsProcessed=0;
             tic
@@ -139,14 +139,18 @@ classdef cTrapDisplayProcessing<handle
                 if i>1 % if i==1 the decision image was retrieved already.
                     identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.imageProcessingMethod);
                 end
-                d_im=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_im);
+                [d_imCenters, d_imEdges]=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_imCenters);
                 
                 % use this decision image  and the
                 %       cTimelapse.cTimepoint(timepoint).trapInfo.segCenters
                 % field populated by above method to find cell objects
                 % (i.e. actually identify centres and outlines)
-                cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_im);
-
+                if max(d_imEdges(:))>0
+                    disp('Using edgeACSnake')
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'edgeACSnake',[],identification_image_stacks,d_imCenters,d_imEdges);
+                else
+                    cTimelapse.identifyCellObjects(cCellVision,timepoint,traps,channel,'trackUpdateObjects',[],identification_image_stacks,d_imCenters,d_imEdges);
+                end
                 
                 for j=1:length(traps)
                     trap = traps(j);
@@ -168,7 +172,7 @@ classdef cTrapDisplayProcessing<handle
                     
                     % make the edge pixels, given by seg_areas, red.
                     t_im=image(:,:,1);
-                    t_im(seg_areas)=1; 
+                    t_im(seg_areas)=1;
                     image(:,:,1)=t_im;
                     
                     temp_image{j}=image;

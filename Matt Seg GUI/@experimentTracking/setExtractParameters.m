@@ -38,11 +38,15 @@ for posi = positionsToSet
     cTimelapse = cExperiment.loadCurrentTimelapse(posi);
     cTimelapse.extractionParameters = extractParameters;
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(posi,false)    
-end
-
+    if posi==length(positionsToSet)
+        cExperiment.saveTimelapseExperiment(posi);
+    else
+        cExperiment.saveTimelapse(posi);
+    end
+    
 % Finish logging protocol
 cExperiment.logger.complete_protocol;
+
 catch err
     cExperiment.logger.protocol_error;
     rethrow(err);

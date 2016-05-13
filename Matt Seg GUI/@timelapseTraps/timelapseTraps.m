@@ -61,6 +61,13 @@ classdef timelapseTraps<handle
         %parameters for the extraction of cell Data, a function handle and
         %a parameter structure which the function makes use of.
         
+        temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
+        %This allows the cell tracking and curating things to happen a
+        %whole lot faster and easier. This way you can just modify the
+        %returnTimepoint file to check to see if something is loaded.
+        % - channel
+        % - images
+        
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
@@ -78,7 +85,7 @@ classdef timelapseTraps<handle
     end
     
     properties(Constant)
-    defaultExtractParameters = struct('extractFunction',@extractCellDataStandard,...
+    defaultExtractParameters = struct('extractFunction',@extractCellDataStandardParfor,...
         'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
     
     end
@@ -136,7 +143,6 @@ classdef timelapseTraps<handle
                 if ~ismember(m.SetAccess,{'immutable','none'})
                     cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
                 end
-                
             end
             
         end

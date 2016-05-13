@@ -64,17 +64,22 @@ cExperiment.logger.add_arg('Maximum number of cells',params.maximumNumberOfCells
 cExperiment.logger.start_protocol('autoselecting cells',length(positionsToCheck));
 try
 
-for i=1:length(positionsToCheck)
-    %if params.maximumNumberOfCells
-        experimentPos=positionsToCheck(i);
-        cTimelapse=cExperiment.returnTimelapse(experimentPos);
-        cTimelapse.automaticSelectCells(params);
-        params.maximumNumberOfCells = max(params.maximumNumberOfCells - full(sum(cTimelapse.cellsToPlot(:))),0);
-        cExperiment.cTimelapse=cTimelapse;
-        cExperiment.cellsToPlot{i}=cTimelapse.cellsToPlot;
-        cExperiment.saveTimelapseExperiment(experimentPos);
-    %end
-end
+    for i=1:length(positionsToCheck)
+        if params.maximumNumberOfCells>=0
+            experimentPos=positionsToCheck(i);
+            cTimelapse=cExperiment.returnTimelapse(experimentPos);
+            cTimelapse.automaticSelectCells(params);
+            params.maximumNumberOfCells = max(params.maximumNumberOfCells - full(sum(cTimelapse.cellsToPlot(:))),0);
+            cExperiment.cTimelapse=cTimelapse;
+            cExperiment.cellsToPlot{i}=cTimelapse.cellsToPlot;
+            %         cExperiment.saveTimelapseExperiment(experimentPos);
+            if i==length(positionsToCheck)
+                cExperiment.saveTimelapseExperiment(experimentPos);
+            else
+                cExperiment.saveTimelapse(experimentPos);
+            end
+        end
+    end
 
 % Finish logging protocol
 cExperiment.logger.complete_protocol;

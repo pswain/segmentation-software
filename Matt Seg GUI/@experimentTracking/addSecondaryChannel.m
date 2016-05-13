@@ -11,6 +11,7 @@ end
 
 % Start logging protocol
 cExperiment.logger.start_protocol(['adding channel ',searchString],length(cExperiment.dirs));
+
 try
 
 for i=1:length(cExperiment.dirs)
@@ -25,5 +26,8 @@ catch err
     cExperiment.logger.protocol_error;
     rethrow(err);
 end
+
+cExperiment.channelNames{end+1}=searchString;
+
 
 end

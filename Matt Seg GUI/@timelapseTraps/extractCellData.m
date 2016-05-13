@@ -10,9 +10,8 @@ function extractCellData(cTimelapse)
 %
 % sets the extractionParameters to be a field in the extractedData.
 
-
 cTimelapse.extractionParameters.extractFunction(cTimelapse)
-   
+
 [cTimelapse.extractedData(:).extractionParameters] = deal(cTimelapse.extractionParameters);
 
 end

@@ -18,10 +18,15 @@ if nargin<3
 end
 
 cTimelapse=cExperiment.cTimelapse;
+cTimelapse.temporaryImageStorage=[];
+
 if isempty(cExperiment.OmeroDatabase)
-    save([cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'],'cTimelapse');
-    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-    
+    if nargin>1
+        cTimelapseFilename=[cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'];
+    else
+        cTimelapseFilename=cExperiment.currentTimelapseFilename;
+    end
+    save(cTimelapseFilename,'cTimelapse');
     cExperiment.cTimelapse=[];
     
     if saveCE

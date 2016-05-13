@@ -58,11 +58,12 @@ trapInfo_struct = cTimelapse.createTrapInfoTemplate(data_template);
 
 if cTimelapse.trapsPresent
     
-    
+    regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
     bb=30;
+    bb=floor(size(regIm,1)*.2);
     accumCol=0;
     accumRow=0;
-    regIm=cTimelapse.returnSingleTimepoint(timepoints(1));
+    
     regIm=double(regIm);
     regIm=regIm(bb:end-bb,bb:end-bb);
     regImFft=fft2(regIm);
@@ -71,7 +72,8 @@ if cTimelapse.trapsPresent
         %make trapInfo_struct the size of the the number of traps at size
         %cTimelapse.cTimepoint(timpoint(1))
         trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
-        
+        meanRegIm=mean(regIm(:));
+
         %set first timepoint to correct trapInfo struct. Remove later when
         %you have worked out where the first timepoint trapInfo structure
         %gets initialised.
@@ -87,7 +89,7 @@ if cTimelapse.trapsPresent
         newIm=cTimelapse.returnSingleTimepoint(timepoint);
         cTimelapse.imSize=size(newIm);
         newIm=double(newIm);
-        newIm=newIm/median(newIm(:))*median(regIm(:));
+        newIm=newIm/mean(newIm(:))*meanRegIm;
         newIm=newIm(bb:end-bb,bb:end-bb);
         [output, ~] = dftregistration(regImFft,fft2(newIm),1);
         

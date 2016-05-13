@@ -1,4 +1,4 @@
-function [trapLocations, trap_mask, trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
+function [trapLocations trap_mask trapImages cc image]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck,cc,im)
 % [trapLocations, trap_mask, trapImages]=identifyTrapLocationsSingleTP(cTimelapse,timepoint,cCellVision,trapLocations,trapImagesPrevTp,trapLocationsToCheck)
 %
 % function for identifying traps in the single timepoint using cross
@@ -40,7 +40,13 @@ if nargin<6 || isempty(trapLocationsToCheck)
     trapLocationsToCheck='none'; %traps to put through the 'find nearest best point and set trap location to that' mill. if string 'none' does none of them.
 end
 
+if nargin<7 || isempty(cc)
+    cc=[]; %just to avoid redoing the cc if not necessary
+end
 
+if nargin<8 || isempty(im)
+    im=[]; %just to avoid redoing the cc if not necessary
+end
 
 
 cTrap=cCellVision.cTrap;
@@ -74,14 +80,21 @@ end
 cTimelapse.cTrapSize.bb_width=cTrap.bb_width;
 cTimelapse.cTrapSize.bb_height=cTrap.bb_height;
 
-image=cTimelapse.returnSingleTimepoint(timepoint);
+if isempty(im)
+    image=cTimelapse.returnSingleTimepoint(timepoint);
+    image=double(image);
+    image=image*cTrap.scaling/median(image(:));
+    image=padarray(image,[cTrap.bb_height cTrap.bb_width],median(image(:)));
 
-if nargin<4
-    trapLocations=predictTrapLocations(image,cTrap); 
+else
+    image=im;
 end
 
-[trapLocations, trap_mask ,trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck);
+if nargin<4 || isempty(trapLocations)
+    [trapLocations d cc]=predictTrapLocations(image,cTrap,[]); 
+end
 
+    [trapLocations trap_mask trapImages cc]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck,cc);
 
 cTimelapse.cTimepoint(timepoint).trapLocations=trapLocations;
 
@@ -104,7 +117,7 @@ end
 
 end
 
-function [trapLocations, trap_mask]=predictTrapLocations(image,cTrap)
+function [trapLocations, trap_mask, ccCalc]=predictTrapLocations(image,cTrap,cc)
 % [trapLocations trap_mask]=predictTrapLocations(image,cTrap)
 %
 % uses trap1 of cTrap (an image of the trap) to identify traps in the image
@@ -112,29 +125,36 @@ function [trapLocations, trap_mask]=predictTrapLocations(image,cTrap)
 % correlation as a threshold and picks all values below this in order,
 % ruling out the area directly around each new trap Location.
 
-timepoint_im=double(image);
-timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
-image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],median(timepoint_im(:)));
+image_temp=image;% image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],median(timepoint_im(:)));
 
-cc=normxcorr2(cTrap.trap1,image_temp)+normxcorr2(cTrap.trap2,image_temp);
 
-cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
-cc_new=ones(size(cc,1),size(cc,2))*median(cc(:));
-cc_new(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5)=cc(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5);
+if isempty(cc)
+    cc=abs(normxcorr2(cTrap.trap1,image_temp))+abs(normxcorr2(cTrap.trap2,image_temp));
+    cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+    cc_new=zeros(size(cc));%*median(cc(:));
+    cc_new(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5)=cc(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5);
+    cc=cc_new;
+    % f1=fspecial('gaussian',4,.8);
+    f1=fspecial('disk',1);
+    cc=(imfilter((cc),f1));
+    cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+    cc=padarray(cc,[cTrap.bb_height,cTrap.bb_width]);
 
-cc=cc_new;
-cc=(imfilter(abs(cc),fspecial('disk',1)));
-cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+end
+ccCalc=cc;
 
-cc=padarray(cc,[cTrap.bb_height,cTrap.bb_width]);
+
 [max_im_cc, imax] = max(cc(:));
 max_cc=max_im_cc;
 trap_index=1;
 trap_mask=false(size(cc,1),size(cc,2));
 
-while max_cc> .65*max_im_cc
+ccBounding=1.1;
+while max_cc> .5*max_im_cc
     [ypeak, xpeak] = ind2sub(size(cc),imax(1));
-    cc(ypeak-cTrap.bb_height*1:ypeak+cTrap.bb_height*1,xpeak-cTrap.bb_width*1:xpeak+cTrap.bb_width*1)=0;
+    bY=floor(cTrap.bb_height*ccBounding);
+    bX=floor(cTrap.bb_width*ccBounding);
+    cc(ypeak-bY:ypeak+bY,xpeak-bX:xpeak+bX)=0;
     xcenter=xpeak-cTrap.bb_width;
     ycenter=ypeak-cTrap.bb_height;
     trapLocations(trap_index).xcenter=xcenter;
@@ -149,7 +169,7 @@ end
 
 
 
-function [trapLocations, trap_mask ,trapImages]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
+function [trapLocations, trap_mask, trapImages, cc]=updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck,cc)
 % [trapLocations, trap_mask ,trapImages] = updateTrapLocations(image,cTrap,trapLocations,trapLocationsToCheck)
 % 
 % confusing function. I think its purpose is to make a trap_mask (a logical
@@ -165,20 +185,22 @@ elseif strcmp(trapLocationsToCheck,'none')
     trapLocationsToCheck = [];
 end
 
-timepoint_im=double(image);
-timepoint_im=timepoint_im*cTrap.scaling/median(timepoint_im(:));
-image_temp=padarray(timepoint_im,[cTrap.bb_height cTrap.bb_width],'replicate');%median(timepoint_im(:)));
+image_temp=image;
 
-cc=abs(normxcorr2(cTrap.trap1,image_temp))+abs(normxcorr2(cTrap.trap2,image_temp));
-cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
-cc_new=zeros(size(cc));
-cc_new(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5)=cc(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5);
-cc=cc_new;
-f1=fspecial('disk',1);
-cc=(imfilter((cc),f1));
-cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+if isempty(cc)
+    cc=abs(normxcorr2(cTrap.trap1,image_temp))+abs(normxcorr2(cTrap.trap2,image_temp));
+    cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+    cc_new=zeros(size(cc));%*median(cc(:));
+    cc_new(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5)=cc(cTrap.bb_height*1.5:end-cTrap.bb_height*1.5,cTrap.bb_width*1.5:end-cTrap.bb_width*1.5);
+    cc=cc_new;
+    % f1=fspecial('gaussian',4,.8);
+    f1=fspecial('disk',1);
+    cc=(imfilter((cc),f1));
+    cc=cc(cTrap.bb_height+1:end-cTrap.bb_height,cTrap.bb_width+1:end-cTrap.bb_width);
+    cc=padarray(cc,[cTrap.bb_height,cTrap.bb_width]);
 
-cc=padarray(cc,[cTrap.bb_height,cTrap.bb_width]);
+end
+
 trap_mask=false(size(cc,1),size(cc,2));
 trapImages=zeros([size(cTrap.trap1) length(trapLocations)] );
 

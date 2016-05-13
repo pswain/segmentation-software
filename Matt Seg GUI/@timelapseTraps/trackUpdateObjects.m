@@ -161,7 +161,7 @@ for j=1:length(image)
                 
                 tempR=trapInfom1(trapj).cell(locBigCell(bigCellIndex)).cellRadius;
                 tempRadiusSearch(1)=tempR-1;tempRadiusSearch(2)=tempR+2;
-                [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,[],[],tempRadiusSearch,tempBigCenter,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
                 circen(end+1:end+size(circen1,1),:)=circen1;
                 cirrad(end+1:end+length(cirrad1))=cirrad1;
                 
@@ -175,7 +175,6 @@ for j=1:length(image)
                 end
             end
         end
-        
     end
     
     
@@ -183,20 +182,25 @@ for j=1:length(image)
     %Then go through and check the remaining locations found by the
     %cellVision portion, and use those locations to find new circles.
     bwl=bwlabel(bw_mask);
+    [grdx, grdy] = gradient(temp_imFilt);
     for bwlIndex=1:max(bwl(:))
         bw_mask=bwl==bwlIndex;
         %MAGNIFICATION
         
         % a number of parameters here specified by Matt in the tail end of
         % this function call, not sure how signficant they are
+        
+        % if statement on magnification is to enforce an alternative
+        % processing for cellAsic images from Hille. Consider removing long
+        % term.
         if magnification<100
             if bwlIndex==1
-                [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,grdx,grdy,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             else
-                [~, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,searchRadius,bw_mask,accum,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
+                [~, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,grdx,grdy,searchRadius,bw_mask,accum,max(temp_imFilt(:))*.1,8,.9,fltr4accum);
             end
         else
-            [~, circen1, cirrad1] =CircularHough_Grd_matt(imresize(temp_imFilt,scale),searchRadius*scale,imresize(bw_mask,scale,'nearest'),[],max(temp_im(:))*.1,8,.7,fltr4accum);
+            [~, circen1, cirrad1] =CircularHough_Grd_matt(imresize(temp_imFilt,scale),[],[],searchRadius*scale,imresize(bw_mask,scale,'nearest'),[],max(temp_im(:))*.1,8,.7,fltr4accum);
         end
         
         circen(end+1:end+size(circen1,1),:)=circen1;
@@ -375,7 +379,7 @@ end
 
 
 
-function [accum, varargout] = CircularHough_Grd_matt(img, radrange, mattmask, accum,varargin)
+function [accum, varargout] = CircularHough_Grd_matt(img, grdx,grdy, radrange, mattmask, accum,varargin)
 % [accum, varargout] = CircularHough_Grd_matt(img, radrange, mattmask, accum,varargin)
 %
 % taken from the CircularHough_Grd function from file exchange and
@@ -690,10 +694,12 @@ if ~(img_is_double || isa(img, 'single')),
 end
 
 % Compute the gradient and the magnitude of gradient
-if img_is_double,
-    [grdx, grdy] = gradient(img);
-else
-    [grdx, grdy] = gradient(imgf);
+if isempty(grdx)
+    if img_is_double,
+        [grdx, grdy] = gradient(img);
+    else
+        [grdx, grdy] = gradient(imgf);
+    end
 end
 grdmag = sqrt(grdx.^2 + grdy.^2);
 if isempty(accum)
@@ -978,4 +984,146 @@ varargout{2} = cirrad;
 if nargout > 3,
     varargout{3} = dbg_LMmask;
 end
+end
+
+function [accum, varargout] = CircularHough_Grd(img, grdx,grdy,radrange, varargin)
+ 
+ 
+%%%%%%%% Arguments and parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+% Validation of arguments
+if ndims(img) ~= 2 || ~isnumeric(img),
+    error('CircularHough_Grd: ''img'' has to be 2 dimensional');
+end
+if ~all(size(img) >= 32),
+    error('CircularHough_Grd: ''img'' has to be larger than 32-by-32');
+end
+ 
+if numel(radrange) ~= 2 || ~isnumeric(radrange),
+    error(['CircularHough_Grd: ''radrange'' has to be ', ...
+        'a two-element vector']);
+end
+prm_r_range = sort(max( [0,0;radrange(1),radrange(2)] ));
+ 
+% Parameters (default values)
+prm_grdthres = 10;
+prm_fltrLM_R = 8;
+prm_multirad = 0.5;
+func_compu_cen = true;
+func_compu_radii = true;
+ 
+% Validation of arguments
+vap_grdthres = 1;
+if nargin > (1 + vap_grdthres),
+    if isnumeric(varargin{vap_grdthres}) && ...
+            varargin{vap_grdthres}(1) >= 0,
+        prm_grdthres = varargin{vap_grdthres}(1);
+    else
+        error(['CircularHough_Grd: ''grdthres'' has to be ', ...
+            'a non-negative number']);
+    end
+end
+ 
+vap_fltr4LM = 2;    % filter for the search of local maxima
+if nargin > (1 + vap_fltr4LM),
+    if isnumeric(varargin{vap_fltr4LM}) && varargin{vap_fltr4LM}(1) >= 3,
+        prm_fltrLM_R = varargin{vap_fltr4LM}(1);
+    else
+        error(['CircularHough_Grd: ''fltr4LM_R'' has to be ', ...
+            'larger than or equal to 3']);
+    end
+end
+%
+% vap_multirad = 3;
+% if nargin > (1 + vap_multirad),
+%     if isnumeric(varargin{vap_multirad}) && ...
+%         varargin{vap_multirad}(1) >= 0.1 && ...
+%         varargin{vap_multirad}(1) <= 1,
+%     prm_multirad = varargin{vap_multirad}(1);
+%     else
+%         error(['CircularHough_Grd: ''multirad'' has to be ', ...
+%             'within the range [0.1, 1]']);
+%     end
+% end
+ 
+vap_fltr4accum = 4; % filter for smoothing the accumulation array
+% Default filter (5-by-5)
+fltr4accum=varargin{end};
+% fltr4accum = ones(5,5);
+% fltr4accum(2:4,2:4) = 2;
+% fltr4accum(3,3) = 6;
+% fltr4accum = fltr4accum / sum(fltr4accum(:));
+% fltr4accum=imresize(fltr4accum,.6);
+ 
+ 
+func_compu_cen = ( nargout > 1 );
+func_compu_radii = ( nargout > 2 );
+ 
+% Reserved parameters
+dbg_on = false;      % debug information
+dbg_bfigno = 4;
+if nargout > 3,  dbg_on = true;  end
+ 
+ 
+%%%%%%%% Building accumulation array %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+% Convert the image to single if it is not of
+% class float (single or single)
+% img=single(img);
+ 
+% Compute the gradient and the magnitude of gradient
+% [grdx,grdy] = imgradientxy(img);
+
+grdmag = sqrt(grdx.^2 + grdy.^2);
+ 
+% Get the linear indices, as well as the subscripts, of the pixels
+% whose gradient magnitudes are larger than the given threshold
+grdmasklin = find(grdmag > prm_grdthres);
+[grdmask_IdxI, grdmask_IdxJ] = ind2sub(size(grdmag), grdmasklin);
+ 
+rr_4linaccum = single( prm_r_range );
+linaccum_dr = [ (-rr_4linaccum(2) + 0.5) : -rr_4linaccum(1) , ...
+    (rr_4linaccum(1) + 0.5) : rr_4linaccum(2) ];
+ 
+lin2accum_aJ = floor( ...
+    single(grdx(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( single(grdmask_IdxJ)+0.5 , [1,length(linaccum_dr)] ) ...
+    );
+lin2accum_aI = floor( ...
+    single(grdy(grdmasklin)./grdmag(grdmasklin)) * linaccum_dr + ...
+    repmat( single(grdmask_IdxI)+0.5 , [1,length(linaccum_dr)] ) ...
+    );
+ 
+% Clip the votings that are out of the accumulation array
+mask_valid_aJaI = ...
+    (lin2accum_aJ > 0) & lin2accum_aJ < (size(grdmag,2) + 1) & ...
+    lin2accum_aI > 0 & lin2accum_aI < (size(grdmag,1) + 1);
+ 
+mask_valid_aJaI_reverse = ~ mask_valid_aJaI;
+lin2accum_aJ = lin2accum_aJ .* mask_valid_aJaI + mask_valid_aJaI_reverse;
+lin2accum_aI = lin2accum_aI .* mask_valid_aJaI + mask_valid_aJaI_reverse;
+clear mask_valid_aJaI_reverse;
+ 
+% Linear indices (of the votings) into the accumulation array
+lin2accum = sub2ind( size(grdmag), lin2accum_aI, lin2accum_aJ );
+ 
+lin2accum_size = size( lin2accum );
+lin2accum = reshape( lin2accum, [numel(lin2accum),1] );
+clear lin2accum_aI lin2accum_aJ;
+ 
+% Weights of the votings, currently using the gradient maginitudes
+% but in fact any scheme can be used (application dependent)
+weight4accum = ...
+    repmat( single(grdmag(grdmasklin)) , [lin2accum_size(2),1] ) .* ...
+    mask_valid_aJaI(:);
+clear mask_valid_aJaI;
+ 
+% Build the accumulation array using Matlab function 'accumarray'
+accum = accumarray( lin2accum , weight4accum );
+accum = [ accum ; zeros( numel(grdmag) - numel(accum) , 1 ) ];
+accum = reshape( accum, size(grdmag) );
+ 
+%%%%%%%% Locating local maxima in the accumulation array %%%%%%%%%%%%
+% Smooth the accumulation array
+accum = filter2( fltr4accum, accum );
 end

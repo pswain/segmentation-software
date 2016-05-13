@@ -97,12 +97,11 @@ for timepoint=1:length(cTimelapse.timepointsProcessed)
         tpStack=cTimelapse.returnTrapsTimepoint([],timepoint,channel,type);
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
 
-        %in case ethere is no fluorescent image at that tp, just copy the
-        %current radius over
+        %in case ethere is no fluorescent image at that tp, make it 0
         if ~sum(tpStack(:))
             for trapIndex=1:length(trapInfo)
                 for cellIndex=1:length(trapInfo(trapIndex).cell)
-                    cTimelapse.cTimepoint(timepoint).trapInfo(trapIndex).cell(cellIndex).cellRadiusFL=trapInfo(trapIndex).cell(cellIndex).cellRadius;
+                    cTimelapse.cTimepoint(timepoint).trapInfo(trapIndex).cell(cellIndex).cellRadiusFL=0;%trapInfo(trapIndex).cell(cellIndex).cellRadius;
                 end
             end
             

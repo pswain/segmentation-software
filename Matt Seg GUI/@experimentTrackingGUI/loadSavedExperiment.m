@@ -29,6 +29,7 @@ switch answer
         cExpGUI.cExperiment.saveExperiment;
 end
 
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
 
 set(cExpGUI.posList,'Value',1);
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
