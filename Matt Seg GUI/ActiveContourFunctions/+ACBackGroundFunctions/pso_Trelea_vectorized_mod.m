@@ -6,7 +6,7 @@
 % goplotspso      -   changed all uses of 'functname' to 'functname_string'
 %gradient_descent -   added a gradient descent for the best point, so that it
 %                     would jusst gradient descent while the rest of the seeds swarmed.
-
+%
 % pso_Trelea_vectorized.m
 % a generic particle swarm optimizer
 % to find the minimum or maximum of any 
@@ -212,6 +212,8 @@ ps_orig = ps;
 ps = ps+D+1;
 
 PSOseed = cat(1,PSOseed,repmat(PSOseed(1,:),D,1));
+
+derivative_step = 1;
 %%%%%%%%%%%%%%
 
 
@@ -556,7 +558,7 @@ for i=1:me  % start epoch loop (iterations)
            %vel(idx1,:) = vel(idx1,:)+g_descent_param*rand(1)*gbest_gradient; %added by elco - does a sort of gradient descent on the g best.
                
        end
-       if max(abs(gbest_gradient(:)))>0
+       if max(abs(gbest_gradient(:)))>0 && all(~isinf(gbest_gradient))
             vel(ps_orig+1,:) = -g_descent_param*rand(1)*gbest_gradient/max(abs(gbest_gradient(:))); %does only gradient descent on g best.
        end
        
@@ -567,7 +569,7 @@ for i=1:me  % start epoch loop (iterations)
        % update new position (PSO algo)    
         pos(ps_orig+1,:) = g_best_old;
         pos = pos + vel;
-        pos(ps_orig+2:end,:) = diag(ones(D,1)) + repmat(gbest,D,1);
+        pos(ps_orig+2:end,:) = derivative_step*diag(ones(D,1)) + repmat(gbest,D,1);
     
        % position masking, limits positions to desired search space
        % method: 0) no position limiting, 1) saturation at limit,
