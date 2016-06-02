@@ -20,14 +20,14 @@ for i=1:length(cExperiment.dirs)
     cExperiment.saveTimelapseExperiment(i);
 end
 
+cExperiment.channelNames{end+1}=searchString;
+
 % Finish logging protocol
 cExperiment.logger.complete_protocol;
 catch err
     cExperiment.logger.protocol_error;
     rethrow(err);
 end
-
-cExperiment.channelNames{end+1}=searchString;
 
 
 end

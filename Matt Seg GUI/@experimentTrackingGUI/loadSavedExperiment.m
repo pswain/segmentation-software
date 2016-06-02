@@ -1,6 +1,11 @@
 function loadSavedExperiment(cExpGUI)
 
-[FileName,PathName,FilterIndex] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+[FileName,PathName] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+
+if isequal(FileName,0) || isequal(PathName,0)
+    return
+end
+
 l1 = load(fullfile(PathName,FileName));
 cExpGUI.cExperiment=l1.cExperiment;
 
@@ -30,7 +35,9 @@ switch answer
 end
 
 set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
+cExpGUI.channel = 1;
 
 set(cExpGUI.posList,'Value',1);
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
 set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);

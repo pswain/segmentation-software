@@ -69,7 +69,10 @@ classdef experimentTracking<handle
             %Optional inputs 2-4 only used when creating objects using the
             %Omero database: OmeroDatabase - object of class OmeroDatabase
             %expName, a unique name for this cExperiment
-                                               
+            % if folder is the logical true then this is a queue to loada
+            % 'bare' cExperiment (i.e. with no defined fields) or user
+            % inputs. Used in loadobj method.
+            
             % Create a new logger to log changes for this cExperiment:
             cExperiment.logger = experimentLogging(cExperiment);
             
@@ -77,7 +80,12 @@ classdef experimentTracking<handle
             if nargin<1
                 fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
+            elseif islogical(folder) && folder
+                % if folder is true, cExperiment returned bare for load
+                % function.
+                return
             end
+            
             if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(folder,'Select the folder where data should be saved');
@@ -182,10 +190,38 @@ classdef experimentTracking<handle
     
     methods(Static)
 
-        function cExperiment = loadobj(obj)
-            cExperiment = obj;
+        function cExperiment = loadobj(LoadStructure)
+            
+            %% default loading method: DO NOT CHANGE
+            cExperiment = experimentTracking(true);
+            
+            FieldNames = fieldnames(LoadStructure);
+            
+            %only populate mutable fields occcuring in both the load object
+            %and the cTimelapse object.
+            FieldNames = intersect(FieldNames,fieldnames(cExperiment));
+            
+            for i = 1:numel(FieldNames)
+                
+                m = findprop(cExperiment,FieldNames{i});
+                if ~ismember(m.SetAccess,{'immutable','none'})
+                    cExperiment.(FieldNames{i}) = LoadStructure.(FieldNames{i});
+                end
+                
+            end
+            
+            
             % Create a new experimentLogging object when loading:
             cExperiment.logger = experimentLogging(cExperiment);
+            
+            % back compatibility to put channel names into cExperiment
+            % channelNames
+            if isempty(cExperiment.channelNames)
+                cTimelapse = cExperiment.loadCurrentTimelapse(1);
+                cExperiment.channelNames = cTimelapse.channelNames;
+            end
+            
+            
         end
                 
         function cCellVision = loadDefaultCellVision

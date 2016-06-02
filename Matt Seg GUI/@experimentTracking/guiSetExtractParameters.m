@@ -16,7 +16,10 @@ if nargin<2 || isempty(extractParameters)
     extractParameters = timelapseTraps.defaultExtractParameters;
 end
 
-if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) || isequal(extractParameters.extractFunction,@extractCellDataStandard)
+if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) ...
+        || isequal(extractParameters.extractFunction,@extractCellDataStandard)...
+        || isequal(extractParameters.extractFunction,@extractCellParamsOnly)...
+        
     functionParameters = extractParameters.functionParameters;
     
     list = {'max','mean','std','sum','basic'};
@@ -29,6 +32,14 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) || 
     type=list{answer};
     switch type
         case {'max','std','mean','sum'}
+            % bit of an ugly hack that should be sorted out, but means that
+            % if someone selects basic they can later change their
+            % selection to standard (i.e. basic extraction will run through
+            % the gui).
+            if isequal(extractParameters.extractFunction,@extractCellParamsOnly)
+                extractParameters.extractFunction = @extractCellDataStandardParfor;
+                functionParameters = struct;
+            end
             functionParameters.type = type;
         case {'basic'}
             extractParameters.extractFunction = @extractCellParamsOnly;
@@ -48,7 +59,6 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) || 
             end
         end
         
-    end
         dlg_title = 'Which channels to extract?';
         prompt = {['please select the channels for which you would like to extract data'],'',''};
         answer = listdlg('PromptString',prompt,'Name',dlg_title,'ListString',channel_list,'SelectionMode','multiple',...

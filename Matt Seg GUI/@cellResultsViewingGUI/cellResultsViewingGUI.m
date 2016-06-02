@@ -45,8 +45,16 @@ classdef cellResultsViewingGUI<handle
                 end
                 
             end
-            
             CellResGUI.cExperiment = cExperiment;
+            
+            if isempty(cExperiment.cellInf)
+                
+                warndlg('please extract data before running the cellResultsViewingGUI (the clue is in the name)')
+                uiwait
+                return
+                
+            end
+            
             CellResGUI.needToSave=false;
             scrsz = get(0,'ScreenSize');
             CellResGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(4) 2*scrsz(4)/3]);

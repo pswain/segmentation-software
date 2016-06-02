@@ -43,7 +43,7 @@ for posi = positionsToSet
     else
         cExperiment.saveTimelapse(posi);
     end
-    
+end
 % Finish logging protocol
 cExperiment.logger.complete_protocol;
 

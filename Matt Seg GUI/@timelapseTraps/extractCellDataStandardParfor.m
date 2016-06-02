@@ -273,7 +273,7 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     
                     % proteinLocalization is max5/median to make it easy
                     % when using the cellResultsViewingGUI 
-                    extractedData(channel).proteinLocalization=extractedData(channel).max5(allIndex,timepoint)./extractedData(channel).median(allIndex,timepoint);
+                    extractedData(channel).proteinLocalization(allIndex,timepoint)=extractedData(channel).max5(allIndex,timepoint)./extractedData(channel).median(allIndex,timepoint);
 
                     cellLocSmall=cellLocAllSmall(:,:,allIndex);
                     cellFLsmall=trapImage(cellLocSmall);

@@ -27,7 +27,7 @@ if cExperiment.trackTrapsOverwrite
     for i=1:length(positionsToSegment)
         currentPos=positionsToSegment(i);
         cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
-        cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
+        cTimelapse.trackTrapsThroughTime(cCellVision,cTimelapse.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
 
     end

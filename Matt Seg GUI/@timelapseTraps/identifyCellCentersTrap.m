@@ -135,7 +135,7 @@ end
 
 cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
 
-ß
+
 % store the segmentation result (segCenters) in the cTimelapse object.
 for k=1:length(trap)
     if cTimelapse.trapsPresent

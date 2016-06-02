@@ -30,6 +30,7 @@ searchResult=regexp(cTimelapse.channelNames,searchString,'start');
 loc= ~cellfun('isempty',searchResult);
 if sum(loc)>0
     errordlg('Error, a channel with that name already exists');
+    error('Error, a channel with that name already exists');
 end
 
 cTimelapse.channelNames{end+1}=searchString;

@@ -11,7 +11,6 @@ cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
 timepoint = CellResGUI.TimepointSelected;
 
 button_fields = get(CellResGUI.SelectPlotFieldButton,'String');
-plot_field=tempy{get(CellResGUI.SelectPlotFieldButton,'Value')};
 
 plot_field = button_fields{get(CellResGUI.SelectPlotFieldButton,'Value')};
 
