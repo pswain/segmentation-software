@@ -1,10 +1,26 @@
-function [IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical,use_canny)
-% attempt to, like the radial gradient funciton, make an image that is high
-% for white circles inside black circles.
-% Radrange can be an nx2 vector where each row is a different rad range which is applied seperately. 
-% do_neg  =  0 -both
-%            1 -only positive
-%           -1 - only negative
+function [IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical)
+% [IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical)
+%
+% attempt to, make a circular hough like function that takes account of
+% whether the image shows a white cicle in a black background or a black
+% circle on a white background. IMoutPos is high for the former, IMoutNeg
+% is high for the latter.
+%
+% Radrange              -   can be an nx2 vector where each row is a different 
+%                           rad range which is applied seperately. 
+% do_neg                -   number indicating the following:
+%                                0 -both
+%                                1 -only positive
+%                               -1 - only negative
+% pixels_to_ignore      -   (optional)logical of pixels to exclude from the procedure
+% make_image_logical    -   (optional) boolean. If true it does not use
+%                           gradient values and just sets all pixels above
+%                           the threshold to be value 1 for the proecedure.           -   
+
+
+% if IMin is a stack it is assumed to be a stack of grdx and grdy, used to
+% avoid gradient stage if they have already been calculated.
+
 
 
 ispercentile = false;
@@ -32,12 +48,6 @@ end
 if nargin<6 || isempty(make_image_logical)
     
     make_image_logical = false;
-    
-end
-
-if nargin<6 || isempty(use_canny)
-    
-    use_canny = false;
     
 end
 
@@ -137,37 +147,6 @@ else
     grdyNEG = 1*(grdy<-grd_thresh & ~pixels_to_ignore);
 end
 
-if use_canny
-    
-%     IMcanny = edge(IMin,'canny');
-%     
-%     grdxPOS = 1*(grdxPOS>0 & IMcanny);
-%     
-%     grdxNEG = 1*(grdxNEG>0 & IMcanny);
-%     
-%     grdyPOS = 1*(grdyPOS>0 & IMcanny);
-%     
-%     grdyNEG = 1*(grdyNEG>0 & IMcanny);
-%     
-    
-%     grdxPOS = 1*bwmorph(grdxPOS>0,'thin',Inf);
-%     
-%     grdxNEG = 1*bwmorph(grdxNEG>0,'thin',Inf);
-%     
-%     grdyPOS = 1*bwmorph(grdyPOS>0,'thin',Inf);
-%     
-%     grdyNEG = 1*bwmorph(grdyNEG>0,'thin',Inf);
-%     
-
-    grdxPOS = 1*grdxPOS>0;
-    
-    grdxNEG = 1*grdxNEG>0;
-    
-    grdyPOS = 1*grdyPOS>0;
-    
-    grdyNEG = 1*grdyNEG>0;
-    
-end
 
 % %highlights areas of black surrounded by areas of white
 % IMoutPOS = conv2(grdxPOS,1*(LEFTangle & Rlogical),'same') + conv2(grdxNEG,1*(RIGHTangle & Rlogical),'same') +...

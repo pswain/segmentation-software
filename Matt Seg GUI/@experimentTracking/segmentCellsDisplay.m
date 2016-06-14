@@ -20,15 +20,31 @@ if nargin<3
 end
 
 if cExperiment.trackTrapsOverwrite
+    % Start logging protocol
+    cExperiment.logger.start_protocol('tracking traps',length(positionsToSegment));
+    try
+        
     for i=1:length(positionsToSegment)
         currentPos=positionsToSegment(i);
         cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
-        cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
+        cTimelapse.trackTrapsThroughTime(cCellVision,cTimelapse.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
 
     end
+    
+    % Finish logging protocol
+    cExperiment.logger.complete_protocol;
+    catch err
+        cExperiment.logger.protocol_error;
+        rethrow(err);
+    end
 end
 
+% Start logging protocol
+cExperiment.logger.add_arg('Two stage cell vision threshold',cExperiment.cellVisionThresh);
+cExperiment.logger.add_arg('Acquisition status','completed');
+cExperiment.logger.start_protocol('identifying cells',length(positionsToSegment));
+try
 
 for i=1:length(positionsToSegment)
     currentPos=positionsToSegment(i);
@@ -42,4 +58,13 @@ for i=1:length(positionsToSegment)
     cExperiment.posSegmented(currentPos)=1;
     cExperiment.saveTimelapseExperiment(currentPos);
     clear cTimelapse;
+end
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

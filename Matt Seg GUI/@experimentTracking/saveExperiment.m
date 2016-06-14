@@ -1,5 +1,9 @@
 function saveExperiment(cExperiment,fileName)
-%     save([cExperiment.rootFolder '/cExperiment'],'cExperiment');
+
+%
+% saves cExperiment to:
+%   [cExperiment.rootFolder '/cExperiment'],'cExperiment');
+
 if isempty(cExperiment.OmeroDatabase)
     %Original save code for experiments created from a folder full of image
     %files
@@ -32,7 +36,11 @@ else
     if iscell(expFileName)
         expFileName=expFileName{:};
     end
-    save([cExperiment.saveFolder filesep expFileName],'cExperiment');
+    %Save cCellVision as a seperate variable
+    cCellVision=cExperiment.cCellVision;
+    cExperiment.cCellVision=[];   
+    save([cExperiment.saveFolder filesep expFileName],'cExperiment','cCellVision');
+    
     %Is there an existing file representing this cExperiment?
     fileAnnotations=getDatasetFileAnnotations(omeroDatabase.Session,omeroDs);
     %Create a cell array of file annotation names
@@ -64,23 +72,7 @@ else
     %Restore the cExperiment object
     cExperiment.omeroDs=omeroDs;
     cExperiment.OmeroDatabase=omeroDatabase;
-    
-    %Also save the cCellVision file if present
-    visFileName=['cCellVision_' cExperiment.rootFolder '.mat'];
-    visFilePath=[cExperiment.saveFolder filesep 'cCellVision_' cExperiment.rootFolder '.mat'];
-    cCellVision=cExperiment.cCellVision;
-    if ~isempty(cCellVision)
-        save(visFilePath,'cCellVision');
-        faIndex=strcmp(visFileName,faNames);
-        faIndex=find(faIndex);
-        if ~isempty(faIndex)
-            faIndex=faIndex(1);
-            disp(['Uploading file cCellVision_' cExperiment.rootFolder '.mat']);
-            fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), visFilePath);
-        else%The file is not yet attached to the dataset
-            disp(['Uploading file cCellVision_' cExperiment.rootFolder '.mat']);
-            cExperiment.OmeroDatabase.uploadFile(visFilePath, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
-        end
-    end
+    cExperiment.cCellVision=cCellVision;  
+
 end
 

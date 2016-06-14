@@ -29,6 +29,11 @@ if nargin<3
     
 end
 
+% Start logging protocol
+cExperiment.logger.add_arg('extractionParameters',extractParameters);
+cExperiment.logger.start_protocol('setting extraction parameters',length(positionsToSet));
+try
+
 for posi = positionsToSet
     cTimelapse = cExperiment.loadCurrentTimelapse(posi);
     cTimelapse.extractionParameters = extractParameters;
@@ -38,6 +43,13 @@ for posi = positionsToSet
     else
         cExperiment.saveTimelapse(posi);
     end
+end
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
 end
 
 end

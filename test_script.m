@@ -133,6 +133,12 @@ cExperiment_test.selectCellsToPlotAutomatic(poses,params);
 cExperiment_test.extractCellInformation(poses,false);
 
 cExperiment_test.compileCellInformation(poses);
+%%
+cExperiment_true.cTimelapse = [];
+cExperiment_test.cTimelapse = [];
+
+cExperiment_true.logger = [];
+cExperiment_test.logger = [];
 
 
 if isequaln(cExperiment_test,cExperiment_true)
@@ -151,6 +157,9 @@ for diri=1:length(cExperiment_true.dirs)
     
     cTimelapse_true.ActiveContourObject = [];
     cTimelapse_test.ActiveContourObject = [];
+    
+    cTimelapse_true.logger = [];
+    cTimelapse_test.logger = [];
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -212,8 +221,8 @@ for diri=1:length(cExperiment_true.dirs)
         exD_fields = fields(cTimelapse_test.extractedData(chi));
         for fieldii = 1:length(exD_fields)
             fieldi = exD_fields{fieldii};
-            if ~isequal(size(cTimelapse_test.extractedData(chi).(fieldi)),size(cTimelapse_true.extractedData(chi).(fieldi)))...
-                    || ~isequal(sortrows(cTimelapse_test.extractedData(chi).(fieldi)),sortrows(cTimelapse_true.extractedData(chi).(fieldi)))
+            if isnumeric(cTimelapse_test.extractedData(chi).(fieldi)) && (~isequal(size(cTimelapse_test.extractedData(chi).(fieldi)),size(cTimelapse_true.extractedData(chi).(fieldi)))...
+                    || ~isequal(sortrows(cTimelapse_test.extractedData(chi).(fieldi)),sortrows(cTimelapse_true.extractedData(chi).(fieldi))))
                 fprintf('failed at field %s , pos %d , chi %d  \n',fieldi,diri,chi)
                 to_disp = sortrows(cTimelapse_test.extractedData(chi).(fieldi))-sortrows(cTimelapse_true.extractedData(chi).(fieldi));
                 to_divide = sortrows(cTimelapse_true.extractedData(chi).(fieldi));
@@ -296,6 +305,11 @@ cExperiment_test.trainBirthHMM;
 
 cExperiment_test.classifyBirthsHMM;
 
+cExperiment_true.cTimelapse = [];
+cExperiment_test.cTimelapse = [];
+
+cExperiment_true.logger = [];
+cExperiment_test.logger = [];
 
 if isequaln(cExperiment_test,cExperiment_true)
     
@@ -310,6 +324,12 @@ for diri=1:length(cExperiment_true.dirs)
     
     cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
+    
+    cTimelapse_true.ActiveContourObject = [];
+    cTimelapse_test.ActiveContourObject = [];
+    
+    cTimelapse_true.logger = [];
+    cTimelapse_test.logger = [];
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -341,6 +361,11 @@ l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cE
 cExperiment_true = l1.cExperiment;
 cExperiment_true.cCellVision = l1.cCellVision;
 
+cExperiment_true.cTimelapse = [];
+cExperiment_test.cTimelapse = [];
+
+cExperiment_true.logger = [];
+cExperiment_test.logger = [];
 
 if isequaln(cExperiment_test,cExperiment_true)
     
@@ -355,6 +380,12 @@ for diri=1:length(cExperiment_true.dirs)
     
     cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
+    
+    cTimelapse_true.ActiveContourObject = [];
+    cTimelapse_test.ActiveContourObject = [];
+    
+    cTimelapse_true.logger = [];
+    cTimelapse_test.logger = [];
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -422,6 +453,11 @@ cTimelapse_test.timepointsProcessed = true(1,new_first_tp);
 
 cTimelapse_test.addTimepoints;
 
+cTimelapse_true.ActiveContourObject = [];
+cTimelapse_test.ActiveContourObject = [];
+
+cTimelapse_true.logger = [];
+cTimelapse_test.logger = [];
 
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -533,7 +569,7 @@ cExperiment_test.cCellVision = l2.cCellVision;
 cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
 cCellVision = cExperiment_test.cCellVision;
 
-TrackingCurator=curateCellTrackingGUI(cTimelapse,1,2,7,[1 3]);
+TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,1,2,7,[1 3]);
 
 
 

@@ -26,6 +26,11 @@ if nargin<3
     cellMovementThresh=str2double(answer{1});
 end
 
+%% Start logging protocol
+cExperiment.logger.add_arg('Tracking threshold',cellMovementThresh);
+cExperiment.logger.start_protocol('tracking cells',length(positionsToTrack));
+try
+
 %% Run the tracking on the timelapse
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
@@ -38,4 +43,13 @@ for i=1:length(positionsToTrack)
     else
         cExperiment.saveTimelapse(experimentPos);
     end
+end
+
+%% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

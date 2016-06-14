@@ -107,7 +107,7 @@ classdef cTrapDisplayProcessing<handle
 
             % just to get an image of the appropriate size - also used
             % later.
-            identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(1),cCellVision.method);
+            identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoints(1),cCellVision.imageProcessingMethod);
             d_imCenters = zeros([size(identification_image_stacks{1},1) size(identification_image_stacks{1},2) length(identification_image_stacks)]);
             
             % identifyCellCentres resizes the image if magnification do not
@@ -120,6 +120,9 @@ classdef cTrapDisplayProcessing<handle
             tic
             for i=1:length(timepoints)
                 timepoint=timepoints(i);
+                % Trigger the TimepointChanged event for experimentLogging
+                experimentLogging.changeTimepoint(cTimelapse,timepoint);
+
                 set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint),' of ', num2str(max(timepoints))]);
                 
                 if i>1
@@ -134,7 +137,7 @@ classdef cTrapDisplayProcessing<handle
                 % calculate the decision images used to find segmentation
                 % results.
                 if i>1 % if i==1 the decision image was retrieved already.
-                    identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.method);
+                    identification_image_stacks = cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.imageProcessingMethod);
                 end
                 [d_imCenters, d_imEdges]=cTimelapse.identifyCellCentersTrap(cCellVision,timepoint,traps,identification_image_stacks,d_imCenters);
                 

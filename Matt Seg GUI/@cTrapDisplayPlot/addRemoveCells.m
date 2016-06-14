@@ -19,7 +19,7 @@ if strcmp(key,cDisplay.CurateTracksKey)
     
     if ~isempty(CellNumNearestCell)
         
-        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap);
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
         TrackingCurator.UpdateImages;
     end
@@ -29,10 +29,12 @@ if strcmp(key,cDisplay.CurateTracksKey)
 else
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
-        disp(['remove circle at ', num2str([Cx,Cy])]);
+    % Update the log
+    logmsg(cDisplay.cTimelapse,'Unselecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection=0;
     else
-        disp(['add circle at ', num2str([Cx,Cy])]);
+    % Update the log
+    logmsg(cDisplay.cTimelapse,'Selecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection=1;
     end
     

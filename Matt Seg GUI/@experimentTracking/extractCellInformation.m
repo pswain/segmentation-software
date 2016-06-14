@@ -42,11 +42,23 @@ if doParameterGUI || nargin>3
     cExperiment.setExtractParameters(positionsToExtract,extractParameters)
 end
 
-
+% Start logging protocol
+cExperiment.logger.start_protocol('extracting cell information',length(positionsToExtract));
+try
+    
 for i=1:length(positionsToExtract)
     experimentPos=positionsToExtract(i);
     cTimelapse=cExperiment.returnTimelapse(experimentPos);
     cTimelapse.extractCellData;
     cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(experimentPos);
+    cExperiment.saveTimelapseExperiment(experimentPos,false);
+end
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

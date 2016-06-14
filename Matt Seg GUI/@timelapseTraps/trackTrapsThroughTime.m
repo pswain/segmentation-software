@@ -40,12 +40,12 @@ function trackTrapsThroughTime(cTimelapse,cCellVision,timepoints,isCont)
 if nargin<3 || isempty(timepoints)
     timepoints=cTimelapse.timepointsToProcess;
 end
-tic
-h = waitbar(0,'Please wait as this tracks the traps through the timelapse ...');
 
 if nargin<4 || isempty(isCont)
     isCont=false;
 end
+
+
 
 %for initialising trapInfo
 if cTimelapse.trapsPresent
@@ -72,20 +72,26 @@ if cTimelapse.trapsPresent
         %make trapInfo_struct the size of the the number of traps at size
         %cTimelapse.cTimepoint(timpoint(1))
         trapInfo_struct(1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations)) = trapInfo_struct;
-    meanRegIm=mean(regIm(:));
+        meanRegIm=mean(regIm(:));
+
+        %set first timepoint to correct trapInfo struct. Remove later when
+        %you have worked out where the first timepoint trapInfo structure
+        %gets initialised.
+        if ~isCont
+            cTimelapse.cTimepoint(timepoints(1)).trapInfo = trapInfo_struct;
+        end
     for i=2:length(timepoints)
-        
-        
-        
         timepoint=timepoints(i);
+        
+        % Trigger the TimepointChanged event for experimentLogging
+        experimentLogging.changeTimepoint(cTimelapse,timepoint);
+        
         newIm=cTimelapse.returnSingleTimepoint(timepoint);
         cTimelapse.imSize=size(newIm);
         newIm=double(newIm);
         newIm=newIm/mean(newIm(:))*meanRegIm;
         newIm=newIm(bb:end-bb,bb:end-bb);
         [output, ~] = dftregistration(regImFft,fft2(newIm),1);
-        
-        
         
         colDif=output(4);
         rowDif=output(3);
@@ -146,8 +152,6 @@ if cTimelapse.trapsPresent
             accumRow = 0;
         end
         
-        waitbar(i/length(timepoints));
-        
     end
     
 else
@@ -161,9 +165,6 @@ if ~isCont
     [cTimelapse.cTimepoint(timepoints).trapMaxCell] = deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
     [cTimelapse.cTimepoint(timepoints).trapMaxCellUTP] =  deal(zeros(size(cTimelapse.cTimepoint(timepoints(1)).trapLocations)));
 end
-toc
-close(h)
-
 
 end
 

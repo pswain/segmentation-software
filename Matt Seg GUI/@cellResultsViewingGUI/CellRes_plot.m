@@ -10,8 +10,9 @@ cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
 
 timepoint = CellResGUI.TimepointSelected;
 
-tempy = get(CellResGUI.SelectPlotFieldButton,'String');
-plot_field=tempy{get(CellResGUI.SelectPlotFieldButton,'Value')};
+button_fields = get(CellResGUI.SelectPlotFieldButton,'String');
+
+plot_field = button_fields{get(CellResGUI.SelectPlotFieldButton,'Value')};
 
 plot_channel = get(CellResGUI.SelectPlotChannelButton,'Value');
 

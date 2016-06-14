@@ -21,57 +21,22 @@ load(fullfile(path,file),'cCellVision');
 
 
 
-%% use cExperiment to make a training set - WARNING, generally will load a cCellVision
+%% initialise for cExperiment compilation
 
-num_timepoints = 40;
+cExperiment =[];
+num_timepoints = 5;
 
-fprintf('\n\n choose a new location in which to save the training cExperiment \n \n');
-[NewExpLocation] = uigetdir(path);
+%% select cExperiments you want to add to the gound truth set.
+% num_timpoints timepoints will be added from each one.
 
-OldExpLocation = cExperiment.saveFolder;
+a = inputdlg('provide append name');
+cExperiment = append_cExperiment(cExperiment,num_timepoints,[],[]);
 
-DirToUse = 1:length(cExperiment.dirs);
-TPtoUse = ones(size(DirToUse));
+% run append_cExperiment as many times as necessary to compile all the
+% cExperiment files.
+% best to delete cellInf before starting.
 
-if length(cExperiment.dirs)>num_timepoints
-    
-    DirToUse = randperm(length(cExperiment.dirs));
-    DirToUse = DirToUse(1:num_timepoints);
-    TPtoUse = ones(size(DirToUse));
-    
-end
 
-if length(cExperiment.dirs)<num_timepoints
-    
-    TPtoUse = floor(num_timepoints/length(cExperiment.dirs))*ones(size(DirToUse));
-    remainder = mod(num_timepoints,length(cExperiment.dirs));
-    if remainder>0
-        
-        assign_remainders = randperm(length(cExperiment.dirs));
-        assign_remainders = assign_remainders(1:remainder);
-        TPtoUse(assign_remainders) = TPtoUse(assign_remainders)+1; 
-        
-    end
-
-end
-
-cExperiment.dirs = cExperiment.dirs(DirToUse);
-
-for di = 1:length(cExperiment.dirs)
-
-    load(fullfile(OldExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse');
-    TPs = randperm(length(cTimelapse.timepointsToProcess));
-    TPs = cTimelapse.timepointsToProcess(TPs(1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess))));
-    cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
-    %cTimelapse.timepointsProcessed = cTimelapse.timepointsProcessed(TPs);
-    cTimelapse.timepointsToProcess = 1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess));
-    save(fullfile(NewExpLocation , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse')
-    
-end
-
-cExperiment.saveFolder = NewExpLocation;
-cExperiment.cCellVision = cCellVision;
-cExperiment.saveExperiment;
 
 %% open a GUI to edit the experiment
 
@@ -85,9 +50,9 @@ expGUI = experimentTrackingGUI;
 %load(fullfile(path,file),'cExperiment');
 
 
-for di = 1:length(cExperiment.dirs)
+for di =1:18% 1:length(cExperiment.dirs)
     
-    load(fullfile(cExperiment.saveFolder , [cExperiment.dirs{di},'cTimelapse']),'cTimelapse');
+    cTimelapse = cExperiment.loadCurrentTimelapse(di);
         if di==1
             cTimelapseAll = fuseTimlapses({cTimelapse});
         else
@@ -100,7 +65,7 @@ end
 cTimelapse = cTimelapseAll;
 clear cTimelapseAll
 
-cTimelapseDisplay(cTimelapse)
+cTdisp = cTimelapseDisplay(cTimelapse);
 
 %%
 clear cExperiment currentPos di file path
@@ -108,11 +73,11 @@ clear cExperiment currentPos di file path
 figure;imshow(OverlapGreyRed(double(cCellVision.cTrap.trap1),cCellVision.cTrap.trapOutline,[],[],true),[]);
 
 %%
-TP = round(rand*length(cTimelapse.cTimepoint));
-TI = round(rand*length(cTimelapse.cTimepoint(TP).trapInfo));
+TP = randi(length(cTimelapse.cTimepoint),1);
+TI = randi(length(cTimelapse.cTimepoint(TP).trapInfo),1);
 
-imshow(OverlapGreyRed(double(cTimelapse.returnSingleTrapTimepoint(TI,TP,1)),cCellVision.cTrap.trapOutline,[],[],true),[]);
-
+imshow(OverlapGreyRed(double(cTimelapse.returnSingleTrapTimepoint(TI,TP,1)),full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsBig),[],full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsInner),true),[]);
+figure(gcf)
 
 
 %% improve cCellvision trap outline
@@ -135,64 +100,100 @@ TrapPixelImage = ACTrapFunctions.make_trap_pixels_from_image(TrapIM);
 cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 
+%% make trap_inner region
+
+%%
+
+trap_im = cCellVision.cTrap.trapOutline;
+
+trap_inner = trap_im;
+
+for j = find(sum(trap_im,1)>2)
+    
+    trap_inner(min(find(trap_im(:,j))):max(find(trap_im(:,j))),j) = true;
+end
+
+trap_inner_log = trap_inner;
+if false
+open_elem = strel('disk',10);
+trap_inner = imdilate(trap_inner,open_elem);
+trap_inner(:,[1 end]) = false;
+trap_inner([1 end],:) = false;
+trap_inner = imerode(trap_inner,open_elem);
+end
+
+trap_inner_log = trap_inner;
+se = fspecial('gauss',[50,50],10);
+trap_inner = imfilter(1*(trap_inner & ~trap_im),se);
+
+%trap_inner= trap_inner>1;
+%trap_inner(trap_im)=false;
+imshow(trap_inner/max(trap_inner(:))+2*trap_im,[]);
+figure(2);
+imshow(trap_inner_log+2*trap_im,[]);
+
+cCellVision.cTrap.trapInner = trap_inner;
+
+
 %% set segmentation method
-%Elcos BF filter set
+
+%% Elcos BF filter set
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim(CSVM,image);
 
 %SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
 
-%% set segmentation method
+%% very simple classifier for out of focus images
 
 SegMethod = @(CSVM,image) NoTrapVerySlimBadFocus(CSVM,image);
 
 %SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
 
-%% set segmentation method
+%% for GFP z stacks (doesn't work very well)
 
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlimGFP(CSVM,image);
 
 %SegMethod = @(CSVM,image) createImFilterSetCellTrap(CSVM,image);
 
-%% for GFP segmentation, get mean_brightness
-pix_values = [];
-TPsRand = randperm(length(cTimelapse.cTimepoint));
-for i=1:30
-    im = cTimelapse.returnSingleTimepoint(TPsRand(i),cTimelapse.channelsForSegment(2));
-    pix_values = cat(1,pix_values,im(:));
-    
-end
+%% 1 and 3 Bright field classifier.
 
-mean_brightness = mean(pix_values(pix_values>5*median(pix_values)));
+SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoBF_1_3(CSVM,image,trapOutline);
 
-cCellVision.se = struct;
+%% single GFP slice
 
-cCellVision.se.se3=strel('disk',3);
-    cCellVision.se.se2=strel('disk',2);
-    cCellVision.se.se1=strel('disk',1);
+SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoGFP_1(CSVM,image);
 
-cCellVision.se.mean_brightness = mean_brightness;
 
+%% set normalisation method for cCellVision
+
+%%
+
+cCellVision.imageProcessingMethod = 'twostage_norm';
 
 %% check histrogram of images
 
+% not really sure what I hoped to learn from these image but good to know
+% that it isn't crazy.
 figure;
 values = {};
 bins = {};
+imStacks = {};
 for ti = 1:length(cTimelapse.cTimepoint)
-    imS = cTimelapse.returnSegmenationTrapsStack(1,ti);
+    imS = cTimelapse.returnSegmenationTrapsStack(1,ti,cCellVision.imageProcessingMethod);
     imS = imS{1};
     title(sprintf('timepoint %d',ti))
     for slicei = 1:size(imS,3)
         im = imS(:,:,slicei);
-        im = im - median(im(:));
-        im = im/iqr(im(:));
+        %im = im - median(im(:));
+        %im = im/iqr(im(:));
         %im = im/median(im(:));
         if ti==1 
             [values{slicei},bins{slicei}] = hist(im(:),200);
+            imStacks{slicei} = im;
         else
             [valuestemp] = hist(im(:),bins{slicei});
             values{slicei} = cat(1,values{slicei},valuestemp);
+            imStacks{slicei} = cat(3,imStacks{slicei},im);
         end
     end
     
@@ -204,6 +205,10 @@ for slicei = 1:size(imS,3)
     plot(bins{slicei},log(values{slicei} +1));
 
 end
+
+gui1 = GenericStackViewingGUI(imStacks{1});
+gui2 = GenericStackViewingGUI(imStacks{2});
+
 %% look at single image from cCellVision
 %TI = 1;
 %TP =6;
@@ -221,11 +226,16 @@ gui.stack = A;
 gui.LaunchGUI
 
 
-
+trapOutline = full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsBig) + full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsInner);
+trapOutline = trapOutline*0.5;
 %%
-
-tic;B = SegMethod(cCellVision,A);toc;
+if nargin(SegMethod)==3
+tic;B = SegMethod(cCellVision,A,trapOutline);toc;
+else
+    tic;B = SegMethod(cCellVision,A);toc;
+end
 gui.stack = reshape(B,size(A,1),size(A,2),[]);
+gui.normalisation = '';
 gui.LaunchGUI;
 
 
@@ -258,7 +268,7 @@ nT = 1;
 nTr = 1;
 nTrT = 1;
 while nTrT<=numTraps
-    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,1);
+    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,2);
     for iT = 1:size(TrapIm,3)
         image_to_show = repmat(double(TrapIm(:,:,iT)),[1,1,3]);
         image_to_show = image_to_show.*(1 + ...
@@ -268,7 +278,7 @@ while nTrT<=numTraps
         nTrT = nTrT + 1;
     end
     fprintf('timepoint nT of some\n')
-    nT = nT +1;
+    nT = nT +step_size;
     
     
 end
@@ -283,10 +293,10 @@ cCellVision.trainingParams.cost=2
 cCellVision.trainingParams.gamma=1
 %% parameter grid search
 %cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
-ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
+ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
-maxTP = 30;
+maxTP = 1000;
 step_size=max(length(cTimelapse.cTimepoint),max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1])); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchLinear(step_size,cmd);
 %% linear training
@@ -317,32 +327,142 @@ cCellVision.generateTrainingSet2Stage(cTimelapse,step_size);
 
 cCellVision.trainingData.kernel_features = cCellVision.trainingData.features;
 cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
+
+%% classify linear data (taken from classify image 2 stage)
+
+classes = cCellVision.trainingData.class;
+
+normalised_features=(cCellVision.trainingData.features - repmat(cCellVision.scaling.min,size(cCellVision.trainingData.features,1),1));
+normalised_features=normalised_features*spdiags(1./(cCellVision.scaling.max-cCellVision.scaling.min)',0,size(normalised_features,2),size(normalised_features,2));
+
+labels=ones(size(normalised_features,1),1);
+dec_values=zeros(size(normalised_features,1),1);
+predict_label=zeros(size(normalised_features,1),1);
+
+% mex file that does the linear prediction.
+[~, ~, dec_valuesLin] = predict(labels, sparse(normalised_features), cCellVision.SVMModelLinear); % test the training data]\
+
+
+% report
+
+fprintf('non cell pixels: %2.2f %% correct \n cell pixels: %2.2f %% correct\n',...
+    100*sum(dec_valuesLin>0 & ~cCellVision.trainingData.class')/sum(~cCellVision.trainingData.class),...
+    100*sum(dec_valuesLin<0 & cCellVision.trainingData.class')/sum(cCellVision.trainingData.class));
+
+%% use to select kernel features
+
+kernel_features = [];
+kernel_classes = [];
+
+total_2stage_features = 60000;
+fraction_cell_selected = 0.05;
+fraction_non_cell_selected = 0.05;
+
+% cell pixels
+I = find(classes ==1);
+dec_valuesLin_cells = dec_valuesLin(I);
+[~,I2] = sort(abs(dec_valuesLin_cells));
+I = I(I2(1:floor(min(fraction_cell_selected*total_2stage_features,length(I)))));
+
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+%non cell pixels
+I = find(classes ==0);
+dec_valuesLin_non_cells = dec_valuesLin(I);
+[~,I2] = sort(abs(dec_valuesLin_non_cells));
+I = I(I2(1:floor(min(fraction_non_cell_selected*total_2stage_features,length(I)))));
+
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+%random pixels
+
+I = randperm(length(classes),ceil(min(total_2stage_features*(1- (fraction_cell_selected+ fraction_non_cell_selected)),length(classes))));
+kernel_features = cat(1,kernel_features,cCellVision.trainingData.features(I,:));
+kernel_classes = cat(2,kernel_classes,cCellVision.trainingData.class(I));
+
+cCellVision.trainingData.kernel_features = kernel_features;
+cCellVision.trainingData.kernel_class = kernel_classes;
+
+
+%% attemps to find a refined set of features
+linear_weights = cCellVision.SVMModelLinear.w;
+
+[x,I] = sort(abs(linear_weights),'descend');
+
+features_to_keep = I(1:20);
+cCellVision.trainingData.kernel_features = cCellVision.trainingData.features(:,features_to_keep);
+cCellVision.trainingData.kernel_class = cCellVision.trainingData.class;
+
+
 %% two stage grid search
-maxTP= 30;
+maxTP= 2;
 
-ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
+ws = [sum(cCellVision.trainingData.kernel_class==1)/sum(cCellVision.trainingData.kernel_class==0) 3];
 %ws = round(ws./min(ws,[],2));
-cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
+cmd=sprintf('-s 0 -t 2 -w0 %f -w1 %f',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
 
-step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
-cCellVision.runGridSearch(step_size);
+%step_size=max(1,floor(length(cTimelapse.cTimepoint)/maxTP)); 
+step_size = 2;
+tic
+cCellVision.runGridSearch(step_size,cmd);
+toc
 
-%%
-maxTP = 100;
-ws = [sum(cCellVision.trainingData.class)/length(cCellVision.trainingData.class) 1];
+fprintf('grid search complete \n')
+%
+maxTP = 1;
+%ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==0) 1];
 %step_size=max(length(cTimelapse.cTimepoint),floor(length(cTimelapse.cTimepoint)/maxTP)); 
 step_size = 1;
 cmd = sprintf('-s 0 -t 2 -w0 %f -w1 %f -c %f -g %f',ws(1),ws(2),cCellVision.trainingParams.cost,cCellVision.trainingParams.gamma);
 tic
 cCellVision.trainSVM(step_size,cmd);toc
 
+fprintf('two stage training complete \n')
+
+%% classify an image
+
+[predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellVision,A,trapOutline);
+
+figure;imshow(A,[]);
+imtool(decision_im,[]);
+
+
+%% classify with two stage
+
+% CRASHES MATLAB FOR SOME REASON - FIX
+n = 10;
+
+I = randperm(length(classes),n);
+
+normalised_2stage_features = normalised_features(I,:);
+classes_2stage = classes(I);
+
+labels=ones(size(normalised_2stage_features,1),1);
+dec_values=zeros(size(normalised_2stage_features,1),1);
+predict_label=zeros(size(normalised_2stage_features,1),1);
+
+% mex file that does the linear prediction.
+[a, ~, dec_values_2stage] = predict(labels, (normalised_2stage_features), cCellVision.SVMModel); % test the training data]\
+
+   
+% report
+
+fprintf('non cell pixels: %2.2f %% correct \n cell pixels: %2.2f %% correct\n',...
+    100*sum(dec_values_2stage>0 & ~classes_2stage')/sum(~class_2stage),...
+    100*sum(dec_values_2stage<0 & classes_2stage')/sum(classes_2stage));
+
+
+  
+
 %% classify images and see
 
-for TP = 1:length(cTimelapse.cTimepoint);
+for TP = 1%:length(cTimelapse.cTimepoint);
 
 traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
 
-DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);
+tic;DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);toc
 TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
 
 DecisionImageStack = DecisionImageStack./(2*max(abs(DecisionImageStack(:))));

@@ -10,7 +10,9 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 %                       timelapseTraps.returnSegmentationTrapStack
 % trapOutline       :   optional. grayscale or binary image of trap pixels
 %                       which are removed from analysis. Defaults to a
-%                       dialation of cCellSVM.cTrap.trapOutline. Any
+%                       dialation of cCellSVM.cTrap.trapOutline. If it is
+%                       greyscale then the grey scale image is passed to
+%                       the feature function but for classification any
 %                       non-zero pixel is considered a trap pixel.
 %
 % predicted_im      :   binary of whether a pixel is considered a cell
@@ -43,6 +45,7 @@ if nargin<3 || isempty(trapOutline)
 end
 
 filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
+trapOutline = trapOutline>=1;
 filtered_image=double(filtered_image);
 filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
 filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));
@@ -57,7 +60,9 @@ predict_label=zeros(size(image,1)*size(image,2),1);
 [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
 
 dec_values(~trapOutline(:))=dec_valuesLin(:,1);
-dec_values(trapOutline(:))=1;
+% Matt and elco differed on what value the trap pixels should have in the decision image
+% ensure there are not problems for matt from this
+dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
 if size(dec_valuesLin,2)>2
     dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
     dec_values2(~trapOutline(:))=dec_valuesLin(:,3);
@@ -80,6 +85,7 @@ if ~isempty(cCellSVM.SVMModel) && ~strcmp(cCellSVM.method,'linear')
     % look at only pixels within a certain distance of the two stage
     % threshold.
     IX(B>cCellSVM.linearToTwoStageParams.threshold) = [];
+    IX(ismember(IX,find(trapOutline))) = [];
     
     % apply an upper boundary of the number of pixels to apply the two
     % stage model to

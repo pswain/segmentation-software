@@ -14,6 +14,7 @@ classdef curateCellTrackingGUI<handle
         subAxes=[];
         slider = [];
         cTimelapse=[]
+        cCellVision=[];
         trapIndex = 1;
         CellLabel = 1;
         subAxesTimepoints = [];
@@ -38,7 +39,7 @@ classdef curateCellTrackingGUI<handle
     
     
     methods
-        function TrackingCurator=curateCellTrackingGUI(cTimelapse,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
+        function TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
             % TrackingCurator=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional),ShowOtherChannels(optional),ColourScheme(optional))
             %
             % cTimelapse
@@ -51,24 +52,25 @@ classdef curateCellTrackingGUI<handle
             AllowedColourSchemes = curateCellTrackingGUI.allowedColourSchemes; % a cell array of allowed colour scheme strings
             
             TrackingCurator.cTimelapse = cTimelapse;
+            TrackingCurator.cCellVision = cCellVision;
             
-            if nargin<2 || isempty(Timepoint)
+            if nargin<3 || isempty(Timepoint)
                 Timepoint = min(TrackingCurator.cTimelapse.timepointsToProcess);
             end
             
-            if ~(nargin<3 || isempty(TrapIndex))
+            if ~(nargin<4 || isempty(TrapIndex))
                 TrackingCurator.trapIndex = TrapIndex;
             end
             
-            if ~(nargin<4 || isempty(StripWidth))
+            if ~(nargin<5 || isempty(StripWidth))
                 TrackingCurator.StripWidth = StripWidth;
             end
             
-            if ~(nargin<5 || isempty(Channels))
+            if ~(nargin<6 || isempty(Channels))
                 TrackingCurator.Channels =Channels;
             end
             
-            if ~(nargin<6 || isempty(ColourScheme) )
+            if ~(nargin<7 || isempty(ColourScheme) )
                 
                 if ~any(strcmp(ColourScheme,AllowedColourSchemes))
                     

@@ -35,7 +35,7 @@ if size(varargin,2)>=1
     
     TrapRemovealFunctionHandle = str2func(['ACImageTransformations.' parameters.TrapHandleFunction]);
     
-    if strfind(parameters.TrapHandleFunction,'preProc')
+    if any(strfind(parameters.TrapHandleFunction,'preProc'))
         imageStack = TrapRemovealFunctionHandle(imageStack,parameters.TrapHandleFunctionParameters,varargin{1});
     end
 end
@@ -82,7 +82,7 @@ if size(varargin,2)>=1
     
     TrapRemovealFunctionHandle = str2func(['ACImageTransformations.' parameters.TrapHandleFunction]);
     
-    if ~strfind(parameters.TrapHandleFunction,'preProc')
+    if isempty(strfind(parameters.TrapHandleFunction,'preProc'))
         imageStack = TrapRemovealFunctionHandle(imageStack,parameters.TrapHandleFunctionParameters,varargin{1});
     end
     

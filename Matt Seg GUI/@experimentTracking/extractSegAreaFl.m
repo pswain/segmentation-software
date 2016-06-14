@@ -49,6 +49,11 @@ if nargin<5
 end
 
 %% Run the tracking on the timelapse
+
+% Start logging protocol
+cExperiment.logger.start_protocol('segmenting cells by fluorescence',length(positionsToTrack));
+try
+
 for i=1:length(positionsToTrack)
     experimentPos=positionsToTrack(i);
     cTimelapse = cExperiment.loadCurrentTimelapse(experimentPos);
@@ -58,4 +63,13 @@ for i=1:length(positionsToTrack)
     cExperiment.posTracked(experimentPos)=1;
     cExperiment.cTimelapse=cTimelapse;
     cExperiment.saveTimelapseExperiment(experimentPos);
+end
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
 end

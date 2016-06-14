@@ -76,10 +76,9 @@ if nargin<4 || isempty(type)
 end
 
 tp=timepoint;
-ignoreRotateEtc=false;
 
 
-if isfield(cTimelapse.temporaryImageStorage,'channel') & channel == cTimelapse.temporaryImageStorage.channel
+if isfield(cTimelapse.temporaryImageStorage,'channel') && channel == cTimelapse.temporaryImageStorage.channel
     timepointIm=cTimelapse.temporaryImageStorage.images(:,:,timepoint);
 else
     
@@ -174,20 +173,7 @@ else
                 
             end
             
-            %necessary for background correction and just makes life easier
-            timepointIm = double(timepointIm);
             
-            %change if want things other than maximum projection
-            switch type
-                case 'min'
-                    timepointIm=min(timepointIm,[],3);
-                case 'max'
-                    timepointIm=max(timepointIm,[],3);
-                case 'stack'
-                    timepointIm=timepointIm;
-                case 'sum'
-                    timepointIm=sum(timepointIm,3);
-            end
             
         else
             if cTimelapse.imSize
@@ -204,77 +190,7 @@ else
                 cTimelapse.imSize=size(timepointIm);
             end
             disp('There is no data in this channel at this timepoint');
-            ignoreRotateEtc=true;
-        end
-        
-        if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
-            cTimelapse.imSize = size(timepointIm);
-        end
-        
-        %used for padding data
-        medVal=1.3*mean(timepointIm(:));
-        
-        
-        %This was a correction instigated by Matt but seems like a really bad
-        %idea to just include without any kind of check. have commented out for
-        %now.
-        
-        %correction for stupid thing where the first couple columns sometimes turn
-        %REALLY bright .... why???? some camera issue.
-        % firstColMean=mean(timepointIm(:,1));
-        % medVal=median(timepointIm(:));
-        % meanVal=medVal;
-        % if firstColMean>meanVal*1.5
-        %     timepointIm(:,1)=meanVal;
-        %     firstColMean=mean(timepointIm(:,2));
-        %     if firstColMean>meanVal*1.5
-        %         timepointIm(:,2)=meanVal;
-        %     end
-        % end
-        
-        
-        if ~isempty(cTimelapse.imScale)
-            timepointIm=imresize(timepointIm,cTimelapse.imScale);
-            %to correct for black lines
-            timepointIm(1:2,:)=timepointIm(3:4,:);
-            timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
-        end
-        
-        
-        
-        if size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel}) && ~ignoreRotateEtc
-            %first part of this statement is to guard against cases where channel
-            %has not been assigned
-            timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
-        end
-        
-        
-        % Elco: I don't believe any timelapse has timpoint specific image rotation
-        % anymore. Left in just in case of legacy cases.
-        if isfield(cTimelapse.cTimepoint(tp),'image_rotation') & ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
-            image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
-        else
-            image_rotation=cTimelapse.image_rotation;
-        end
-        
-        if image_rotation~=0  && ~ignoreRotateEtc
-            bbN=200; tIm=[];
-            for slicei = 1:size(timepointIm,3)
-                tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
-                tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-                tIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
-            end
-            timepointIm=tIm;
-        end
-        
-        if size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)  && ~ignoreRotateEtc
-            %first part of this statement is to guard against cases where channel
-            %has not been assigned
-            TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
-            LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
-            HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
-            timepointIm = padarray(timepointIm,[abs(TimepointBoundaries) 0],medVal);
-            timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
+            return
         end
         
         
@@ -288,7 +204,6 @@ else
         else
             channelName=cTimelapse.channelNames;
         end
-        chNum=find(strcmp(channelName,cTimelapse.OmeroDatabase.Channels));
         
         if isempty (cTimelapse.OmeroDatabase.Session)
             cTimelapse.OmeroDatabase.login;
@@ -311,39 +226,141 @@ else
         sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
         sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
         timepointIm=zeros(sizeY, sizeX, sizeZ);
-        for z=1:sizeZ
-            try
-                plane=store.getPlane(z-1, chNum-1, timepoint-1);
-            catch
-                %Fix upload script to prevent the need for this debug
-                disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
-                plane=store.getPlane(z-1, chNum-1, timepoint-2);
-                timepoint=timepoint-1;
-            end
-            timepointIm(:,:,z) = toMatrix(plane, pixels)';
-        end
-        store.close();
-        switch type
-            case 'max'
-                timepointIm=max(timepointIm,[],3);
-            case 'stack'
-                timepointIm=timepointIm;
-            case 'sum'
-                timepointIm=sum(timepointIm,3);
-        end
-        if isfield(cTimelapse.cTimepoint(timepoint),'image_rotation') && ~isempty(cTimelapse.cTimepoint(timepoint).image_rotation)
-            image_rotation=cTimelapse.cTimepoint(timepoint).image_rotation;
+        
+        if any(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels))
+            chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
+            zsections = 1:sizeZ;
         else
-            image_rotation=cTimelapse.image_rotation;
+            chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.OmeroDatabase.MicroscopeChannels));
+            zstring = regexp(channelName,'_(.*)$','tokens');
+            if ~isempty(zstring)
+                zsections = str2double(zstring{1});
+            else
+                error('Invalid channel name - this is a bug see Julian/Ivan');
+            end
         end
         
-        if image_rotation~=0
-            %         medVal=median(timepointIm(:));
-            bbN=200;
-            tpImtemp=padarray(timepointIm,[bbN bbN],medVal,'both');
-            tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
-            tpImtemp(tpImtemp==0)=medVal;
-            timepointIm=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+        for z=zsections
+            folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];
+            if exist(folderName)==0
+                mkdir(folderName);
+            end
+            %Generate a filename based on the channel, timepoint and z section.
+            fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
+            
+            %Check if this plane has been cached (is there a file with this name?)
+            if exist(fileName)==2
+                timepointIm(:,:,z)=imread(fileName);
+            else
+                %Get the image from the Omero Database
+                try
+                    plane=store.getPlane(z-1, chNum-1, timepoint-1);
+                    %cache the plane to make retrieval faster next time - this
+                    %doesn't work very well hence commented - need a better way
+                    %to speed up image browsing
+                    %imwrite(toMatrix(plane, pixels)', fileName);
+                catch
+                    %Fix upload script to prevent the need for this debug
+                    disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
+                    plane=store.getPlane(z-1, chNum-1, timepoint-2);
+                    timepoint=timepoint-1;
+                end
+                timepointIm(:,:,z) = toMatrix(plane, pixels)';
+            end
+            
         end
+        store.close();
+        
     end
+    
+    
+    
+    
+    if isempty(cTimelapse.imSize) %set the imsize property if it hasn't already been set
+        cTimelapse.imSize = [size(timepointIm,1)  size(timepointIm,2)];
+    end
+    
+    %necessary for background correction and just makes life easier
+    timepointIm = double(timepointIm);
+    
+    
+    %change if want things other than maximum projection
+    switch type
+        case 'min'
+            timepointIm=min(timepointIm,[],3);
+        case 'max'
+            timepointIm=max(timepointIm,[],3);
+        case 'stack'
+            timepointIm=timepointIm;
+        case 'sum'
+            timepointIm=sum(timepointIm,3);
+    end
+    
+    
+    %used for padding data
+    medVal=1.3*mean(timepointIm(:));
+    
+    
+    %This was a correction instigated by Matt but seems like a really bad
+    %idea to just include without any kind of check. have commented out for
+    %now.
+    
+    %correction for stupid thing where the first couple columns sometimes turn
+    %REALLY bright .... why???? some camera issue.
+    % firstColMean=mean(timepointIm(:,1));
+    % medVal=median(timepointIm(:));
+    % meanVal=medVal;
+    % if firstColMean>meanVal*1.5
+    %     timepointIm(:,1)=meanVal;
+    %     firstColMean=mean(timepointIm(:,2));
+    %     if firstColMean>meanVal*1.5
+    %         timepointIm(:,2)=meanVal;
+    %     end
+    % end
+    
+    
+    if ~isempty(cTimelapse.imScale)
+        timepointIm=imresize(timepointIm,cTimelapse.imScale);
+        %to correct for black lines
+        timepointIm(1:2,:)=timepointIm(3:4,:);
+        timepointIm(:,end-1:end)=timepointIm(:,end-3:end-2);
+    end
+    
+    
+    
+    if isprop(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})  
+        %first part of this statement is to guard against cases where channel
+        %has not been assigned
+        timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+    end
+    
+    
+    % Elco: I don't believe any timelapse has timpoint specific image rotation
+    % anymore. Left in just in case of legacy cases.
+    if isfield(cTimelapse.cTimepoint(tp),'image_rotation') && ~isempty(cTimelapse.cTimepoint(tp).image_rotation)
+        image_rotation=cTimelapse.cTimepoint(tp).image_rotation;
+    else
+        image_rotation=cTimelapse.image_rotation;
+    end
+    
+    if image_rotation~=0 
+        bbN=200; tIm=[];
+        for slicei = 1:size(timepointIm,3)
+            tpImtemp=padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
+            tpImtemp=imrotate(tpImtemp,image_rotation,'bilinear','loose');
+            tIm(:,:,slicei)=tpImtemp(bbN+1:end-bbN,bbN+1:end-bbN);
+        end
+        timepointIm=tIm;
+    end
+    
+    if isprop(cTimelapse,'offset') && size(cTimelapse.offset,1)>=channel && any(cTimelapse.offset(channel,:)~=0)  
+        %first part of this statement is to guard against cases where channel
+        %has not been assigned
+        TimepointBoundaries = fliplr(cTimelapse.offset(channel,:));
+        LowerTimepointBoundaries = abs(TimepointBoundaries) + TimepointBoundaries +1;
+        HigherTimepointBoundaries = [size(timepointIm,1) size(timepointIm,2)] + TimepointBoundaries + abs(TimepointBoundaries);
+        timepointIm = padarray(timepointIm,[abs(TimepointBoundaries) 0],medVal);
+        timepointIm = timepointIm(LowerTimepointBoundaries(1):HigherTimepointBoundaries(1),LowerTimepointBoundaries(2):HigherTimepointBoundaries(2),:);
+    end
+    
 end

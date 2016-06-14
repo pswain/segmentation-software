@@ -34,7 +34,7 @@ if strcmp(key,cDisplay.CurateTracksKey)
     
     if ~isempty(CellNumNearestCell)
         
-        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap);
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
         TrackingCurator.UpdateImages;
         
@@ -45,10 +45,12 @@ if strcmp(key,cDisplay.CurateTracksKey)
 elseif ~cDisplay.trackOverlay
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
-        disp(sprintf('remove circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
+        % Update the log
+        logmsg(cDisplay.cTimelapse,'Remove cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection='remove';
     else
-        disp(sprintf('add circle at (%0.0f,%0.0f) in trap %d ', Cx,Cy,trap));
+        % Update the log
+        logmsg(cDisplay.cTimelapse,'Add cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
         selection='add';
     end
     method='hough';

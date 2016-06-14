@@ -65,6 +65,7 @@ classdef cTrapSelectDisplay<handle
                 cDisplay.ExclusionZones = ExclusionZones;
             end
             cDisplay.cc=[];
+            
             cDisplay.cCellVision=cCellVision;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.figure=figure;
@@ -152,7 +153,9 @@ classdef cTrapSelectDisplay<handle
                 set(cDisplay.axesHandle,'CLim',[min(im_mask(:)) max(im_mask(:))])
 
                 cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
-                disp(['remove trap at ', num2str([Cx,Cy])]);
+                
+                % Update the log
+                logmsg(cDisplay.cTimelapse,'Remove trap at %s', num2str([Cx,Cy]));
             else
                 cDisplay.trapLocations(end+1).xcenter=Cx;
                 cDisplay.trapLocations(end).ycenter=Cy;
@@ -164,7 +167,8 @@ classdef cTrapSelectDisplay<handle
                 
                 cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
 
-                disp(['add trap at ', num2str([Cx,Cy])]);
+                % Update the log
+                logmsg(cDisplay.cTimelapse,'Add trap at %s',num2str([Cx,Cy]));
             end
         end
 

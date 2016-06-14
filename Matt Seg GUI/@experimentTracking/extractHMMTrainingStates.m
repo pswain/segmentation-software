@@ -5,7 +5,7 @@ function extractHMMTrainingStates(cExperiment)
 % function has been called.
 
 if isempty(cExperiment.lineageInfo.motherInfo.daughterLabel)
-    errodlg('Must run extractLineageInfo first');
+    errordlg('Must run extractLineageInfo first');
 end
 
 

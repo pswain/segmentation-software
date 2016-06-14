@@ -10,8 +10,13 @@ function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
 % removing cExperiment.cCellVision, saving it as a separate object, then
 % putting it back.
 % 
-% Third input is only used by Omero code.It is saveCE: logical - if true,
+% Third input is boolean - saveCE: logical - if true,
 % save the cExperiment file as well as the timelapse,
+
+if nargin<3
+    saveCE=true;
+end
+
 cTimelapse=cExperiment.cTimelapse;
 cTimelapse.temporaryImageStorage=[];
 
@@ -23,10 +28,13 @@ if isempty(cExperiment.OmeroDatabase)
     end
     save(cTimelapseFilename,'cTimelapse');
     cExperiment.cTimelapse=[];
-    cCellVision=cExperiment.cCellVision;
-%     cExperiment.cCellVision=[];
-    save([cExperiment.saveFolder filesep 'cExperiment.mat'],'cExperiment','cCellVision');
-    cExperiment.cCellVision=cCellVision;
+    
+    if saveCE
+        cCellVision=cExperiment.cCellVision;
+        cExperiment.cCellVision=[];
+        save([cExperiment.saveFolder filesep 'cExperiment.mat'],'cExperiment','cCellVision');
+        cExperiment.cCellVision=cCellVision;
+    end
 else
     %Save code for Omero loaded cExperiments - upload cExperiment file to
     %Omero database. Use the alternative method saveExperiment if you want
@@ -62,25 +70,7 @@ else
     else%The file is not yet attached to the dataset
         cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment');
     end
-            
-    %cCellVision file
-    fileName=[cExperiment.saveFolder filesep dsName 'cCellVision_' cExperiment.rootFolder '.mat'];
-    cCellVision=cExperiment.cCellVision;
-    save(fileName,'cCellVision');
-    faIndex=strcmp([dsName 'cCellVision_' cExperiment.rootFolder '.mat'],faNames);
-    faIndex=find(faIndex);
-   
-    if ~isempty(faIndex)
-         faIndex=faIndex(1);
-         disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
-         fA = updateFileAnnotation(cExperiment.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
-    else%The file is not yet attached to the dataset
-        cExperiment.OmeroDatabase.uploadFile(fileName, cExperiment.omeroDs, 'cCellVision file uploaded by @experimentTracking.saveTimelapseExperiment');
-    end
     
-    if nargin<3
-        saveCE=true;
-    end
     if saveCE
         %cExperiment file
         %Before saving, replace OmeroDatabase object with the server name, make .cTimelapse empty and replace .omeroDs with its Id to avoid
@@ -91,7 +81,13 @@ else
         omeroDs=cExperiment.omeroDs;
         cExperiment.omeroDs=[];
         fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
-        save(fileName,'cExperiment');
+        %Save cCellVision as a seperate variable
+        cCellVision=cExperiment.cCellVision;
+        cExperiment.cCellVision=[];
+       
+        save(fileName,'cExperiment','cCellVision');
+        %Update or upload the file - first need to find the file annotation
+        %object
         faIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
         faIndex=find(faIndex);
         if ~isempty(faIndex)
@@ -104,5 +100,6 @@ else
         %Restore the cExperiment object
         cExperiment.omeroDs=omeroDs;
         cExperiment.OmeroDatabase=omeroDatabase;
+        cExperiment.cCellVision=cCellVision;
     end
 end

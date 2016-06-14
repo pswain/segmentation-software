@@ -11,8 +11,10 @@ cell_number = find(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapI
 
 image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
+% inserted by Matt for smooth image scrolling. Consider altering or leaving
+% out entirely.
 % only load the first channel into memory regardless
-CellResGUI.cExperiment.cTimelapse.loadChannelIntoMemory(1);
+%CellResGUI.cExperiment.cTimelapse.loadChannelIntoMemory(1);
 
 cell_image = CellResGUI.cExperiment.cTimelapse.returnSingleTrapTimepoint(trap_number,timepoint,image_channel_number);
 

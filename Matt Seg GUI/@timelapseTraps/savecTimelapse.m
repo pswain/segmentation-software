@@ -1,5 +1,8 @@
 function savecTimelapse(cTimelapse)
-
+% mthod to save the cTimelapse
+%
+% probably defunct since all processing and storing is now done via
+% experimentTracking
 
 cTimelapse.temporaryImageStorage=[];
 if strcmp(cTimelapse.timelapseDir,'ignore')

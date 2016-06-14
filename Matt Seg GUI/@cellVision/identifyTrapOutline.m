@@ -85,14 +85,14 @@ if ~isempty(cCellVision.cTrap)
         else %use elco's active contour stuff
             ImageTransformParameters = struct('postprocessing','invert');
              ACparameters = struct('alpha',0.01,'beta','0','R_min',3,'R_max',max(size(im)),'opt_points',12,...
-                'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',4);
+                'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds_for_PSO',30,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',4);
             
             TrapImage = double(cCellVision.cTrap.trap1);
             TrapImage = TrapImage/median(TrapImage(:));
             ForcingImage = ACBackGroundFunctions.get_cell_image(TrapImage,min(size(TrapImage),[],2),[PntX PntY]);
             ForcingImage = ACImageTransformations.radial_gradient(ForcingImage,ImageTransformParameters);
             %fprintf('\nTrap Image for trap outline set to no transformation\n')
-            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(TrapImage)/2));
+            [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(ForcingImage)/2));
             
             fprintf('\n\n please edit the outline by clicking on the image and press enter when you are satisfied \n\n ')
             
@@ -105,7 +105,7 @@ if ~isempty(cCellVision.cTrap)
             px = px-1;
             py = py-1;
             
-            SegmentationBinary = zeros(size(ForcingImage));
+            SegmentationBinary = zeros(size(TrapImage));
             SegmentationBinary(py+size(ForcingImage,1)*(px-1))=1;
             imflat(:,:,i) = SegmentationBinary;
             

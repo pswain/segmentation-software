@@ -2,7 +2,7 @@ function runDownload (table, h, thirdArgument)
 
 handles=guidata(gcf);
 
-%Only dowload one dataset if handles.singleDs is true
+%Only download one dataset if handles.singleDs is true
 if ~handles.singleDs
     handles.omeroDs=handles.selectedIds;
 else

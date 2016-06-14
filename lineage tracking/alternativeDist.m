@@ -1,4 +1,9 @@
 function distance= alternativeDist(pt1,pt2)
+% distance= alternativeDist(pt1,pt2)
+%
+% used for tracking cells that relies on movement of the cell and change in
+% radius.
+
 if ~isempty(pt1) && ~isempty(pt2)
     dist=[];
     for i=1:size(pt1,2)
@@ -14,6 +19,7 @@ if ~isempty(pt1) && ~isempty(pt2)
     if find(temp<0)
         loc=temp<0;
 %         temp(loc)=temp(loc).^2;
+        % square difference if change in radius is negative
         temp(loc)=temp(loc).^2*1;
 
     end

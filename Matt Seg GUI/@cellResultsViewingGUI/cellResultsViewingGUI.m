@@ -45,8 +45,16 @@ classdef cellResultsViewingGUI<handle
                 end
                 
             end
-            
             CellResGUI.cExperiment = cExperiment;
+            
+            if isempty(cExperiment.cellInf)
+                
+                warndlg('please extract data before running the cellResultsViewingGUI (the clue is in the name)')
+                uiwait
+                return
+                
+            end
+            
             CellResGUI.needToSave=false;
             scrsz = get(0,'ScreenSize');
             CellResGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(4) 2*scrsz(4)/3]);
@@ -59,11 +67,8 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellSelectListInterface = uicontrol(CellResGUI.TopPanel,'Style','listbox','String',{'no cells selected'},...
                 'Units','normalized','Position',[.33 .015 .3 .97],'Max',1,'Min',1,'Callback',@(src,event)SelectCell(CellResGUI));
             
-            try
-            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum cExperiment.cellInf(1).trapNum cExperiment.cellInf(1).cellNum];
-            catch
-                CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum' cExperiment.cellInf(1).trapNum' cExperiment.cellInf(1).cellNum'];
-            end
+            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum(:) cExperiment.cellInf(1).trapNum(:) cExperiment.cellInf(1).cellNum(:)];
+
             CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
@@ -201,7 +206,7 @@ classdef cellResultsViewingGUI<handle
             
             for celli =1:size(setting_array,1)
                 
-                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%3d  %3d  %3d',setting_array(celli,1),setting_array(celli,2),setting_array(celli,3));
+                CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%s   trap: %3d   cell:  %3d',CellResGUI.cExperiment.dirs{setting_array(celli,1)},setting_array(celli,2),setting_array(celli,3));
                 
             end
             

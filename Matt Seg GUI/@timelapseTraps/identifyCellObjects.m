@@ -21,6 +21,8 @@ function identifyCellObjects(cTimelapse,cCellVision,timepoint,traps,channel, met
 % trap_image    :   cell array of image stacks taken from
 %                           timelapseTraps.returnSegmentationTrapsStack
 %                   format depends on cCellVision.method
+%                   NOTE - when method is hough it should be an image, not
+%                   a cell array of images.
 % d_im          :   stack of decision images - one for each trap_image.
 %                   negative values indicate a location likely to be a cell
 %                   centre.
@@ -91,6 +93,22 @@ switch method
         % trackUpdateObject where it is a cell array. Elco has only seen it
         % called without the trap_image given (and so set empty)
         hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
+    
+    case 'hough_and_track' %maintained for use in curateCellTrackingGUI
+        % and other GUIs where cells are added after tracking.
+        % simply calls the hough_track but then assigns a tracking number
+        % and updates relevant fields.
+        % NOTE should only be called with a single trap (i.e. traps = one
+        % number) or it will get confused.
+        traps = traps(1);
+        hough_track(cTimelapse,cCellVision,traps,channel,timepoint,bw,trap_image,allowedOverlap)
+        newCellLabel = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(traps) +1;
+        cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(traps) = newCellLabel;
+        cTimelapse.cTimepoint(timepoint).trapInfo(traps).cellLabel(end+1) = newCellLabel;
+        for TP = timepoint:cTimelapse.timepointsToProcess(end);
+            cTimelapse.cTimepoint(TP).trapMaxCellUTP(traps) = newCellLabel;
+        end
+
     case 'active_contour'%seems to not be maintained
         linear_segmentation(cTimelapse,cCellVision,traps,channel)
     case 'elcoAC' %maintained. Used in curateCellTrackingGUI.
@@ -99,6 +117,14 @@ end
 end
 
 function edgeACSnake(cTimelapse,cCellVision,traps,timepoint,d_imEdges)
+% edgeACSnake(cTimelapse,cCellVision,traps,timepoint,d_imEdges)
+%
+% Uses both a centre and an edge decision image and applies matlab
+% activecontour and a file exchange function to obtain an active contour
+% outline of the cells.
+
+
+
 se1=cCellVision.se.se1;
 se2=cCellVision.se.se2;
 se3=cCellVision.se.se3;
@@ -781,6 +807,8 @@ trap = traps(1);
 [Iy,Ix] = find(bw);
 ycell = round(mean(Iy));
 xcell = round(mean(Ix));
+trap_size = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+
 
 if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
     newIndex = length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)+1;
@@ -798,8 +826,8 @@ cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(newIndex) = newCellLab
 % puts some inital data in the cell array in case there is an error in the
 % active contour code.
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadius = 5;
-[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented));
-cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,size(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(1).segmented)));
+[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],trap_size);
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,trap_size));
 
 % run active contour code on that particular trap and cell.
 cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);

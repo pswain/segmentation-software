@@ -9,10 +9,25 @@ if nargin<2 || isempty(searchString)
     searchString = searchString{1};
 end
 
-cExperiment.channelNames{end+1}=searchString;
+% Start logging protocol
+cExperiment.logger.start_protocol(['adding channel ',searchString],length(cExperiment.dirs));
+
+try
 
 for i=1:length(cExperiment.dirs)
     cExperiment.loadCurrentTimelapse(i);
     cExperiment.cTimelapse.addSecondaryTimelapseChannel(searchString);
     cExperiment.saveTimelapseExperiment(i);
+end
+
+cExperiment.channelNames{end+1}=searchString;
+
+% Finish logging protocol
+cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
+
+
 end

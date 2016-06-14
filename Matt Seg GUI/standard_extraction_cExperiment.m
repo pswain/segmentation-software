@@ -1,5 +1,5 @@
-function standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage)
-%standard_extraction_cExperiment(cExperiment,maxTP,poses,do_AC,do_Extract,do_lineage)
+function standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage,params)
+%standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_track,do_AC,do_extract,do_lineage,params)
 %
 % function to do the most standard segmentation. Written so that
 % cExperiment files can be segmented in script
@@ -11,9 +11,12 @@ function standard_extraction_cExperiment(cExperiment,poses,maxTP,do_segment,do_t
 %                           2=> do segmentation and tracking after
 %                           experiment
 %                           anything else => nothing
+% do_track      :   track cells and do 
 % do_AC         :   (boolean). do active contour method
 % do_extract    :   (boolean). extract data
 % do_lineage    :   (boolean). do lineage tracking
+% params        :   a structure of parameters. See
+%                   standard_extraction_cExperiment_default for details.
 % 
 %
 if nargin<4
@@ -37,6 +40,20 @@ if nargin<8
 do_lineage= true;
 end
 
+if nargin<9
+    file_name = mfilename('fullpath');
+    run([file_name '_parameters_default'])
+end
+
+paramsLineage = params.paramsLineage;
+paramsCellSelect = params.paramsCellSelect;
+paramsCombineTracklet = params.paramsCombineTracklet;
+
+
+% cell identification, equivalent to the 'identify cells' button. Uses a
+% support vector machine, encoded by cCellVision, to identify cells in the
+% timelapse. Can either be run after the experiment is completed or while
+% it is still running.
 if do_segment==1
     cExperiment.trackTrapsOverwrite = true;
     cExperiment.segmentCellsDisplayContinuous(cExperiment.cCellVision,poses,maxTP)
@@ -46,32 +63,35 @@ elseif do_segment==2
     cExperiment.segmentCellsDisplay(cExperiment.cCellVision,poses)
     cExperiment.trackTrapsOverwrite = false;
 end
+
+% tracks the cells from one timepoint to the next using a modified
+% euclidean distance which takes account of changes in cell size from one
+% timepoint to the next and punishes shrinking cells more in the tracking.
+%
+% followed by a post processing step that combines tracks of very similar
+% cells separated by a short period.
 if do_track
-    cExperiment.trackCells(poses,5);
-    
-    paramsCombineTracklet.fraction=.1; %fraction of timelapse length that cells must be present or
-    paramsCombineTracklet.duration=3; %number of frames cells must be present
-    paramsCombineTracklet.framesToCheck=(max(cExperiment.timepointsToProcess));
-    paramsCombineTracklet.framesToCheckEnd=1;
-    paramsCombineTracklet.endThresh=2; %num tp after end of tracklet to look for cells
-    paramsCombineTracklet.sameThresh=4; %num tp to use to see if cells are the same
-    paramsCombineTracklet.classThresh=3.8; %classification threshold
-    
+    cExperiment.trackCells(poses,params.trackingDistance);
     combineTracklets(cExperiment,poses,paramsCombineTracklet);
 end
 
+% equivalent to the Run Active Contour button, selecting method 1. Uses an
+% active contour method, ideally on out of focus Brightfield images, to
+% find a more accurate outline of the cell than the circles found by
+% 'identify cells'.
+% With the standard method this requires the cells to be found and tracked.
 if do_AC
     cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,2,false,false);
 end
 
+% extracts the data and compiles it in cExperiment.cellInf.
+% equivalent to pressing the following in order:
+% AutoSelect
+% Extract Data
+% Compile Data
+
 if do_extract
-    cTimelapse=cExperiment.returnTimelapse(poses(1));
-    params.fraction=.8; %fraction of timelapse length that cells must be present or
-    params.duration=4;  %length(cTimelapse.cTimepoint); %number of frames cells must be present
-    params.framesToCheck=length(cTimelapse.timepointsProcessed);
-    params.framesToCheckEnd=1;
-    params.maximumNumberOfCells = Inf;
-    cExperiment.selectCellsToPlotAutomatic(poses,params);
+    cExperiment.selectCellsToPlotAutomatic(poses,paramsCellSelect);
     
     cExperiment.extractCellInformation(poses,false);
     
@@ -79,16 +99,13 @@ if do_extract
     
 end
 
+% perfroms daughter identification and lineage tracking based in a hidden
+% markov model of daughter events.
 if do_lineage
-    params.motherDurCutoff=params.framesToCheck/4;
-    params.motherDistCutoff=8;
-    params.budDownThresh=0;
-    params.birthRadiusThresh=7;
-    params.daughterGRateThresh=-1;
-    cExperiment.extractLineageInfo(poses,params);
     
+    cExperiment.extractLineageInfo(poses,paramsLineage);
     
-    cExperiment.compileLineageInfo;
+    cExperiment.compileLineageInfo(poses);
     
     cExperiment.extractHMMTrainingStates;
     

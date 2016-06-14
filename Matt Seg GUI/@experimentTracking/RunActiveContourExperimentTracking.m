@@ -59,21 +59,24 @@ end
 
 
 if nargin<6 || isempty(OverwriteTimelapseParameters)
-    options = {'overwrite' 'keep individiual parameter sets'};
-    cancel_option = 'cancel';
-   button_answer = questdlg('Would you like to overwrite the individual timelapse parameters with the cExperiment active contour parameters? Unless you know a reason why, you probably want to choose ''overwrite'' ', ...
-                         'overwrite:', ...
-                         options{1},options{2},cancel_option,options{1});
-                     
-     if strcmp(button_answer,cancel_option)
-         fprintf('\n\n    active contour method cancelled    \n\n')
-         return
-     elseif strcmp(button_answer,options{1})
-         OverwriteTimelapseParameters = true;
-     elseif strcmp(button_answer,options{2})
-         OverwriteTimelapseParameters = false;
-     end
-                     
+    OverwriteTimelapseParameters = true; 
+
+%fairly pointless GUI
+%
+%     options = {'overwrite' 'keep individiual parameter sets'};
+%     cancel_option = 'cancel';
+%    button_answer = questdlg('Would you like to overwrite the individual timelapse parameters with the cExperiment active contour parameters? Unless you know a reason why, you probably want to choose ''overwrite'' ', ...
+%                          'overwrite:', ...
+%                          options{1},options{2},cancel_option,options{1});
+%                      
+%      if strcmp(button_answer,cancel_option)
+%          fprintf('\n\n    active contour method cancelled    \n\n')
+%          return
+%      elseif strcmp(button_answer,options{1})
+%          OverwriteTimelapseParameters = true;
+%      elseif strcmp(button_answer,options{2})
+%          OverwriteTimelapseParameters = false;
+%      end
                      
                      
 end
@@ -103,21 +106,26 @@ if nargin<8 ||isempty(TrackTrapsInTime)
 end
 
 if nargin<9 || isempty(LeaveFirstTimepointUnchanged)
-   options = {'leave unchanged' 'change'};
-    cancel_option = 'cancel';
-   button_answer = questdlg('Would you like to leave the first timepoint unchanged?', ...
-                         'leave first timepoint unchanged:', ...
-                         options{1},options{2},cancel_option,options{1});
-                     
-     if strcmp(button_answer,cancel_option)
-         fprintf('\n\n    active contour method cancelled    \n\n')
-         return
-     elseif strcmp(button_answer,options{1})
-         LeaveFirstTimepointUnchanged = true;
-     elseif strcmp(button_answer,options{2})
-         LeaveFirstTimepointUnchanged = false;
-     end
     
+    LeaveFirstTimepointUnchanged = false;
+    
+% another fairly pointless user interface
+% 
+%    options = {'leave unchanged' 'change'};
+%     cancel_option = 'cancel';
+%    button_answer = questdlg('Would you like to leave the first timepoint unchanged?', ...
+%                          'leave first timepoint unchanged:', ...
+%                          options{1},options{2},cancel_option,options{1});
+%                      
+%      if strcmp(button_answer,cancel_option)
+%          fprintf('\n\n    active contour method cancelled    \n\n')
+%          return
+%      elseif strcmp(button_answer,options{1})
+%          LeaveFirstTimepointUnchanged = true;
+%      elseif strcmp(button_answer,options{2})
+%          LeaveFirstTimepointUnchanged = false;
+%      end
+%     
 end
 
 if nargin<10 || isempty(CellsToUse)
@@ -130,8 +138,8 @@ end
 %% Load timelapses
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
-    load(fullfile(cExperiment.saveFolder,[ cExperiment.dirs{currentPos} 'cTimelapse']),'cTimelapse');
-    cExperiment.cTimelapse=cTimelapse;
+    
+    cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
     
     if isempty(cTimelapse.ActiveContourObject)
         cTimelapse.InstantiateActiveContourTimelapseTraps(cExperiment.ActiveContourParameters);
@@ -148,13 +156,37 @@ for i=1:length(positionsToIdentify)
         else
             [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod(ACmethod);
         end
-    end
-    
-    
-    
-    if method_dialog_answer_value == false;
-        fprintf('\n\n   Active contour method cancelled\n\n')
-        return
+        
+        if method_dialog_answer_value == false;
+            fprintf('\n\n   Active contour method cancelled\n\n')
+            return
+        end
+        
+        % if channel field is empty, get user to select a channel
+        % bit laborious but resilient to people putting the wrong numbers
+        % in the boxes (i.e. only cares about sign).
+        while isempty(cExperiment.ActiveContourParameters.ImageTransformation.channel)
+            prompts = cTimelapse.channelNames;
+            prompts{1} = sprintf(['The image used for the active contour method is constructed by'...
+                ' the addition and subtraction of channels, and should be constructed such that '...
+                'cell edges are regions that go from bright to dark moving out from the cell.\n'...
+                'Please select channels such that this is so but putting a 1 in channels that '...
+                'should be contributed positively and -1 for thos that should contribute negatively. leave all others blank.\n'...
+                'If you are unsure, but a 1 in DIC/birghtfield_001 and a -1 in DIC/Brightfield_003 \n \n %s'...
+                ],prompts{1});
+            answer = inputdlg(prompts,'select active contour channels',1);
+            if isempty(answer)
+                fprintf('\n\n   Active contour method cancelled\n\n')
+                return
+            else
+            answer = answer';
+            answer_array = sign(cellfun(@(x) str2double(x),answer,'UniformOutput',true));
+            channels_to_use = find(~isnan(answer_array));
+            cExperiment.ActiveContourParameters.ImageTransformation.channel = channels_to_use.*answer_array(channels_to_use);
+            cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = 1;
+            end
+        end
+        
     end
     
     if TrackTrapsInTime
@@ -178,11 +210,19 @@ for i=1:length(positionsToIdentify)
         cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
     end
     
-    cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
+    % put in try catch since Andy's images kept screwing up the
+    % segmentation
+    try
+        cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
     
+    catch err
+        fprintf('\n\n error on position %s \n\n',cExperiment.dirs{currentPos})
+        display(err)
+        fprintf('\n\n saving position and continuing \n\n')
+    end
     cExperiment.saveTimelapseExperiment(currentPos);
     
-    fprintf('finished position %d of %d \n \n',i,length(positionsToIdentify))
+    fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))
     
     disp.cExperiment.posSegmented(currentPos) = true;
     disp.cExperiment.posTracked(currentPos) = true;

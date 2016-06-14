@@ -1,8 +1,14 @@
 function extractCellDataStandardParfor(cTimelapse)
-% extractCellDataStandard(cTimelapse)
+% extractCellDataStandardParfor(cTimelapse)
 %
-% standard extraction function to extract all the commonly used
-% measurement for the cells. Uses the parameters structure
+% a standard extraction function to extract all the commonly used
+% measurement for the cells, but this now uses parfor loop to speed up the
+% extraction.
+% IMPORTANT CHANGE. INSTEAD OF USING THE MAX5 PIXELS, THE MAX5 IS THE
+% BRIGHTEST 2.5% OF THE PIXELS OF THE CELL. THIS ALLOWS THE MAX5 FEATURE TO
+% SCALE WITH CELL SIZE SO YOU DON'T GET DIFFERENT RELATIVE LOCALIZATION SCORES
+% DEPENDING ON CELL SIZE.
+%. Uses the parameters structure
 %
 %       cTimelapse.extractionParameters.functionParameters
 %
@@ -265,7 +271,10 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     extractedData(channel).membraneMedian(allIndex,timepoint)=median(membraneFL(:));
                     extractedData(channel).membraneMax5(allIndex,timepoint)=mean(mflsorted(1:numberOverlapPixels));
                     
-%                     cellLocSmall=imerode(cellLoc,se2);
+                    % proteinLocalization is max5/median to make it easy
+                    % when using the cellResultsViewingGUI 
+                    extractedData(channel).proteinLocalization(allIndex,timepoint)=extractedData(channel).max5(allIndex,timepoint)./extractedData(channel).median(allIndex,timepoint);
+
                     cellLocSmall=cellLocAllSmall(:,:,allIndex);
                     cellFLsmall=trapImage(cellLocSmall);
                     

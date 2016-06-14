@@ -44,12 +44,6 @@ function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Cen
 
 % Notes:
 
-%just use the previous Priors to segement cells
-if nargin>5 & ~isempty(radii_previous_time_point) 
-    ACparameters.R_min=max(min(radii_previous_time_point)*.75-2,2);
-    ACparameters.R_max=max(radii_previous_time_point)*1.2+2;
-end
-
 
 forcing_images = double(forcing_images);
 
@@ -70,8 +64,8 @@ visualise = ACparameters.visualise;%3; %degree of visualisation (0,1,2,3)
 EVALS = ACparameters.EVALS;%6000; %maximum number of iterations passed to fmincon
 spread_factor = ACparameters.spread_factor;% 1; %used in particle swarm optimisation. determines spread of initial particles.
 spread_factor_prior = ACparameters.spread_factor_prior;% 0.5; %used in particle swarm optimisation. determines spread of initial particles.
-seeds = ACparameters.seeds;%100;
-
+seeds = ACparameters.seeds;%100; number used to initialise
+seeds_for_PSO = ACparameters.seeds_for_PSO;%best set actually used for PSO.
 %parameters internal to the program
 
 method = 'PSO';%'lbfgsb'; %'PSO','lbfgsb'
@@ -261,29 +255,37 @@ PSOseed(I) = SuperUB(I);
 %%particle swarm optimisation
 
 %group of functions taken out of splinefit to speed up optimisation.
-[A,n,breaks,dim,jj,C] = ACBackGroundFunctions.splinefit_prep([angles; 2*pi],ones([seeds (opt_points+1)]),[angles; 2*pi],'p');
+[A,n,breaks,dim,jj,C] = ACBackGroundFunctions.splinefit_prep([angles; 2*pi],ones([seeds_for_PSO (opt_points+1)]),[angles; 2*pi],'p');
 
 switch method
     %%Using particle swarm
     case 'PSO'
         
-        P = [0 EVALS seeds 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
+        %default [100 2000 24 2 2 0.9 0.4 1500 1e-25 250 NaN 0 0];
+        P = [0 EVALS seeds_for_PSO 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
         
         %stopped multiplying by the interquartile range. Now try and use tanh to keep image at good range. 
         radial_punishing_factor = alpha*ones(opt_points,1);
         time_change_punishing_factor = betaElco;
-
+        
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
         if use_previous_timepoint
-            
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
-        
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C);    
         else
-            
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C),opt_points*Timepoints,4,[LB UB],0,P,'',PSOseed);
-        
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C);   
         end
+        
+        % refine seeds to smaller set
+
+        preliminary_scores = function_to_optimise(PSOseed);
+        [~,Iscores] = sort(preliminary_scores,1,'ascend');
+        refinedPSOseeds = PSOseed(Iscores(1:seeds_for_PSO),:);
+        
+        
+        [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds);
+        
+        
         radii_stack = optOUT(1:(end-1));
         ResultsF = optOUT(end);
 
@@ -336,10 +338,12 @@ switch method
                 'maxTotalIts',ACparameters.EVALS,...
                 'printEvery',Inf);
             [res,val] = lbfgsb( fun, LB, UB, opts );
-
+            %[res,val] = fmincon(fun,radii_stack,[],[],[],[],LB,UB);
             if val<ResultsF
-        radii_stack = res;
-        ResultsF = val;
+                radii_stack = res;
+                ResultsF = val;
+            else
+                fprintf('optimisation_lame\n')
             end
     end
 end

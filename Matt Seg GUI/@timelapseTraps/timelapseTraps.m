@@ -48,6 +48,7 @@ classdef timelapseTraps<handle
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
         extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
         channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
+        microscopeChannels%cell array of channel names as defined by the microscope software.
         imSize %the size of the images 
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         lineageInfo %structure array to hld everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
@@ -70,7 +71,7 @@ classdef timelapseTraps<handle
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-
+        
     end
     
     properties(SetAccess = immutable)
@@ -87,6 +88,16 @@ classdef timelapseTraps<handle
     defaultExtractParameters = struct('extractFunction',@extractCellDataStandardParfor,...
         'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
     
+    end
+    
+    properties (Transient)
+        % Transient properties won't be saved
+        logger; % *optional* handle to an experimentLogging object to keep a log
+    end
+    
+    events
+        LogMsg
+        TimepointChanged
     end
     
     methods
@@ -112,6 +123,8 @@ classdef timelapseTraps<handle
                 else
                     cTimelapse.omeroImage=folder;
                     cTimelapse.OmeroDatabase=varargin{1};
+                    cTimelapse.channelNames=varargin{1}.Channels;
+                    cTimelapse.microscopeChannels=varargin{1}.MicroscopeChannels;
                 end
                 cTimelapse.cellsToPlot=sparse(100,1e3);
             end
@@ -126,11 +139,9 @@ classdef timelapseTraps<handle
             FieldNames = fields(cTimelapseIN);
             
             for i = 1:numel(FieldNames)
-                a=strfind(FieldNames{i},'Template');
-                if isempty(a);
-                    if ~strcmp('defaultExtractParameters',FieldNames{i})
-                        cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
-                    end
+                m = findprop(cTimelapseIN,FieldNames{i});
+                if ~ismember(m.SetAccess,{'immutable','none'})
+                    cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
                 end
             end
             
@@ -165,6 +176,15 @@ classdef timelapseTraps<handle
             trapInfo_struct.segmented = data_template;
             trapInfo_struct.trackLabel = data_template;
             trapInfo_struct.cell.segmented = data_template;
+            trapInfo_struct.refinedTrapPixelsInner = [];
+            trapInfo_struct.refinedTrapPixelsBig = [];
+            
+        end
+        
+        function default_trap_indices = defaultTrapIndices(cTimelapse)
+            % default_trap_indices = defaultTrapIndices(cTimelapse)
+            % return the default trap indices to run anything over.
+            default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
         end
         
         

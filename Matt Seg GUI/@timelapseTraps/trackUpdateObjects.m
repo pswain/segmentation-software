@@ -189,6 +189,10 @@ for j=1:length(image)
         
         % a number of parameters here specified by Matt in the tail end of
         % this function call, not sure how signficant they are
+        
+        % if statement on magnification is to enforce an alternative
+        % processing for cellAsic images from Hille. Consider removing long
+        % term.
         if magnification<100
             if bwlIndex==1
                 [accum, circen1, cirrad1] =CircularHough_Grd_matt(temp_imFilt,grdx,grdy,searchRadius,bw_mask,[],max(temp_imFilt(:))*.1,8,.9,fltr4accum);

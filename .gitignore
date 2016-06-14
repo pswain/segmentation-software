@@ -54,7 +54,7 @@ GeneralFunctions/FileExchangeFucntions/splinefit/html/examples_05.png
 GeneralFunctions/FileExchangeFucntions/splinefit/html/examples_06.png
 GeneralFunctions/FileExchangeFucntions/splinefit/html/examples.html
 GeneralFunctions/FileExchangeFucntions/splinefit/splinefit.png
-<<<<<<< HEAD
+test.png
 Scot/Fiji.app/.checksums
 Scot/Fiji.app/Contents/MacOS/ImageJ-macosx
 Scot/Fiji.app/Contents/MacOS/ImageJ-tiger
@@ -659,9 +659,8 @@ Scot/Fiji.app/update/jars/scifio-0.15.0.jar
 Scot/Fiji.app/update/jars/scifio-0.15.4.jar
 Scot/Fiji.app/update/jars/scijava-common-2.22.5.jar
 Scot/Fiji.app/update/jars/scripting-java-0.2.2.jar
-=======
 *.xls
->>>>>>> 15b4c1e737f0e3eb910772908bd85399cc7acc45
 GeneralFunctions/Shampoo extract/ZpTnormplotting.m
-Matt Seg GUI/@experimentTracking/extractBirthsInfo.m
 GeneralFunctions/Shampoo extract/ZpTnormplotting_Omero.m
+Matt Seg GUI/@timelapseTraps/OmeroTemp/100uMClimbazoleAcq.txt
+Matt Seg GUI/@timelapseTraps/OmeroTemp/100uMClimbazolelog.txt

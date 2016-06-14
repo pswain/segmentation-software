@@ -30,7 +30,7 @@ else
     end
     posName=cExperiment.dirs{timelapseNum};
     fileName=[posName 'cTimelapse_' cExperiment.rootFolder '.mat'];
-    if exist([cExperiment.saveFolder filesep fileName])==7
+    if exist([cExperiment.saveFolder fileName])==7
         %This cTimelapse has already been downloaded to the temporary local
         %folder
         load ([cExperiment.saveFolder filesep fileName]);
@@ -53,4 +53,10 @@ else
     end
     %Ensure the timelapse has the channels list for the dataset
     cTimelapse.channelNames=cExperiment.experimentInformation.channels;
+end
+
+% In either case, once the timelapse is successfully loaded, trigger a
+% PositionChanged event to notify experimentLogging
+experimentLogging.changePos(cExperiment,timelapseNum,cTimelapse);
+
 end

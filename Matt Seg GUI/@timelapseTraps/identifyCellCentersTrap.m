@@ -58,7 +58,7 @@ end
 
 
 if nargin<5 ||isempty(image)
-    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.method);
+    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.imageProcessingMethod);
 
 end
 
@@ -104,8 +104,15 @@ function [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,t
 % This preallocates the segmented images to speed up execution
 d_imCenters=zeros(size(old_d_im));
 d_imEdges=zeros(size(old_d_im));
+
 if cTimelapse.trapsPresent
-    trapOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se2);
+    %used if refineTrapOutline has not been used to populate
+    %refinedTrapPixelInner/Big
+    defaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se2);
+
+    % if cTimelapse.refinedTrapOutline has been run then use this for trap
+    % outline.
+    trapOutline = cTimelapse.returnTrapsPixelsTimepoint(trap,timepoint,defaultTrapOutline);
 else
     trapOutline = false(size(image{1},1),size(image{1},2));
 end
@@ -116,7 +123,7 @@ end
 %uncomment when you change parfor to for for debugginf
 % fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
 parfor k=1:length(trap) %CHANGE BACK TO parfor
-    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline>0);
+    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline(:,:,k));
     d_imCenters(:,:,k)=d_im_temp(:,:,1);
     if size(d_im_temp,3)>1
         d_imEdges(:,:,k)=d_im_temp(:,:,2);
@@ -126,7 +133,7 @@ parfor k=1:length(trap) %CHANGE BACK TO parfor
     segCenters{k}=sparse(bw>0); 
 end
 
-cCellVision.cTrap.currentTpOutline=trapOutline>0;
+cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
 
 
 % store the segmentation result (segCenters) in the cTimelapse object.
