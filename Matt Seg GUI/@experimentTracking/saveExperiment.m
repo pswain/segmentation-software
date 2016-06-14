@@ -3,6 +3,8 @@ function saveExperiment(cExperiment,fileName)
 if isempty(cExperiment.OmeroDatabase)
     %Original save code for experiments created from a folder full of image
     %files
+    cTimelapse=cExperiment.cTimelapse;
+    cExperiment.cTimelapse=[];
     if nargin<2
         cCellVision=cExperiment.cCellVision;
         cExperiment.cCellVision=[];
@@ -15,6 +17,7 @@ if isempty(cExperiment.OmeroDatabase)
         save([cExperiment.saveFolder '/' fileName],'cExperiment','cCellVision');
         cExperiment.cCellVision=cCellVision;
     end
+    cExperiment.cTimelapse=cTimelapse;
 else
     %Save code for cExperiments created from an Omero dataset - only call
     %with one input
