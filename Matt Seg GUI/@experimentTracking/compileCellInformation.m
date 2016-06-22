@@ -56,7 +56,7 @@ for posi=2:length(positionsToExtract)
                     %assumes only 50 percent of timepoints will be present on
                     %average.
                 end
-                fprintf([fn '\n'])
+                
                 cExperiment.cellInf(chi).(fn)((index+1):(index+tempLen),:)=data_template;
             end
             cExperiment.cellInf(chi).trapNum((index+1):(index+tempLen)) = zeros(1,tempLen);

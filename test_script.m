@@ -416,6 +416,12 @@ cTimelapse_test = cExperiment_test.loadCurrentTimelapse(1);
 
 cTimelapse_test.addSecondaryTimelapseChannel('GFP_001');
 
+cTimelapse_true.ActiveContourObject = [];
+    cTimelapse_test.ActiveContourObject = [];
+    
+    cTimelapse_true.logger = [];
+    cTimelapse_test.logger = [];
+
 if report_differences(cTimelapse_true,cTimelapse_test);
     
     fprintf('\n\n add channel test passed \n \n')
@@ -521,6 +527,9 @@ for diri=1:length(cExperiment_true.dirs)
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
     cTimelapse_true.ActiveContourObject = [];
     cTimelapse_test.ActiveContourObject = [];
+    cTimelapse_true.logger = [];
+    cTimelapse_test.logger = [];
+
     if isequaln(cTimelapse_test,cTimelapse_true)
         
         fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)

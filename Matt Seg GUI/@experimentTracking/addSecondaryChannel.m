@@ -22,6 +22,8 @@ end
 
 cExperiment.channelNames{end+1}=searchString;
 
+cExperiment.saveExperiment;
+
 % Finish logging protocol
 cExperiment.logger.complete_protocol;
 catch err

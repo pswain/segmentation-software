@@ -767,11 +767,22 @@ classdef timelapseTrapsActiveContour<handle
             
         end
         
-        function ttacObject = saveobj(ttacObject)
-            %save function just to set TimelapseTraps fields empty.
-            %ttacObject is always a subclass of TimelapseTraps anyway.
-            ttacObject.TimelapseTraps = [];
+        function ttacObjectOUT = copy(ttacObjectIN)
+            %ttacObjectOUT = copy(ttacObjectIN)
+            % make a new ttacObject object with all the same field values.
+            ttacObjectOUT = timelapseTrapsActiveContour(ttacObjectIN.Parameters);
+            
+            FieldNames = fields(ttacObjectIN);
+            
+            for i = 1:numel(FieldNames)
+                m = findprop(ttacObjectIN,FieldNames{i});
+                if ~ismember(m.SetAccess,{'immutable','none'})
+                    ttacObjectOUT.(FieldNames{i}) = ttacObjectIN.(FieldNames{i});
+                end
+            end
+            
         end
+        
         
         
         
