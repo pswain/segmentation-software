@@ -179,8 +179,10 @@ classdef cellResultsViewingGUI<handle
             
             %keydown function
             set(CellResGUI.figure,'WindowKeyPressFcn',@CellResGUI.CellRes_key_press_cb);
-
-            %CellResGUI.SelectCell();
+            
+            CellResGUI.CellSelected = 0;
+            set(CellResGUI.CellSelectListInterface,'Value',1);
+            CellResGUI.SelectCell();
             
         end
 
@@ -201,6 +203,15 @@ classdef cellResultsViewingGUI<handle
                 error('setting cell should be an array of the form \n\n     [position_array trap_array cell_number_array] \n\nwhere the columns of the array are vectors of the position, trapnumber and cell number of each cell to be viewable.')
             end
             
+            % this is a bit involved and is to make sure the right
+            % cTimelapse gets loaded
+            if CellResGUI.CellSelected~=0;
+                set_cell = true;
+                old_id = CellResGUI.CellsForSelection(CellResGUI.CellSelected,:);
+            else
+                set_cell = false;
+            end
+            
             CellResGUI.CellsForSelection = setting_array;
             CellResGUI.CellsforSelectionDiplayString = {};
             
@@ -210,8 +221,24 @@ classdef cellResultsViewingGUI<handle
                 
             end
             
+            
             set(CellResGUI.CellSelectListInterface,'String',CellResGUI.CellsforSelectionDiplayString);
+            if set_cell
+                
+                [cell_present,new_cell_id] = ismember(old_id,setting_array,'rows');
+                if cell_present
+                    CellResGUI.CellSelected = new_cell_id;
+                    set(CellResGUI.CellSelectListInterface,'Value',new_cell_id);
+                else
+                    CellResGUI.CellSelected = 0;
+                    set(CellResGUI.CellSelectListInterface,'Value',1);
+                end
+            
+                    
+                
+            else
             set(CellResGUI.CellSelectListInterface,'Value',1);
+            end
             
         end
         

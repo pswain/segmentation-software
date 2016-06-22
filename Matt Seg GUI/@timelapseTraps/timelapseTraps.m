@@ -133,7 +133,9 @@ classdef timelapseTraps<handle
         
         function cTimelapseOUT = copy(cTimelapseIN)
         %cTimelapseOUT = copy(cTimelapseIN)
-        % make a new cTimelapse object with all the same field values.   
+        % make a new cTimelapse object with all the same field values. 
+        % care has been taken here to also copy the
+        % timelapseTrapsActiveContour object which is a handle object.
             cTimelapseOUT = timelapseTraps([],true);
             
             FieldNames = fields(cTimelapseIN);
@@ -143,6 +145,14 @@ classdef timelapseTraps<handle
                 if ~ismember(m.SetAccess,{'immutable','none'})
                     cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
                 end
+            end
+            
+            if ~isempty(cTimelapseIN.ActiveContourObject)
+                cTimelapseIN.ActiveContourObject.TimelapseTraps = [];
+                cTimelapseOUT.ActiveContourObject = cTimelapseIN.ActiveContourObject.copy;
+                cTimelapseIN.ActiveContourObject.TimelapseTraps = cTimelapseIN;
+                cTimelapseOUT.ActiveContourObject.TimelapseTraps = cTimelapseOUT;
+                
             end
             
         end
@@ -239,6 +249,16 @@ classdef timelapseTraps<handle
             if ~isempty(cTimelapse.ActiveContourObject)
                     cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
             end
+        end
+        
+        function cTimelapse_save = saveobj(cTimelapse_in)
+            
+            cTimelapse_save = cTimelapse_in.copy;
+            
+            if ~isempty(cTimelapse_save.ActiveContourObject)
+                cTimelapse_save.ActiveContourObject.TimelapseTraps = [];
+            end
+            
         end
     end
 end

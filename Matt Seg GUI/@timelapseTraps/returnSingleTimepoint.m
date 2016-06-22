@@ -331,7 +331,7 @@ else
     if isprop(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})  
         %first part of this statement is to guard against cases where channel
         %has not been assigned
-        timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+        timepointIm = timepointIm.*repmat(cTimelapse.BackgroundCorrection{channel},[1 1 size(timepointIm,3)]);
     end
     
     

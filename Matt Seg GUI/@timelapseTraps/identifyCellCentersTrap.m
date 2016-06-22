@@ -75,7 +75,7 @@ switch cCellVision.method
     case {'linear','twostage'}
         [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
     case {'wholeIm','wholeTrap'}
-        [d_imCenters]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
+        [d_imCenters,d_imEdges]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
 end
 
 end
@@ -152,7 +152,7 @@ end
 end
 
 
-function [d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
+function [d_im,d_imEdges]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
 %[d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
 %
 % handles two types of cCellVision.method : wholeIm and wholeTrap. 
@@ -190,7 +190,14 @@ end
 trapOutline = trapOutline>0;
 cCellVision.cTrap.currentTpOutline=trapOutline;
 
-[~,d_im]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
+[~,d_im_temp]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
+
+d_im=d_im_temp(:,:,1);
+if size(d_im_temp,3)>1
+    d_imEdges=d_im_temp(:,:,2);
+else
+    d_imEdges=zeros(size(d_im));
+end
 
 t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im,fspecial('gaussian',4,2),'symmetric')/5; %
 bw=t_im<cCellVision.twoStageThresh;
