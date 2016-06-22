@@ -149,8 +149,8 @@ max_cc=max_im_cc;
 trap_index=1;
 trap_mask=false(size(cc,1),size(cc,2));
 
-ccBounding=1.1;
-while max_cc> .5*max_im_cc
+ccBounding=1.2;
+while max_cc> .45*max_im_cc
     [ypeak, xpeak] = ind2sub(size(cc),imax(1));
     bY=floor(cTrap.bb_height*ccBounding);
     bX=floor(cTrap.bb_width*ccBounding);
