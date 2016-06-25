@@ -58,12 +58,18 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
         %timepoint with a different channel.
         pattern='\d{5,9}';
         fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
-
+        % match number
         match1=regexp(files(:),fileNum{end},'match');
+        %match search string
         match2=regexp(files(:),searchString,'match');
+        % not a hidden file
+        match3 = regexp(files(:),'^[^.]','match');
+        
         loc1= ~cellfun('isempty',match1);
         loc2= ~cellfun('isempty',match2);
-        loc=loc1&loc2;
+        loc3= ~cellfun('isempty',match3);
+        
+        loc=loc1 & loc2 & loc3;
         if sum(loc)>0
             cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
             files(loc)=[];
