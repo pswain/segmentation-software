@@ -30,6 +30,7 @@ classdef timelapseTraps<handle
                   % defines the size of the trap extracted in methods such
                   % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
                   % empty if there are not traps
+        trapImSize % uses the cTrapSize property to give the size of the image.
         image_rotation % to ensure that it lines up with the cCellVision Model
         imScale % used to scale down images if needed
                 % this isn't used much so the GUI sets it to a default of
@@ -49,17 +50,21 @@ classdef timelapseTraps<handle
         extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
         channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
         microscopeChannels%cell array of channel names as defined by the microscope software.
-        imSize %the size of the images 
+        imSize %the size of the images before rotation (i.e. raw images).
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         lineageInfo %structure array to hld everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
-        ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
         ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
         extractionParameters = timelapseTraps.defaultExtractParameters;
         %parameters for the extraction of cell Data, a function handle and
         %a parameter structure which the function makes use of.
+        ACParams = []; % active contour parameters.
+        
+        cellInfoTemplate % template for the cellInfo structure.
+        trapInfoTemplate % template for the trapInfo structure
+        cTimepointTemplate % template for the cTimepoint structure.
         
         temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
         %This allows the cell tracking and curating things to happen a
@@ -75,12 +80,6 @@ classdef timelapseTraps<handle
     end
     
     properties(SetAccess = immutable)
-        cTimepointTemplate = struct('filename',[],'trapLocations',[],...
-                            'trapInfo',[],'trapMaxCell',[],'trapMaxCellUTP',[]); %template for the cTimepoint structure
-        cellInfoTemplate = struct('cellCenter',[],'cellRadius',[],'segmented',[])
-        trapInfoTemplate = struct('segCenters',[],...
-            'cell',struct('cellCenter',[],'cellRadius',[],'segmented',[]), ...
-        'cellsPresent',0,'cellLabel',[],'segmented',[],'trackLabel',[]);
         
     end
     
@@ -197,6 +196,39 @@ classdef timelapseTraps<handle
             default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
         end
         
+        function trapImSize = get.trapImSize(cTimelapse)
+            
+            trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+        end
+        
+        function cTimelapse = set.trapImSize(cTimelapse,input)
+            
+            fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+        end
+        
+        function cellInfoTemplate = get.cellInfoTemplate(cTimelapse)
+            
+             cellInfoTemplate = struct('cellCenter',[],...
+                       'cellRadius',[],...
+                       'segmented',sparse(false(cTimelapse.trapImSize)),...
+                       'cellRadii',[],...
+                       'cellAngle',[]);
+        end
+        
+        function trapInfoTemplate = get.trapInfoTemplate(cTimelapse)
+            
+            trapInfoTemplate = struct('segCenters',[],...
+                'cell',cTimelapse.cellInfoTemplate, ...
+                'cellsPresent',0,'cellLabel',[],'segmented',[],'trackLabel',[]);
+            
+        end
+        
+        function cTimepointTemplate =get.cTimepointTemplate(cTimelapse)
+            
+            cTimepointTemplate = struct('filename',[],'trapLocations',[],...
+                            'trapInfo',[],'trapMaxCell',[]); %template for the cTimepoint structure
+
+        end
         
     end
     
@@ -246,18 +278,15 @@ classdef timelapseTraps<handle
                 cTimelapse.offset(end+1:length(cTimelapse.channelNames)) = 0;
             end
             
-            if ~isempty(cTimelapse.ActiveContourObject)
-                    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
+            
+            if isfield(LoadStructure,'ActiveContourObject')
+                cTimelapse.ACParams = LoadStructure.ActiveContourObject.Parameters;
             end
         end
         
         function cTimelapse_save = saveobj(cTimelapse_in)
             
             cTimelapse_save = cTimelapse_in.copy;
-            
-            if ~isempty(cTimelapse_save.ActiveContourObject)
-                cTimelapse_save.ActiveContourObject.TimelapseTraps = [];
-            end
             
         end
     end
