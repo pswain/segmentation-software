@@ -1,5 +1,5 @@
 function trap_image = returnWholeTrapImage(cTimelapse,cCellVision,timepoint)
-% trapOutline = returnWholeTrapImage(cTimelapse,timepoint)
+% trapOutline = returnWholeTrapImage(cTimelapse,cCellVision,timepoint)
 %
 % returns an image (double) of the size cTimelapse.imSize with a trap outline at
 % every trap location. Currently just places the trap outline from
