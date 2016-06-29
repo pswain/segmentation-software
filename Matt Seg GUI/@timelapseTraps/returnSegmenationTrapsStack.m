@@ -42,6 +42,9 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 % imagestack_out : cell array of image stacks with the exact content being
 %                  determined by 'type' input as described above.
 %
+% processing of this function is done by 
+%    timelapseTraps.processSegmentationTrapStack 
+% this allows separation of processing and loading for speed. 
 
 
 if nargin<4
@@ -52,64 +55,13 @@ if ~cTimelapse.trapsPresent
     type = 'wholeIm';
 end
 
-for ci = 1:length(cTimelapse.channelsForSegment)  
-    if ismember(type,{'twostage','linear','trap','twostage_norm','twostage_norm_fluor'}) %trap option is for legacy reasons
-        % return a cell array with each element being an image stack for
-        % the trap in the traps array provided
-        temp_im = cTimelapse.returnTrapsTimepoint(traps,timepoint,cTimelapse.channelsForSegment(ci));
-        if ismember(type,{'twostage_norm'})
-            temp_im = temp_im - median(temp_im(:));
-            prctile_range = prctile(temp_im(:),[2 98]);
-            % using this percentile range was arbitrarily chosen to try and
-            % get a range defined by the trap pixels that would be somewhat
-            % robust to hot pixels. Seemed to work well even for crowded
-            % images.
-            temp_im = temp_im./(prctile_range(2) - prctile_range(1));
-        end
-        if ismember(type,{'twostage_norm_fluor'})
-            % heuristic normalisation for fluorescent images intended to
-            % return them to a similar range whatever the brightness. Idea
-            % is that the median is always background (not too many cells)
-            % and that the upper 10 percent a fluorescent cells - so
-            % normalising to the standard deviation of the cells.
-            prcentiles = prctile(temp_im(:),[50, 90]);
-            s_upper = std(temp_im(temp_im>prcentiles(2)));
-            temp_im = (temp_im-prcentiles(1))/s_upper;
-            
-            
-        end
-        mval=1.3*mean(temp_im(:));
-        if ci==1
-            imagestack_out = cell(length(traps),1);
-            [imagestack_out{:}] = deal(mval*ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment)));
-        end
-        for ti=1:length(traps)
-            imagestack_out{ti}(:,:,ci) = temp_im(:,:,ti);
-        end
-    elseif ismember(type,{'wholeIm','whole'}) %'whole' is for legacy reasons
-        % return a single element cell array containing stack of whole
-        % timepoint image
-        % each slice is a channel
-        temp_im = cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelsForSegment(ci));
-        mval=mean(temp_im(:));
-        if ci==1
-            imagestack_out = cell(1,1);
-            imagestack_out{1} = mval*ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment));
-        end
-        imagestack_out{1}(:,:,ci) = temp_im;
-    elseif strcmp(type,'wholeTrap') 
-        % return a single element cell array containing stack of trap images laid in a long strip
-        % each slice is a channel
-        temp_im = cTimelapse.returnTrapsTimepoint(traps,timepoint,cTimelapse.channelsForSegment(ci));
-        mval=mean(temp_im(:));
-        if ci==1
-            imagestack_out = cell(1,1);
-            colL=size(temp_im,2);
-            imagestack_out{1} = mval*ones(size(temp_im,1),size(temp_im,2)*length(traps),length(cTimelapse.channelsForSegment));
-        end
-        for ti=1:length(traps)
-            imagestack_out{1}(:,1+(ti-1)*colL:ti*colL,ci) = temp_im(:,:,ti);
-        end
-    end 
+image_stack = [];
+
+for ci = cTimelapse.channelsForSegment
+    image_stack = cat(3,image_stack,cTimelapse.returnSingleTimepoint(timepoint,ci));
 end
+
+[ imagestack_out ] = processSegmentationTrapStack( cTimelapse,image_stack,traps,timepoint,type );
+ 
+
 end
