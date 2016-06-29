@@ -73,8 +73,11 @@ classdef FlowInTrap
            %prior_array = returnPrior(self,cell_loc,cell_radius)
             cell_loc_index = self.locMap(cell_loc(2), cell_loc(1));
             loc_prior = self.flowLookUpTable(:,:,cell_loc_index);
-
-            size_index = find(self.radius_bins(1:(end-1))<=cell_radius & self.radius_bins(2:(end))>cell_radius);
+            
+            % the trailing/leading true's might seem strange but mean that
+            % even if the radius passed is outside the boundaries used it
+            % will get a size index.
+            size_index =find( [true self.radius_bins(2:(end-1))<=cell_radius] & [self.radius_bins(2:(end-1))>cell_radius true]);
             size_prior = self.sizeLookUpTable(:,:,size_index);
             
             prior_array =  (size_prior+loc_prior)/2;

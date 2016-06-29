@@ -104,14 +104,13 @@ Recentering =false; %recalcluate the centre of the cells each time as the averag
 
 
 %multiplier od decision image added to Transformed image.
-DIMproportion = 0.2;
+DIMproportion = 1;
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
 
 %for debugging
 %CrossCorrelationPrior = ones(ProspectiveImageSize,ProspectiveImageSize);
 
 %variable assignments,mostly for convenience and parallelising.
-ImageSize = cTimelapse.imSize;
 TrapPresentBoolean = cTimelapse.trapsPresent;
 TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
 TrapImageSize = cTimelapse.trapImSize;
@@ -181,66 +180,124 @@ end
 ACparametersPass = ACparameters;
 ACparametersPass.visualise = 0;
 
+% apply more computaitonal power to cells found for the first time.
+ACparametersPassFirstFind = ACparametersPass;
+ACparametersPassFirstFind.seeds_for_PSO = 2*ACparametersPassFirstFind.seeds_for_PSO;
+ACparametersPassFirstFind.seeds = 2*ACparametersPassFirstFind.seeds;
+
+
+ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
+    
+DecisionImageChannel = cTimelapse.channelsForSegment;
+
+TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
+TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
+TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
+if isempty(TrapRefineParameters.starting_trap_outline);
+    TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
+end
+TrapRefineFunction = @(stack) TrapRefineFunction(stack,TrapRefineParameters);
+
+CrossCorrelationMethod = 'just_DIM';
+                    
 
 %% loop through timepoints
 for TP = Timepoints
     tic;
     fprintf('timepoint %d \n',TP)
     
-    WholeImage = [];
-    for chi = 1:length(CrossCorrelationChannel)
+    AllChannelsToLoad = unique(abs([CrossCorrelationChannel ACImageChannel TrapRefineChannel DecisionImageChannel]));
+    
+    CCImage = [];
+    %ensure images are only loaded once even if used in various parts of
+    %the code.
+    for chi = 1:length(AllChannelsToLoad)
+        channel = AllChannelsToLoad(chi);
+        TempIm = double(cTimelapse.returnSingleTimepoint(TP,channel));
+        
         if chi==1
-            WholeImage =sign(CrossCorrelationChannel(chi)) * double(cTimelapse.returnSingleTimepoint(TP,abs(CrossCorrelationChannel(chi))));
-        else
-            WholeImage = WholeImage  + sign(CrossCorrelationChannel(chi)) * double(cTimelapse.returnSingleTimepoint(TP,abs(CrossCorrelationChannel(chi))));
-            
+            %preallocate images for speed. DIMImage is stack rather than
+            %single image.
+            CCImage = zeros(size(TempIm));
+            ACImage = CCImage;
+            TrapRefineImage = CCImage;            
+            DIMImage = zeros([size(TempIm) length(DecisionImageChannel)]);
+            ImageSize = size(TempIm);
+
         end
-    end
-    WholeImage = IMnormalise(WholeImage);
-    
-    if TrapPresentBoolean
-        WholeTrapImage = cTimelapse.returnWholeTrapImage(cCellVision, TP);
-    else
-        WholeTrapImage = zeros([size(WholeImage,1) size(WholeImage,2)]);
-    end
-    
-    ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
-    
-    for chi = 1:length(ACImageChannel)
-        if chi==1
-            ACImage =sign(ACImageChannel(chi)) * double(cTimelapse.returnSingleTimepoint(TP,abs(ACImageChannel(chi))));
-        else
-            ACImage = ACImage  + sign(ACImageChannel(chi)) * double(cTimelapse.returnSingleTimepoint(TP,abs(ACImageChannel(chi))));
-            
+        
+        if ismember(channel,abs(CrossCorrelationChannel))
+            CCImage = CCImage + sign(CrossCorrelationChannel(channel==abs(CrossCorrelationChannel))) * TempIm;    
+        end
+        
+        if ismember(channel,abs(ACImageChannel))
+            ACImage = ACImage + sign(ACImageChannel(channel==abs(ACImageChannel))) * TempIm;
+        end
+        
+        if ismember(channel,abs(TrapRefineChannel))
+            TrapRefineImage = TrapRefineImage + sign(TrapRefineChannel(channel==abs(TrapRefineChannel))) * TempIm;
+        end
+        
+        if ismember(channel,DecisionImageChannel)
+            DIMImage(:,:,channel==DecisionImageChannel) = TempIm;
         end
     end
     
     ACImage = IMnormalise(ACImage);
     
+    CCImage = IMnormalise(CCImage);
+    
+    if TrapPresentBoolean
+        %for holding trap images of trap pixels.
+        TrapTrapImageStack = cTimelapse.returnTrapsFromImage(TrapRefineImage,TP,TrapsToCheck);
+        TrapTrapImageStack = TrapRefineFunction(TrapTrapImageStack);
+    else
+        WholeTrapImage = zeros([size(CCImage,1) size(CCImage,2)]);
+    end
+
     TrapLocations = cTimelapse.cTimepoint(TP).trapLocations;
     
-    %Elco - currently unused but left in since I might come back to it.
-    if TrapPresentBoolean
-        %[~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false);
-        WholeImageElcoHough = repmat(WholeImage,[1 1 length(RadRanges)]);
-    else
-        %[~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false);
-        WholeImageElcoHough = repmat(WholeImage,[1 1 length(RadRanges)]);
+    switch CrossCorrelationMethod
+        case 'new_elco'
+            %Elco - currently unused but left in since I might come back to it.
+            if TrapPresentBoolean
+                [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false);
+            else
+                [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false);
+            end
+            WholeImageElcoHoughSum = sqrt(sum(WholeImageElcoHough.^2,3));
+            WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;
+            WholeImageElcoHoughNormalised = WholeImageElcoHough./repmat(WholeImageElcoHoughSum,[1 1 size(WholeImageElcoHough,3)]);
+            
+            WholeImageElcoHoughMedians = zeros(1,size(WholeImageElcoHough,3));
+            
+            for slicei = 1:size(WholeImageElcoHough,3)
+                tempIm = WholeImageElcoHough(:,:,slicei);
+                WholeImageElcoHoughMedians(slicei) = median(tempIm(:));
+            end
+            
     end
-    WholeImageElcoHoughSum = sqrt(sum(WholeImageElcoHough.^2,3));
-    WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;
-    WholeImageElcoHoughNormalised = WholeImageElcoHough./repmat(WholeImageElcoHoughSum,[1 1 size(WholeImageElcoHough,3)]);
-    
     if TP>= TPtoStartSegmenting;
         
         %get decision image for each trap from SVM
         %If the traps have not been previously segmented this also initialises the trapInfo field
         
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
+
+        % this calculates the decision image
         
-        % this calculates the decision image and also sets the trapInfo to
-        % be empty - removing any cell information previously contained.
-        [DecisionImageStack, EdgeImage] = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TrapsToCheck,[],[]);
+        [ SegmentationStackArray ] = processSegmentationTrapStack( cTimelapse,DIMImage,TrapsToCheck,TP,cCellVision.imageProcessingMethod);
+        
+        DecisionImageStack = zeros(size(TrapTrapImageStack));
+        EdgeImageStack = DecisionImageStack;
+        
+        parfor k=1:length(TrapsToCheck)
+            [~, d_im_temp]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
+            DecisionImageStack(:,:,k)=d_im_temp(:,:,1);
+            if size(d_im_temp,3)>1
+                EdgeImageStack(:,:,k)=d_im_temp(:,:,2);
+            end
+        end
         
         TransformedImagesVIS = cell(length(TrapInfo));
         OutlinesVIS = TransformedImagesVIS;
@@ -250,18 +307,7 @@ for TP = Timepoints
         
         % stored to add to forcing image later
         NormalisedDecisionImageStack = DecisionImageStack/iqr(DecisionImageStack(:));
-        
-        
-        %for holding trap images of trap pixels.
-        TrapTrapImageStack = zeros(size(DecisionImageStack));
-        
-        WholeImageElcoHoughMedians = zeros(1,size(WholeImageElcoHough,3));
-        
-        for slicei = 1:size(WholeImageElcoHough,3)
-            tempIm = WholeImageElcoHough(:,:,slicei);
-            WholeImageElcoHoughMedians(slicei) = median(tempIm(:));
-        end
-        
+
         CrossCorrelating = false(size(TrapsToCheck));
         
         PredictedCellLocationsAllCells = cell(size(TrapsToCheck));
@@ -285,7 +331,7 @@ for TP = Timepoints
                 
                 %register images and use to inform expeted position
                 if PerformRegistration
-                    reg_result = FindRegistrationForImageStack(cat(3,PreviousWholeImage,WholeImage),1,MaxRegistration);
+                    reg_result = FindRegistrationForImageStack(cat(3,PreviousWholeImage,CCImage),1,MaxRegistration);
                     reg_result = fliplr(reg_result(2,:));
                     %this is no the shift required in the current image -
                     % [x y] after fliplr - to make it match up with the
@@ -300,7 +346,7 @@ for TP = Timepoints
                 
                 PredictedCellLocationsAllCells{TI} = -2*abs(CrossCorrelationValueThreshold)*ones(TrapImageSize(1),TrapImageSize(2),length(PreviousCurrentTrapInfo.cell));
                 if TI==1 && cTimelapse.ACParams.ActiveContour.visualise>2;
-                    cc_gui.stack = cat(3,WholeImageElcoHough,WholeImage);
+                    cc_gui.stack = cat(3,WholeImageElcoHough,CCImage);
                     cc_gui.LaunchGUI;
                     pause
                 end
@@ -337,16 +383,16 @@ for TP = Timepoints
                     
                     %botch fix for error over Exzpected centre being out of
                     %range
-                    if ExpectedCellCentre(1)>size(WholeImageElcoHough,2);%ttacObject.ImageSize(1)
-                        ExpectedCellCentre(1) = size(WholeImageElcoHough,2);%ttacObject.ImageSize(1);
+                    if ExpectedCellCentre(1)>ImageSize(2);%ttacObject.ImageSize(1)
+                        ExpectedCellCentre(1) = ImageSize(2);%ttacObject.ImageSize(1);
                     end
                     
                     if ExpectedCellCentre(1)<1;
                         ExpectedCellCentre(1) = 1;
                     end
                     
-                    if ExpectedCellCentre(2)>size(WholeImageElcoHough,1);%ttacObject.ImageSize(2)
-                        ExpectedCellCentre(2) = size(WholeImageElcoHough,1);%ttacObject.ImageSize(2);
+                    if ExpectedCellCentre(2)>ImageSize(1);%ttacObject.ImageSize(2)
+                        ExpectedCellCentre(2) = ImageSize(1);%ttacObject.ImageSize(2);
                     end
                     
                     if ExpectedCellCentre(2)<1;
@@ -359,11 +405,9 @@ for TP = Timepoints
                         CellRadii = PreviousCurrentTrapInfo.cell(CI).cellRadii;
                     end
                     
-                    CellCorrelationVector = PreviousCurrentTrapInfo.cell(CI).CorrelationVector;
                     
                     PredictedCellLocation = zeros(ProspectiveImageSize,ProspectiveImageSize);
                     
-                    CrossCorrelationMethod = 'just_DIM';
                     
                     switch CrossCorrelationMethod
                         case 'just_DIM'
@@ -374,6 +418,8 @@ for TP = Timepoints
                                 LocalExpectedCellCentre,...
                                 Inf);
                         case 'new_elco'
+                            CellCorrelationVector = PreviousCurrentTrapInfo.cell(CI).CorrelationVector;
+                    
                             ProspectiveImageHoughStack = GetSubStack(WholeImageElcoHoughNormalised,...
                                 round(fliplr(ExpectedCellCentre)),...
                                 ProspectiveImageSize*[1 1 ]);
@@ -453,11 +499,8 @@ for TP = Timepoints
             end %if timepoint> FirstTimepoint
             
             if TrapPresentBoolean
-                TrapTrapImage = ACBackGroundFunctions.get_cell_image(WholeTrapImage,...
-                    TrapImageSize,...
-                    [TrapLocations(trap).xcenter TrapLocations(trap).ycenter],...
-                    0 ) ;
-                TrapTrapImageStack(:,:,TI) = TrapTrapImage;
+
+                TrapTrapImage = TrapTrapImageStack(:,:,TI);
                 
                 TrapTrapLogical = TrapTrapImage > TrapPixExcludeThreshCentre;
                 if CrossCorrelating(TI)
@@ -535,10 +578,10 @@ for TP = Timepoints
             CellTrapImage = [];
             CIpar = [];
             
-%             if  ACparameters.visualise >1
-%                 TransformedImagesVISTrap = [];
-%                 OutlinesVISTrap = [];
-%             end
+            if  ACparameters.visualise >1
+                TransformedImagesVISTrap = [];
+                OutlinesVISTrap = [];
+            end
             
             %look for new cells
             while CellSearch
@@ -614,10 +657,12 @@ for TP = Timepoints
                         CellTrapImage = ACBackGroundFunctions.get_cell_image(TrapTrapImage,...
                             SubImageSize,...
                             NewCellCentre );
-                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
+                        %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
+                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
                         
                     else
-                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
+                        %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
+                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters);
                     end
                     
                     %COME BACK TO LATER. NEED TO DO THE TRAP REMOVAL AGAIN
@@ -641,7 +686,7 @@ for TP = Timepoints
                     
                     if TrapPresentBoolean
                         %ExcludeLogical = (CellTrapImage>=TrapPixExcludeThreshAC) | (NotCellsCell>=CellPixExcludeThresh);
-                        ExcludeLogical = (imerode(CellTrapImage>=TrapPixExcludeThreshAC,strel('disk',1),'same')| (NotCellsCell>=CellPixExcludeThresh));
+                        ExcludeLogical = (imerode(CellTrapImage>=TrapPixExcludeThreshAC,strel('disk',3),'same')| (NotCellsCell>=CellPixExcludeThresh));
                     else
                         ExcludeLogical = NotCellsCell>=CellPixExcludeThresh;
                     end
@@ -657,7 +702,7 @@ for TP = Timepoints
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
                     else
                         [RadiiResult,AnglesResult] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,[],[],ExcludeLogical);
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,FauxCentersStack,[],[],ExcludeLogical);
                         
                     end
                     %write active contour result and change cross
@@ -686,15 +731,15 @@ for TP = Timepoints
                     
                     [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',double(ParCurrentTrapInfo.cell(NCI).cellCenter),TrapImageSize);
                     
-%                     if ACparameters.visualise>1
-%                         
-%                         TransformedImagesVISTrap = cat(3,TransformedImagesVISTrap,TransformedCellImage);
-%                         [pxVIS,pyVIS] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',round(size(TransformedCellImage)/2),size(TransformedCellImage));
-%                         SegmentationBinary = false(size(TransformedCellImage));
-%                         SegmentationBinary(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
-%                         OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinary);
-%                         
-%                     end
+                    if ACparameters.visualise>1
+                        
+                        TransformedImagesVISTrap = cat(3,TransformedImagesVISTrap,TransformedCellImage);
+                        [pxVIS,pyVIS] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',round(size(TransformedCellImage)/2),size(TransformedCellImage));
+                        SegmentationBinary = false(size(TransformedCellImage));
+                        SegmentationBinary(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
+                        OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinary);
+                        
+                    end
                     
                     SegmentationBinary = false(TrapImageSize);
                     SegmentationBinary(py+TrapImageSize(1,1)*(px-1))=true;
@@ -735,12 +780,12 @@ for TP = Timepoints
                 
             end %while cell search
             
-%             if ACparameters.visualise>1
-%                 
-%                 OutlinesVIS{TI} = OutlinesVISTrap;
-%                 TransformedImagesVIS{TI} = TransformedImagesVISTrap;
-%                 
-%             end
+            if ACparameters.visualise>1
+                
+                OutlinesVIS{TI} = OutlinesVISTrap;
+                TransformedImagesVIS{TI} = TransformedImagesVISTrap;
+                
+            end
             
             %create this new variable for writing before adding superflous
             %rubbis to ParCurrenttrapInfo which is only used in
@@ -782,7 +827,7 @@ for TP = Timepoints
                     ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) = 1;
                 end
                 
-                ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfo.cell(OldCells(CI)).TPpresent+1;
+                %ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfo.cell(OldCells(CI)).TPpresent+1;
                 
             end
             
@@ -813,23 +858,33 @@ for TP = Timepoints
         TrapInfo(TrapsToCheck) = SliceableTrapInfo;
     else
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
-    end
-    
-    for trapi = TrapsToCheck
         
-        %fix later - just need to get absolute cell locations
-        
-        AbsoluteCellCentres = cTimelapse.returnCellCentresAbsolute(trapi,TP);
-        for CI = 1:size(AbsoluteCellCentres,1)
-            %this is a vector taken from the correlation image at the
-            %current timepoint which will hopefully be very similar for
-            %this same cells at the next timepoint.
-            TrapInfo(trapi).cell(CI).CorrelationVector = squeeze(WholeImageElcoHoughNormalised(AbsoluteCellCentres(CI,2),AbsoluteCellCentres(CI,1),:));
+        % initialise since these are used later.
+        for TI = 1:length(TrapInfo)
+            for CI = 1:length(TrapInfo(TI).cell);
+                TrapInfo(TI).cell(CI).ExpectedCentre = TrapInfo(TI).cell(CI).cellCenter;
+                TrapInfo(TI).cell(CI).TPpresent = 1;
+            end
         end
     end
     
+    switch CrossCorrelationMethod
+        case 'new_elco'
+            for trapi = TrapsToCheck
+                
+                %fix later - just need to get absolute cell locations
+                
+                AbsoluteCellCentres = cTimelapse.returnCellCentresAbsolute(trapi,TP);
+                for CI = 1:size(AbsoluteCellCentres,1)
+                    %this is a vector taken from the correlation image at the
+                    %current timepoint which will hopefully be very similar for
+                    %this same cells at the next timepoint.
+                    TrapInfo(trapi).cell(CI).CorrelationVector = squeeze(WholeImageElcoHoughNormalised(AbsoluteCellCentres(CI,2),AbsoluteCellCentres(CI,1),:));
+                end
+            end
+    end
     
-    PreviousWholeImage = WholeImage;
+    PreviousWholeImage = CCImage;
     PreviousTrapInfo = TrapInfo;
     
     TimeOfTimepoint = toc;
@@ -837,12 +892,16 @@ for TP = Timepoints
     
     disp.slider.Value = TP;
     disp.slider_cb;
-    if ACparameters.visualise>1
+    if ACparameters.visualise>1 && TP>=TPtoStartSegmenting
         OutlinesStack = [];
         TransformedImagesStack =[];
         for TI = 1:length(TrapInfo)
-            OutlinesStack = cat(3,OutlinesStack,OutlinesVIS{TI});
-            TransformedImagesStack = cat(3,TransformedImagesStack,TransformedImagesVIS{TI});
+            if ~isempty(OutlinesVIS{TI})
+                OutlinesStack = cat(3,OutlinesStack,OutlinesVIS{TI});
+            end
+            if ~isempty(TransformedImagesVIS{TI})
+                TransformedImagesStack = cat(3,TransformedImagesStack,TransformedImagesVIS{TI});
+            end
         end
         guiDI.stack = DecisionImageStack;
         guiDI.LaunchGUI;

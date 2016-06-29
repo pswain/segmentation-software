@@ -91,9 +91,6 @@ else
         loc= cellfun('length',fileNum);
         threshM=max([max(loc) 1]);
         loc=loc>=threshM;
-        if channel>1
-            loc(1)=0;
-        end
         if sum(loc)>0
             file=cTimelapse.cTimepoint(timepoint).filename{loc};
             

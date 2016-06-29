@@ -185,8 +185,6 @@ classdef timelapseTraps<handle
             trapInfo_struct.segmented = data_template;
             trapInfo_struct.trackLabel = data_template;
             trapInfo_struct.cell.segmented = data_template;
-            trapInfo_struct.refinedTrapPixelsInner = [];
-            trapInfo_struct.refinedTrapPixelsBig = [];
             
         end
         
@@ -203,7 +201,7 @@ classdef timelapseTraps<handle
         
         function cTimelapse = set.trapImSize(cTimelapse,input)
             
-            fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+            %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
         end
         
         function cellInfoTemplate = get.cellInfoTemplate(cTimelapse)
@@ -244,10 +242,13 @@ classdef timelapseTraps<handle
             %and the cTimelapse object.
             FieldNames = intersect(FieldNames,fieldnames(cTimelapse));
             
+            % fields to ignore for some reason or other
+            ignoreFields = {'trapImSize'};
+            
             for i = 1:numel(FieldNames)
                 
                 m = findprop(cTimelapse,FieldNames{i});
-                if ~ismember(m.SetAccess,{'immutable','none'})
+                if ~ismember(m.SetAccess,{'immutable','none'}) & ~ismember(FieldNames{i},ignoreFields)
                     cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
                 end
                 
@@ -279,7 +280,7 @@ classdef timelapseTraps<handle
             end
             
             
-            if isfield(LoadStructure,'ActiveContourObject')
+            if isprop(LoadStructure,'ActiveContourObject')
                 cTimelapse.ACParams = LoadStructure.ActiveContourObject.Parameters;
             end
         end
