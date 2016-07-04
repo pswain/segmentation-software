@@ -34,7 +34,7 @@ else
         positionsToLoad=1:length(cExperiment.dirs);
     end
 end
-    
+
 if nargin<4
     pixelSize=[];
 end
@@ -88,59 +88,59 @@ end
 if ~isempty(cExperiment.pixelSize)
     cExperiment.logger.add_arg('Pixel size',cExperiment.pixelSize);
 end
-% The other arguments are added and the protocol started after the first 
+% The other arguments are added and the protocol started after the first
 % call to loadTimelapse below...
 
 try
-
-%% Load timelapses
-for i=1:length(positionsToLoad)
-    currentPos=positionsToLoad(i);
     
-    if ~isempty(cExperiment.OmeroDatabase)
-        cExperiment.cTimelapse=timelapseTraps(oImages.get(i-1),cExperiment.OmeroDatabase);
-    else
-        cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
-    end
-    
-    % Trigger a PositionChanged event to notify experimentLogging
-    experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
-    
-    cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.imScale);
-    
-    cExperiment.magnification=cExperiment.cTimelapse.magnification;
-    cExperiment.imScale=cExperiment.cTimelapse.imScale;
-    
-    cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
-    cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-    cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
-    cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
-    
-    % After the first call to loadTimelapse, the arguments should now all
-    % be set, so start logging the creation protocol:
-    if i==1
-        cExperiment.logger.add_arg('Default segmentation channel',cExperiment.searchString);
-        cExperiment.logger.add_arg('Traps present',cExperiment.trapsPresent);
-        cExperiment.logger.add_arg('Image rotation',cExperiment.image_rotation);
-        cExperiment.logger.add_arg('Magnification',cExperiment.magnification);
-        if ~isempty(cExperiment.imScale)
-            cExperiment.logger.add_arg('Image scale',cExperiment.imScale);
+    %% Load timelapses
+    for i=1:length(positionsToLoad)
+        currentPos=positionsToLoad(i);
+        
+        if ~isempty(cExperiment.OmeroDatabase)
+            cExperiment.cTimelapse=timelapseTraps(oImages.get(i-1),cExperiment.OmeroDatabase);
+        else
+            cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
         end
-        cExperiment.logger.start_protocol('creating new experiment',length(positionsToLoad));
+        
+        % Trigger a PositionChanged event to notify experimentLogging
+        experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
+        
+        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.imScale);
+        
+        cExperiment.magnification=cExperiment.cTimelapse.magnification;
+        cExperiment.imScale=cExperiment.cTimelapse.imScale;
+        
+        cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
+        cExperiment.searchString=cExperiment.cTimelapse.channelNames;
+        cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
+        cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
+        
+        % After the first call to loadTimelapse, the arguments should now all
+        % be set, so start logging the creation protocol:
+        if i==1
+            cExperiment.logger.add_arg('Default segmentation channel',cExperiment.searchString);
+            cExperiment.logger.add_arg('Traps present',cExperiment.trapsPresent);
+            cExperiment.logger.add_arg('Image rotation',cExperiment.image_rotation);
+            cExperiment.logger.add_arg('Magnification',cExperiment.magnification);
+            if ~isempty(cExperiment.imScale)
+                cExperiment.logger.add_arg('Image scale',cExperiment.imScale);
+            end
+            cExperiment.logger.start_protocol('creating new experiment',length(positionsToLoad));
+        end
+        
+        cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit
     end
     
-    cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit
-end
-
-% load the default cellVision file.
-cCellVision = cExperiment.loadDefaultCellVision;
-cExperiment.cCellVision = cCellVision;
-
-
-cExperiment.saveExperiment;
-
-% Finish logging protocol
-cExperiment.logger.complete_protocol;
+    % load the default cellVision file.
+    cCellVision = cExperiment.loadDefaultCellVision;
+    cExperiment.cCellVision = cCellVision;
+    
+    
+    cExperiment.saveExperiment;
+    
+    % Finish logging protocol
+    cExperiment.logger.complete_protocol;
 catch err
     cExperiment.logger.protocol_error;
     rethrow(err);
