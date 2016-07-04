@@ -31,6 +31,7 @@ classdef curateCellTrackingGUI<handle
         keyPressed = []; % the key being held down. ignore return,uparrow,downarrow - they are treated differently.
         outlineEditKey = 'o'; %the key to be pressed activate outline editing functionality
         addRemoveKey = 'p'; %the key to be pressed to use add/remove functionality
+        closeKey = '[' % the key pressed to close the GUI.
     end % properties
     
     properties(Constant)
@@ -40,8 +41,7 @@ classdef curateCellTrackingGUI<handle
     
     methods
         function TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
-            % TrackingCurator=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional),ShowOtherChannels(optional),ColourScheme(optional))
-            %
+            % TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
             % cTimelapse
             % Timepoint
             % TrapIndex
@@ -221,7 +221,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([TrackingCurator.cTimelapse.trapImSize    size(Timepoints,2)]));
             
             ProgressCounter = 0;
             TotalTime = length(TrackingCurator.Channels)*length(Timepoints);
@@ -254,7 +254,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([TrackingCurator.cTimelapse.trapImSize,size(Timepoints,2)]));
             
             TrackingCurator.BaseImages = Images;
         end
@@ -269,7 +269,7 @@ classdef curateCellTrackingGUI<handle
             
             Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([TrackingCurator.cTimelapse.trapImSize size(Timepoints,2)]);
             
             TrackingCurator.CellOutlines = CellOutlines;
             
@@ -309,7 +309,7 @@ classdef curateCellTrackingGUI<handle
             end
             
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([TrackingCurator.cTimelapse.trapImSize size(Timepoints,2)]);
             if nargin<2
                 h = waitbar(0,'Please wait as we obtain your cell outlines ...');
                 ProgressCounter = 0;

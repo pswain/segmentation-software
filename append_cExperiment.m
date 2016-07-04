@@ -46,8 +46,8 @@ if nargin<5 || isempty(append_name)
     if isempty(cExperiment_orig)
         append_name = '';
     else
+        append_name = num2str(randi(1000,1));
     end
-    append_name = num2str(randi(1000,1));
     
 end
 
@@ -65,9 +65,13 @@ cExperiment_new = l1.cExperiment;
 cExperiment_new.cCellVision = l1.cCellVision;
 
 if nargin<2 || isempty(DirToAdd)
-    DirToAdd = 1:length(cExperiment_new.dirs);
-    TPtoUse = ones(size(DirToAdd));
+    
+    [DirToAdd] = listdlg('Liststring',cExperiment_new.dirs,'SelectionMode','muliple',...
+        'Name','Positions To Append','PromptString','Please select the positions from the new cExperiment to add to the existing cExperiment');
+    
+    
 end
+TPtoUse = ones(size(DirToAdd));
 
 if isempty(cExperiment_orig)
     l1 = load(location);
@@ -111,7 +115,7 @@ for di = 1:length(cExperiment_new.dirs)
     
     %set field names to be consistent across experiments
     if changeChannelNames
-        cTimelapse.channelNames = cExperiment.channelNames;
+        cTimelapse.channelNames = cExperiment_orig.channelNames;
     end
     % select random timepoints but maintain order
     TPs_index = randperm(length(cTimelapse.timepointsToProcess));
