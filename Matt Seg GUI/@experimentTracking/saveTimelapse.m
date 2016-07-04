@@ -1,5 +1,5 @@
 function saveTimelapse(cExperiment,currentPos)
-% saveTimelapse(cExperiment,currentPos, saveCE)
+% saveTimelapse(cExperiment,currentPos)
 %
 % saves cExperiment.cTimelapse to:
 %   [cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse']

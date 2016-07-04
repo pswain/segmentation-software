@@ -807,7 +807,7 @@ trap = traps(1);
 [Iy,Ix] = find(bw);
 ycell = round(mean(Iy));
 xcell = round(mean(Ix));
-trap_size = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+trap_size = cTimelapse.trapImSize;
 
 
 if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
@@ -817,7 +817,13 @@ else
     cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = true;
 end
 
-newCellLabel = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(trap) +1;
+newCellLabel = cTimelapse.returnMaxCellLabel(trap) +1;
+
+
+newCellAngle = linspace(0,2*pi,cTimelapse.ACParams.ActiveContour.opt_points +1);
+newCellAngle = newCellAngle(1:(end-1));
+newCellRadii = 5*ones(size(newCellAngle));
+
 cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapMaxCell(trap) = newCellLabel;
 
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellCenter = [xcell ycell] ;
@@ -826,16 +832,15 @@ cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(newIndex) = newCellLab
 % puts some inital data in the cell array in case there is an error in the
 % active contour code.
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadius = 5;
-[px,py] = ACBackGroundFunctions.get_full_points_from_radii([5 5 5 5],pi*[0;0.5;1;1.5],[xcell ycell],trap_size);
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellAngle = newCellAngle;
+cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).cellRadii = newCellRadii;
+[px,py] = ACBackGroundFunctions.get_full_points_from_radii(newCellRadii,newCellAngle,[xcell ycell],trap_size);
 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell(newIndex).segmented = sparse(ACBackGroundFunctions.px_py_to_logical(px,py,trap_size));
 
 % run active contour code on that particular trap and cell.
-cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);
+%cTimelapse.ActiveContourObject.SegmentConsecutiveTimePoints(timepoint,timepoint,false,[trap newCellLabel],false);
+fprintf('\n currenty broken - need to fix adding cells at a single timepoint using the active contour stuff\n')
 
-
-for TP = timepoint:cTimelapse.timepointsToProcess(end);
-    cTimelapse.cTimepoint(TP).trapMaxCellUTP(trap) = newCellLabel;
-end
 
 
 

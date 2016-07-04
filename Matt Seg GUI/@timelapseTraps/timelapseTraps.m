@@ -30,7 +30,6 @@ classdef timelapseTraps<handle
                   % defines the size of the trap extracted in methods such
                   % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
                   % empty if there are not traps
-        trapImSize % uses the cTrapSize property to give the size of the image.
         image_rotation % to ensure that it lines up with the cCellVision Model
         imScale % used to scale down images if needed
                 % this isn't used much so the GUI sets it to a default of
@@ -61,10 +60,7 @@ classdef timelapseTraps<handle
         %parameters for the extraction of cell Data, a function handle and
         %a parameter structure which the function makes use of.
         ACParams = []; % active contour parameters.
-        
-        cellInfoTemplate % template for the cellInfo structure.
-        trapInfoTemplate % template for the trapInfo structure
-        cTimepointTemplate % template for the cTimepoint structure.
+        ActiveContourObject = []; % there for legacy reasons. Will be removed soon but difficult to reprocess old data sets once it is.
         
         temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
         %This allows the cell tracking and curating things to happen a
@@ -76,6 +72,14 @@ classdef timelapseTraps<handle
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
+        
+    end
+    
+    properties(Dependent = true)
+        cellInfoTemplate % template for the cellInfo structure.
+        trapInfoTemplate % template for the trapInfo structure
+        cTimepointTemplate % template for the cTimepoint structure.
+        trapImSize % uses the cTrapSize property to give the size of the image.
         
     end
     
@@ -141,18 +145,11 @@ classdef timelapseTraps<handle
             
             for i = 1:numel(FieldNames)
                 m = findprop(cTimelapseIN,FieldNames{i});
-                if ~ismember(m.SetAccess,{'immutable','none'})
+                if ~ismember(m.SetAccess,{'immutable','none'}) || m.Dependent
                     cTimelapseOUT.(FieldNames{i}) = cTimelapseIN.(FieldNames{i});
                 end
             end
-            
-            if ~isempty(cTimelapseIN.ActiveContourObject)
-                cTimelapseIN.ActiveContourObject.TimelapseTraps = [];
-                cTimelapseOUT.ActiveContourObject = cTimelapseIN.ActiveContourObject.copy;
-                cTimelapseIN.ActiveContourObject.TimelapseTraps = cTimelapseIN;
-                cTimelapseOUT.ActiveContourObject.TimelapseTraps = cTimelapseOUT;
-                
-            end
+
             
         end
         
@@ -195,20 +192,43 @@ classdef timelapseTraps<handle
         end
         
         function trapImSize = get.trapImSize(cTimelapse)
-            
-            trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+            if isempty(cTimelapse.cTrapSize)
+                trapImSize = [];
+            else
+                trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+            end
         end
         
-        function cTimelapse = set.trapImSize(cTimelapse,input)
-            
+        function cTimelapse = set.trapImSize(cTimelapse,input)    
+            % do nothing, just to stop errors
+            %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+        end
+        
+
+        function cTimelapse = set.cellInfoTemplate(cTimelapse,input)
+            % do nothing, just to stop errors
+            %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+        end
+        
+        function cTimelapse = set.trapInfoTemplate(cTimelapse,input)
+             % do nothing, just to stop errors
+            %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+        end
+        function cTimelapse = set.cTimepointTemplate(cTimelapse,input)
+             % do nothing, just to stop errors
             %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
         end
         
         function cellInfoTemplate = get.cellInfoTemplate(cTimelapse)
             
+            if ~isempty(cTimelapse.cTrapSize)
+                segTemplate = sparse(false(cTimelapse.trapImSize));
+            else
+                segTemplate = [];
+            end
              cellInfoTemplate = struct('cellCenter',[],...
                        'cellRadius',[],...
-                       'segmented',sparse(false(cTimelapse.trapImSize)),...
+                       'segmented',segTemplate,...
                        'cellRadii',[],...
                        'cellAngle',[]);
         end
@@ -248,6 +268,7 @@ classdef timelapseTraps<handle
             for i = 1:numel(FieldNames)
                 
                 m = findprop(cTimelapse,FieldNames{i});
+                %fprintf([FieldNames{i} '\n'])
                 if ~ismember(m.SetAccess,{'immutable','none'}) & ~ismember(FieldNames{i},ignoreFields)
                     cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
                 end
@@ -280,8 +301,9 @@ classdef timelapseTraps<handle
             end
             
             
-            if isprop(LoadStructure,'ActiveContourObject')
+            if isprop(LoadStructure,'ActiveContourObject') && ~isempty(LoadStructure.ActiveContourObject)
                 cTimelapse.ACParams = LoadStructure.ActiveContourObject.Parameters;
+                cTimelapse.ActiveContourObject = [];
             end
         end
         

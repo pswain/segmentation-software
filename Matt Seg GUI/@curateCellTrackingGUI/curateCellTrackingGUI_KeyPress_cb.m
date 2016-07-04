@@ -28,6 +28,8 @@ elseif strcmp(event.Key,'uparrow')
     TrackingCurator.Channels = mod(TrackingCurator.Channels,length(TrackingCurator.cTimelapse.channelNames)) + 1;
     TrackingCurator.DataObtained(:) = false;
     TrackingCurator.UpdateImages;
+elseif strcmp(event.Character,TrackingCurator.closeKey)
+    close(TrackingCurator.figure)
 else
     TrackingCurator.keyPressed = event.Character;
 end

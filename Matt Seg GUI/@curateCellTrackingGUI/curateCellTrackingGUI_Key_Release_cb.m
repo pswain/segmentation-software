@@ -12,5 +12,6 @@ function curateCellTrackingGUI_Key_Release_cb(GUI,property,src,event)
 if ~ismember(event.Key,{'return','uparrow','downarrow'})
     GUI.(property) = [];
 end
+
 end
 

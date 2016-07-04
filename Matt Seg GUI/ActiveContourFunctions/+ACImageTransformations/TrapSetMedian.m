@@ -9,6 +9,8 @@ function imageStack = TrapSetMedian(imageStack,parameters,varargin)
 %parameters:
 
 %MaxThresh = the threshold value above which 
+%TrapPrctile = prcentile of image to use on median trap pixels (default to
+%50th = median);
 
 if size(varargin,2)>0
     
@@ -26,18 +28,21 @@ else
     MedThresh = parameters.MedThresh;
 end
     
+if ~exist('parameters','var') || ~isfield(parameters,'TrapPrctile')
+    TrapPrctile = 50;
+else
+    TrapPrctile = parameters.TrapPrctile;
+end
     
 
 for i=1:size(imageStack,3)
     
     image = imageStack(:,:,i);
-
-        trap_px = TrapStack(:,:,i);
-
- 
-
-   MAXimage = max(abs(image(:)));
-   MEDimage = median(image(:));
+    
+    trap_px = TrapStack(:,:,i);
+    
+   MAXimage = max(abs(image(~trap_px)));
+   MEDimage = prctile(image(~trap_px),TrapPrctile);
    
    %trap points greater than MedThresh set to median
    image(trap_px>MedThresh) = MEDimage; 
