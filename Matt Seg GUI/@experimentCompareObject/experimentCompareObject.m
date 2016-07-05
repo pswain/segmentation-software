@@ -35,11 +35,11 @@ classdef experimentCompareObject <handle
             if nargin<3||isempty(experiment_name)
                 name = '';
                 while isempty(name);
-                name = inputdlg('please provide a name for this experiment that has is not already taken','experiment name',1);
-                name = name{1};
-                if ismember(name,self.experimentNames)
-                    name = '';
-                end
+                    name = inputdlg('please provide a name for this experiment that has is not already taken','experiment name',1);
+                    name = name{1};
+                    if ismember(name,self.experimentNames)
+                        name = '';
+                    end
                 end
             end
             self.experimentLocations{end+1} = location;
@@ -62,7 +62,7 @@ classdef experimentCompareObject <handle
         
         function setByTimepoint(self,timepoints)
             %setByTimepoint(self,timepoints)
-            % 
+            %
             % set the timepoint/traps to process to be all the traps at all
             % the position for just the timepoints timepoints.
             
@@ -86,7 +86,7 @@ classdef experimentCompareObject <handle
             
             for posi =1:length(poses)
                 loc = self.positionsToProcess == poses(posi);
-                self.curatedtimepointTraps{loc} = sparse(false(size(self.timepointsTrapsToProcess{loc}))); 
+                self.curatedtimepointTraps{loc} = sparse(false(size(self.timepointsTrapsToProcess{loc})));
             end
             
         end
@@ -102,7 +102,7 @@ classdef experimentCompareObject <handle
             if nargin<2 || isempty(channel_to_curate)
                 channel_to_curate = 1;
             end
-                
+            
             if nargin<3 || isempty(skip_curated)
                 skip_curated = false;
             end
@@ -132,9 +132,72 @@ classdef experimentCompareObject <handle
                     
                 end
             end
-
+        end
+        
+        function areaError = determineAreaError(self)
+            % calculates the area error for the experiments when compared
+            % with the ground truth. returns struct array with the same
+            % params
+            
+            %only runs on the traps/timepoints in self.curatedtimepointTraps{posi}(TP,TI)
+            %that should have been labeled as true in the curateGroundTruth
+            errorStruct=struct('cellSize',[],'areaError',[]);
+            areaError=repmat(errorStruct,1,length(self.experimentNames));
+            testExp=[];
+            for expInd=1:length(self.experimentNames)
+                testExp{expInd}=elf.loadExperiment(expInd);
+            end
+            groundTruthExp=self.loadGroundTruth;
+            
+            for posInd=1:length(self.positionsToProcess)
+                currPos=self.positionsToProcess(posInd)
+                gtTimelapse=groundTruthExp.returnTimelapse(currPos);
+                curatedLoc=self.curatedtimepointTraps{posInd}; %row=tp col=trap
+                for expInd=1:length(testExp)
+                    testTimelapse=testExp{expInd}.returnTimelapse(currPos);
+                    for tpInd=1:size(curatedLoc,1)
+                        for trapInd=1:size(curatedLoc,2)
+                            overlapMatrix=[];%row=gt cell col=testCell
+                            if curatedLoc(tpInd,trapInd) %only calc error if was curated
+                                gtTrapInfo=gtTimelapse.cTimepoint(tpInd).trapInfo(trapInd);
+                                testTrapInfo=testTimelapse.cTimepoint(tpInd).trapInfo(trapInd);
+                                gtCellSize=[];testCellSize=[];
+                                for gtCellInd=1:length(gtTrapInfo.cell)
+                                    gtCell=imfill(full(gtTrapInfo.cell(gtCellInd).segmented),'holes');
+                                    gtCellSize(gtCellInd)=sum(gtCell(:));
+                                    for testCellInd=1:length(testTrapInfo.cell)
+                                        tCell=imfill(full(testTrapInfo.cell(testCellInd).segmented),'holes');
+                                        testCellSize(testCellInd)=sum(tCell(:));
+                                        unionCell=tCell & gtCell;
+                                        intersectCell=(tCell & ~gtCell) | (~tCell & gtCell);
+                                        overlapMatrix(gtCellInd,testCellInd)=sum(unionCell(:))/sum(intersectCell(:));
+                                    end
+                                end
+                                
+                                %checks all of the 
+                                [v i]=max(abs(overlapMatrix-1),[],2);
+                                for overlapInd=1:length(i)
+                                    errorStruct(expInd).areaError(end+1)=overlapMatrix(overlapInd,i);
+                                    errorStruct(expInd).cellSize(end+1)=gtCellSize(overlapInd);
+                                end
+                                overlapMatrix(:,i)=NaN;
+                                loc=find(max(~isnan(overlapMatrix)));
+                                for noOverlapInd=1:length(loc)
+                                    errorStruct(expInd).areaError(end+1)=0;
+                                    errorStruct(expInd).cellSize(end+1)=testCellSize(loc(noOverlapInd));
+                                end
+                            end
+                        end
+                    end
+                end
+            end
             
         end
+        
+        function trackingError = determineTrackingError(self)
+            
+        end
+
         
     end
     
