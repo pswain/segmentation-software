@@ -91,6 +91,25 @@ classdef experimentCompareObject <handle
             
         end
         
+        function removeCurationArea(self,number_to_remove)
+            %removeCurationArea(self,number_to_remove)
+            %bit of a hack function. removes the last 'number_to_remove'
+            %curated images.
+            % useful if you accidently let a few slip.
+            
+            empty_poses = cellfun(@(x) any(full(x(:))),self.curatedtimepointTraps);
+            last_pos_curated = find(empty_poses,1,'last');
+            
+            if isempty(last_pos_curated)
+                last_pos_curated = 1;
+            end
+            
+            curated_points = find(self.curatedtimepointTraps{last_pos_curated}(:));
+            to_remove = curated_points((end-(number_to_remove-1)):end);
+            self.curatedtimepointTraps{last_pos_curated}(to_remove) = false;
+            
+        end
+        
         
         function cExperiment = curateGroundTruthForArea(self,channel_to_curate,skip_curated)
             %cExperiment = curateGroundTruthForArea(self,channel_to_curate,skip_curated)
@@ -109,7 +128,7 @@ classdef experimentCompareObject <handle
             
             cExperiment = self.loadGroundTruth;
             
-            for posi = 1:self.positionsToProcess
+            for posi = 1:length(self.positionsToProcess)
                 pos = self.positionsToProcess(posi);
                 cTimelapse = cExperiment.loadCurrentTimelapse(pos);
                 [TPs,Traps] = find(self.timepointsTrapsToProcess{posi});
@@ -118,18 +137,25 @@ classdef experimentCompareObject <handle
                     
                     TP = TPs(i);
                     TI = Traps(i);
-                    gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TP,TI,1,channel_to_curate);
                     
-                    % essentially inactivate slider gui so that you edit
-                    % one timepont at a time and don't get confused.
-                    gui.slider.Min = TP;
-                    gui.slider.Max = TP;
-                    
-                    
-                    uiwait();
-                    cExperiment.saveTimelapse(pos);
-                    self.curatedtimepointTraps{posi}(TP,TI) =true;
-                    
+                    if ~skip_curated || ~(self.curatedtimepointTraps{posi}(TP,TI))
+                        
+                        gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TP,TI,1,channel_to_curate);
+                        
+                        % essentially inactivate slider gui so that you edit
+                        % one timepont at a time and don't get confused.
+                        % also, strange bug where last doesn't seem to be
+                        % allowed by constructor.
+                        
+                        gui.slider.Value = TP;
+                        gui.slider.Min = TP;
+                        gui.slider.Max = TP;
+                        
+                        
+                        uiwait();
+                        cExperiment.saveTimelapse(pos);
+                        self.curatedtimepointTraps{posi}(TP,TI) =true;
+                    end
                 end
             end
 
