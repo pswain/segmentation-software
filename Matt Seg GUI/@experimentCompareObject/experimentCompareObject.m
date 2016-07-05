@@ -150,7 +150,7 @@ classdef experimentCompareObject <handle
             groundTruthExp=self.loadGroundTruth;
             
             for posInd=1:length(self.positionsToProcess)
-                currPos=self.positionsToProcess(posInd)
+                currPos=self.positionsToProcess(posInd);
                 gtTimelapse=groundTruthExp.returnTimelapse(currPos);
                 curatedLoc=self.curatedtimepointTraps{posInd}; %row=tp col=trap
                 for expInd=1:length(testExp)
@@ -195,6 +195,25 @@ classdef experimentCompareObject <handle
         end
         
         function trackingError = determineTrackingError(self)
+            % goes through all timepoints to identify the cell that is
+            % there the longest in the curated dataset. This is labelled
+            % the mother cell. It then finds the cell in the test dataset
+            % that most closely matches up with that cell and then checks
+            % the amount of time it overlaps with the real mother, as well
+            % as the error type. 
+            
+            %
+            
+            %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
+            %that should have been labeled as true in the curateGroundTruth
+            errorStruct=struct('gtDuration',[],'testDuration',[],'errorType',[]);
+            trackingError=repmat(errorStruct,1,length(self.experimentNames));
+            testExp=[];
+            for expInd=1:length(self.experimentNames)
+                testExp{expInd}=elf.loadExperiment(expInd);
+            end
+            groundTruthExp=self.loadGroundTruth;
+
             
         end
 
