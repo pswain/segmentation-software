@@ -30,6 +30,8 @@ classdef experimentTracking<handle
         trackTrapsOverwrite
         imScale
         
+        shouldLog %a parameter that tells the logger whether it should do things 
+        
         channelNames %this has the list of the channel names  
         currentTimelapseFilename; %name of where the current timelapse was loaded from
         cTimelapse; %populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
@@ -50,6 +52,7 @@ classdef experimentTracking<handle
                                 % methods, copied to each timelapseTraps
                                 % object when this is run (if parameters
                                 % selected appropriately)
+                                
     end
     
     properties (Transient)
@@ -74,8 +77,10 @@ classdef experimentTracking<handle
             % inputs. Used in loadobj method.
             
             % Create a new logger to log changes for this cExperiment:
-            cExperiment.logger = experimentLogging(cExperiment);
-            
+            disp('Not generating log files now - to change open experimentTracking.m')
+            cExperiment.logger = experimentLogging(cExperiment,false);
+            cExperiment.shouldLog=true;
+
             % Read filenames from folder
             if nargin<1
                 fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
@@ -212,7 +217,8 @@ classdef experimentTracking<handle
             
             
             % Create a new experimentLogging object when loading:
-            cExperiment.logger = experimentLogging(cExperiment);
+            disp('Not generating log files now - to change open experimentTracking.m')
+            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             % back compatibility to put channel names into cExperiment
             % channelNames

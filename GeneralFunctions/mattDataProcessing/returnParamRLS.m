@@ -28,7 +28,7 @@ if nargin<5 || isempty(birthTimes)
 end
 param.RLS=[];param.Chron=[];param.Abs=[];param.RLScycle=[];
 motherLoc=find(motherLocLogical);
-bb=20;nRLS=[];
+bb=12;nRLS=[];
 for i=1:length(motherLoc)
     mPos=cExperiment.cellInf(1).posNum(motherLoc(i));
     mCell=cExperiment.cellInf(1).cellNum(motherLoc(i));
@@ -50,7 +50,11 @@ for i=1:length(motherLoc)
     else
         param.Abs(i,:)=cExperiment.cellInf(paramInfo.channel).(paramInfo.name)(motherLoc(i),:);
     end
-    t=param.Abs(i,cExperiment.lineageInfo.motherInfo.motherStartEnd(mLocTemp,1) : cExperiment.lineageInfo.motherInfo.motherStartEnd(mLocTemp,2));
+    try
+        t=param.Abs(i,cExperiment.lineageInfo.motherInfo.motherStartEnd(mLocTemp,1) : cExperiment.lineageInfo.motherInfo.motherStartEnd(mLocTemp,2));
+    catch
+        b=1
+    end
     param.Chron(i,1:length(t))=t;
     for j=1:length(bTimeIndex1)
         bTimeIndex=bTimeIndex1(j);
@@ -67,7 +71,7 @@ for i=1:length(motherLoc)
             b=1;
         end
         t(t==0)=NaN;
-        param.RLS(i,j)=nanmean(t);
+        param.RLS(i,j)=nanmedian(t);
         param.RLScycle(i,j,1:length(t))=full(t);
         
     end
@@ -86,3 +90,9 @@ param.RLSdeath=full(param.RLSdeath);
 param.RLS=full(param.RLS);
 param.Chron=full(param.Chron);
 param.Abs=full(param.Abs);
+
+param.RLSdeath(param.RLSdeath==0)=NaN;
+param.RLS(param.RLS==0)=NaN;
+param.Chron(param.Chron==0)=NaN;
+param.Abs(param.Abs==0)=NaN;
+

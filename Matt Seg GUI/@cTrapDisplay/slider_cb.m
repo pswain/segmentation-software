@@ -51,6 +51,7 @@ for j=1:size(alltraps,3)
         trackLabel=label2rgb(segLabel,'jet','w','shuffle');
         trackLabel=double(trackLabel);
         trackLabel=trackLabel/255;
+        image(repmat(segLabel>0,[1 1 3]))=1;
         image=image.*trackLabel;
     else
         t_im=image(:,:,1);
