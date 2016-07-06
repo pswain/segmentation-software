@@ -77,7 +77,7 @@ classdef experimentTracking<handle
             % inputs. Used in loadobj method.
             
             % Create a new logger to log changes for this cExperiment:
-            disp('Not generating log files now - to change open experimentTracking.m')
+            %disp('Not generating log files now - to change open experimentTracking.m')
             cExperiment.logger = experimentLogging(cExperiment,false);
             cExperiment.shouldLog=true;
 
