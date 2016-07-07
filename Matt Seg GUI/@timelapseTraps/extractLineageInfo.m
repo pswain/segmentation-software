@@ -118,7 +118,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
             break;
         end
         
-        tpBefore=find(diff(smooth(tpCheck,3)>0,1)>0);
+        tpBefore=find(diff(smooth(double(tpCheck),3)>0,1)>0);
         tpCheckBefore=zeros(size(tpCheck));
         if ~isempty(tpBefore)
             tpCheckBefore(:,1:tpBefore)=1;
