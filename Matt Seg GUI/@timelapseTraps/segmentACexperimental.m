@@ -376,7 +376,7 @@ for TP = Timepoints
                     end
                     
                     if TrapPresentBoolean
-                        ExpectedCellCentre = LocalExpectedCellCentre + [TrapLocations(trap).xcenter TrapLocations(trap).ycenter] - ([TrapWidth TrapHeight] + 1) ;
+                        ExpectedCellCentre = double(LocalExpectedCellCentre) + double([TrapLocations(trap).xcenter TrapLocations(trap).ycenter] - ([TrapWidth TrapHeight] + 1)) ;
                     else
                         ExpectedCellCentre = LocalExpectedCellCentre;
                     end
