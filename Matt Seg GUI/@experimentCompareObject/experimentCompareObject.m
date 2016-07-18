@@ -145,7 +145,7 @@ classdef experimentCompareObject <handle
             areaError=repmat(errorStruct,1,length(self.experimentNames));
             testExp=[];
             for expInd=1:length(self.experimentNames)
-                testExp{expInd}=elf.loadExperiment(expInd);
+                testExp{expInd}=self.loadExperiment(expInd);
             end
             groundTruthExp=self.loadGroundTruth;
             
@@ -168,23 +168,23 @@ classdef experimentCompareObject <handle
                                     for testCellInd=1:length(testTrapInfo.cell)
                                         tCell=imfill(full(testTrapInfo.cell(testCellInd).segmented),'holes');
                                         testCellSize(testCellInd)=sum(tCell(:));
-                                        unionCell=tCell & gtCell;
-                                        intersectCell=(tCell & ~gtCell) | (~tCell & gtCell);
-                                        overlapMatrix(gtCellInd,testCellInd)=sum(unionCell(:))/sum(intersectCell(:));
+                                        unionCell=tCell | gtCell;
+                                        intersectCell=(tCell & gtCell); %| (~tCell & gtCell);
+                                        overlapMatrix(gtCellInd,testCellInd)=sum(intersectCell(:))/sum(unionCell(:));
                                     end
                                 end
                                 
                                 %checks all of the 
-                                [v i]=max(abs(overlapMatrix-1),[],2);
-                                for overlapInd=1:length(i)
-                                    errorStruct(expInd).areaError(end+1)=overlapMatrix(overlapInd,i);
-                                    errorStruct(expInd).cellSize(end+1)=gtCellSize(overlapInd);
+                                [v maxInd]=max(overlapMatrix,[],2);
+                                for overlapInd=1:length(maxInd)
+                                    areaError(expInd).areaError(end+1)=overlapMatrix(overlapInd,maxInd(overlapInd));
+                                    areaError(expInd).cellSize(end+1)=gtCellSize(overlapInd);
                                 end
-                                overlapMatrix(:,i)=NaN;
+                                overlapMatrix(:,maxInd)=NaN;
                                 loc=find(max(~isnan(overlapMatrix)));
                                 for noOverlapInd=1:length(loc)
-                                    errorStruct(expInd).areaError(end+1)=0;
-                                    errorStruct(expInd).cellSize(end+1)=testCellSize(loc(noOverlapInd));
+                                    areaError(expInd).areaError(end+1)=0;
+                                    areaError(expInd).cellSize(end+1)=testCellSize(loc(noOverlapInd));
                                 end
                             end
                         end

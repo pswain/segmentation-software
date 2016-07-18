@@ -79,7 +79,7 @@ classdef experimentTracking<handle
             % Create a new logger to log changes for this cExperiment:
             disp('Not generating log files now - to change open experimentTracking.m')
             cExperiment.logger = experimentLogging(cExperiment,false);
-            cExperiment.shouldLog=true;
+            cExperiment.shouldLog=false;
 
             % Read filenames from folder
             if nargin<1
