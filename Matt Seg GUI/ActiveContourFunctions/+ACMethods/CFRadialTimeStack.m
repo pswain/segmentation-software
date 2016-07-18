@@ -45,17 +45,24 @@ function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat
 
 all_outputs = false;
 
-prior_radii_range = [5 14];
-area_punishing_term = 100000;
-
 Ftot = 0;
 radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
 
+radial_punishing_factor = mean(radial_punishing_factor);
 
-prior_radii_range = (prior_radii_range.^2)*radii_length;
-area_punishing_term = area_punishing_term/radii_length;
+% for trained radius punishment
+% gaussian parameters trained from cellVision training set
+inverted_cov =...
+    [0.9568   -0.9824    0.2210   -0.3336    0.2061   -0.1774
+   -0.9824    2.3140   -0.7398    0.3936   -0.2683   -0.6752
+    0.2210   -0.7398    1.4997   -0.9595    0.4939   -0.3992
+   -0.3336    0.3936   -0.9595    1.5773   -1.0942    0.4536
+    0.2061   -0.2683    0.4939   -1.0942    1.6916   -0.9590
+   -0.1774   -0.6752   -0.3992    0.4536   -0.9590    1.9724];
+
+mu = [9.1462    8.0528    6.7623    6.1910    6.0670    6.8330];
 
 
 if all_outputs
@@ -94,20 +101,9 @@ for ti = 1:length(timepoints_to_optimise)
     
     
     %construct spline using file exchange function 'splinefit'
-    
-    %TESTING CHANGES FOR SPEED
-    %r_spline = splinefit([angles; 2*pi],[radii_mat radii_mat(:,1)],[angles; 2*pi],'p');%make the spline
-    
-    %[A,n,breaks,dim,jj,C] = splinefit_prep([angles; 2*pi],ones(size(radii_mat)+[0 1]),[angles; 2*pi],'p');
-    
-    
     r_spline = ACBackGroundFunctions.splinefit_thin(A,n,breaks,points,jj,C,[radii_mat radii_mat(:,1)]);
     
-    
-    %TESTING CHANGES FOR SPEED
     radii_full = ppval(r_spline,steps);
-    
-    %radii_full = spline([-1*angles(2,1); angles; 2*pi],[radii(end);radii;radii(1)],steps);
     
     %convert radial coords to x y coords
     cordx_full = round(center(1)+(radii_full.*repmat(cos(steps),points,1)));
@@ -142,54 +138,39 @@ for ti = 1:length(timepoints_to_optimise)
         
         end
 
+        %add radial punishing term
+
+    
+        
+        % trained logliklihood based term.
+        if radii_length ==6;
+            
+            radii_reordered = radii_mat(p,:);
+            %make max radii first entry
+            [~,mi] = max(radii_reordered);
+            radii_reordered = circshift(radii_reordered,-(mi-1),2);
+            
+            % flip so 2nd entry is 2nd largest
+            if radii_reordered(2)<radii_reordered(end)
+                radii_reordered = fliplr(radii_reordered);
+                radii_reordered = circshift(radii_reordered,1,2);
+                
+            end
+            
+            F(p) = F(p) + radial_punishing_factor*(radii_reordered-mu)*inverted_cov*((radii_reordered - mu)');
+        end
         
     end
     
-    %add radial punishing term
-    D2radii = ACBackGroundFunctions.second_derivative_snake_horizontal(radii_mat);
     
-    if all_outputs
-        
-        F_circular(:,timepoints_to_optimise(ti)) = (((D2radii./radii_mat).^2))*radial_punishing_factor;
-        F = F + F_circular(:,timepoints_to_optimise(ti));
-        
-    else
+
     
-        F = F+(((D2radii./radii_mat).^2))*radial_punishing_factor; %add punishment for very uneven cell outlines
     
-    end
-    %add 'area punishing term'
     
-    if false
-    average_area = sum(radii_mat.^2,2);
-    
-    area_punishment = zeros(size(average_area));
-    
-    too_small = average_area<prior_radii_range(1);
-    
-    area_punishment(too_small) = (area_punishing_term/prior_radii_range(1))*(abs(average_area(too_small)-prior_radii_range(1)));
-    
-    too_large = average_area>prior_radii_range(2);
-    
-    area_punishment(too_large) = (area_punishing_term/prior_radii_range(2))*(abs(average_area(too_large)-prior_radii_range(2)));
-    
-    if all_outputs
-        F_size(:,timepoints_to_optimise(ti)) = area_punishment;
-        F = F+area_punishment;
-    else
-        F = F+area_punishment;
-    end
-    end
     Ftot = Ftot+F;
     
 end
 
-%Ftot = Ftot+ betaElco*sum((radii_stack_mat - [radii_stack_mat(:,(end+1-radii_length):end) radii_stack_mat(:,1:(end-radii_length))]).^2,2);
-%timepoint_diff_mat = (1 - ([radii_stack_mat(:,(end+1-radii_length):end) radii_stack_mat(:,1:(end-radii_length))]./radii_stack_mat)).^2;
-%timepoint_diff_mat = (1 - ( radii_stack_mat(:,1:(end-radii_length))./radii_stack_mat(:,(radii_length+1):end))).^2;
-
-% timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))./...
-%                         (radii_stack_mat(:,(radii_length+1):end) +  radii_stack_mat(:,1:(end-radii_length)))).^2;
 
 timepoint_diff_mat = ((radii_stack_mat(:,(radii_length+1):end) -  radii_stack_mat(:,1:(end-radii_length)))./...
                         (radii_stack_mat(:,1:(end-radii_length)))).^2;
@@ -214,17 +195,4 @@ end
 
 
 
-
-function [D2radii] = second_derivative_snake(radii)
-
-%calculate second derivative of points radii (D^2 r / D (theta) ^2)
-%radii is expected to be an unlooped list (i.e. a list of unrepeated,
-%evenly spaced radii.
-radii2 = [radii(:,end) radii radii(:,1)];
-mask = [-1 2 -1];
-
-D2radii = conv2(radii2,mask,'valid');
-
-
-end
 
