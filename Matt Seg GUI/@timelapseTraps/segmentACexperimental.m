@@ -376,6 +376,7 @@ for TP = Timepoints
         
         TransformedImagesVIS = cell(length(TrapInfo));
         OutlinesVIS = TransformedImagesVIS;
+        CellStatsDebug = TransformedImagesVIS;
         if ACparameters.visualise>1
             DecisionImageStackVIS = DecisionImageStack;
         end
@@ -656,6 +657,7 @@ for TP = Timepoints
             if  ACparameters.visualise >1
                 TransformedImagesVISTrap = [];
                 OutlinesVISTrap = [];
+                CellStatsDebugTrap = [];
             end
             
             %look for new cells
@@ -761,6 +763,8 @@ for TP = Timepoints
                         
                     end
                     
+                    %fprintf('%f\n',ACscore);
+                    
                     % check tracked cell meets criteria of shape change
                     if CrossCorrelating(TI)
                         reordered_radii = ACBackGroundFunctions.reorder_radii(cat(1,PreviousTimepointRadii,RadiiResult));
@@ -786,6 +790,8 @@ for TP = Timepoints
                             %return to while loop on cells
                             continue
                         end
+                    else
+                        p_score = 0;
                         
                     end
                     
@@ -849,6 +855,7 @@ for TP = Timepoints
                         SegmentationBinary = false(size(TransformedCellImage));
                         SegmentationBinary(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
                         OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinary);
+                        CellStatsDebugTrap = cat(1,CellStatsDebugTrap,[ACscore p_score])
                         
                     end
                     
@@ -895,6 +902,7 @@ for TP = Timepoints
                 
                 OutlinesVIS{TI} = OutlinesVISTrap;
                 TransformedImagesVIS{TI} = TransformedImagesVISTrap;
+                CellStatsDebug{TI} = CellStatsDebugTrap;
                 
             end
             
@@ -1006,12 +1014,16 @@ for TP = Timepoints
     if ACparameters.visualise>1 && TP>=TPtoStartSegmenting
         OutlinesStack = [];
         TransformedImagesStack =[];
+        CellStats = [];
         for TI = 1:length(TrapInfo)
             if ~isempty(OutlinesVIS{TI})
                 OutlinesStack = cat(3,OutlinesStack,OutlinesVIS{TI});
             end
             if ~isempty(TransformedImagesVIS{TI})
                 TransformedImagesStack = cat(3,TransformedImagesStack,TransformedImagesVIS{TI});
+            end
+            if ~isempty(CellStatsDebug{TI})
+                CellStats = cat(1,CellStats,CellStatsDebug{TI});
             end
         end
         guiDI.stack = DecisionImageStack;
@@ -1022,6 +1034,11 @@ for TP = Timepoints
         guiOutline.LaunchGUI;
         guiTrapIM.stack = cTimelapse.returnTrapsTimepoint(TrapsToCheck,TP,cTimelapse.ACParams.ActiveContour.ShowChannel);
         guiTrapIM.LaunchGUI;
+        for i=1:size(CellStats,1)
+            
+            fprintf('cell %d  score %3.3g  shape score %3.3g \n',i,CellStats(i,1),CellStats(i,2));
+            
+        end
         fprintf('press enter to continue . . . . \n')
         pause;
         
