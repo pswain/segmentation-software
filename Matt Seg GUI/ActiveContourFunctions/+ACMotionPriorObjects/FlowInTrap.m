@@ -54,7 +54,7 @@ classdef FlowInTrap
         end
         
         function locMap = processTrapOutline(self,trapOutline,r_min)
-            % makes a map: 1 downtream, 2 in middle, 3 upstream
+            % makes a map: 1 downstream, 2 in middle, 3 upstream
             locMap = ones(size(trapOutline));
             middle_x = any(trapOutline,1);
             last_x = find(middle_x,1,'first');

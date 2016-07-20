@@ -217,7 +217,9 @@ classdef experimentTracking<handle
             
             
             % Create a new experimentLogging object when loading:
-            disp('Not generating log files now - to change open experimentTracking.m')
+            if ~cExperiment.shouldLog
+                disp('Not generating log files now - to change open experimentTracking.m')
+            end
             cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             % back compatibility to put channel names into cExperiment

@@ -1,5 +1,5 @@
-function cExperiment_orig =  append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name,delete_extractedData,changeChannelNames)
-% cExperiment_orig = append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name)
+function cExperiment_orig =  append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name,delete_extractedData,changeChannelNames,do_pairs)
+% cExperiment_orig = append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name,delete_extractedData,changeChannelNames,do_pairs)
 %
 % adds positions 'DirToAdd' from one cExperiment to another. If num_timepoints is
 % specified, it will take that many timepoints from the new cExperiment
@@ -22,13 +22,26 @@ function cExperiment_orig =  append_cExperiment(cExperiment_orig, DirToAdd, num_
 % DirToAdd                  :   directories to use in adding (defaults to
 %                               all). If empty, starts with this one.
 % num_timepoints            :   total number of timepoints to add
-%                               distributed evenly over positions
+%                               distributed evenly over positions*(see
+%                               footnote)
 % location                  :   file location of experiment to be added.
 %                               Requested by GUI if absent.
 % append_name               :   name added to position to identify them
 % delete_extracted_data     :   boolean. whether to delete extracted data
 %                               from the cTimelapses when saving
+% changeChannelNames        :   if true, change cTimelapse.channelNames to
+%                               cExperiment_orig (final one) .channelNames
+%                               . Handy for processing.
+% do_pairs                  :   if true, takes timepoints in pairs of n and
+%                               n+1 (when randomly selected). This will
+%                               result in double the number of timepoints.
 %
+% * There is a slight caveat on num_timepoints. If num_timpoints is Inf,
+% nothing will be done to modify the timepoints. If it is less than Inf,
+% sub sets will be selected only from those labelled as 'toProcess' in
+% cTimelapse.timepointToProcess. This means that even if all the timepoints
+% are taken, only those labelled as 'toProcess' will remain after the fuse
+% (unless num_timpoint ==Inf)
 % written by Elco
 
 if nargin<3 || isempty(num_timepoints)
@@ -59,6 +72,10 @@ if nargin<6 || isempty(changeChannelNames)
     changeChannelNames = true;
 end
 
+if nargin<7 || isempty(do_pairs)
+    do_pairs = false;
+end
+
 
 l1 = load(location);
 cExperiment_new = l1.cExperiment;
@@ -80,6 +97,7 @@ if isempty(cExperiment_orig)
     fprintf('\n\n please select a location for the reduced cExperiment file\n\n')
     cExperiment_orig.saveFolder = uigetdir(cExperiment_orig.saveFolder);
     cExperiment_orig.dirs = {};
+    cExperiment_orig.cellInf = [];
 end
 
 if length(cExperiment_new.dirs)>num_timepoints
@@ -117,13 +135,24 @@ for di = 1:length(cExperiment_new.dirs)
     if changeChannelNames
         cTimelapse.channelNames = cExperiment_orig.channelNames;
     end
-    % select random timepoints but maintain order
-    TPs_index = randperm(length(cTimelapse.timepointsToProcess));
-    TPs = sort(cTimelapse.timepointsToProcess(TPs_index(1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess)))));
     
-    cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
-    cTimelapse.timepointsToProcess = 1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess));
-    cTimelapse.timepointsProcessed = false(size(cTimelapse.timepointsToProcess));
+    if ~isinf(num_timepoints)
+        
+        % select random timepoints but maintain order
+        if do_pairs
+            TPs_index = randperm(length(cTimelapse.timepointsToProcess)-1);
+            TPs_index = TPs_index(1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess)));
+            TPs_index = union(TPs_index,TPs_index+1);
+        else
+            TPs_index = randperm(length(cTimelapse.timepointsToProcess));
+            TPs_index = TPs_index(1:min(TPtoUse(di),length(cTimelapse.timepointsToProcess)));
+        end
+        TPs = sort(cTimelapse.timepointsToProcess(TPs_index));
+        
+        cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
+        cTimelapse.timepointsToProcess = 1:length(cTimelapse.cTimepoint);
+        cTimelapse.timepointsProcessed = false(size(cTimelapse.timepointsToProcess));
+    end
     cExperiment_orig.dirs{end+1} = [append_name,cExperiment_new.dirs{di}];
     save(fullfile(cExperiment_orig.saveFolder , [append_name,cExperiment_new.dirs{di},'cTimelapse']),'cTimelapse')
     
