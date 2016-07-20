@@ -85,12 +85,15 @@ TrapPixExcludeThreshCentre = cTimelapse.ACParams.CrossCorrelation.TrapPixExclude
 TrapPixExcludeThreshAC = cTimelapse.ACParams.ActiveContour.TrapPixExcludeThreshAC;% 1; %trap pixels which will not be allowed within active contour areas
 CellPixExcludeThresh = cTimelapse.ACParams.ActiveContour.CellPixExcludeThresh; %0.8; %bwdist value of cell pixels which will not be allowed in the cell area (so inner (1-cellPixExcludeThresh) fraction will be ruled out of future other cell areas)
 
+OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
+
 % cross correlation prior constructed from two parts:
 % a tight gaussian gaussian centered at the center spot (width JumpSize1)
 % a broader gaussian constrained to not go beyond front of the cell (width JumpSize2, truncated at JumpSize1)
 
 
 %object to provide priors for cell movement based on position and location.
+%CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision);
 CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrap(cTimelapse,cCellVision);
 
 PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
@@ -100,12 +103,84 @@ if cTimelapse.trapsPresent
     PerformRegistration = false; %registration should be covered by tracking in the traps.
 end
 
-Recentering =false; %recalcluate the centre of the cells each time as the average ofthe outline
+Recentering =true; %recalcluate the centre of the cells each time as the average ofthe outline
 
 
 %multiplier od decision image added to Transformed image.
 DIMproportion = 1;
 %CrossCorrelationPrior = CrossCorrelationPrior./max(CrossCorrelationPrior(:));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% for trained cell trakcing rubbish
+
+% for trained time change punishment
+% gaussian parameters from paurs of curated cells.
+inverted_cov_2cell_small =...
+  [ 3.6850   -1.8042    0.6610    0.1756    0.5107   -0.0625   -1.2654   -0.4407   -0.5562   -0.8113   -0.4586   -0.0849
+   -1.8042    7.0565   -2.3833    0.4243    0.6222   -2.1497    0.0148   -1.9660    0.9446   -0.1127   -0.5825    0.3210
+    0.6610   -2.3833    5.4670   -1.1714    0.0939    0.8149   -0.3297    0.5652   -2.6783    0.0447    0.1496   -0.8001
+    0.1756    0.4243   -1.1714    3.4690   -1.5093   -0.2491   -0.3079   -0.0859    0.5353   -1.3459    0.2008    0.0392
+    0.5107    0.6222    0.0939   -1.5093    5.2771   -1.5584   -0.3473   -0.8205   -0.4417    0.3719   -2.5134    0.3101
+   -0.0625   -2.1497    0.8149   -0.2491   -1.5584    4.8677   -0.1218    0.1100   -0.7309    0.0958    0.7098   -1.6012
+   -1.2654    0.0148   -0.3297   -0.3079   -0.3473   -0.1218    1.7690   -0.3154    0.3806    0.6215    0.2986   -0.4786
+   -0.4407   -1.9660    0.5652   -0.0859   -0.8205    0.1100   -0.3154    2.9549   -0.9365    0.3240    0.8932    0.1766
+   -0.5562    0.9446   -2.6783    0.5353   -0.4417   -0.7309    0.3806   -0.9365    3.5456   -0.9408    0.3411    0.7558
+   -0.8113   -0.1127    0.0447   -1.3459    0.3719    0.0958    0.6215    0.3240   -0.9408    2.8966   -1.2654    0.2338
+   -0.4586   -0.5825    0.1496    0.2008   -2.5134    0.7098    0.2986    0.8932    0.3411   -1.2654    3.6476   -1.0149
+   -0.0849    0.3210   -0.8001    0.0392    0.3101   -1.6012   -0.4786    0.1766    0.7558    0.2338   -1.0149    2.5496 ];
+ 
+
+log_det_cov_2cell_small = log(det(inverted_cov_2cell_small));
+
+inverted_cov_2cell_small_1cell = ...
+   [2.4427   -2.0993    0.0641   -0.2104   -0.1239   -0.3314
+   -2.0993    5.6055   -1.6940    0.4267    0.1990   -1.8805
+    0.0641   -1.6940    3.2553   -1.0467   -0.1074    0.1925
+   -0.2104    0.4267   -1.0467    2.7684   -1.6112   -0.0687
+   -0.1239    0.1990   -0.1074   -1.6112    3.3484   -1.2699
+   -0.3314   -1.8805    0.1925   -0.0687   -1.2699    3.6582];
+
+log_det_cov_2cell_small_1cell = log(det(inverted_cov_2cell_small_1cell));
+
+
+mu_2cell_small = ...
+    [6.3255    5.5594    4.9345    4.7670    4.6263    4.7629    6.1710    5.5720    4.9830    4.9389    4.8321    5.0378];
+ 
+inverted_cov_2cell_large =...
+    [  2.3252   -1.0645    0.4999    0.4400    0.1024   -0.0282   -1.6182    0.2609   -0.3319   -0.8341   -0.0588    0.2063
+       -1.0645    4.2161   -0.7572    0.2109    0.8579   -0.5746    0.2607   -2.1498    0.4998   -0.0011   -1.1088   -0.4927
+        0.4999   -0.7572    4.1199   -1.1441   -0.0358    0.9840   -0.3555    0.1993   -2.8321    0.6279   -0.0271   -1.1231
+        0.4400    0.2109   -1.1441    3.5522   -1.2739    0.4049   -0.4757   -0.1871    0.4126   -2.1332    0.4667   -0.2236
+        0.1024    0.8579   -0.0358   -1.2739    3.6650   -0.9906   -0.1527   -0.8121   -0.0167    0.4856   -2.2233    0.3479
+       -0.0282   -0.5746    0.9840    0.4049   -0.9906    4.1526    0.0211   -0.4100   -1.1563   -0.2920    0.5674   -2.3946
+       -1.6182    0.2607   -0.3555   -0.4757   -0.1527    0.0211    1.9014   -0.4786    0.5093    0.7099    0.2932   -0.5466
+        0.2609   -2.1498    0.1993   -0.1871   -0.8121   -0.4100   -0.4786    2.4660   -0.7676    0.2704    0.8639    0.8028
+       -0.3319    0.4998   -2.8321    0.4126   -0.0167   -1.1563    0.5093   -0.7676    3.7467   -1.1574    0.3433    0.8806
+       -0.8341   -0.0011    0.6279   -2.1332    0.4856   -0.2920    0.7099    0.2704   -1.1574    3.1400   -1.1870    0.4560
+       -0.0588   -1.1088   -0.0271    0.4667   -2.2233    0.5674    0.2932    0.8639    0.3433   -1.1870    3.1958   -0.9830
+        0.2063   -0.4927   -1.1231   -0.2236    0.3479   -2.3946   -0.5466    0.8028    0.8806    0.4560   -0.9830    3.1388 ];
+
+log_det_cov_2cell_large = log(det(inverted_cov_2cell_large));
+
+inverted_cov_2cell_large_1cell = ...
+   [0.9069   -0.9364    0.2096   -0.0909    0.0602   -0.1900
+   -0.9364    2.2819   -0.6710    0.1747   -0.0614   -0.8289
+    0.2096   -0.6710    1.8512   -0.9688    0.0582   -0.2163
+   -0.0909    0.1747   -0.9688    1.9795   -1.1770    0.2309
+    0.0602   -0.0614    0.0582   -1.1770    2.0198   -0.8258
+   -0.1900   -0.8289   -0.2163    0.2309   -0.8258    2.1950];
+
+log_det_cov_2cell_large_1cell = log(det(inverted_cov_2cell_large_1cell));
+    
+mu_2cell_large = ...
+    [9.3514    8.0165    6.8417    6.5490    6.4683    6.9211    9.3151    8.0440    6.8029    6.4617    6.4043    7.0368];
+
+threshold_radius = 6;
+
+% selected rather arbitrarily from histogram of trained values.
+threshold_probability = 2e-30;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %for debugging
 %CrossCorrelationPrior = ones(ProspectiveImageSize,ProspectiveImageSize);
@@ -618,26 +693,6 @@ for TP = Timepoints
                 end
                 
                 if ProceedWithCell
-                    
-                    NCI = NCI+1;
-                    
-                    %write new cell info
-                    ParCurrentTrapInfo.cell(NCI) = NewCellStruct;
-                    
-                    if CrossCorrelating(TI)
-                        ParCurrentTrapInfo.cellLabel(NCI) = PreviousCurrentTrapInfo.cellLabel(CIpar);
-                        OldCells = [OldCells CIpar];
-                        NewCrossCorrelatedCells = [NewCrossCorrelatedCells NCI];
-                    else
-                        NewCells = [NewCells NCI];
-                        ParCurrentTrapInfo.cellLabel(NCI) = SliceableTrapMaxCell(TI)+1;
-                        SliceableTrapMaxCell(TI) = SliceableTrapMaxCell(TI)+1;
-
-                    end
-                    ParCurrentTrapInfo.cell(NCI).cellCenter = double([xnewcell ynewcell]);
-                    ParCurrentTrapInfo.cellsPresent = true;
-                    
-                    
                     %do active contour
                     
                     NewCellCentre = [xnewcell ynewcell];
@@ -698,13 +753,61 @@ for TP = Timepoints
                     if CrossCorrelating(TI)
                         PreviousTimepointRadii = PreviousCurrentTrapInfo.cell(CIpar).cellRadii;
                         
-                        [RadiiResult,AnglesResult] = ...
+                        [RadiiResult,AnglesResult,ACscore] = ...
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
                     else
-                        [RadiiResult,AnglesResult] = ...
+                        [RadiiResult,AnglesResult,ACscore] = ...
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,FauxCentersStack,[],[],ExcludeLogical);
                         
                     end
+                    
+                    % check tracked cell meets criteria of shape change
+                    if CrossCorrelating(TI)
+                        reordered_radii = ACBackGroundFunctions.reorder_radii(cat(1,PreviousTimepointRadii,RadiiResult));
+                        reordered_radii_list = [reordered_radii(1,:) reordered_radii(2,:)];
+                        if mean(PreviousTimepointRadii)<threshold_radius;
+                            p_score = -(reordered_radii_list - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_list - mu_2cell_small)') - 0.5*log_det_cov_2cell_small...
+                                + (reordered_radii_list(1:OptPoints) - mu_2cell_small(1:OptPoints))*inverted_cov_2cell_small_1cell*((reordered_radii_list(1:OptPoints) - mu_2cell_small(1:OptPoints))') + 0.5*log_det_cov_2cell_small_1cell;
+                        else
+                            p_score = -(reordered_radii_list - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_list - mu_2cell_large)') - log_det_cov_2cell_large...
+                                + (reordered_radii_list(1:OptPoints) - mu_2cell_large(1:OptPoints))*inverted_cov_2cell_large_1cell*((reordered_radii_list(1:OptPoints) - mu_2cell_large(1:OptPoints))') + 0.5*log_det_cov_2cell_large_1cell;
+                        
+                        end
+                        
+                        if p_score < log(threshold_probability);
+                            SegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
+                            
+                            SegmentationBinary = imfill(SegmentationBinary,[ynewcell xnewcell]);
+                            % set that area so that it won't be found again
+                            % as a tracked cell of the same cell.
+                            temp_im = PredictedCellLocationsAllCells{TI}(:,:,CIpar);
+                            temp_im(SegmentationBinary) = -2*abs(CrossCorrelationValueThreshold);
+                            PredictedCellLocationsAllCells{TI}(:,:,CIpar) = temp_im;
+                            %return to while loop on cells
+                            continue
+                        end
+                        
+                    end
+                    
+                    %write new cell info
+                    
+                    NCI = NCI+1;
+                    
+                    ParCurrentTrapInfo.cell(NCI) = NewCellStruct;
+                    
+                    if CrossCorrelating(TI)
+                        ParCurrentTrapInfo.cellLabel(NCI) = PreviousCurrentTrapInfo.cellLabel(CIpar);
+                        OldCells = [OldCells CIpar];
+                        NewCrossCorrelatedCells = [NewCrossCorrelatedCells NCI];
+                    else
+                        NewCells = [NewCells NCI];
+                        ParCurrentTrapInfo.cellLabel(NCI) = SliceableTrapMaxCell(TI)+1;
+                        SliceableTrapMaxCell(TI) = SliceableTrapMaxCell(TI)+1;
+
+                    end
+                    ParCurrentTrapInfo.cell(NCI).cellCenter = double([xnewcell ynewcell]);
+                    ParCurrentTrapInfo.cellsPresent = true;
+                    
                     %write active contour result and change cross
                     %correlation matrix and decision image.
                     
@@ -720,9 +823,17 @@ for TP = Timepoints
                         
                         SegmentationBinary = false(TrapImageSize);
                         SegmentationBinary(py+TrapImageSize(1,1)*(px-1))=true;
+                        %SegmentationBinary = imfill(SegmentationBinary,'holes')
                         
-                        RadiiResult = ACBackGroundFunctions.initialise_snake_radial(1*(~SegmentationBinary),OptPoints,xnewcell,ynewcell,ACparameters.R_min,ACparameters.R_max,[]);
+                        RadiiResult = ACBackGroundFunctions.initialise_snake_radial(1*(~imfill(SegmentationBinary,[ynewcell xnewcell])),OptPoints,xnewcell,ynewcell,ACparameters.R_min,ACparameters.R_max,[]);
                         RadiiResult = RadiiResult';
+                        
+                        %debug
+%                         NewSegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
+%                         NewSegmentationBinary = imdilate(NewSegmentationBinary,ones(5),'same');
+%                         if any(SegmentationBinary(:) & ~NewSegmentationBinary(:))
+%                             fprintf('debug')
+%                         end
                     end
                     
                     ParCurrentTrapInfo.cell(NCI).cellRadii = RadiiResult;

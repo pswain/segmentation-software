@@ -12,7 +12,7 @@ function [radii,angles,RminTP,RmaxTP] = initialise_snake_radial(im,N,x,y,Rmin,Rm
 %
 % exclude_logical - logical of size of image with true at pixels that should not be within the cells
 %                   outline. Used to set Rmin and Rmax for the image.
-
+% in the case of ties the function picks the largest radius.
 
 N = max(N,2);
 
@@ -45,8 +45,8 @@ end
 for i=1:N
     %loops through all the first N points (leaving out the repeated zero
     %N+1) and get the best point in the image for them.
-    cordx = uint16(x+(RminTP(i):RmaxTP(i))'*cos(angles(i)));%radial cords
-    cordy = uint16(y+(RminTP(i):RmaxTP(i))'*sin(angles(i)));
+    cordx = (x+(RminTP(i):0.1:RmaxTP(i))'*cos(angles(i)));%radial cords
+    cordy = (y+(RminTP(i):0.1:RmaxTP(i))'*sin(angles(i)));
     
     cordx(cordx<1) = 1;
     cordx(cordx>imX) = imX;
@@ -54,16 +54,17 @@ for i=1:N
     cordy(cordy<1) = 1;
     cordy(cordy>imY) = imY;
     
+    coords = [round(cordx(:)) round(cordy(:))];
+    coords = unique(coords,'rows','stable');
     
-    score = zeros(size(cordx));
-    for j = 1:length(score)
-        score(j) = im(cordy(j),cordx(j));
-    end
+    coords_index = coords(:,2) + imY*(coords(:,1)-1);
     
+    score = im(coords_index);
+
+    [minScore] = min(score);
+    minIndex = find(score==minScore,1,'last')';
     
-    [~,minIndex] = min(score);
-    
-    radii(i) = Rmin+minIndex-1;
+    radii(i) = sqrt((coords(minIndex,1)-x)^2 + (coords(minIndex,2)-y)^2);
     
 end
 

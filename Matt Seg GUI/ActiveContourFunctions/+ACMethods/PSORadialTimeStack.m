@@ -1,5 +1,5 @@
-function [radii_res,angles] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
-%function [radii_res,angles,ResultsX,ResultsY] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
+function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
+%function [radii_res,angles,score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
 
 % Segment_elco_fmc_radial ---
 %
@@ -287,7 +287,7 @@ switch method
         
         
         radii_stack = optOUT(1:(end-1));
-        ResultsF = optOUT(end);
+        opt_score = optOUT(end);
 
 %%%%%%%%%%%%%%%%%%%% NOT WELL MAINTAINED  -   CHECK DIFFERENCE WITH PSO CASE BEFORE UNCOMMENTING AND USING   %%%%%%%%%%%%%%%%%        
 %     case 'fmincon' 
@@ -339,9 +339,9 @@ switch method
                 'printEvery',Inf);
             [res,val] = lbfgsb( fun, LB, UB, opts );
             %[res,val] = fmincon(fun,radii_stack,[],[],[],[],LB,UB);
-            if val<ResultsF
+            if val<opt_score
                 radii_stack = res;
-                ResultsF = val;
+                opt_score = val;
             else
                 fprintf('optimisation_lame\n')
             end
