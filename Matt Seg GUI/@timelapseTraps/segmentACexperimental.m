@@ -180,6 +180,9 @@ threshold_radius = 6;
 % selected rather arbitrarily from histogram of trained values.
 threshold_probability = 2e-30;
 
+%throw away cells with a score higher than this.
+threshold_score = -5;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %for debugging
@@ -617,6 +620,8 @@ for TP = Timepoints
         end
         %parfor actually looking for cells
         %fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
+        cells_discarded = 0;
+        cells_found = 0;
         parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfo = [];
@@ -778,7 +783,7 @@ for TP = Timepoints
                         
                         end
                         
-                        if p_score < log(threshold_probability);
+                        if p_score < log(threshold_probability) || ACscore> threshold_score
                             SegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
                             
                             SegmentationBinary = imfill(SegmentationBinary,[ynewcell xnewcell]);
@@ -788,15 +793,29 @@ for TP = Timepoints
                             temp_im(SegmentationBinary) = -2*abs(CrossCorrelationValueThreshold);
                             PredictedCellLocationsAllCells{TI}(:,:,CIpar) = temp_im;
                             %return to while loop on cells
+                            %cells_discarded = cells_discarded+1;
                             continue
                         end
                     else
+                        if  ACscore> threshold_score
+                            SegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
+                            
+                            SegmentationBinary = imfill(SegmentationBinary,[ynewcell xnewcell]);
+                            % set that area so that it won't be found as a
+                            % new cell again
+                            
+                            TrapDecisionImage(SegmentationBinary) = 2*abs(TwoStageThreshold);
+                            %return to while loop on cells
+                            cells_discarded = cells_discarded+1;
+                            continue
+                        end
                         p_score = 0;
                         
                     end
                     
                     %write new cell info
                     
+                    cells_found = cells_found+1;
                     NCI = NCI+1;
                     
                     ParCurrentTrapInfo.cell(NCI) = NewCellStruct;
@@ -966,6 +985,7 @@ for TP = Timepoints
             
             
         end %end traps loop
+        fprintf('%d cells of %d discarded\n',cells_discarded,(cells_found+cells_discarded));
         
         TrapMaxCell(TrapsToCheck) = SliceableTrapMaxCell;
         
