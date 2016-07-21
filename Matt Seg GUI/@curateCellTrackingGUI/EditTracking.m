@@ -74,6 +74,43 @@ if isempty(TrackingCurator.keyPressed)
             
         end
     end
+elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.separateTrackingKey)
+    % break tracking from the new cell so that the cell is seaparted from
+    % that tp forwards.
+    CellNumNearestCell = TrackingCurator.cTimelapse.ReturnNearestCellCentre(timepoint,TrackingCurator.trapIndex,cellPt);
+    if ~isempty(CellNumNearestCell)
+        % Update the log
+        logmsg(TrackingCurator.cTimelapse,'Modified cell with label %d in trap %d at timepoint %d to have label %d',...
+            TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell),...
+            TrackingCurator.trapIndex,timepoint,TrackingCurator.CellLabel);
+        
+        oldLabel = TrackingCurator.CellLabel;%TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell);
+        OutlinesToUpdate = [];
+        TPsToUpdateMax = [];
+        TrapInfoMissing = [];
+        % new highest label - if new cells need to be added.
+        newCellLabel = TrackingCurator.cTimelapse.returnMaxCellLabel(TrackingCurator.trapIndex)+1;
+        for TP = timepoint:length(TrackingCurator.cTimelapse.cTimepoint)
+            if ~isempty(TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo)
+                UpdateOutline = false;
+                TPLabels = TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel;
+                
+                if any(TPLabels == oldLabel) %&& oldLabel ~= TrackingCurator.CellLabel
+                    TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==oldLabel) = newCellLabel;
+                    UpdateOutline = true; %update list of TP at which to update the outline
+                end
+%                 if any(TPLabels == TrackingCurator.CellLabel ) && oldLabel ~= TrackingCurator.CellLabel %the and in this statement is added in case people pick the cell that already has the label
+%                     TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel(TPLabels==TrackingCurator.CellLabel) = newCellLabel;
+%                     UpdateOutline = true;
+%                 end
+                if UpdateOutline
+                    OutlinesToUpdate = [OutlinesToUpdate TP];
+                end
+            else
+                TrapInfoMissing = [TrapInfoMissing TP];
+            end
+        end
+    end
     
 elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.outlineEditKey)
     % change active contour result

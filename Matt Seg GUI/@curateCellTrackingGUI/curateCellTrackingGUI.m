@@ -32,6 +32,9 @@ classdef curateCellTrackingGUI<handle
         outlineEditKey = 'o'; %the key to be pressed activate outline editing functionality
         addRemoveKey = 'p'; %the key to be pressed to use add/remove functionality
         closeKey = '[' % the key pressed to close the GUI.
+        separateTrackingKey = 's'; %the key pressed to separate a cell from the tracking of the current cell. 
+                                %to be used when the tracking joins to
+                                %cells together
     end % properties
     
     properties(Constant)
