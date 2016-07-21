@@ -73,7 +73,7 @@ move_centred_subs = move_centred(:,2) + size_sub_image(1)*(move_centred(:,1)-1);
 
 %% make flowLookUpTable
 
-smoothing_element = fspecial('gaussian',[5 5],1);
+smoothing_element = [];%fspecial('gaussian',[5 5],1);
 
 flowLookUpTable = zeros([size_sub_image length(unique(loc))]);
 
@@ -98,7 +98,7 @@ gui = GenericStackViewingGUI(flowLookUpTable)
 
 %% make sizeLookUpTable
 
-smoothing_element = fspecial('gaussian',[5 5],1);
+smoothing_element = [];%fspecial('gaussian',[5 5],1);
 
 sizeLookUpTable = zeros([size_sub_image (length(radius_bins)-1)]);
 
