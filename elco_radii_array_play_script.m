@@ -14,25 +14,7 @@ radii_array_tp1 = original_radii_array_tp1;
 % permutes each radii so that the longest radii is the first entry and the
 % 2nd longest is the 2nd (i.e. reassigns first radii and changes order for
 % regularity).
-
-for i=1:size(radii_array_tp1,1)
-    
-    radii = radii_array_tp1(i,:);
-    
-    %make max radii first entry
-    [~,mi] = max(radii);
-    radii = circshift(radii,-(mi-1),2);
-    
-    % flip so 2nd entry is 2nd largest
-    if radii(2)<radii(end)
-        radii = fliplr(radii);
-        radii = circshift(radii,1,2);
-        
-    end
-    
-    radii_array_tp1(i,:) = radii;
-    
-end
+radii_array_tp1 = ACBackGroundFunctions.reorder_radii(radii_array_tp1);
 
 %% get stats
 
@@ -82,31 +64,9 @@ radii_array_tp2 = original_radii_array_tp2;
 % 2nd longest is the 2nd (i.e. reassigns first radii and changes order for
 % regularity).
 
-for i=1:size(radii_array_tp1,1)
-    
-    radii = radii_array_tp1(i,:);
-    
-    %make max radii first entry
-    [~,mi] = max(radii);
-    
-    radii = cat(1,radii,radii_array_tp2(i,:));
-    
-    if ~any(radii==0)
-    radii = circshift(radii,-(mi-1),2);
-    
-    % flip so 2nd entry is 2nd largest
-    if radii(1,2)<radii(1,end)
-        radii = fliplr(radii);
-        radii = circshift(radii,1,2);
-        
-    end
-    
-    radii_array_tp1(i,:) = radii(1,:);
-    radii_array_tp2(i,:) = radii(2,:);
-    
-    end
-    
-end
+radii_array_tp1 = ACBackGroundFunctions.reorder_radii(radii_array_tp1);
+radii_array_tp2 = ACBackGroundFunctions.reorder_radii(radii_array_tp2);
+
 
 %% test output
 
@@ -170,12 +130,14 @@ cov_radii = cov(paired_radii_array);
 mvnrnd(mean_radii,cov_radii)
 
 %% sample and show
+
+f = figure;
+pos = get(f,'Position');
 while true
 sample_radii = mvnrnd(mean_radii,cov_radii);
 
 sample_radii_tp1 = sample_radii(1:6);
 sample_radii_tp2 = sample_radii(7:end);
-
 
 angles = linspace(0,2*pi,length(sample_radii_tp1)+1);
 
@@ -187,11 +149,16 @@ im1 = ACBackGroundFunctions.px_py_to_logical(px1,py1,[61 61]);
 
 [px2,py2] = ACBackGroundFunctions.get_full_points_from_radii(sample_radii_tp2,angles,[31 31],[61 61]);
 
+
 im2 = ACBackGroundFunctions.px_py_to_logical(px2,py2,[61 61]);
 
 imshow(OverlapGreyRed(zeros(size(im1)),im1,[],im2,true),[])
+set(f,'Position',pos)
 
 pause
+
+pos = get(f,'Position');
+
 end
 
 %% get probabilities 
@@ -212,6 +179,14 @@ ps_large_cond = ps_large./ps_cell1_large;
 ps_cond = cat(1,ps_small_cond,ps_large_cond);
 
 
+%% clear debris>> clear cExperiment
+clear cExpGUI
+clear px* py*
+clear poses
+clear loc* im* expi exps f
+
+
 %% save
 
-%save('~/Documents/microscope_files_swain_microscope_analysis/cCellVision_training/BF_OOF_24_25_30_pairs/curated_radii_processed.mat','radii_array_tp1','radii_array_tp2','original_radii_array_tp1','original_radii_array_tp2','mean_radii*','cov_radii*','threshold_size')
+%save('~/Documents/microscope_files_swain_microscope_analysis/cCellVision_training/BF_OOF_24_25_30_pairs/curated_radii_processed.mat')
+
