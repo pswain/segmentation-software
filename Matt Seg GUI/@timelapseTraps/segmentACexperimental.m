@@ -244,7 +244,7 @@ else
 end
 
 
-disp = cTrapDisplay(cTimelapse,[],[],cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
+disp = cTrapDisplay(cTimelapse,[],true,cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
 
 % gui\s for visualising outputs if that is desired.
 if ACparameters.visualise>1
