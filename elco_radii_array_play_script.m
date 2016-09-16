@@ -69,12 +69,15 @@ radii_array_tp2 = ACBackGroundFunctions.reorder_radii(radii_array_tp2);
 
 
 %% test output
+% for the test input
 
 [~,loc1] = ismember(radii_array_tp1,original_radii_array_tp1);
 
 [~,loc2] = ismember(radii_array_tp2,original_radii_array_tp2);
 
-[loc1 zeros(size(loc1,1),1) loc2]
+n = 24;
+
+[loc1(1:n,:) zeros(n,1) loc2(1:n,:)];
 
 
 
@@ -93,11 +96,128 @@ end
 
 
 if any(radii_array_tp1(:,2)<radii_array_tp1(:,end))
-    fprintf('test 2 failed\n')
+    fprintf('test 3 failed\n')
 else
-    fprintf('test 2 passed\n')
+    fprintf('test 3 passed\n')
 end
 
+
+%% visualisation
+
+%% scatter plot
+h = plot(radii_array_tp1(:), radii_array_tp2(:),'or');
+hold on
+y_lim = h.Parent.YLim;
+plot(y_lim,y_lim,'-b')
+hold off
+
+%% plot of mean and variance in bins
+
+r1 = radii_array_tp1(:);
+r2 = radii_array_tp2(:);
+
+to_remove = (r1==0) | (r2==0);
+
+r1 = r1(~to_remove);
+r2 = r2(~to_remove);
+
+
+[bin_val,bin_loc,bin_adherence] = histcounts(r1(:));
+
+means1 = zeros(size(bin_val));
+means2 = means1;
+stds = means1;
+jbtests = means1;
+
+for i=1:length(bin_val)
+    means1(i) = mean(r1(bin_adherence==i));
+    means2(i) = mean(r2(bin_adherence==i));
+    stds(i) = std(r2(bin_adherence==i));
+    if sum(bin_adherence==i)>1
+        [~,jbtests(i)] = jbtest(r1(bin_adherence==i));
+    end
+end
+
+errorbar(means1,means2,stds);
+hold on
+plot(means1,means1,'-or');
+hold off
+
+figure;
+plot(means1,stds)
+
+%% plot normalise radii
+
+r2_n = r2./r1;
+
+
+[~,p_jb] = jbtest(r2_n);
+fprintf('jbtest for normalised radii is %f',p_jb)
+
+m = mean(r2_n);
+s = std(r2_n);
+
+[n,bins] = hist(r2_n,100);
+
+bar(bins,n/sum(n));
+hold on
+pdfs = normpdf(bins,m,s);
+pdfs = pdfs/sum(pdfs);
+plot(bins,pdfs,'-or');
+hold off
+
+%% NORMALISED 2ND RADII
+
+% based on the success of matt's training, now trying radii normalised to
+% the first timepoint
+
+%% clean up and normalise
+
+to_remove = any(radii_array_tp1==0,2) |  any(radii_array_tp2==0,2);
+
+
+radii_array_tp1_n = radii_array_tp1(~to_remove,:);
+radii_array_tp2_n = radii_array_tp2(~to_remove,:);
+radii_array_tp2_n = radii_array_tp2_n./radii_array_tp1_n;
+
+%% get stats
+
+%% just small cells
+threshold_size = 6;
+radii_array_tp2_n_small =  radii_array_tp2_n(mean(radii_array_tp1_n,2)<6,:);
+
+mean_radii_small = mean(radii_array_tp2_n_small);
+cov_radii_small = cov(radii_array_tp2_n_small);
+
+mean_radii = mean_radii_small;
+cov_radii = cov_radii_small;
+
+%% just large cells
+threshold_size = 6;
+radii_array_tp2_n_large =  radii_array_tp2_n(mean(radii_array_tp1_n,2)>=6,:);
+
+mean_radii_large = mean(radii_array_tp2_n_large);
+cov_radii_large = cov(radii_array_tp2_n_large);
+
+mean_radii = mean_radii_large;
+cov_radii = cov_radii_large;
+
+
+%% sample
+mvnrnd(mean_radii,cov_radii)
+
+%% show probabilities
+
+ps_small = mvnpdf(radii_array_tp2_n_small,mean_radii_small,cov_radii_small);
+ps_large = mvnpdf(radii_array_tp2_n_large,mean_radii_large,cov_radii_large);
+
+ps = cat(1,ps_small,ps_large);
+
+hist(log(ps),300)
+
+%% NON NORMALISED
+% old(now) code when radii were paired into a 12 dimensional gaussian and
+% not normalised.
 %% pick or paired sets
 
 paired_radii_array = [radii_array_tp1 radii_array_tp2];
@@ -110,6 +230,9 @@ paired_radii_array_small =  paired_radii_array(mean(paired_radii_array(:,1:6),2)
 
 mean_radii_small = mean(paired_radii_array_small);
 cov_radii_small = cov(paired_radii_array_small);
+
+mean_radii = mean_radii_small;
+cov_radii = cov_radii_small;
 
 %% just large cells
 
@@ -189,4 +312,5 @@ clear loc* im* expi exps f
 %% save
 
 %save('~/Documents/microscope_files_swain_microscope_analysis/cCellVision_training/BF_OOF_24_25_30_pairs/curated_radii_processed.mat')
+
 

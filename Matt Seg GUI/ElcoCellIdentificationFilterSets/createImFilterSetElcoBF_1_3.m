@@ -39,22 +39,15 @@ if size(image,3)>1
     image = cat(3,image,image(:,:,1) - image(:,:,2));
 end
 
-% set large trap pixels to median to try and stop them influencing the
-% outcome.
-modified_image = image;
-for slicei = 1:size(image,3)
-    slice_im = image(:,:,slicei);
-    slice_im(trapLogicalBig) = median(slice_im(:));
-    modified_image(:,:,slicei) = slice_im;
-end
+% put just the traps of the first slice into the image stack to try and
+% disentangle the trap contribution.
+temp_image = image(:,:,1);
+temp_image(~trapLogicalBig) = median(temp_image(:));
+image = cat(3,image,temp_image);
 
-
-filt_feat=zeros(size(modified_image,1)*size(modified_image,2),size(modified_image,3)*n_filt +1,'double');
-%filt_feat=zeros(size(modified_image,1)*size(modified_image,2),size(modified_image,3)*n_filt,'double');
-
+filt_feat=zeros(size(image,1)*size(image,2),size(image,3)*n_filt,'double');
 
 temp_index = 1;
-%temp_index = temp_index+1;
 
 % hough stuff
 fltr4accum = ones(5,5);
@@ -66,12 +59,12 @@ f1=fspecial('disk',4);
 
 %elco cicular filter stuff
 rad_means = (cCellSVM.radiusSmall : cCellSVM.radiusLarge)';
-rad_ranges = [rad_means-0.5 rad_means+0.5];
+rad_ranges = [rad_means-1 rad_means+1];
 
 
 %% generate features
-for i=1:size(modified_image,3)
-    im_slice=modified_image(:,:,i);
+for i=1:size(image,3)
+    im_slice=image(:,:,i);
         
     %% image itself
     filt_feat(:,temp_index)=im_slice(:);
@@ -96,7 +89,11 @@ for i=1:size(modified_image,3)
      
     
     %% hough on gradient magnitude
-    [temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum,trapLogicalBig);
+    
+    %previously removed trap pixels, now no longer
+    %[temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum,trapLogicalBig);
+    
+    [temp_im] =  CircularHough_Grd_mod(im_slice, [cCellSVM.radiusSmall cCellSVM.radiusLarge],max(grad_mag(:))*.01,6,fltr4accum);
     
     filt_feat(:,temp_index)=temp_im(:);
     temp_index=temp_index+1;
@@ -108,7 +105,7 @@ for i=1:size(modified_image,3)
     %% Elco Hough filter
     
     %[IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical)
-    [IMoutPOS,IMoutNEG] = ElcoImageFilter(im_slice,rad_ranges,0,0,trapLogicalBig,false);
+    [IMoutPOS,IMoutNEG] = ElcoImageFilter(im_slice,rad_ranges,0,0,[],false);
 
     % IMoutPOS handling
     temp_im = sum(IMoutPOS,3);
@@ -147,7 +144,6 @@ for i=1:size(modified_image,3)
     %% Elco tube filter
 
 end
-filt_feat(:,temp_index) = cCellSVM.cTrap.trapInner(:);
 
 
  
