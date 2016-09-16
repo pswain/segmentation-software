@@ -93,9 +93,13 @@ OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
 
 
 %object to provide priors for cell movement based on position and location.
-%CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision);
 jump_parameters = [3 21];
 CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
+
+% more stringent jump object for checking cell score
+jump_parameters_check = [1 21];
+CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
+
 
 PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
 MaxRegistration = cTimelapse.ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
@@ -737,18 +741,48 @@ for TP = Timepoints
                         
                     end
                     
-                    %fprintf('%f\n',ACscore);
+                    if Recentering
+                        %somewhat crude, hope that it will keep cells
+                        %reasonably centred.
+                        [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',double([xnewcell ynewcell]),TrapImageSize);
+                        
+                        xnewcell = round(mean(px));
+                        ynewcell = round(mean(py));
+                        
+                        SegmentationBinary = false(TrapImageSize);
+                        SegmentationBinary(py+TrapImageSize(1,1)*(px-1))=true;
+
+                        RadiiResult = ACBackGroundFunctions.initialise_snake_radial(1*(~imfill(SegmentationBinary,[ynewcell xnewcell])),OptPoints,xnewcell,ynewcell,ACparameters.R_min,ACparameters.R_max,[]);
+                        RadiiResult = RadiiResult';
+                        
+                    end
                     
                     % check tracked cell meets criteria of shape change
                     if CrossCorrelating(TI)
                         reordered_radii = ACBackGroundFunctions.reorder_radii(cat(1,PreviousTimepointRadii,RadiiResult));
                         reordered_radii_norm = reordered_radii(2,:)./reordered_radii(1,:);
+                        
+                        %calculate radii contribution
                         if mean(PreviousTimepointRadii)<threshold_radius;
                             p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') - 0.5*log_det_cov_2cell_small;
                         else
                             p_score = -(reordered_radii_norm - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_norm - mu_2cell_large)') - 0.5*log_det_cov_2cell_large;
                         
                         end
+                        
+                        % calculate movement contribution
+                        old_cell_center = PreviousCurrentTrapInfo.cell(CIpar).cellCenter;
+                        old_cell_radius = mean(PreviousCurrentTrapInfo.cell(CIpar).cellRadii);
+                        
+                        movement_prior = CrossCorrelationPriorObjectCheck.returnPrior(old_cell_center, old_cell_radius);
+                        
+                        relative_new_cell_loc = [xnewcell,ynewcell] - old_cell_center + fliplr(ceil(TrapImageSize/2)); 
+                        
+                        relative_new_cell_loc(relative_new_cell_loc<1) = 1;
+                        relative_new_cell_loc(relative_new_cell_loc>TrapImageSize) = TrapImageSize(relative_new_cell_loc>TrapImageSize);
+                        
+                        p_movement = movement_prior(relative_new_cell_loc(2),relative_new_cell_loc(1));
+                        p_score = p_score + log(p_movement);
                         
                         if p_score < log(threshold_probability) || ACscore> threshold_score
                             SegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
@@ -802,31 +836,6 @@ for TP = Timepoints
                     
                     %write active contour result and change cross
                     %correlation matrix and decision image.
-                    
-                    if Recentering
-                        %somewhat crude, hope that it will keep cells
-                        %reasonably centred.
-                        [px,py] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',double(ParCurrentTrapInfo.cell(NCI).cellCenter),TrapImageSize);
-                        
-                        xnewcell = round(mean(px));
-                        ynewcell = round(mean(py));
-                        
-                        ParCurrentTrapInfo.cell(NCI).cellCenter = double([xnewcell ynewcell]);
-                        
-                        SegmentationBinary = false(TrapImageSize);
-                        SegmentationBinary(py+TrapImageSize(1,1)*(px-1))=true;
-                        %SegmentationBinary = imfill(SegmentationBinary,'holes')
-                        
-                        RadiiResult = ACBackGroundFunctions.initialise_snake_radial(1*(~imfill(SegmentationBinary,[ynewcell xnewcell])),OptPoints,xnewcell,ynewcell,ACparameters.R_min,ACparameters.R_max,[]);
-                        RadiiResult = RadiiResult';
-                        
-                        %debug
-%                         NewSegmentationBinary = ACBackGroundFunctions.get_outline_from_radii(RadiiResult',AnglesResult',[xnewcell ynewcell],TrapImageSize);
-%                         NewSegmentationBinary = imdilate(NewSegmentationBinary,ones(5),'same');
-%                         if any(SegmentationBinary(:) & ~NewSegmentationBinary(:))
-%                             fprintf('debug')
-%                         end
-                    end
                     
                     ParCurrentTrapInfo.cell(NCI).cellRadii = RadiiResult;
                     ParCurrentTrapInfo.cell(NCI).cellAngle = AnglesResult;
