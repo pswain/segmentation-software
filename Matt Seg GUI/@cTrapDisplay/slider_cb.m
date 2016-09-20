@@ -47,7 +47,7 @@ for j=1:size(alltraps,3)
         %shuffle colours so adjacent cells don't look super similar.
         %setting first point of segLabel to trapMaxCell ensures this is
         %consistent across all images.
-        segLabel(1)=cDisplay.cTimelapse.cTimepoint(cDisplay.cTimelapse.timepointsToProcess(1)).trapMaxCell(cDisplay.traps(j));
+        segLabel(1)=50*(1 + floor(cDisplay.cTimelapse.returnMaxCellLabel(cDisplay.traps(j))/50));
         trackLabel=label2rgb(segLabel,'jet','w','shuffle');
         trackLabel=double(trackLabel);
         trackLabel=trackLabel/255;
