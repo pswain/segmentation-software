@@ -200,6 +200,9 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     % shoud be inserted.
                     dataInd = find(trap==currTrap & cells == currCell);
                     if ~isempty(temp_loc)
+                        if length({trapInfo(currTrap).cell(temp_loc).segmented})~=1
+                            error('Oh no!!');
+                        end
                         seg_areas=full(trapInfo(currTrap).cell(temp_loc).segmented);
                         
                         cellLoc=zeros(size(seg_areas));
