@@ -55,6 +55,7 @@ classdef timelapseTraps<handle
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
+        BackgroundOffset = {[]}; %scalar offset to be used with BackgroundCorrection matrix. If non empty, returnSingleTimepoint will subtract this offset before multiplying by the correction matrix.
         ActiveContourObject %an object of the TimelapseTrapsActiveContour class associated with this timelapse.
         ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
         extractionParameters = timelapseTraps.defaultExtractParameters;

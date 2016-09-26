@@ -274,6 +274,16 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                         extractedData(channel).smallmean(dataInd,timepoint)=mean(cellFLsmall(:));
                         extractedData(channel).smallmedian(dataInd,timepoint)=median(cellFLsmall(:));
                         
+                        % Quantify the effect of neighbouring cells, by
+                        % calculating statistics for the cell halo:
+                        cellHaloLoc = imdilate(cellLoc,strel('disk',3));
+                        cellHaloLoc(cellLoc) = false;
+                        cellHaloFL = trapImage(cellHaloLoc);
+                        
+                        extractedData(channel).cellHaloMedian(dataInd,timepoint) = median(cellHaloFL(:));
+                        extractedData(channel).cellHaloMean(dataInd,timepoint) = mean(cellHaloFL(:));
+                        extractedData(channel).cellHaloQ95(dataInd,timepoint) = quantile(cellHaloFL(:),0.95);
+                        
                         seg_areas=zeros(size(trapInfo(currTrap).cell(1).segmented));
                         for allCells=1:length(trapInfo(currTrap).cellLabel)
                             
@@ -286,6 +296,22 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                             end
                         end
                         
+                        % Calculate image background for regions distant to
+                        % cell locations by dilating seg_areas to avoid 
+                        % fluorescence 'halo' around cells:
+                        dilated_seg_areas = imdilate(seg_areas,strel('disk',3));
+                        bgd = trapImage(~dilated_seg_areas);
+                        bgd = bgd(~isnan(bgd(:)));
+                        if isempty(bgd)
+                            % Trap is overrun with cells, there is no
+                            % sensible image background measure
+                            extractedData(channel).imBackgroundDistant(dataInd,timepoint)=NaN;
+                        else
+                            extractedData(channel).imBackgroundDistant(dataInd,timepoint)=...
+                                median(bgd(:));
+                        end
+                        
+                        % Standard image background calculation
                         seg_areas=~seg_areas;
                         
                         bkg=trapImage(seg_areas);
