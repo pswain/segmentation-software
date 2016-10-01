@@ -50,7 +50,9 @@ if isempty(cTimelapse.omeroImage)
     for ss=1:length(searchString)
         timepoint_index=0;
         for n = 1:length(files);
-            if isempty(strfind(files{n},'tif'))|| isempty(strfind(files{n},'png')) || isempty(strfind(files{n},'TIF'))
+            % check file name is an image and is not a hidden unix file
+            if (~isempty(strfind(files{n},'tif'))|| ~isempty(strfind(files{n},'png')) || ~isempty(strfind(files{n},'TIF')))...
+                    && isempty(regexp(files{n},'^\.','once'))
                 if ~isempty(strfind(files{n},searchString{ss}))
                     cTimelapse.cTimepoint(timepoint_index+1).filename{ss}=files{n};
                     cTimelapse.cTimepoint(timepoint_index+1).trapLocations=[];

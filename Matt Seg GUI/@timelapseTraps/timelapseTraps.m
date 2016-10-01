@@ -153,13 +153,7 @@ classdef timelapseTraps<handle
             % this is empty it juse uses an empty array.
             
             if nargin<2
-                if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
-                    data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
-                elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
-                    data_template = sparse(false(cTimelapse.imSize));
-                else
-                    data_template = [];
-                end
+                data_template = cTimelapse.defaultTrapDataTemplate();
             elseif ~issparse(data_template)
                 error('data_template should be a sparse array')
                 
@@ -179,6 +173,24 @@ classdef timelapseTraps<handle
             % default_trap_indices = defaultTrapIndices(cTimelapse)
             % return the default trap indices to run anything over.
             default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
+        end
+        
+        function data_template = defaultTrapDataTemplate(cTimelapse)
+            % data_template = defaultTrapDataTemplate(cTimelapse)
+            % returns a sparse array of the default size for populating
+            % cell and trapInfo structures. Used at various points in the
+            % code where these things need to be populated.
+            % for trap containing cTimelapses, this is the trapSize.
+            % for those without traps, it is the image size.
+            
+            if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
+                data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
+            elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
+                data_template = sparse(false(cTimelapse.imSize));
+            else
+                data_template = [];
+            end
+            
         end
         
         
