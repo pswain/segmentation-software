@@ -65,7 +65,7 @@ switch selection
                 end
             elseif length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)==1
                 
-                data_template=sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width]+1));
+                data_template= cTimelapse.defaultTrapDataTemplate;
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell = cTimelapse.cellInfoTemplate;
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell.segmented = data_template;
                 cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
@@ -76,7 +76,7 @@ switch selection
             end
             
         else %no cells close to click, just make sure fields are as they should be for an empty trap
-            data_template=sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width]+1));
+            data_template= cTimelapse.defaultTrapDataTemplate;
             cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell = cTimelapse.cellInfoTemplate;
             cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell.segmented = data_template;
             cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent = false;
