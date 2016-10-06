@@ -41,7 +41,39 @@ cExperiment = append_cExperiment(cExperiment,num_timepoints,[],[]);
 %% open a GUI to edit the experiment
 
 
-expGUI = experimentTrackingGUI;
+cExpGUI = experimentTrackingGUI;
+
+%% BEFORE EDITING! (if using a non trap timelapse)
+% the non trap timelapse has a few quirks that can make it a bit of a pig.
+% These are best solved by following the following steps.
+
+%% change active contour parameters for cExperiment
+% this is particularly necessary if the new images are of a different
+% maginification.
+
+% set some parameters
+cExperiment = cExpGUI.cExperiment;
+cExperiment.ActiveContourParameters.ImageTransformation.channel = 1; %set to what you want
+cExperiment.ActiveContourParameters.ActiveContour.R_min = 5;
+cExperiment.ActiveContourParameters.ActiveContour.R_max = 50;
+% bit slower but more fine grained outline for large images.
+cExperiment.ActiveContourParameters.ImageSegmentation.OptPoints = 10;
+
+cExperiment.ActiveContourParameters.ImageSegmentation.SubImageSize = 2*(cExperiment.ActiveContourParameters.ActiveContour.R_max + 10) + 1; 
+
+% this line runs the tracking and sets the active contour parameters of
+% each timelapse to be the active contour parameters of the cExperiment.
+% this is useful if using the 'elcoAC' method to add cells.
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(cExperiment.dirs),...
+    min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true);
+
+%% change function
+% this is a little annoying but it is also advisable to change the 'method'
+% of the cTrapDisplay.addRemoveCells function to 'elcoAC' (line 59). This
+% means the cells
+% this might get problematic in later versions (or become the standard).
+
+edit cTrapDisplay.addRemoveCells
 
 %% make training timelapse from cExperiment - WARNING, generally will load a cCellVision
 %  Needs to already be segmented and curated (can't do it afterwards unless non trap timelapse)
@@ -50,7 +82,7 @@ expGUI = experimentTrackingGUI;
 %load(fullfile(path,file),'cExperiment');
 
 
-for di =1:18% 1:length(cExperiment.dirs)
+for di = 1:length(cExperiment.dirs)
     
     cTimelapse = cExperiment.loadCurrentTimelapse(di);
         if di==1
