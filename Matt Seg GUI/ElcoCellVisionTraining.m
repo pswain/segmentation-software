@@ -24,7 +24,7 @@ load(fullfile(path,file),'cCellVision');
 %% initialise for cExperiment compilation
 
 cExperiment =[];
-num_timepoints = 5;
+num_timepoints = Inf;
 
 %% select cExperiments you want to add to the gound truth set.
 % num_timpoints timepoints will be added from each one.
