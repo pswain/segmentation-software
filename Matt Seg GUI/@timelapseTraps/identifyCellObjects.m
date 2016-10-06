@@ -632,8 +632,7 @@ trap = traps(1);
 [Iy,Ix] = find(bw);
 ycell = round(mean(Iy));
 xcell = round(mean(Ix));
-trap_size = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
-
+trap_size = size(cTimelapse.defaultTrapDataTemplate);
 
 if cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellsPresent
     newIndex = length(cTimelapse.cTimepoint(timepoint).trapInfo(trap).cell)+1;
