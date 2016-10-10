@@ -104,7 +104,8 @@ function [d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,imag
 % This preallocates the segmented images to speed up execution
 d_im=zeros(size(old_d_im));
 
-
+tPresent=cTimelapse.trapsPresent;
+if tPresent
 %used if refineTrapOutline has not been used to populate
 %refinedTrapPixelInner/Big
 defaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1);
@@ -112,7 +113,9 @@ defaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1
 % if cTimelapse.refinedTrapOutline has been run then use this for trap
 % outline.
 trapOutline = cTimelapse.returnTrapsPixelsTimepoint(trap,timepoint,defaultTrapOutline);
-
+else
+    trapOutline = full(cTimelapse.defaultTrapDataTemplate);
+end
 %calculate the decisions image, do some transformations on it, and
 %threshold it to give segCentres.
 
