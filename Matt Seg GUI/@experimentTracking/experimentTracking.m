@@ -16,6 +16,7 @@ classdef experimentTracking<handle
         posSegmented % logical array of position already segmented.
         posTracked %logical of positions tracked
         cellsToPlot % Doesn't actually seem to be used anywhere
+        metadata % structure of meta data filled by experimentTracking.parseLogFile
         %currentDir 
         %the following all match their equivalents in timelapseTraps and
         %are popualted and used to populate the timelapseTrap fields when calling
