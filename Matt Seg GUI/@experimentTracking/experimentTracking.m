@@ -136,6 +136,8 @@ classdef experimentTracking<handle
                 end
             else
                 %Position list consists of the Omero image names
+                %Make sure the image list is loaded
+                cExperiment.omeroDs=getDatasets(OmeroDatabase.Session,cExperiment.omeroDs.getId.getValue, true);
                 oImages=cExperiment.omeroDs.linkedImageList;
                 for i=1:oImages.size
                     cExperiment.dirs{i}=char(oImages.get(i-1).getName.getValue);
@@ -144,6 +146,10 @@ classdef experimentTracking<handle
             end
             cExperiment.cellsToPlot=cell(1);
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
+            
+            %Parse the metaData and attach the structure to the
+            %cExperiment object
+             
             
             %Set the channels
             if ~isempty(cExperiment.OmeroDatabase)                

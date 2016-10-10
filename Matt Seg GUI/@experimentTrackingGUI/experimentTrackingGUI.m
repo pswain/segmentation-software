@@ -47,7 +47,7 @@ classdef experimentTrackingGUI<handle
             
             %Add Omero code to the path
             if ispc
-                addpath(genpath('C:\Omero code\Omero code'));
+                addpath(genpath('C:\Users\Public\OmeroCode'));
             else
                 addpath(genpath(['/Users/' char(java.lang.System.getProperty('user.name')) '/Documents/Omero code']));
             end
