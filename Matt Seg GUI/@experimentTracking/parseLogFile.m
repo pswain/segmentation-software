@@ -232,6 +232,7 @@ annotations.pumpSwitches = pumpSwitches;
 annotations.logTimes = timesInMinutes;
 annotations.logPosNames = positionStrs;
 annotations.logExposureTimes = positionExposure;
+annotations.acq = acq;
 
 cExperiment.metadata = annotations;
 
@@ -294,7 +295,7 @@ activeSection = '';
 sectionLineNum = 0;
 
 %% Parse the Acq file line by line:
-fprintf('Parsing Acq file:\n%s\n',acqfile);
+fprintf('...and also parsing Acq file:\n%s\n',acqfile);
 fid = fopen(acqfile);
 tline = fgets(fid);
 
