@@ -17,6 +17,8 @@ if nargin<2
     logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
 end
 
+[logdir,~,~] = fileparts(logFile);
+
 %% Initialise default header variables and regular expressions
 
 microscope = ''; acqfile = ''; acqdir = '';
@@ -35,14 +37,16 @@ commentlines = 0; projectline = false; tagline = false;
 %% Initialise time course variables and regular expressions
 
 % Pre-allocate arrays by guessing sizes
-approxNtimepoints = size(cExperiment.cellInf(1).xloc,2);
+approxNtimepoints = 100;
 approxNpositions = length(cExperiment.dirs);
-% Overestimate Ntimepoints in case the processed timepoints was truncated
-times = zeros(2*approxNtimepoints,approxNpositions);
+%NB: times gets an updated size if we make it past the header lines
+times = zeros(approxNtimepoints,approxNpositions);
 positionStrs = cell(approxNpositions,1);
 positionExposure = struct();
 pumpSwitches = zeros(0,1);
+acq = {}; % Gets filled with structure parsed from Acq file
 timepoint = 0;
+npos = 0;
 
 parseRegExpFast = {'^------Time point_','^Position:',...
     '^Channel:','^Exposure time:','^Switching pumps at'};
@@ -65,6 +69,10 @@ while ischar(tline)
         if acqfileline
             [acqdir,filename,ext] = fileparts(tline);
             acqfile = [filename,ext];
+            % Attempt to find and parse the Acq file:
+            if exist(fullfile(logdir,acqfile),'file')
+                acq = parseAcqFile(fullfile(logdir,acqfile));
+            end
             acqfileline = false;
         end
         if projectline
@@ -95,6 +103,17 @@ while ischar(tline)
                 case 'endheader'
                     header = false; acqfileline = false; tagline = false;
                     commentlines = 0; projectline = false;
+                    % Attempt to update the approximated number of timepoints 
+                    if ~isempty(acq) && ~isempty(acq.times) && ~isempty(acq.times.ntimepoints)
+                      approxNtimepoints = acq.times.ntimepoints;
+                      times = zeros(approxNtimepoints,approxNpositions);
+                    elseif ~isempty(cExperiment.cTimelapse)
+                      approxNtimepoints = length(cExperiment.cTimelapse.cTimepoint);
+                      times = zeros(approxNtimepoints,approxNpositions);
+                    elseif ~isempty(cExperiment.cellInf) && isfield(cExperiment.cellInf,'xloc')
+                      approxNtimepoints = size(cExperiment.cellInf(1).xloc,2);
+                      times = zeros(approxNtimepoints,approxNpositions);
+                    end
             end
         end
         
@@ -126,6 +145,7 @@ while ischar(tline)
             case 'position'
                 parsedline = regexp(tline,lineRegExp{1},'once','tokens');
                 position = str2double(parsedline{1});
+                npos = max([position,npos]);
                 positionStrs{position} = parsedline{2};
             case 'channel'
                 parsedline = regexp(tline,lineRegExp{1},'once','tokens');
@@ -174,7 +194,7 @@ if ~isempty(pumpSwitches)
     end
 end
 
-%% Convert to minutes
+%% Convert timepoint times to minutes
 times = times - times(1,1);
 timesInMinutes = zeros(size(times));
 for i = 1:size(times,1)
@@ -183,26 +203,18 @@ for i = 1:size(times,1)
     end
 end
 
-%% Subset the timepoints to those specified in cExperiment:
-extractedPositions = sort(unique(cExperiment.cellInf(1).posNum));
-extractedTimepoints = false(max(extractedPositions(:)),size(times,1));
-extractedTimepoints(:,cExperiment.timepointsToProcess) = true;
+%% Subset the timepoints and positions to those recorded in log file
 
-%% Refactor the arrays to the same format as cellInf arrays:
-positions = cExperiment.cellInf(1).posNum;
-posNames = cExperiment.dirs;
-posIndices = cellfun(@(s) find(strcmpi(positionStrs',s)), posNames);
-
-% Truncate the array to include the same number of timepoints as cellInf
-timesInMinutes = timesInMinutes(1:approxNtimepoints,:)';
-extractedTimepoints = extractedTimepoints(:,1:approxNtimepoints);
-
-% Set cell times based on that cell's position
-timesInMinutes = timesInMinutes(posIndices(positions),:);
-extractedTimepoints = extractedTimepoints(positions,:);
+% The final value of timepoint is the last in the log file, and npos is the
+% maximum position number seen in the log file:
+timesInMinutes = timesInMinutes(1:timepoint,1:npos)';
+positionStrs = positionStrs(1:npos);
+channels = fieldnames(positionExposure);
+for i=1:length(channels)
+    positionExposure.(channels{i}) = positionExposure.(channels{i})(1:npos);
+end
 
 %% Update cExperiment:
-[logdir,~,~] = fileparts(logFile);
 experiment = regexp(acqfile,'^(.*)Acq\.txt$','tokens','once');
 username = regexp(acqdir,'Swain Lab[/\\]([^/\\]+)[/\\]RAW DATA','tokens','once');
 
@@ -220,11 +232,6 @@ annotations.pumpSwitches = pumpSwitches;
 annotations.logTimes = timesInMinutes;
 annotations.logPosNames = positionStrs;
 annotations.logExposureTimes = positionExposure;
-
-% Attempt to find and parse the Acq file:
-if exist(fullfile(logdir,acqfile),'file')
-    annotations.acq = parseAcqFile(fullfile(logdir,acqfile));
-end
 
 cExperiment.metadata = annotations;
 
