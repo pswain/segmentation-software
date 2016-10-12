@@ -51,10 +51,16 @@ else
     
     %cTimelapse file
     %Before saving, replace image object with its Id and the OmeroDatabase object with the server name - avoids a non-serializable warning
+    oD=cTimelapse.OmeroDatabase;
+    omeroImage=cTimelapse.omeroImage;
     cTimelapse.omeroImage=cTimelapse.omeroImage.getId.getValue;
-    cTimelapse.OmeroDatabase=cTimelapse.OmeroDatabase.Server;
+    cTimelapse.OmeroDatabase=cTimelapse.OmeroDatabase.Server;    
     fileName=[cExperiment.saveFolder filesep dsName 'cTimelapse_' cExperiment.rootFolder '.mat'];
     save(fileName,'cTimelapse');
+    %Restore image and OmeroDatabase objects
+    cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
+    cTimelapse.omeroImage=omeroImage;
+    cTimelapse.OmeroDatabase=oD;
     faIndex=strcmp([dsName 'cTimelapse_' cExperiment.rootFolder '.mat'],faNames);
     faIndex=find(faIndex);
  
