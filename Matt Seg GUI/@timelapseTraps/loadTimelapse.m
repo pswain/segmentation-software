@@ -89,7 +89,7 @@ else
     
     %Load first timepoint of this cTimelapse to fill out the remaining
     %details
-    image=cTimelapse.returnSingleTimepoint(1,searchString);
+    image=cTimelapse.returnSingleTimepoint(1,find(strcmp(cTimelapse.microscopeChannels,searchString)));
 end
 
 cTimelapse.imSize=size(image);

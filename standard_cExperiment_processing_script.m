@@ -12,8 +12,15 @@
 
 cExpGUI = experimentTrackingGUI;
 
-% Use the 'create cExperiment' or 'load cExperiment' to produce a
-% cExperiment object for your time lapse.
+%To create an experiment from a folder containing image files use the
+%"Create New Experiment" or  "Load Experiment" button. To create an
+%experiment from the Omero image database click on the Omero icon. This
+%brings up a 2nd GUI in which you can browse for the dataset you want to
+%segment. Click the "Load" button in that GUI to create an experiment for
+%segmentation. cExperiment files created from the Omero database are
+%automatcally saved as part of the source dataset after segmentation, data
+%extraction etc.
+
 % In the cExperiment creation GUI you will be asked to provide a channel.
 % This is the one you will generally see when viewing images, so something
 % near the centre of the brightfield stack or DIC is advisable. 
@@ -45,6 +52,8 @@ cExperiment = cExpGUI.cExperiment;
 % individually. Adds the other channels (i.e. those in addition to initial
 % Brightfield channel) to the cExperiment so that they are accessible in
 % the processing and data extraction.
+%This step is not necessary for cExperiments created from the Omero
+%database as they should have all channels added automatically
 
 channels = {'Brightfield_001','Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','tdTomato','tdTomato_001','tdTomato_002','tdTomato_003','tdTomato_004','tdTomato_005'};
 
@@ -176,7 +185,7 @@ cExperiment.identifyTrapsTimelapses(cExperiment.cCellVision,poses)
 % (these are only correct if you have added the channels as prescribed -
 % adjust as necessary).
 
-lower_brightfield_channel = 2; % lower z stack slice of brightfield
+lower_brightfield_channel = 1; % lower z stack slice of brightfield
 % in this channel all cells should appear as a reasonably sharp white
 % objects with black halos (a little out of focus is best)
 
@@ -210,7 +219,7 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 % We here inspect the decision image for a particular timepoint to help us
 % choose the decision image thresholds. i.e. those values in the decision
 % image at which the software determines a pixel to be the centre of a
-% cell. Lower values are more stringent, while higher ones are more
+% cell. Lower values are more stringent, n  while higher ones are more
 % lenient. 
 % 
 % The software uses two thresholds, one for new cells (more stringent -
@@ -223,7 +232,7 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 tp = 50; % time point to inspect
 channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
-thresh1 = -2; %yellow: new cells (more stringent)
+thresh1 = -3; %yellow: new cells (more stringent)
 thresh2 = -1; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect
 

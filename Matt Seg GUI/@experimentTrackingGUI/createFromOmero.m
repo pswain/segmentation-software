@@ -65,11 +65,7 @@ if strcmp(dsStruct.action,'segment')
             end
         end
         cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
-        
-        %Copy the channels lists to the cExperiment.
-        cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
-        cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
-        
+       
         %Call createTimelapsePositions with default arguments - so that
         % magnification and imScale are not set in the GUI. These are generally
         % confusing arguments that are not widely used and necessarily supported.
@@ -117,10 +113,6 @@ if strcmp(dsStruct.action,'segment')
                 cExperiment.OmeroDatabase=dsStruct.OmeroDatabase;
                 cExperiment.omeroDs=dsStruct.dataset;
                 cExpGUI.cExperiment=cExperiment;
-                
-                %Copy the channels lists to the cExperiment.
-                cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
-                cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
                 
                 %If the current user is not the creator of this cExperiment then they will be prevented from making changes
                 %Make this clear before offering the option to make an editable copy

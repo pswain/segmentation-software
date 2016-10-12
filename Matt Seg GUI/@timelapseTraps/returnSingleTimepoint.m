@@ -235,25 +235,21 @@ else
         %Generate a filename based on the channel, timepoint and z section.
         fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
         
-        %Check if this plane has been cached (is there a file with this name?)
-        if exist(fileName)==2
-            timepointIm(:,:,z)=imread(fileName);
-        else
-            %Get the image from the Omero Database
-            try
-                plane=store.getPlane(z-1, chNum-1, timepoint-1);
-                %cache the plane to make retrieval faster next time - this
-                %doesn't work very well hence commented - need a better way
-                %to speed up image browsing
-                %imwrite(toMatrix(plane, pixels)', fileName);
-            catch
-                %Fix upload script to prevent the need for this debug
-                disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
-                plane=store.getPlane(z-1, chNum-1, timepoint-2);
-                timepoint=timepoint-1;
-            end
-            timepointIm(:,:,z) = toMatrix(plane, pixels)';
+        
+        %Get the image from the Omero Database
+        try
+            plane=store.getPlane(z-1, chNum-1, timepoint-1);
+            %cache the plane to make retrieval faster next time - this
+            %doesn't work very well hence commented - need a better way
+            %to speed up image browsing
+            %imwrite(toMatrix(plane, pixels)', fileName);
+        catch
+            %Fix upload script to prevent the need for this debug
+            disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
+            plane=store.getPlane(z-1, chNum-1, timepoint-2);
+            timepoint=timepoint-1;
         end
+        timepointIm(:,:,z) = toMatrix(plane, pixels)';
         
     end
     store.close();
@@ -314,7 +310,7 @@ if ~isempty(cTimelapse.imScale)
 end
 
 
-
+%if ~isempty(cTimelapse.
 if isprop(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
     %first part of this statement is to guard against cases where channel
     %has not been assigned
