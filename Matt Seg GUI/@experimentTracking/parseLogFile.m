@@ -4,7 +4,7 @@ function parseLogFile(cExperiment,logFile,progress_bar)
 %   logFile (optional): if specified, that log file is used, otherwise
 %       a good guess is made by searching 'cExperiment.rootFolder'
 
-if nargin<2
+if nargin<2 || isempty(logFile)
     logFile = dir(fullfile(cExperiment.rootFolder,'*log.txt'));
     logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
     if length(logFile)>1
