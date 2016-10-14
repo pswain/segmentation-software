@@ -1,10 +1,10 @@
-function parseLogFile(cExperiment,logFile)
+function parseLogFile(cExperiment,logFile,progress_bar)
 %parseLogFile Parse experiment's log file to obtain meta data
 %   cExperiment: this object
 %   logFile (optional): if specified, that log file is used, otherwise
 %       a good guess is made by searching 'cExperiment.rootFolder'
 
-if nargin<2
+if nargin<2 || isempty(logFile)
     logFile = dir(fullfile(cExperiment.rootFolder,'*log.txt'));
     logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
     if length(logFile)>1
@@ -15,6 +15,19 @@ if nargin<2
         return
     end
     logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
+end
+
+close_progress = false;
+pop_progress_bar = false;
+
+if nargin<3 || ~isa(progress_bar,'Progress')
+    % Initialise a progress bar
+    progress_bar = Progress();
+    % Centre the dialog box
+    progress_bar.frame.setLocationRelativeTo([]);
+    % Set the progress bar title
+    progress_bar.frame.setTitle('Compiling meta data...');
+    close_progress = true;
 end
 
 [logdir,~,~] = fileparts(logFile);
@@ -142,6 +155,12 @@ while ischar(tline)
                 if mod(timepoint,60)==0
                     fprintf('\n');
                 end
+                % If we see a timepoint, begin progress loop over timepoints:
+                if ~pop_progress_bar
+                    progress_bar.push_bar('Parsing log file...',1,approxNtimepoints);
+                    pop_progress_bar = true;
+                end
+                progress_bar.set_val(timepoint);
             case 'position'
                 parsedline = regexp(tline,lineRegExp{1},'once','tokens');
                 position = str2double(parsedline{1});
@@ -179,6 +198,12 @@ fclose(fid);
 
 if timepoint==0
     warning('The specified log file did not contain any time points. "metadata" property not set.');
+    if pop_progress_bar
+        progress_bar.pop_bar; % finished reading all timepoints
+    end
+    if close_progress
+        progress_bar.frame.dispose;
+    end
     return
 end
 
@@ -235,6 +260,14 @@ annotations.logExposureTimes = positionExposure;
 annotations.acq = acq;
 
 cExperiment.metadata = annotations;
+
+% Clean up progress bar:
+if pop_progress_bar
+    progress_bar.pop_bar; % finished reading all timepoints
+end
+if close_progress
+    progress_bar.frame.dispose;
+end
 
 end
 
