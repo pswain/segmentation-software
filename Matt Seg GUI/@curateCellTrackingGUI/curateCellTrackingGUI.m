@@ -40,7 +40,7 @@ classdef curateCellTrackingGUI<handle
     
     methods
         function TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
-            % TrackingCurator=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional),ShowOtherChannels(optional),ColourScheme(optional))
+            % TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
             %
             % cTimelapse
             % Timepoint
