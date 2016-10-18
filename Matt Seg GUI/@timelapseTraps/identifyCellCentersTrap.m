@@ -129,8 +129,9 @@ parfor k=1:length(trap) %CHANGE BACK TO parfor
     segCenters{k}=sparse(bw>0); 
 end
 
-cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
-
+if tPresent
+    cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
+end
 
 % store the segmentation result (segCenters) in the cTimelapse object.
 for k=1:length(trap)
@@ -183,9 +184,11 @@ else
     trapOutline = zeros(cTimelapse.imSize);
 end
 
-trapOutline = trapOutline>0;
-cCellVision.cTrap.currentTpOutline=trapOutline;
 
+trapOutline = trapOutline>0;
+if tPresent
+    cCellVision.cTrap.currentTpOutline=trapOutline;
+end
 [~,d_im]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
 
 t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im,fspecial('gaussian',4,2),'symmetric')/5; %

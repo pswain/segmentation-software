@@ -1,9 +1,17 @@
 classdef experimentTrackingSlidesGUI < experimentTrackingGUI
-    %EXPERIMENTTRACKINGSLIDESGUI Summary of this class goes here
-    %   Detailed explanation goes here
+    % EXPERIMENTTRACKINGSLIDESGUI This is a subclass of the
+    % experimentTrackingGUI designed especially for slides to try and do
+    % away with some of the problems of the experimenttrackingGUI when you
+    % only have one timepoint and don't nececessarily want to actually
+    % identify cells. 
+    % Works in largely the same way with a reduced functionality. The edit
+    % segmentation GUI is replaced with the curate tracking GUI (allows
+    % outlines to be modified) and the identify cells does the active
+    % contour method. 
+    % tracking of traps and cells is automatically taken care of.
     
     properties(Access=private)
-        positionsTracked = false;
+        positionsTracked = false; % flag to ensure traps are tracked once at instantiation and never again.
     end
     
     methods
@@ -25,6 +33,10 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
         end
         
         function cExpGUI = makeButtons(cExpGUI)
+            % cExpGUI = makeButtons(cExpGUI)
+            % makes different set of buttons to standard experimentTrackingGUI
+            % function calls are the same (though some are shadowed by new
+            % methods).
             
             scrsz = get(0,'ScreenSize');
             cExpGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(3)/2 scrsz(4)/2]);
@@ -48,10 +60,8 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             cExpGUI.posList = uicontrol(cExpGUI.expPanel,'Style','listbox','String',{'None Loaded'},...
                 'Units','normalized','Position',[.025 .0 .95 .7],'Max',30,'Min',1);
 
-            %cExpGUI.saveExperimentButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Save Experiment',...
-            %    'Units','normalized','Position',[.025 .0 .95 .15],'Callback',@(src,event)saveExperiment(cExpGUI));
             
-            % second panel
+            % processing panel
             button_width = 0.95;
             top = 1.0;
             button_height = 0.15;
@@ -78,7 +88,6 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             cExpGUI.editSegmentationButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
-
             current_top = current_top - button_total_v;
             
             cExpGUI.extractDataButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract Data',...
@@ -102,7 +111,7 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
         end
         
         function createExperiment(cExpGUI)
-            
+            % createExperiment(cExpGUI)
             cExpGUI.cExperiment=experimentTracking();
             
             % createTimelapsePositions given with explicit arguments so that
@@ -119,6 +128,15 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             
             cExpGUI.trackAllPositions;
         end
+        
+        function identifyCells(cExpGUI)
+            % identifyCells(cExpGUI)
+            % actually does the active contour method on first time point.
+            poses = get(cExpGUI.posList,'Value');
+            cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cExperiment.cCellVision,poses,1,1,true,1,false,false);
+
+        end
+        
     end
     
 end
