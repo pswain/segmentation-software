@@ -103,6 +103,7 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
         function cExpGUI = trackAllPositions(cExpGUI)
             % trackAllPositions(cExpGUI)
             % tracks all the positions to initialise the trapInfo fields.
+            % Only does anything if they haven't been tracked before.
             
             if ~cExpGUI.positionsTracked
                 cExpGUI.cExperiment.trackTrapsInTime;
@@ -132,6 +133,7 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
         function identifyCells(cExpGUI)
             % identifyCells(cExpGUI)
             % actually does the active contour method on first time point.
+            cExpGUI.trackAllPositions;
             poses = get(cExpGUI.posList,'Value');
             cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cExperiment.cCellVision,poses,1,1,true,1,false,false);
 

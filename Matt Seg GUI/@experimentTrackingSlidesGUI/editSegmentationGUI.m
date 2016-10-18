@@ -1,28 +1,19 @@
 function editSegmentationGUI(cExpGUI)
-% editSegmentation(cExperiment,cCellVision,positionsToIdentify,show_overlap,pos_traps_to_show,channel)
+% editSegmentationGUI(cExpGUI)
 %
-%
-% cExperiment             :   object of the experimentTracking class
-% cCellVision             :   object of the cellVision class
-% positionsToIdentify     :   array of indices position to show. Defaults
-%                             to all in cExperiment
-% show_overlap            :   logical of whether to show tracking. asks via
-%                             GUI if not provided.
-% pos_traps_to_show       :   cell array of traps to show at each position
-%                             (an array of trap indices for each position
-%                             stored in a cell array). Defaults to showing
-%                             all traps for each position.
-% channel                 :   channel from which to take underlying image.
-%                             defaults to 1.
-%
-% This opens the cTrapDisplay GUI for each position requested, which is the
-% GUI used for editing segmentation result by addition and removal of
-% cells. 
-%
+% This opens the curateCellTrackingGUI GUI for each position requested.
+% This is the GUI accessed by holding down T and clicking on a cell in the
+% normal GUI (cells are yellow and blue), as oppose the the cTrapDisplay
+% GUI opened in the conventional experimentTrackingGUI.
+% This GUI can add/remove cells and change the outline. See it's help for
+% further information.
+%   
 % the GUI's are opened in turn, with each being opened after the present
 % one is closed.
-
-
+%
+% See Also curateCellTrackingGUI
+cExpGUI.trackAllPositions;
+            
 cExperiment = cExpGUI.cExperiment;
 cCellVision = cExpGUI.cExperiment.cCellVision;
 positionsToIdentify = get(cExpGUI.posList,'Value');

@@ -108,7 +108,7 @@ for channel=1:length(channels)
     extractedData(channel).cellHaloMedian = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).cellHaloMean = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     extractedData(channel).cellHaloQ95 = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
-    
+    extractedData(channel).imBackgroundDistant = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     %end Julian
     extractedData(channel).trapNum = trap';
     extractedData(channel).cellNum = cells';
