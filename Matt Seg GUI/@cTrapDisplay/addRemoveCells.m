@@ -57,12 +57,14 @@ elseif ~cDisplay.trackOverlay
     % hough => circles
     % elcoAC => active contour on point selected.
     method = 'elcoAC';
-%    method='hough';
+    %method='hough';
 
     cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,timepoint,trap,selection,cellPt, method, cDisplay.channel)
     slider_cb(cDisplay);
 
 end
+
+cDisplay.cTimelapse.timepointsProcessed(timepoint)=true;
 
 end
 

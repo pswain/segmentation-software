@@ -104,6 +104,12 @@ for channel=1:length(channels)
     extractedData(channel).pixel_variance_estimate=sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
     %end elcos section
     
+    %for Julian
+    extractedData(channel).cellHaloMedian = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).cellHaloMean = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    extractedData(channel).cellHaloQ95 = sparse(zeros(numCells,length(cTimelapse.timepointsProcessed)));
+    
+    %end Julian
     extractedData(channel).trapNum = trap';
     extractedData(channel).cellNum = cells';
     
