@@ -139,6 +139,13 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
 
         end
         
+        function loadCellVision(cExpGUI)
+            %loadCellVision(cExpGUI)
+            % as experiment Tracking but also runs setSegmentationChannels
+            loadCellVision@experimentTrackingGUI(cExpGUI);
+            cExpGUI.cExperiment.setSegmentationChannels;
+        end
+        
     end
     
 end
