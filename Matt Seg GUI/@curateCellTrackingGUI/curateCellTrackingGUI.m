@@ -221,7 +221,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]));
             
             ProgressCounter = 0;
             TotalTime = length(TrackingCurator.Channels)*length(Timepoints);
@@ -254,7 +254,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]));
             
             TrackingCurator.BaseImages = Images;
         end
@@ -269,7 +269,7 @@ classdef curateCellTrackingGUI<handle
             
             Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]);
             
             TrackingCurator.CellOutlines = CellOutlines;
             
@@ -309,7 +309,7 @@ classdef curateCellTrackingGUI<handle
             end
             
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]);
             if nargin<2
                 h = waitbar(0,'Please wait as we obtain your cell outlines ...');
                 ProgressCounter = 0;

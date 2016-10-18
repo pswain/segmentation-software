@@ -48,11 +48,15 @@ cCellVision.TrainDataGenerationDate = date;
 index=1;
 
 trap1 = cTimelapse.returnSegmenationTrapsStack(1,cTimelapse.timepointsToProcess(1));
-if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner')
-    trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
-        full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
+if cTimelapse.trapsPresent
+    if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner')
+        trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
+            full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
+    else
+        trapImage = cCellVision.cTrap.trapOutline*1;
+    end
 else
-    trapImage = cCellVision.cTrap.trapOutline*1;
+    trapImage = zeros(size(cTimelapse.defaultTrapDataTemplate));
 end
 features=getFilteredImage(cCellVision,trap1{1},trapImage);
 
@@ -102,13 +106,17 @@ for timepoint=1:frame_ss:total_num_timepoints
         disp(['Trap ', int2str(trap), 'Frame ', int2str(timepoint)])
         disp(['Time ', num2str(elapsed_t)])
         
-        if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner') && ~isempty(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner)
-            trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
-                full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
-            insideTraps = trapImage==1;
-            
+        if cTimelapse.trapsPresent
+            if isfield(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1), 'refinedTrapPixelsInner') && ~isempty(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner)
+                trapImage = 0.5*(full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsInner) + ...
+                    full(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(1).refinedTrapPixelsBig));
+                insideTraps = trapImage==1;
+                
+            else
+                trapImage = cCellVision.cTrap.trapOutline*1;
+            end
         else
-            trapImage = cCellVision.cTrap.trapOutline*1;
+            trapImage = zeros(size(cTimelapse.defaultTrapDataTemplate));
         end
         allTrapPixels = trapImage>0;
         features=getFilteredImage(cCellVision,image{trap},trapImage);
