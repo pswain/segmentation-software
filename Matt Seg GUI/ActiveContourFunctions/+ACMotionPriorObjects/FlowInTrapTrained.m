@@ -25,6 +25,8 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
                 temp_im = conv2(temp_im,smoothing_element,'same');
                 flow_look_up(:,:,i) = temp_im;
             end
+            %think about if this makes sense
+            flow_look_up = flow_look_up./max(flow_look_up(:));  
             
             self.flowLookUpTable = flow_look_up;
             size_look_up = l1.sizeLookUpTable;
@@ -34,6 +36,9 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
                 temp_im = conv2(temp_im,smoothing_element,'same');
                 size_look_up(:,:,i) = temp_im;
             end
+            
+            %think about if this makes sense
+            size_look_up = size_look_up./(max(size_look_up(:)));
             
             self.sizeLookUpTable = size_look_up;
         end
