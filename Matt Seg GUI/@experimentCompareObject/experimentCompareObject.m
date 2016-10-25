@@ -8,6 +8,7 @@ classdef experimentCompareObject <handle
         timepointsTrapsToProcess ={} % cell array of timepointTrap matrices to process. Each is a sparse logical array, per position, or [tp x trap] instances to compare
         positionsToProcess = [] % list of positions to process. same size as timepointsTrapsToProcess but just indices.
         curatedtimepointTraps = {} % identitiy of timepoint Trap locations already curated.
+        curatedTrapTracking = {} %identity of trap locations already curated
         groundTruthLocation = [] % path to ground truth cExperiment.
         experimentLocations = {} % paths to cExperiments to compare to ground truth
         experimentNames = {}
@@ -65,7 +66,6 @@ classdef experimentCompareObject <handle
             %
             % set the timepoint/traps to process to be all the traps at all
             % the position for just the timepoints timepoints.
-            
             cExperimentGT = self.loadGroundTruth;
             for posi = 1:length(self.positionsToProcess)
                 pos = self.positionsToProcess(posi);
@@ -74,21 +74,44 @@ classdef experimentCompareObject <handle
                 timepoint_traps_matrix(timepoints,:) = true;
                 timepoint_traps_matrix = sparse(timepoint_traps_matrix);
                 self.timepointsTrapsToProcess{posi} = timepoint_traps_matrix;
-                
             end
-            
+        end
+        
+        function setByTrap(self,traps)
+            %setByTimepoint(self,timepoints)
+            %
+            % set the timepoint/traps to process to be all the traps at all
+            % the position for just the timepoints timepoints.
+            cExperimentGT = self.loadGroundTruth;
+            for posi = 1:length(self.positionsToProcess)
+                pos = self.positionsToProcess(posi);
+                cTimelapse = cExperimentGT.loadCurrentTimelapse(pos);
+                timepoint_traps_matrix = true([length(cTimelapse.cTimepoint) length(cTimelapse.defaultTrapIndices)]);
+%                 timepoint_traps_matrix(:,traps) = true;
+                timepoint_traps_matrix = sparse(timepoint_traps_matrix);
+                self.timepointsTrapsToProcess{posi} = timepoint_traps_matrix;
+            end
         end
         
         function clearCuration(self,poses)
             if nargin<2 || isempty(poses)
                 poses = self.positionsToProcess;
             end
-            
             for posi =1:length(poses)
                 loc = self.positionsToProcess == poses(posi);
                 self.curatedtimepointTraps{loc} = sparse(false(size(self.timepointsTrapsToProcess{loc})));
             end
-            
+        end
+        
+        function clearCurationTracking(self,poses)
+            if nargin<2 || isempty(poses)
+                poses = self.positionsToProcess;
+            end
+            for posi =1:length(poses)
+                loc = self.positionsToProcess == poses(posi);
+                [TPs,Traps] = find(self.timepointsTrapsToProcess{posi});
+                self.curatedTrapTracking{loc} = sparse(1e3,1e3);
+            end
         end
         
         function removeCurationArea(self,number_to_remove)
@@ -155,6 +178,71 @@ classdef experimentCompareObject <handle
                         uiwait();
                         cExperiment.saveTimelapse(pos);
                         self.curatedtimepointTraps{posi}(TP,TI) =true;
+                    end
+                end
+            end
+        end
+        
+        
+        function cExperiment = curateGroundTruthForTracking(self,channel_to_curate,skip_curated)
+            %cExperiment = curateGroundTruthForTracking(self,channel_to_curate,skip_curated)
+            %
+            % loads each experiment, and then goes through each trap to
+            % make sure that they are curated for tracking
+            
+            distThresh=20;
+            
+            if nargin<2 || isempty(channel_to_curate)
+                channel_to_curate = 1;
+            end
+            
+            if nargin<3 || isempty(skip_curated)
+                skip_curated = false;
+            end
+            
+            cExperiment = self.loadGroundTruth;
+            
+            for posi = 1:length(self.positionsToProcess)
+                pos = self.positionsToProcess(posi);
+                cTimelapse = cExperiment.loadCurrentTimelapse(pos);
+                [TPs,Traps] = find(self.timepointsTrapsToProcess{posi});
+                cExperiment.cTimelapse = cTimelapse;
+                Traps=unique(Traps);
+                for i = 1:numel(Traps)
+                    for cellI=1:cTimelapse.cTimepoint(1).trapMaxCell(i)
+                        TI = Traps(i);
+                        
+                        if ~skip_curated || ~(self.curatedTrapTracking{posi}(cellI,TI))
+                            startTP=[];
+                            for tempTP=TPs(end):-1:1
+                                if any(cTimelapse.cTimepoint(tempTP).trapInfo(TI).cellLabel==cellI)
+                                    startTP=tempTP;
+                                end
+                            end
+                            if ~isempty(startTP)
+                                centerIm=cTimelapse.trapImSize/2;
+                                tempCellI=find(cTimelapse.cTimepoint(startTP).trapInfo(TI).cellLabel==cellI);
+                                cellCent=cTimelapse.cTimepoint(startTP).trapInfo(TI).cell(tempCellI).cellCenter;
+                                distFromCenter=pdist2(centerIm,cellCent);
+                                if distFromCenter<distThresh
+                                    gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TPs(1),TI,5,channel_to_curate);
+                                    
+                                    % essentially inactivate slider gui so that you edit
+                                    % one timepont at a time and don't get confused.
+                                    % also, strange bug where last doesn't seem to be
+                                    % allowed by constructor.
+                                    gui.CellLabel=cellI;
+                                    gui.slider.Value = startTP;
+                                    gui.slider.Min = TPs(1);
+                                    gui.slider.Max = TPs(end);
+                                    gui.UpdateImages
+                                    
+                                    uiwait();
+                                    self.curatedTrapTracking{posi}(cellI,TI) =true;
+                                    cExperiment.saveTimelapse(pos);
+                                end
+                            end
+                        end
                     end
                 end
             end
