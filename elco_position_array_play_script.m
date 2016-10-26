@@ -125,7 +125,48 @@ end
 %%
 gui = GenericStackViewingGUI(sizeLookUpTable)
 
+
+
+
+
 %% save
 
 %save('~/Documents/microscope_files_swain_microscope_analysis/cCellVision_training/BF_OOF_24_25_30_pairs/curated_centres_processed.mat')
 
+%% dissppearing cells
+% look at where cells leave the traps from
+
+%% reset
+
+radii_array_tp1 = original_radii_array_tp1;
+radii_array_tp2 = original_radii_array_tp2;
+
+centre_array_tp1 = original_centre_array_tp1;
+centre_array_tp2 = original_centre_array_tp2;
+
+%% remove points not in tp1
+
+to_remove = any(centre_array_tp1==0,2) ;
+
+centre_array_tp1(to_remove,:) = [];
+centre_array_tp2(to_remove,:) = [];
+
+radii_array_tp1(to_remove,:) = [];
+radii_array_tp2(to_remove,:) = [];
+
+
+%% get locs
+
+% get the location of each sample, as its location from the first timepoint
+
+index = centre_array_tp1(:,2) + size(trap_outline,1)*(centre_array_tp1(:,1)-1);
+loc = loc_map(index);
+
+
+%% get cells that dissappear
+% also get their location in timepoint1
+that_dissappear = find(all(centre_array_tp2==0,2));
+
+loc_of_dissappear = loc(that_dissappear);
+
+hist(loc_of_dissappear,3)

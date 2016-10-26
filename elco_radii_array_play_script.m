@@ -148,8 +148,8 @@ plot(means1,stds)
 
 %% plot normalise radii
 
-r2_n = r2./r1;
-
+r2_n = log(r2./r1);
+%r2_n = r2./r1;
 
 [~,p_jb] = jbtest(r2_n);
 fprintf('jbtest for normalised radii is %f',p_jb)
@@ -180,6 +180,8 @@ radii_array_tp1_n = radii_array_tp1(~to_remove,:);
 radii_array_tp2_n = radii_array_tp2(~to_remove,:);
 radii_array_tp2_n = radii_array_tp2_n./radii_array_tp1_n;
 
+%% log normalised
+radii_array_tp2_n = log(radii_array_tp2_n);
 %% get stats
 
 %% just small cells

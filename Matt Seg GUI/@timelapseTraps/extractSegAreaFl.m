@@ -85,6 +85,7 @@ end
 % for each timepoint
 % h=figure
 for timepoint=1:length(cTimelapse.timepointsProcessed)
+    PrintReportString(timepoint,40);
     if cTimelapse.timepointsProcessed(timepoint)
         % Trigger the TimepointChanged event for experimentLogging
         experimentLogging.changeTimepoint(cTimelapse,timepoint);
