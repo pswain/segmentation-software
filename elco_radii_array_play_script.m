@@ -178,6 +178,7 @@ to_remove = any(radii_array_tp1==0,2) |  any(radii_array_tp2==0,2);
 
 radii_array_tp1_n = radii_array_tp1(~to_remove,:);
 radii_array_tp2_n = radii_array_tp2(~to_remove,:);
+radii_array_tp2_unnormalised = radii_array_tp2_n;
 radii_array_tp2_n = radii_array_tp2_n./radii_array_tp1_n;
 
 %% log normalised
@@ -187,6 +188,7 @@ radii_array_tp2_n = log(radii_array_tp2_n);
 %% just small cells
 threshold_size = 6;
 radii_array_tp2_n_small =  radii_array_tp2_n(mean(radii_array_tp1_n,2)<6,:);
+radii_array_tp2_unnormalised_small =  radii_array_tp2_unnormalised(mean(radii_array_tp1_n,2)<6,:);
 
 mean_radii_small = mean(radii_array_tp2_n_small);
 cov_radii_small = cov(radii_array_tp2_n_small);
@@ -197,6 +199,7 @@ cov_radii = cov_radii_small;
 %% just large cells
 threshold_size = 6;
 radii_array_tp2_n_large =  radii_array_tp2_n(mean(radii_array_tp1_n,2)>=6,:);
+radii_array_tp2_unnormalised_large =  radii_array_tp2_unnormalised(mean(radii_array_tp1_n,2)>=6,:);
 
 mean_radii_large = mean(radii_array_tp2_n_large);
 cov_radii_large = cov(radii_array_tp2_n_large);
@@ -216,6 +219,47 @@ ps_large = mvnpdf(radii_array_tp2_n_large,mean_radii_large,cov_radii_large);
 ps = cat(1,ps_small,ps_large);
 
 hist(log(ps),300)
+
+%% show differences
+% calculate the bayes factor for tracked cells with tracked cell pdf and
+% new cell pdf.
+
+% evaluate blocks from segmentACexperimental to get matrices
+%% small cells
+num_small = size(radii_array_tp2_n_small,1);
+p_score_small = -diag((radii_array_tp2_n_small - repmat(mu_2cell_small,num_small,1))*inverted_cov_2cell_small*((radii_array_tp2_n_small - repmat(mu_2cell_small,num_small,1))')) ...
+                                - 0.5*log_det_cov_2cell_small - sum(radii_array_tp2_n_small,2) + ...
+                                diag((radii_array_tp2_unnormalised_small - repmat(mu_1cell,num_small,1))*inverted_cov_1cell*((radii_array_tp2_unnormalised_small - repmat(mu_1cell,num_small,1))'));
+
+
+%% large cells
+num_large = size(radii_array_tp2_n_large,1);
+p_score_large = -diag((radii_array_tp2_n_large - repmat(mu_2cell_large,num_large,1))*inverted_cov_2cell_large*((radii_array_tp2_n_large - repmat(mu_2cell_large,num_large,1))')) ...
+                                - 0.5*log_det_cov_2cell_large - sum(radii_array_tp2_n_large,2) + ...
+                                diag((radii_array_tp2_unnormalised_large - repmat(mu_1cell,num_large,1))*inverted_cov_1cell*((radii_array_tp2_unnormalised_large - repmat(mu_1cell,num_large,1))'));
+
+%% plot
+
+p_scores = cat(1,p_score_small,p_score_large);
+
+[N,X] = hist(p_scores,300);
+
+N_small = hist(p_score_small,X);
+N_large = hist(p_score_large,X);
+
+%bar(X,[N' N_small' N_large'])
+                            
+figure;
+bar(X,N);
+title('all')
+
+figure;
+bar(X,N_small);
+title('small')
+
+figure;
+bar(X,N_large);
+title('large')
 
 %% NON NORMALISED
 % old(now) code when radii were paired into a 12 dimensional gaussian and

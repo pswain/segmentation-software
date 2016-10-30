@@ -93,11 +93,11 @@ OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
 
 
 %object to provide priors for cell movement based on position and location.
-jump_parameters = [3 21];
+jump_parameters = [3 81];
 CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
 
 % more stringent jump object for checking cell score
-jump_parameters_check = [1 21];
+jump_parameters_check = [1 81];
 CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
 
 
@@ -119,7 +119,21 @@ DIMproportion = 1;
 % for trained cell trakcing rubbish
 
 % for trained time change punishment
-% gaussian parameters from paurs of curated cells.
+
+% gaussian parameters for single curated cells
+
+inverted_cov_1cell =...
+    [0.9568   -0.9824    0.2210   -0.3336    0.2061   -0.1774
+   -0.9824    2.3140   -0.7398    0.3936   -0.2683   -0.6752
+    0.2210   -0.7398    1.4997   -0.9595    0.4939   -0.3992
+   -0.3336    0.3936   -0.9595    1.5773   -1.0942    0.4536
+    0.2061   -0.2683    0.4939   -1.0942    1.6916   -0.9590
+   -0.1774   -0.6752   -0.3992    0.4536   -0.9590    1.9724];
+
+mu_1cell = [9.1462    8.0528    6.7623    6.1910    6.0670    6.8330];
+
+
+% gaussian parameters from pairs of curated cells.
 inverted_cov_2cell_small =...
   [150.0532  -55.6032    5.8445   12.8486    8.1765  -17.8547
   -55.6032  109.4672  -14.8512    0.0212    4.8178  -12.1094
@@ -151,10 +165,11 @@ log_det_cov_2cell_large = log(det(inverted_cov_2cell_large));
 threshold_radius = 6;
 
 % selected rather arbitrarily from histogram of trained values.
-threshold_probability = 2e-25;
+threshold_probability = 2e-30;
 
 %throw away cells with a score higher than this.
-threshold_score = -5;
+%threshold_score = -50;
+threshold_score = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -756,12 +771,17 @@ for TP = Timepoints
                     if CrossCorrelating(TI)
                         reordered_radii = ACBackGroundFunctions.reorder_radii(cat(1,PreviousTimepointRadii,RadiiResult));
                         reordered_radii_norm = log(reordered_radii(2,:)./reordered_radii(1,:));
+                        reordered_radii_1cell = reordered_radii(2,:);
                         
-                        %calculate radii contribution
+                        %calculate radii contribution (bayes factor of new and old cell for the found radii)
                         if mean(PreviousTimepointRadii)<threshold_radius;
-                            p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') - 0.5*log_det_cov_2cell_small;
+                            p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
+                                - 0.5*log_det_cov_2cell_small - sum(reordered_radii_norm) + ...
+                                (reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)');
                         else
-                            p_score = -(reordered_radii_norm - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_norm - mu_2cell_large)') - 0.5*log_det_cov_2cell_large;
+                            p_score = -(reordered_radii_norm - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_norm - mu_2cell_large)')...
+                                - 0.5*log_det_cov_2cell_large - sum(reordered_radii_norm) + ...
+                                (reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)');
                         
                         end
                         

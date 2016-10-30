@@ -214,9 +214,13 @@ for ti = 1:length(timepoints_to_optimise)
                 %hence log.
                 radii_reordered_norm =  log(radii_reordered_stack(2,:)./radii_reordered_stack(1,:));
                 if mean(radii_reordered_stack(1,:),2)<threshold_radius;
-                    F(p) = F(p) + time_change_punishing_factor*(radii_reordered_norm-mu_2cell_small)*inverted_cov_2cell_small*((radii_reordered_norm - mu_2cell_small)');
+                    F(p) = F(p) + time_change_punishing_factor*...
+                        ((radii_reordered_norm-mu_2cell_small)*inverted_cov_2cell_small*((radii_reordered_norm - mu_2cell_small)')...
+                            +  sum(radii_reordered_norm));
                 else
-                    F(p) = F(p) + time_change_punishing_factor*(radii_reordered_norm-mu_2cell_large)*inverted_cov_2cell_large*((radii_reordered_norm - mu_2cell_large)');
+                    F(p) = F(p) + time_change_punishing_factor*...
+                        ((radii_reordered_norm-mu_2cell_large)*inverted_cov_2cell_large*((radii_reordered_norm - mu_2cell_large)') ...
+                            +  sum(radii_reordered_norm));
                 end
             end
         end
