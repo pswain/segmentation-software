@@ -79,12 +79,13 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)displayWholeTimelapse(cExpGUI));
 
             current_top = current_top - button_total_v;
+            % uncomment when we have a cellVision model.
             
-            cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
-                'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)identifyCells(cExpGUI));
-
-            current_top = current_top - button_total_v;
-            
+%             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
+%                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)identifyCells(cExpGUI));
+% 
+%             current_top = current_top - button_total_v;
+%             
             cExpGUI.editSegmentationButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
