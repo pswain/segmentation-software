@@ -42,9 +42,11 @@ classdef experimentCompareObject <handle
                         name = '';
                     end
                 end
+                experiment_name=name;
             end
+            
             self.experimentLocations{end+1} = location;
-            self.experimentNames{end+1} = name;
+            self.experimentNames{end+1} = experiment_name;
         end
         
         function cExperiment = loadExperiment(self,index)
@@ -190,7 +192,7 @@ classdef experimentCompareObject <handle
             % loads each experiment, and then goes through each trap to
             % make sure that they are curated for tracking
             
-            distThresh=20;
+%             distThresh=20;
             
             if nargin<2 || isempty(channel_to_curate)
                 channel_to_curate = 1;
@@ -220,11 +222,12 @@ classdef experimentCompareObject <handle
                                 end
                             end
                             if ~isempty(startTP)
-                                centerIm=cTimelapse.trapImSize/2;
-                                tempCellI=find(cTimelapse.cTimepoint(startTP).trapInfo(TI).cellLabel==cellI);
-                                cellCent=cTimelapse.cTimepoint(startTP).trapInfo(TI).cell(tempCellI).cellCenter;
-                                distFromCenter=pdist2(centerIm,cellCent);
-                                if distFromCenter<distThresh
+                                isCellCloseEnough=self.IsCellCloseEnough(cTimelapse,startTP,TI,cellI);
+%                                 centerIm=cTimelapse.trapImSize/2;
+%                                 tempCellI=find(cTimelapse.cTimepoint(startTP).trapInfo(TI).cellLabel==cellI);
+%                                 cellCent=cTimelapse.cTimepoint(startTP).trapInfo(TI).cell(tempCellI).cellCenter;
+%                                 distFromCenter=pdist2(centerIm,cellCent);
+                                if isCellCloseEnough%distFromCenter<distThresh
                                     gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TPs(1),TI,5,channel_to_curate);
                                     
                                     % essentially inactivate slider gui so that you edit
@@ -247,6 +250,17 @@ classdef experimentCompareObject <handle
                 end
             end
         end
+        
+        function isCellCloseEnough=IsCellCloseEnough(cTimelapse,startTP,TI,cellI)
+            distThresh=20;
+            centerIm=cTimelapse.trapImSize/2;
+            tempCellI=find(cTimelapse.cTimepoint(startTP).trapInfo(TI).cellLabel==cellI);
+            cellCent=cTimelapse.cTimepoint(startTP).trapInfo(TI).cell(tempCellI).cellCenter;
+            distFromCenter=pdist2(centerIm,cellCent);
+            isCellCloseEnough=distFromCenter<distThresh;
+            
+        end
+        
         
         function areaError = determineAreaError(self)
             % calculates the area error for the experiments when compared
@@ -320,16 +334,95 @@ classdef experimentCompareObject <handle
             
             %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
             %that should have been labeled as true in the curateGroundTruth
-            errorStruct=struct('gtDuration',[],'testDuration',[],'errorType',[]);
+            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorCalc',[]);
+%             errorMatrix=cell(); %one cell for each of the experiment names
+            %within each cell make a matrix to hold the 
+            overlapThresh=.5;
+            
             trackingError=repmat(errorStruct,1,length(self.experimentNames));
             testExp=[];
+            groundTruthExp=self.loadGroundTruth;
             for expInd=1:length(self.experimentNames)
-                testExp{expInd}=elf.loadExperiment(expInd);
+                testExp{expInd}=self.loadExperiment(expInd);
             end
             groundTruthExp=self.loadGroundTruth;
-
+            %             cellIndAll=zeros(1,length(self.experimentNames));
             
+            for expInd=1:length(testExp)
+                cellIndAll=0;
+                for posInd=1:length(self.curatedTrapTracking)
+                    currPos=posInd;
+                    gtTimelapse=groundTruthExp.returnTimelapse(currPos);
+                    curatedLoc=self.curatedTrapTracking{posInd}; %row=cellInd col=trapInde
+                    [curatedCells curatedTraps]=find(curatedLoc);
+                    traps=unique(curatedTraps);
+                    testTimelapse=testExp{expInd}.returnTimelapse(currPos);
+                    for trapInd=1:length(traps)
+                        currTrap=traps(trapInd);
+                        cellsCurTrap=curatedCells(curatedTraps==currTrap);
+                        cellIndAll=max(cellIndAll)+1:max(cellIndAll)+length(cellsCurTrap);
+                        for tpInd=1:length(gtTimelapse.cTimepoint)
+                            for cellInd=1:length(cellsCurTrap)
+                                currCellInd=cellsCurTrap(cellInd);
+                                cellLoc=find(gtTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cellLabel==currCellInd);
+                                if ~isempty(cellLoc)
+                                    %                                     try
+                                        gtCellSeg=gtTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cell(cellLoc).segmented;
+%                                     catch 
+%                                         b=1;
+%                                     end
+                                    gtCellSeg=full(gtCellSeg);
+                                    gtCellSeg=imfill(gtCellSeg,'holes');
+                                    cellOverlap=[];
+                                    for testCellInd=1:length(testTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cell)
+                                        tCell=full(testTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cell(testCellInd).segmented);
+                                        tCell=imfill(tCell,'holes');
+                                        unionCell=tCell | gtCellSeg;
+                                        intersectCell=(tCell & gtCellSeg); %| (~tCell & gtCell);
+                                        cellOverlap(testCellInd)=sum(intersectCell(:))/sum(unionCell(:));
+                                    end
+                                    [vMax indMax]=max(cellOverlap);
+                                    testCellLabel=testTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cellLabel(indMax);
+                                    %                                     try
+                                    if vMax>overlapThresh
+                                        trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel)=1 + trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel);
+                                    else
+                                        trackingError(expInd).errorAddCell(cellIndAll(cellInd))=1+ trackingError(expInd).errorAddCell(cellIndAll(cellInd));
+                                    end
+                                    %                                     catch
+                                    %                                         b=1
+                                    %                                     end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            weightJoin=1.5;
+            weightAdd=2;
+            for expInd=1:length(testExp)
+                errorMatrix=trackingError(expInd).errorMatrix;
+                errorAdd=trackingError(expInd).errorAddCell;
+                loc=find(max(errorMatrix,[],2)>0);
+                nCells=max(loc);
+                for cellInd=1:nCells
+                    tVal=errorMatrix(cellInd,:);
+                    totalTp=sum(tVal)+errorAdd(cellInd);
+                    [corrTrack ind]=max(tVal);
+                    tVal(ind)=0;
+                    joinErr=sum((tVal>0)*weightJoin);
+                    addErr=errorAdd(cellInd)*weightAdd;
+                    errTemp=1 - (addErr+joinErr)/(totalTp*weightAdd);
+%                     if isnan(errTemp)
+%                         b=1;
+%                     end
+                    trackingError(expInd).errorCalc(cellInd)=errTemp;
+                end
+            end
         end
+        
+        
 
         
     end
