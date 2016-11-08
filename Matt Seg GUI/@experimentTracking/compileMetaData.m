@@ -84,7 +84,7 @@ timesInMinutes = timesInMinutes(posIndices(positions),:);
 extractedTimepoints = extractedTimepoints(positions,:);
 
 %% Update cExperiment:
-cExperiment.cellInf(1).date = date;
+cExperiment.cellInf(1).date = cExperiment.metadata.date;
 cExperiment.cellInf(1).times = timesInMinutes;
 cExperiment.cellInf(1).extractedTimepoints = extractedTimepoints;
 cExperiment.cellInf(1).annotations = cExperiment.metadata;
