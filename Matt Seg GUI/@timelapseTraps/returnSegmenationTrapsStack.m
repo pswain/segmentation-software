@@ -46,11 +46,12 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 
 if nargin<4
     type = 'twostage';
+    if ~cTimelapse.trapsPresent
+        type = 'wholeIm';
+    end
 end
 
-if ~cTimelapse.trapsPresent
-    type = 'wholeIm';
-end
+
 
 for ci = 1:length(cTimelapse.channelsForSegment)  
     if ismember(type,{'twostage','linear','trap','twostage_norm','twostage_norm_fluor'}) %trap option is for legacy reasons
@@ -91,10 +92,9 @@ for ci = 1:length(cTimelapse.channelsForSegment)
         % timepoint image
         % each slice is a channel
         temp_im = cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelsForSegment(ci));
-        mval=mean(temp_im(:));
         if ci==1
             imagestack_out = cell(1,1);
-            imagestack_out{1} = mval*ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment));
+            imagestack_out{1} = ones(size(temp_im,1),size(temp_im,2),length(cTimelapse.channelsForSegment));
         end
         imagestack_out{1}(:,:,ci) = temp_im;
     elseif strcmp(type,'wholeTrap') 

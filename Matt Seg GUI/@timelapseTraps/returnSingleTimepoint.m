@@ -314,7 +314,13 @@ end
 if isprop(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})
     %first part of this statement is to guard against cases where channel
     %has not been assigned
-    timepointIm = timepointIm.*cTimelapse.BackgroundCorrection{channel};
+    bgdScaling = cTimelapse.BackgroundCorrection{channel}(:,:,ones(size(timepointIm,3),1));
+    if isprop(cTimelapse,'BackgroundOffset') && length(cTimelapse.BackgroundOffset)>=channel && ~isempty(cTimelapse.BackgroundOffset{channel})
+        bgdOffset = cTimelapse.BackgroundOffset{channel};
+        timepointIm = bgdOffset + (timepointIm - bgdOffset).*bgdScaling;
+    else
+        timepointIm = timepointIm.*bgdScaling;
+    end
 end
 
 
