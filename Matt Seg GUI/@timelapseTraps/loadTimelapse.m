@@ -20,9 +20,9 @@ function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,traps
 %
 % imScale can be set to the string 'gui' to populate it via user interface.
 
-cTimelapse.channelNames=searchString;
 if isempty(cTimelapse.omeroImage)
     %get names of all files in the timelapseDir folder
+    cTimelapse.channelNames=searchString;
     folder=cTimelapse.timelapseDir;
     tempdir=dir(folder);
     names=cell(1);
@@ -89,7 +89,8 @@ else
     
     %Load first timepoint of this cTimelapse to fill out the remaining
     %details
-    image=cTimelapse.returnSingleTimepoint(1,searchString);
+    
+    image=cTimelapse.returnSingleTimepoint(1,find(strcmp(cTimelapse.channelNames,searchString)));
 end
 
 cTimelapse.imSize=size(image);

@@ -20,7 +20,7 @@ end
 if ~isempty(cExperiment.OmeroDatabase)
     chNames=cExperiment.experimentInformation.channels;
     ch = menu('Choose channel used in segmentation (brightfield/DIC images)',chNames);
-    searchString=chNames{ch};
+    searchString=chNames(ch);
 else
     if nargin<2 || isempty(searchString)
         searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'DIC'});
@@ -99,6 +99,10 @@ for i=1:length(positionsToLoad)
     
     if ~isempty(cExperiment.OmeroDatabase)
         cExperiment.cTimelapse=timelapseTraps(oImages.get(i-1),cExperiment.OmeroDatabase);
+%         if i==1
+%             chi = cExperiment.cTimelapse.selectChannelGUI('select channel','select channel to view for defining traps',false);
+%             cExperiment.searchString = cExperiment.cTimelapse.channelNames(chi);
+%         end
     else
         cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
     end
@@ -110,9 +114,12 @@ for i=1:length(positionsToLoad)
     
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.imScale=cExperiment.cTimelapse.imScale;
-    
     cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
-    cExperiment.searchString=cExperiment.cTimelapse.channelNames;
+    
+    % in Omero version, this is populated when the cTimelapse is created.
+    if isempty(cExperiment.OmeroDatabase)
+        cExperiment.searchString=cExperiment.cTimelapse.channelNames;
+    end
     cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
     cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
     
