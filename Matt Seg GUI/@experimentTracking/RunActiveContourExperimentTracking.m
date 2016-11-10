@@ -202,7 +202,7 @@ for i=1:length(positionsToIdentify)
     
     %on the first position find the trap images and then just assign all the relevant fields for
     %other positions.
-    if  (cTimelapse.ActiveContourObject.TrapPresentBoolean && (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
+    if  ( (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
             getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cCellVision);
     end
     
@@ -217,7 +217,7 @@ for i=1:length(positionsToIdentify)
     
     catch err
         fprintf('\n\n error on position %s \n\n',cExperiment.dirs{currentPos})
-        display(err)
+        rethrow(err)
         fprintf('\n\n saving position and continuing \n\n')
     end
     cExperiment.saveTimelapseExperiment(currentPos);

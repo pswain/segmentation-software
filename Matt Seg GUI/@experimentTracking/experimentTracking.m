@@ -16,6 +16,7 @@ classdef experimentTracking<handle
         posSegmented % logical array of position already segmented.
         posTracked %logical of positions tracked
         cellsToPlot % Doesn't actually seem to be used anywhere
+        metadata % structure of meta data filled by experimentTracking.parseLogFile
         %currentDir 
         %the following all match their equivalents in timelapseTraps and
         %are popualted and used to populate the timelapseTrap fields when calling
@@ -71,7 +72,7 @@ classdef experimentTracking<handle
             % Create a new logger to log changes for this cExperiment:
             cExperiment.logger = experimentLogging(cExperiment);
             
-            % Read filenames from folder
+            % Initialise source (root folder) and save paths
             if nargin<1
                 fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
                 folder=uigetdir(pwd,'Select the Root of a single experimental set containing folders of multiple positions');
@@ -79,8 +80,7 @@ classdef experimentTracking<handle
             if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(folder,'Select the folder where data should be saved');
-            end
-            
+            end            
             if ischar(folder)
                 cExperiment.rootFolder=folder;
                 cExperiment.saveFolder=saveFolder;
@@ -93,30 +93,33 @@ classdef experimentTracking<handle
                 else
                     cExperiment.rootFolder='001';%default experiment name
                 end
+                %Define paths for temporary storage of Omero information
                 if ismac
                     cExperiment.saveFolder=['/Users/' char(java.lang.System.getProperty('user.name')) '/Documents/OmeroTemp'];
                     
                 else
                     cExperiment.saveFolder=['C:\Users\' getenv('USERNAME') '\OmeroTemp'];
                 end
+                %Ensure the save folder exists and is empty
                 if ~exist(cExperiment.saveFolder,'dir')
-                    
-                    
-                    
-                    
-                    mkdir(cExperiment.saveFolder);
+                      mkdir(cExperiment.saveFolder);
                 end
                 delete([cExperiment.saveFolder '/*']);
+                %Define the Omero properties of cExperiment
                 cExperiment.omeroDs=folder;
                 cExperiment.OmeroDatabase=OmeroDatabase;
             end
+            %Record the user who is creating the cExperiment
             if ispc
                 cExperiment.creator=getenv('USERNAME');
             else
                 [~, cExperiment.creator] = system('whoami');
             end
+            %Initialize records of positions segmented and tracked
             cExperiment.posSegmented=0;
             cExperiment.posTracked=0;
+            %Define the source folders (or Omero image names) for each
+            %position
             if isempty(cExperiment.OmeroDatabase)
                 tempdir=dir(cExperiment.rootFolder);
             else
@@ -136,6 +139,9 @@ classdef experimentTracking<handle
                 end
             else
                 %Position list consists of the Omero image names
+                %Make sure the image list is loaded
+                cExperiment.omeroDs=getDatasets(OmeroDatabase.Session,cExperiment.omeroDs.getId.getValue, true);
+                %Get the image list
                 oImages=cExperiment.omeroDs.linkedImageList;
                 for i=1:oImages.size
                     cExperiment.dirs{i}=char(oImages.get(i-1).getName.getValue);
@@ -145,26 +151,46 @@ classdef experimentTracking<handle
             cExperiment.cellsToPlot=cell(1);
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
             
+            %Parse the microscope acquisition metadata and attach the structure to the
+            %cExperiment object - this populates the metadata field of
+            %cExperiment
+            if ~isempty(cExperiment.OmeroDatabase)
+            %This is an Omero cExperiment - need to download the log and
+            %acq files from the database before parsing
+                expName=char(folder.getName.getValue);
+                logName=[expName(1:end-3) 'log.txt'];
+                acqName=[expName(1:end-3) 'Acq.txt'];
+                logPath=cExperiment.OmeroDatabase.downloadFile(folder,logName);
+                [~]=cExperiment.OmeroDatabase.downloadFile(folder,acqName);
+                cExperiment.parseLogFile(logPath);
+            else
+                cExperiment.parseLogFile;
+            end
+             
+            
             %Set the channels
             if ~isempty(cExperiment.OmeroDatabase)                
                 %Set the channels field - add a separate channel for each section in case
                 %they are required for data extraction or segmentation:
                 %Get the number of Z sections
-                sizeZ=OmeroDatabase.MetaData.z.numSections;
+                im=oImages.get(0);%the first image - assumes all images have the same dimensions
+                pixels=im.getPrimaryPixels;
+                sizeZ=pixels.getSizeZ.getValue;
                 %Get the list of channels from the microscope log
-                origChannels=cExperiment.OmeroDatabase.getChannelNames(cExperiment.omeroDs,cExperiment.OmeroDatabase.MetaData);
+                origChannels=cExperiment.metadata.acq.channels.names;
                 cExperiment.OmeroDatabase.MicroscopeChannels = origChannels;
                 cExperiment.experimentInformation.MicroscopeChannels=origChannels;
                 %The first entries in
                 %cExperiment.experimentInformation.channels are the
                 %original channels - then followed by a channel for each
                 %section.
-                cExperiment.experimentInformation.Channels=origChannels;
                 if sizeZ>1
                     for ch=1:length(origChannels)
-                        if cExperiment.OmeroDatabase.MetaData.channels(ch).zSectioning
+                        if cExperiment.metadata.acq.channels.zsect(ch)==1%Does the channel do z sectioning?                        
                             for z=1:sizeZ
-                                cExperiment.OmeroDatabase.Channels{length(cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+                                if cExperiment.metadata.acq.channels.zsect(ch)==1
+                                    cExperiment.OmeroDatabase.Channels{length(cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+                                end
                             end
                         end
                     end

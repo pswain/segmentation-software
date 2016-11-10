@@ -1,5 +1,5 @@
 function cExperiment_orig =  append_cExperiment(cExperiment_orig, num_timepoints,location, append_name)
-% cExperiment_orig = append_cExperiment(location, num_timepoints)
+% cExperiment_orig =  append_cExperiment(cExperiment_orig, num_timepoints,location, append_name)
 % adds positions from one cExperiment to another. If num_timepoints is
 % specified, it will take that many timepoints from the new cExperiment
 % distributed evenly over the old cExperiment positions.

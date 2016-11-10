@@ -40,7 +40,7 @@ classdef curateCellTrackingGUI<handle
     
     methods
         function TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
-            % TrackingCurator=editActiveContourCellGUI(ttacObject,TrapNum,CellNum,Timepoint(optional),StripWidth(optional),ShowOtherChannels(optional),ColourScheme(optional))
+            % TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
             %
             % cTimelapse
             % Timepoint
@@ -221,7 +221,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]));
             
             ProgressCounter = 0;
             TotalTime = length(TrackingCurator.Channels)*length(Timepoints);
@@ -254,7 +254,7 @@ classdef curateCellTrackingGUI<handle
             
             Images = cell(1,(length(TrackingCurator.Channels)));
             
-            [Images{:}] =  deal(zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2)));
+            [Images{:}] =  deal(zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]));
             
             TrackingCurator.BaseImages = Images;
         end
@@ -269,7 +269,7 @@ classdef curateCellTrackingGUI<handle
             
             Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]);
             
             TrackingCurator.CellOutlines = CellOutlines;
             
@@ -309,7 +309,7 @@ classdef curateCellTrackingGUI<handle
             end
             
             
-            CellOutlines = zeros((2*TrackingCurator.cTimelapse.cTrapSize.bb_height)+1,(2*TrackingCurator.cTimelapse.cTrapSize.bb_width)+1,size(Timepoints,2));
+            CellOutlines = zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]);
             if nargin<2
                 h = waitbar(0,'Please wait as we obtain your cell outlines ...');
                 ProgressCounter = 0;
@@ -392,21 +392,25 @@ classdef curateCellTrackingGUI<handle
                         case TrackingCurator.allowedColourSchemes{1} %'multicoloured'
                             tempImage = 0.3*tempImage;
                             tempImage = cat(3,tempImage,tempImage,tempImage);
-                            [tempIndexI, tempIndexJ] = find(tempOutline==0,1);
-                            tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex);
-                            
-                            tempOutline = label2rgb(tempOutline,'jet','w','noshuffle');
-                            tempOutline(tempIndexI,tempIndexJ,:) = 255;
-                            tempOutline = (0.95/0.3)*double(tempOutline)/255;
-                            tempImage = tempImage.*double(tempOutline);
+                            if TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.TimepointsInStrip(widthi)).trapInfo(TrackingCurator.trapIndex).cellsPresent
+                                [tempIndexI, tempIndexJ] = find(tempOutline==0,1);
+                                tempOutline(tempIndexI,tempIndexJ) = TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex);
+                                
+                                tempOutline = label2rgb(tempOutline,'jet','w','noshuffle');
+                                tempOutline(tempIndexI,tempIndexJ,:) = 255;
+                                tempOutline = (0.95/0.3)*double(tempOutline)/255;
+                                tempImage = tempImage.*double(tempOutline);
+                            end
                             
                         case TrackingCurator.allowedColourSchemes{2}%'trackedCellOnly'
                             
                             tempImage = 0.9*tempImage;
                             RedandGreen = tempImage;
                             Blue = tempImage;
-                            Blue(tempOutline~=0 & tempOutline ~= TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
-                            RedandGreen(tempOutline == TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
+                            if TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.TimepointsInStrip(widthi)).trapInfo(TrackingCurator.trapIndex).cellsPresent
+                                Blue(tempOutline~=0 & tempOutline ~= TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
+                                RedandGreen(tempOutline == TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
+                            end
                             tempImage = cat(3,RedandGreen,RedandGreen,Blue);
                     end
                     

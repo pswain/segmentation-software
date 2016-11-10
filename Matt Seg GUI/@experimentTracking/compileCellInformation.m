@@ -26,12 +26,17 @@ end
 % Start logging protocol
 cExperiment.logger.start_protocol('compiling cell information',length(positionsToExtract));
 try
-    
+
 cTimelapse=cExperiment.returnTimelapse(positionsToExtract(1));
 
 cExperiment.cellInf=cTimelapse.extractedData;
 
 [cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
+
+% Track extracted timepoints for compilation of times from meta data:
+extractedTimepoints = false(length(cExperiment.dirs),...
+    length(cTimelapse.timepointsProcessed));
+extractedTimepoints(1,:) = cTimelapse.timepointsProcessed;
 
 % list of fields that are not identically sized arrays
 fields_treated_special = {'posNum','trapNum','cellNum','extractionParameters'};
@@ -85,6 +90,7 @@ for posi=2:length(positionsToExtract)
         cExperiment.cellInf(chi).posNum((index+1):(index+num_cells)) = pos*ones(1,num_cells);
 
     end
+    extractedTimepoints(pos,:) = cTimelapse.timepointsProcessed;
     index = index + num_cells;
 
     cExperiment.cTimelapse = [];
@@ -106,6 +112,9 @@ end
 if force
     [cExperiment.cellInf(:).extractionParameters] = deal([]);
 end
+
+% Compile meta data into the cellInf:
+cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
 
 cExperiment.saveExperiment();
 
