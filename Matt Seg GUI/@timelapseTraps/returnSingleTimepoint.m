@@ -218,12 +218,12 @@ else
         chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
         zsections = 1:sizeZ;
     else
-        chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.OmeroDatabase.MicroscopeChannels));
+         chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.microscopeChannels));
         zstring = regexp(channelName,'_(.*)$','tokens');
         if ~isempty(zstring)
             zsections = str2double(zstring{1});
         else
-            error('Invalid channel name - this is a bug see Julian/Ivan');
+            zsections =1;
         end
     end
         

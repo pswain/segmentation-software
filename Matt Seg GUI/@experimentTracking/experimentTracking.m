@@ -150,12 +150,9 @@ classdef experimentTracking<handle
                 %Set the channels field - add a separate channel for each section in case
                 %they are required for data extraction or segmentation:
                 %Get the number of Z sections
-                ims=cExperiment.omeroDs.linkedImageList;
-                im=ims.get(0);%the first image - assumes all images have the same dimensions
-                pixels=im.getPrimaryPixels;
-                sizeZ=pixels.getSizeZ.getValue;
+                sizeZ=OmeroDatabase.MetaData.z.numSections;
                 %Get the list of channels from the microscope log
-                origChannels=cExperiment.OmeroDatabase.getChannelNames(cExperiment.omeroDs);
+                origChannels=cExperiment.OmeroDatabase.getChannelNames(cExperiment.omeroDs,cExperiment.OmeroDatabase.MetaData);
                 cExperiment.OmeroDatabase.MicroscopeChannels = origChannels;
                 cExperiment.experimentInformation.MicroscopeChannels=origChannels;
                 %The first entries in
@@ -165,8 +162,10 @@ classdef experimentTracking<handle
                 cExperiment.experimentInformation.Channels=origChannels;
                 if sizeZ>1
                     for ch=1:length(origChannels)
-                        for z=1:sizeZ
-                            cExperiment.OmeroDatabase.Channels{length(cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+                        if cExperiment.OmeroDatabase.MetaData.channels(ch).zSectioning
+                            for z=1:sizeZ
+                                cExperiment.OmeroDatabase.Channels{length(cExperiment.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+                            end
                         end
                     end
                 end

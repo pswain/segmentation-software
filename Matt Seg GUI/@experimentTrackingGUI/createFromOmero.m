@@ -1,9 +1,11 @@
 function createFromOmero(cExpGUI)
-%Creates a cExperiment from a user-selected Omero dataset and saves it as a
-%file attachment to the database.
+%Runs the Omero gui and if the user loads an experiment for segmentation, 
+%creates or downloads a cExperiment from the user-selected Omero dataset.
+%Newly-created cExperiment and cTimelapse files are saved as file
+%attachments to the database.
 
 %Get a dataset selection from the user:
-dsStruct=omeroGUI('download','skye.bio.ed.ac.uk');
+dsStruct=omeroGUI('download','sce-bio-c04287.bio.ed.ac.uk');
 %There are options other than selecting a dataset for segmentation in that
 %gui - so only create a dataset if the correct button has been pressed
 if strcmp(dsStruct.action,'segment')
