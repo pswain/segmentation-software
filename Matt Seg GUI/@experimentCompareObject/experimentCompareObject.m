@@ -334,7 +334,7 @@ classdef experimentCompareObject <handle
             
             %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
             %that should have been labeled as true in the curateGroundTruth
-            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorCalc',[]);
+            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
 %             errorMatrix=cell(); %one cell for each of the experiment names
             %within each cell make a matrix to hold the 
             overlapThresh=.5;
@@ -357,12 +357,16 @@ classdef experimentCompareObject <handle
                     [curatedCells curatedTraps]=find(curatedLoc);
                     traps=unique(curatedTraps);
                     testTimelapse=testExp{expInd}.returnTimelapse(currPos);
+                    
                     for trapInd=1:length(traps)
+                        completedCells=[];
                         currTrap=traps(trapInd);
                         cellsCurTrap=curatedCells(curatedTraps==currTrap);
                         cellIndAll=max(cellIndAll)+1:max(cellIndAll)+length(cellsCurTrap);
-                        for tpInd=1:length(gtTimelapse.cTimepoint)
-                            for cellInd=1:length(cellsCurTrap)
+                        for cellInd=1:length(cellsCurTrap)
+                            currCellSepInd=0;
+                            for tpInd=1:length(gtTimelapse.cTimepoint)
+                            
                                 currCellInd=cellsCurTrap(cellInd);
                                 cellLoc=find(gtTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cellLabel==currCellInd);
                                 if ~isempty(cellLoc)
@@ -386,6 +390,16 @@ classdef experimentCompareObject <handle
                                     %                                     try
                                     if vMax>overlapThresh
                                         trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel)=1 + trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel);
+                                        alreadyUsedCell=find(completedCells==testCellLabel);
+                                        if isempty(alreadyUsedCell)
+                                            completedCells=[completedCells testCellLabel];
+                                            currCellSepInd=[currCellSepInd testCellLabel];
+                                        else
+                                            if ~any(currCellSepInd==testCellLabel)
+                                                currCellSepInd=[currCellSepInd testCellLabel];
+                                                trackingError(expInd).errorSeparate(cellIndAll(cellInd))=trackingError(expInd).errorSeparate(cellIndAll(cellInd))+1;
+                                            end
+                                        end
                                     else
                                         trackingError(expInd).errorAddCell(cellIndAll(cellInd))=1+ trackingError(expInd).errorAddCell(cellIndAll(cellInd));
                                     end
@@ -399,24 +413,28 @@ classdef experimentCompareObject <handle
                 end
             end
             
-            weightJoin=1.5;
+            weightJoin=1.0;
             weightAdd=2;
+            weightSplit=2;
             for expInd=1:length(testExp)
                 errorMatrix=trackingError(expInd).errorMatrix;
                 errorAdd=trackingError(expInd).errorAddCell;
+                errorSplit=trackingError(expInd).errorSeparate; %b/c all cells by default have one split in the calculations
                 loc=find(max(errorMatrix,[],2)>0);
                 nCells=max(loc);
                 for cellInd=1:nCells
                     tVal=errorMatrix(cellInd,:);
                     totalTp=sum(tVal)+errorAdd(cellInd);
+                    
                     [corrTrack ind]=max(tVal);
                     tVal(ind)=0;
                     joinErr=sum((tVal>0)*weightJoin);
                     addErr=errorAdd(cellInd)*weightAdd;
-                    errTemp=1 - (addErr+joinErr)/(totalTp*weightAdd);
-%                     if isnan(errTemp)
-%                         b=1;
-%                     end
+                    splitErr=errorSplit(cellInd)*weightSplit;
+                    errTemp=1 - (addErr+joinErr+splitErr)/(totalTp*weightAdd);
+                    if isinf(errTemp)
+                        errTemp=NaN;
+                    end
                     trackingError(expInd).errorCalc(cellInd)=errTemp;
                 end
             end
