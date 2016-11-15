@@ -80,6 +80,10 @@ classdef experimentCompareObject <handle
         end
         
         function clearCuration(self,poses)
+            % clearCuration(self,poses)
+            % clears the declaration of timepoints as curated, resetting
+            % them to false so that the curation can begin from the
+            % beginning.
             if nargin<2 || isempty(poses)
                 poses = self.positionsToProcess;
             end

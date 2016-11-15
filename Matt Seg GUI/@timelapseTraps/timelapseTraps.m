@@ -185,10 +185,13 @@ classdef timelapseTraps<handle
             
         end
         
-        function default_trap_indices = defaultTrapIndices(cTimelapse)
-            % default_trap_indices = defaultTrapIndices(cTimelapse)
+        function default_trap_indices = defaultTrapIndices(cTimelapse,tp)
+            % default_trap_indices = defaultTrapIndices(cTimelapse,tp=1)
             % return the default trap indices to run anything over.
-            default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
+            if nargin<2
+                tp=1;
+            end
+            default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(tp)).trapInfo);
         end
         
         function trapImSize = get.trapImSize(cTimelapse)

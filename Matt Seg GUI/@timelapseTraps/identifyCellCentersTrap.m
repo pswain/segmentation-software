@@ -67,7 +67,7 @@ if cCellVision.magnification/cTimelapse.magnification ~= 1
 end
 
 if nargin<6 || isempty(old_d_im)
-    old_d_im=zeros(size(image{1},1),size(image{1},2),size(image,1));
+    old_d_im=zeros(size(image{1},1),size(image{1},2),length(image));
 end    
 
 
@@ -179,7 +179,7 @@ if tPresent
     if strcmp(cCellVision.method,'wholeTrap')
         trapOutline=repmat(cCellVision.cTrap.trapOutline,[1 length(trap)]);
     elseif strcmp(cCellVision.method,'wholeIm')
-        trapOutline = cTimelapse.returnWholeTrapImage(cCellVision,timepoint);
+        trapOutline = cTimelapse.returnWholeTrapImage(cCellVision.cTrap.trapOutline,timepoint);
     else
         error('cCellVision.method should one of {wholeIm  wholeTrap linear twostage}');
     end

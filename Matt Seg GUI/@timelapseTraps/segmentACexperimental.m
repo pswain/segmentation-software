@@ -1,5 +1,5 @@
 function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
-%segmentACexperimental(cTimelapse,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,CellsToUse)
+%segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
 %
 %Complete segmentation function that uses the cCellVision and cross correlation to find images of
 %cells and performs the active contour to get the edges.
@@ -104,6 +104,9 @@ CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimel
 PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
 MaxRegistration = cTimelapse.ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
 
+% default trapOutline used for normalisation.
+DefaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,strel('disk',3),'same');
+
 if cTimelapse.trapsPresent
     PerformRegistration = false; %registration should be covered by tracking in the traps.
 end
@@ -168,8 +171,8 @@ threshold_radius = 6;
 threshold_probability = 2e-30;
 
 %throw away cells with a score higher than this.
-%threshold_score = -50;
-threshold_score = Inf;
+threshold_score = -10;
+%threshold_score = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -317,8 +320,28 @@ for TP = Timepoints
         %for holding trap images of trap pixels.
         TrapTrapImageStack = cTimelapse.returnTrapsFromImage(TrapRefineImage,TP,TrapsToCheck);
         TrapTrapImageStack = TrapRefineFunction(TrapTrapImageStack);
+        
+        % since this WholeTrapImage (a logical of all traps in the image)
+        % is used for normalisation we don't want to use only the traps
+        % being checked. So fill in unchecked traps with default outline
+        % from cCellVision (dilated).
+        DefaultTrapIndices = cTimelapse.defaultTrapIndices(TP);
+        DefaultTrapImageStack = repmat(DefaultTrapOutline,[1,1,length(DefaultTrapIndices)]);
+        for trapi = 1:length(TrapsToCheck)
+            trap = TrapsToCheck(trapi);
+            DefaultTrapImageStack(:,:,trap) = TrapTrapImageStack(:,:,trapi);
+        end
+        WholeTrapImage = cTimelapse.returnWholeTrapImage(DefaultTrapImageStack,TP,DefaultTrapIndices);
+        
     else
         WholeTrapImage = zeros([size(CCImage,1) size(CCImage,2)]);
+    end
+    
+    % normalise AC image by gradient at traps
+    TrapMask = WholeTrapImage>0;
+    if any(TrapMask(:))
+        [ACImageGradX,ACImageGradY] = gradient(ACImage);
+        ACImage = ACImage/mean(sqrt(ACImageGradX(TrapMask).^2 + ACImageGradY(TrapMask).^2  ));
     end
 
     TrapLocations = cTimelapse.cTimepoint(TP).trapLocations;
