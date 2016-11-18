@@ -1,7 +1,10 @@
-function exportTrapImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_TrapImage,do_SegmentationResult,do_DecisionImage)
-% exportTrapImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_TrapImage,do_SegmentationResult,do_DecisionImage)
+function exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage)
+% exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage)
 %
-% exports trap images for each position in pos to a different directory. 
+% exports images for each position in pos to a different directory. 
+% if do_traps, does each trap individually to a new directory.
+% if do_traps, has other options (like decisionImage, SegmentationResult
+% etc.)
 
 if nargin<2 || isempty(positions)
     positions = 1:length(cExperiment.dirs);
@@ -30,8 +33,15 @@ if nargin<6|| isempty(channels)
         return
     end
 end
+% if do traps
+if nargin<7 || isempty(do_traps)
+    bt1 = 'traps';
+    trap_or_whole = questdlg('Do you wish to export trap images or whole image','traps or whole?',bt1,'whole images','traps');
+    do_traps = strcmp(trap_or_whole,bt1);
+end
 
-if nargin<9 
+% set other parameters
+if nargin<10 && do_traps
     answer = settingsdlg('title','other option',...
         'description','please select whether to export other options',...
         {'trap pixels';'do_Trap'},true,...
@@ -52,9 +62,21 @@ for posi = 1:length(positions)
     if ~isdir(cT_export_directory)
         mkdir(export_directory,cExperiment.dirs{pos});
     end
-    exportTrapImage(cTimelapse,cT_export_directory,[root_name '_' cExperiment.dirs{pos}],[],timepoints,channels,do_TrapImage,do_SegmentationResult,cExperiment.cCellVision,do_DecisionImage);
-
+    if do_traps
+        exportTrapImage(cTimelapse,cT_export_directory,[root_name '_' cExperiment.dirs{pos}],[],timepoints,channels,do_TrapImage,do_SegmentationResult,cExperiment.cCellVision,do_DecisionImage);
+    else
+        name = [root_name '_' cExperiment.dirs{pos}];
+        fprintf('position %d : %d timepoints \n',posi,length(timepoints))
+        for tp = timepoints
+            for ch = channels
+                im = cTimelapse.returnSingleTimepoint(tp,ch);
+                im_towrite = uint16(im);
+                imwrite(im_towrite,sprintf('%s%s%s_tp%0.6d_%s.png',cT_export_directory,filesep,name,tp,cTimelapse.channelNames{ch}));
+            end
+            PrintReportString(tp,50)
+        end
+    end
 end
 
-
+fprintf('\n\ndone\n\n')
 end
