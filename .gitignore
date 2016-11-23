@@ -664,3 +664,5 @@ GeneralFunctions/Shampoo extract/ZpTnormplotting.m
 GeneralFunctions/Shampoo extract/ZpTnormplotting_Omero.m
 Matt Seg GUI/@timelapseTraps/OmeroTemp/100uMClimbazoleAcq.txt
 Matt Seg GUI/@timelapseTraps/OmeroTemp/100uMClimbazolelog.txt
+Matt Seg GUI/@editActiveContourCellGUI/*
+Matt Seg GUI/@editActiveContourTimelapseGUI/*

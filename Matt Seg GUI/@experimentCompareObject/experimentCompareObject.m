@@ -63,36 +63,32 @@ classdef experimentCompareObject <handle
             cExperiment.cCellVision = l1.cCellVision;
         end
         
-        function setByTimepoint(self,timepoints)
-            %setByTimepoint(self,timepoints)
+        function setToProcessByTimepoint(self,timepoints)
+            % setToProcessByTimepoint(self,timepoints)
             %
             % set the timepoint/traps to process to be all the traps at all
-            % the position for just the timepoints timepoints.
+            % the position for just the timepoints timepoints. if
+            % timepoints is not provided, uses all.
             cExperimentGT = self.loadGroundTruth;
             for posi = 1:length(self.positionsToProcess)
                 pos = self.positionsToProcess(posi);
                 cTimelapse = cExperimentGT.loadCurrentTimelapse(pos);
                 timepoint_traps_matrix = false([length(cTimelapse.cTimepoint) length(cTimelapse.defaultTrapIndices)]);
+                if nargin<2
+                    timepoints = 1:length(length(cTimelapse.cTimepoint));
+                end
                 timepoint_traps_matrix(timepoints,:) = true;
                 timepoint_traps_matrix = sparse(timepoint_traps_matrix);
                 self.timepointsTrapsToProcess{posi} = timepoint_traps_matrix;
             end
         end
         
-        function setByTrap(self,traps)
-            %setByTimepoint(self,timepoints)
+        function setTpProcessAsAll(self)
+            %setByTrap(self,traps)
             %
             % set the timepoint/traps to process to be all the traps at all
-            % the position for just the timepoints timepoints.
-            cExperimentGT = self.loadGroundTruth;
-            for posi = 1:length(self.positionsToProcess)
-                pos = self.positionsToProcess(posi);
-                cTimelapse = cExperimentGT.loadCurrentTimelapse(pos);
-                timepoint_traps_matrix = true([length(cTimelapse.cTimepoint) length(cTimelapse.defaultTrapIndices)]);
-%                 timepoint_traps_matrix(:,traps) = true;
-                timepoint_traps_matrix = sparse(timepoint_traps_matrix);
-                self.timepointsTrapsToProcess{posi} = timepoint_traps_matrix;
-            end
+            % the position forfor all timepoints.
+            setToProcessByTimepoint(self);
         end
         
         function clearCuration(self,poses)
@@ -100,6 +96,7 @@ classdef experimentCompareObject <handle
             % clears the declaration of timepoints as curated, resetting
             % them to false so that the curation can begin from the
             % beginning.
+            % See Also: REMOVECURATIONAREA
             if nargin<2 || isempty(poses)
                 poses = self.positionsToProcess;
             end
@@ -110,6 +107,10 @@ classdef experimentCompareObject <handle
         end
         
         function clearCurationTracking(self,poses)
+            % clearCurationTracking(self,poses)
+            % 
+            % clears tracking curation
+            
             if nargin<2 || isempty(poses)
                 poses = self.positionsToProcess;
             end
@@ -125,6 +126,7 @@ classdef experimentCompareObject <handle
             %bit of a hack function. removes the last 'number_to_remove'
             %curated images.
             % useful if you accidently let a few slip.
+            % See Also: CLEARCURATION
             
             empty_poses = cellfun(@(x) any(full(x(:))),self.curatedtimepointTraps);
             last_pos_curated = find(empty_poses,1,'last');
@@ -144,8 +146,19 @@ classdef experimentCompareObject <handle
             %cExperiment = curateGroundTruthForArea(self,channel_to_curate,skip_curated)
             %
             % loads the ground truth cExperiment and then loads each
-            % trap/timepoint individually using the trackingCurationGUI to
-            % for curation
+            % trap/timepoint individually using the trackingCurationGUI
+            % for curation. Only those timepoints/traps specificed by
+            % self.tpProcess are loaded.
+            % When the GUI is closed it is assumed the timepoint/trap has
+            % been curated and the correspoind entry in
+            % self.curatedTimepointsTraps is set to 1.
+            % 
+            % channel_to_curate - channel to show in the curation GUI
+            % skip_curated      - if true, skips traps/timepoints already
+            %                     curated according to the self.curatedtimepointTraps
+            %                     field.
+            % See Also:
+            % REMOVECURATIONAREA,CLEARCURATION,SETTOPROCESSBYTIMEPOINT,CURATEGROUNDTRUTHFORTRACKING
             
             if nargin<2 || isempty(channel_to_curate)
                 channel_to_curate = 1;
@@ -256,6 +269,12 @@ classdef experimentCompareObject <handle
         end
         
         function isCellCloseEnough=IsCellCloseEnough(cTimelapse,startTP,TI,cellI)
+            % isCellCloseEnough=IsCellCloseEnough(cTimelapse,startTP,TI,cellI)
+            %
+            % checks if a cell is within 20 pixels of the centre of the
+            % trap - 
+            % MATT - was this a criteria for being part of the tracking
+            % curation set?
             distThresh=20;
             centerIm=cTimelapse.trapImSize/2;
             tempCellI=find(cTimelapse.cTimepoint(startTP).trapInfo(TI).cellLabel==cellI);
@@ -267,12 +286,15 @@ classdef experimentCompareObject <handle
         
         
         function areaError = determineAreaError(self)
+            % areaError = determineAreaError(self)
+            %
             % calculates the area error for the experiments when compared
             % with the ground truth. returns struct array with the same
             % params
             
-            %only runs on the traps/timepoints in self.curatedtimepointTraps{posi}(TP,TI)
-            %that should have been labeled as true in the curateGroundTruth
+            % only runs on the traps/timepoints in self.curatedtimepointTraps{posi}(TP,TI)
+            % that should have been labeled as true in the curateGroundTruth
+            % See Also: CURATEGROUNDTRUTHFORAREA
             errorStruct=struct('cellSize',[],'areaError',[]);
             areaError=repmat(errorStruct,1,length(self.experimentNames));
             testExp=[];
@@ -306,12 +328,17 @@ classdef experimentCompareObject <handle
                                     end
                                 end
                                 
-                                %checks all of the 
+                                % finds the most overlapping test cell for each ground truth cell and records their error.
+                                % MATT - slight issue if a test overlaps
+                                % with two ground truth cells it might be
+                                % used twice??
                                 [v maxInd]=max(overlapMatrix,[],2);
                                 for overlapInd=1:length(maxInd)
                                     areaError(expInd).areaError(end+1)=overlapMatrix(overlapInd,maxInd(overlapInd));
                                     areaError(expInd).cellSize(end+1)=gtCellSize(overlapInd);
                                 end
+                                % all cells with no ground truth
+                                % counterpart contribute a score of zero.
                                 overlapMatrix(:,maxInd)=NaN;
                                 loc=find(max(~isnan(overlapMatrix)));
                                 for noOverlapInd=1:length(loc)
@@ -333,23 +360,45 @@ classdef experimentCompareObject <handle
             % that most closely matches up with that cell and then checks
             % the amount of time it overlaps with the real mother, as well
             % as the error type. 
-            
-            %
-            
             %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
             %that should have been labeled as true in the curateGroundTruth
-            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
-%             errorMatrix=cell(); %one cell for each of the experiment names
-            %within each cell make a matrix to hold the 
+            %  
+            % MATT - please check
+            %
+            % OUTPUTS:
+            % trackingError - structure array with one element for
+            %                 each experiment
+            %FIELDS:
+            % errorMatrix   - matrix of the form [ground_truth_label x identified_cell_label] 
+            %                 with each element being the number of
+            %                 timepoints they overlap for.
+            % errorAddCell  - matrix of the form [1 x ground_truth_label] 
+            %                 with each element being the number of
+            %                 timepoints for which no overlapping test cell
+            %                 was found.
+            % errorSeperate - matrix of the form [1 x ground_truth_label] 
+            %                 with each element being the number of
+            %                 times the overlapping cell had already been
+            %                 used in the track of a previous cell.
+            % erroCalc      - matrix of the form [1 x ground_truth_label] 
+            %                 with each error calculated assuming error
+            %                 weightings of 
+            %                   join =1.0;
+            %                   split = 2.0
+            %                   add = 2.0;
+            weightJoin=1.0;
+            weightAdd=2;
+            weightSplit=2;
             overlapThresh=.5;
             
+            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
+
             trackingError=repmat(errorStruct,1,length(self.experimentNames));
             testExp=[];
             groundTruthExp=self.loadGroundTruth;
             for expInd=1:length(self.experimentNames)
                 testExp{expInd}=self.loadExperiment(expInd);
             end
-            groundTruthExp=self.loadGroundTruth;
             %             cellIndAll=zeros(1,length(self.experimentNames));
             
             for expInd=1:length(testExp)
@@ -417,9 +466,7 @@ classdef experimentCompareObject <handle
                 end
             end
             
-            weightJoin=1.0;
-            weightAdd=2;
-            weightSplit=2;
+
             for expInd=1:length(testExp)
                 errorMatrix=trackingError(expInd).errorMatrix;
                 errorAdd=trackingError(expInd).errorAddCell;
@@ -436,6 +483,7 @@ classdef experimentCompareObject <handle
                     addErr=errorAdd(cellInd)*weightAdd;
                     splitErr=errorSplit(cellInd)*weightSplit;
                     errTemp=1 - (addErr+joinErr+splitErr)/(totalTp*weightAdd);
+                    % shouldn't happen
                     if isinf(errTemp)
                         errTemp=NaN;
                     end
