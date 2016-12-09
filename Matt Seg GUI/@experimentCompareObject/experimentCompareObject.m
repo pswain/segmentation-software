@@ -30,7 +30,7 @@ classdef experimentCompareObject <handle
         function addNewExperiment(self,location,experiment_name)
             %  addNewExperiment(self,location,experiment_name)
             if nargin<2 || isempty(location)
-                [filename,pathname] = uigetfile({'*.mat'},'please select the location of a new cExperiment to add to the comparison');
+                [filename,pathname] = uigetfile({'*.mat'},'please select the location of a new cExperiment to add to the comparison',self.groundTruthLocation);
                 location = fullfile(pathname,filename);
             end
             if nargin<3||isempty(experiment_name)

@@ -93,7 +93,7 @@ OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
 
 
 %object to provide priors for cell movement based on position and location.
-jump_parameters = [3 81];
+jump_parameters = [4 81];
 CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
 
 % more stringent jump object for checking cell score
@@ -417,7 +417,7 @@ for TP = Timepoints
                 PreviousCurrentTrapInfo = PreviousTrapInfo(trap);
             end
             
-            if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && ~isinf(CrossCorrelationValueThreshold) && ~isempty(PreviousCurrentTrapInfo.cell(1).cellCenter)
+            if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && CrossCorrelationValueThreshold<Inf && ~isempty(PreviousCurrentTrapInfo.cell(1).cellCenter)
                 
                 %register images and use to inform expeted position
                 if PerformRegistration
@@ -531,7 +531,9 @@ for TP = Timepoints
                     end
                     
                     % apply 'movement prior' provided by MotionPrior oject
-                    PredictedCellLocation = CrossCorrelationPriorObject.returnPrior(LocalExpectedCellCentre,mean(CellRadii)).*PredictedCellLocation;
+                    ProbableMotionImage = CrossCorrelationPriorObject.returnPrior(LocalExpectedCellCentre,mean(CellRadii));
+                    ProbableMotionImage(ProbableMotionImage<threshold_probability) = 0;
+                    PredictedCellLocation = log(ProbableMotionImage)+PredictedCellLocation;
                     
                     %this for loop might seem somewhat strange and
                     %unecessary, but it is to deal with the 'TrapImage'
@@ -749,7 +751,7 @@ for TP = Timepoints
                     %multiplying by the 75th percentile of the
                     %TransformedCellImage for scaling.
                     
-                    TransformedCellImage = TransformedCellImage + DIMproportion*(CellDecisionImage*iqr(TransformedCellImage(:)));
+                    %TransformedCellImage = TransformedCellImage + DIMproportion*(CellDecisionImage*iqr(TransformedCellImage(:)));
                     %%%%
                     
                     if TrapPresentBoolean
