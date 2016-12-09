@@ -285,8 +285,8 @@ classdef experimentCompareObject <handle
         end
         
         
-        function areaError = determineAreaError(self)
-            % areaError = determineAreaError(self)
+        function areaError = determineAreaError(self,streSize)
+            % areaError = determineAreaError(self,streSize)
             %
             % calculates the area error for the experiments when compared
             % with the ground truth. returns struct array with the same
@@ -308,6 +308,20 @@ classdef experimentCompareObject <handle
                 gtTimelapse=groundTruthExp.returnTimelapse(currPos);
                 curatedLoc=self.curatedtimepointTraps{posInd}; %row=tp col=trap
                 for expInd=1:length(testExp)
+                    toDilate=false;
+                    if nargin<2
+                        strelDisk=[];
+                    elseif length(streSize)==1
+                        strelDisk=strel('disk',abs(streSize));
+                        if streSize>0
+                            toDilate=true;
+                        end
+                    else
+                        strelDisk=strel('disk',abs(streSize(expInd)));
+                        if streSize(expInd)>0
+                            toDilate=true;
+                        end
+                    end
                     testTimelapse=testExp{expInd}.returnTimelapse(currPos);
                     for tpInd=1:size(curatedLoc,1)
                         for trapInd=1:size(curatedLoc,2)
@@ -321,6 +335,13 @@ classdef experimentCompareObject <handle
                                     gtCellSize(gtCellInd)=sum(gtCell(:));
                                     for testCellInd=1:length(testTrapInfo.cell)
                                         tCell=imfill(full(testTrapInfo.cell(testCellInd).segmented),'holes');
+                                        if ~isempty(strelDisk)
+                                            if toDilate
+                                                tCell=imdilate(tCell,strelDisk);
+                                            else
+                                                tCell=imerode(tCell,strelDisk);
+                                            end
+                                        end
                                         testCellSize(testCellInd)=sum(tCell(:));
                                         unionCell=tCell | gtCell;
                                         intersectCell=(tCell & gtCell); %| (~tCell & gtCell);
@@ -362,6 +383,7 @@ classdef experimentCompareObject <handle
             % as the error type. 
             %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
             %that should have been labeled as true in the curateGroundTruth
+<<<<<<< HEAD
             %  
             % MATT - please check
             %
@@ -389,6 +411,11 @@ classdef experimentCompareObject <handle
             weightJoin=1.0;
             weightAdd=2;
             weightSplit=2;
+=======
+            errorStruct=struct('errorMatrix',sparse(1e5,1e5),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
+%             errorMatrix=cell(); %one cell for each of the experiment names
+            %within each cell make a matrix to hold the 
+>>>>>>> 0d4949e04c109c4671208c48269ad6fbbf893c9e
             overlapThresh=.5;
             
             errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
@@ -402,6 +429,7 @@ classdef experimentCompareObject <handle
             %             cellIndAll=zeros(1,length(self.experimentNames));
             
             for expInd=1:length(testExp)
+                expInd
                 cellIndAll=0;
                 for posInd=1:length(self.curatedTrapTracking)
                     currPos=posInd;
@@ -439,9 +467,10 @@ classdef experimentCompareObject <handle
                                         cellOverlap(testCellInd)=sum(intersectCell(:))/sum(unionCell(:));
                                     end
                                     [vMax indMax]=max(cellOverlap);
-                                    testCellLabel=testTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cellLabel(indMax);
+                             
                                     %                                     try
                                     if vMax>overlapThresh
+                                        testCellLabel=testTimelapse.cTimepoint(tpInd).trapInfo(currTrap).cellLabel(indMax);
                                         trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel)=1 + trackingError(expInd).errorMatrix(cellIndAll(cellInd),testCellLabel);
                                         alreadyUsedCell=find(completedCells==testCellLabel);
                                         if isempty(alreadyUsedCell)
