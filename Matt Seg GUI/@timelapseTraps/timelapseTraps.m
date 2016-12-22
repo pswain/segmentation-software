@@ -55,6 +55,7 @@ classdef timelapseTraps<handle
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
+        BackgroundOffset = {[]}; %scalar offset to be used with BackgroundCorrection matrix. If non empty, returnSingleTimepoint will subtract this offset before multiplying by the correction matrix.
         ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
         extractionParameters = timelapseTraps.defaultExtractParameters;
         %parameters for the extraction of cell Data, a function handle and
@@ -165,13 +166,7 @@ classdef timelapseTraps<handle
             % this is empty it juse uses an empty array.
             
             if nargin<2
-                if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
-                    data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
-                elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
-                    data_template = sparse(false(cTimelapse.imSize));
-                else
-                    data_template = [];
-                end
+                data_template = cTimelapse.defaultTrapDataTemplate();
             elseif ~issparse(data_template)
                 error('data_template should be a sparse array')
                 
@@ -192,6 +187,24 @@ classdef timelapseTraps<handle
                 tp=1;
             end
             default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(tp)).trapInfo);
+        end
+        
+        function data_template = defaultTrapDataTemplate(cTimelapse)
+            % data_template = defaultTrapDataTemplate(cTimelapse)
+            % returns a sparse array of the default size for populating
+            % cell and trapInfo structures. Used at various points in the
+            % code where these things need to be populated.
+            % for trap containing cTimelapses, this is the trapSize.
+            % for those without traps, it is the image size.
+            
+            if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
+                data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
+            elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
+                data_template = sparse(false(cTimelapse.imSize));
+            else
+                data_template = [];
+            end
+            
         end
         
         function trapImSize = get.trapImSize(cTimelapse)

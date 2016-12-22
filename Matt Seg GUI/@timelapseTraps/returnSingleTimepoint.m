@@ -228,12 +228,12 @@ else
             chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
             zsections = 1:sizeZ;
         else
-            chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.OmeroDatabase.MicroscopeChannels));
+         chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.microscopeChannels));
             zstring = regexp(channelName,'_(.*)$','tokens');
             if ~isempty(zstring)
                 zsections = str2double(zstring{1});
             else
-                error('Invalid channel name - this is a bug see Julian/Ivan');
+            zsections =1;
             end
         end
         
@@ -245,25 +245,21 @@ else
             %Generate a filename based on the channel, timepoint and z section.
             fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
             
-            %Check if this plane has been cached (is there a file with this name?)
-            if exist(fileName)==2
-                timepointIm(:,:,z)=imread(fileName);
-            else
-                %Get the image from the Omero Database
-                try
-                    plane=store.getPlane(z-1, chNum-1, timepoint-1);
-                    %cache the plane to make retrieval faster next time - this
-                    %doesn't work very well hence commented - need a better way
-                    %to speed up image browsing
-                    %imwrite(toMatrix(plane, pixels)', fileName);
-                catch
-                    %Fix upload script to prevent the need for this debug
-                    disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
-                    plane=store.getPlane(z-1, chNum-1, timepoint-2);
-                    timepoint=timepoint-1;
-                end
-                timepointIm(:,:,z) = toMatrix(plane, pixels)';
-            end
+        
+        %Get the image from the Omero Database
+        try
+            plane=store.getPlane(z-1, chNum-1, timepoint-1);
+            %cache the plane to make retrieval faster next time - this
+            %doesn't work very well hence commented - need a better way
+            %to speed up image browsing
+            %imwrite(toMatrix(plane, pixels)', fileName);
+        catch
+            %Fix upload script to prevent the need for this debug
+            disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
+            plane=store.getPlane(z-1, chNum-1, timepoint-2);
+            timepoint=timepoint-1;
+        end
+        timepointIm(:,:,z) = toMatrix(plane, pixels)';
             
         end
         store.close();
@@ -324,11 +320,17 @@ else
     end
     
     
-    
+%if ~isempty(cTimelapse.
     if isprop(cTimelapse,'BackgroundCorrection') && size(cTimelapse.BackgroundCorrection,2)>=channel && ~isempty(cTimelapse.BackgroundCorrection{channel})  
         %first part of this statement is to guard against cases where channel
         %has not been assigned
-        timepointIm = timepointIm.*repmat(cTimelapse.BackgroundCorrection{channel},[1 1 size(timepointIm,3)]);
+    bgdScaling = cTimelapse.BackgroundCorrection{channel}(:,:,ones(size(timepointIm,3),1));
+    if isprop(cTimelapse,'BackgroundOffset') && length(cTimelapse.BackgroundOffset)>=channel && ~isempty(cTimelapse.BackgroundOffset{channel})
+        bgdOffset = cTimelapse.BackgroundOffset{channel};
+        timepointIm = bgdOffset + (timepointIm - bgdOffset).*bgdScaling;
+    else
+        timepointIm = timepointIm.*bgdScaling;
+    end
     end
     
     

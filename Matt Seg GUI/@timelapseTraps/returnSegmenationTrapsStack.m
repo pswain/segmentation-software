@@ -49,11 +49,12 @@ function [imagestack_out] = returnSegmenationTrapsStack(cTimelapse,traps,timepoi
 
 if nargin<4
     type = 'twostage';
+    if ~cTimelapse.trapsPresent
+        type = 'wholeIm';
+    end
 end
 
-if ~cTimelapse.trapsPresent
-    type = 'wholeIm';
-end
+
 
 image_stack = [];
 

@@ -44,6 +44,12 @@ files_already_added = [cTimelapse.cTimepoint(:).filename];
 % don't add files already stored in cTimelapse.
 files = setdiff(files,files_already_added);
 
+% throw away hidden files in unix system
+to_keep = cellfun('isempty',regexp(files,'^\.','once'));
+
+files = files(to_keep);
+
+
 files=sort(files);
 
 

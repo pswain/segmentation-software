@@ -104,7 +104,7 @@ function [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,t
 % This preallocates the segmented images to speed up execution
 d_imCenters=zeros(size(old_d_im));
 d_imEdges=zeros(size(old_d_im));
-
+tPresent=cTimelapse.trapsPresent;
 if cTimelapse.trapsPresent
     %used if refineTrapOutline has not been used to populate
     %refinedTrapPixelInner/Big
@@ -116,7 +116,6 @@ if cTimelapse.trapsPresent
 else
     trapOutline = false(size(image{1},1),size(image{1},2));
 end
-
 %calculate the decisions image, do some transformations on it, and
 %threshold it to give segCentres.
 
@@ -133,8 +132,9 @@ parfor k=1:length(trap) %CHANGE BACK TO parfor
     segCenters{k}=sparse(bw>0); 
 end
 
-cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
-
+if tPresent
+    cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
+end
 
 % store the segmentation result (segCenters) in the cTimelapse object.
 for k=1:length(trap)
@@ -187,9 +187,11 @@ else
     trapOutline = zeros(cTimelapse.imSize);
 end
 
-trapOutline = trapOutline>0;
-cCellVision.cTrap.currentTpOutline=trapOutline;
 
+trapOutline = trapOutline>0;
+if tPresent
+    cCellVision.cTrap.currentTpOutline=trapOutline;
+end
 [~,d_im_temp]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
 
 d_im=d_im_temp(:,:,1);

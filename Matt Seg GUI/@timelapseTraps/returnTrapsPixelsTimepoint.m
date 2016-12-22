@@ -13,12 +13,14 @@ if isempty(traps)
 end
 
 if nargin<4||isempty(default_result)
-    default_result = zeros([2*cTimelapse.cTrapSize.bb_height+1 2*cTimelapse.cTrapSize.bb_width+1]);
+    default_result = zeros(size(cTimelapse.defaultTrapDataTemplate));
 end
 
-trapsStack = zeros([2*cTimelapse.cTrapSize.bb_height+1 2*cTimelapse.cTrapSize.bb_width+1 length(traps)]);
+
+trapsStack = zeros([size(cTimelapse.defaultTrapDataTemplate) length(traps)]);
 
 
+if cTimelapse.trapsPresent
 
 % if cTimelapse.refinedTrapOutline has been run then use this for trap
 % outline.
@@ -38,5 +40,6 @@ for k=1:length(traps)
     end
 end
 
-
+else
+end
 end

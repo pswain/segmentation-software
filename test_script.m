@@ -736,3 +736,9 @@ else
     fprintf('passedf changing image location test\n\n')
 
 end
+
+%% special slide GUI
+
+% special GUI written for Ivan to extract data from slides.
+
+cExpGUI = experimentTrackingSlidesGUI

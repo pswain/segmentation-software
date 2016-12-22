@@ -20,9 +20,9 @@ function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,traps
 %
 % imScale can be set to the string 'gui' to populate it via user interface.
 
-cTimelapse.channelNames=searchString;
 if isempty(cTimelapse.omeroImage)
     %get names of all files in the timelapseDir folder
+    cTimelapse.channelNames=searchString;
     folder=cTimelapse.timelapseDir;
 	tempdir=dir(folder);
 	nfiles=0;
@@ -58,7 +58,9 @@ if isempty(cTimelapse.omeroImage)
     for ss=1:length(searchString)
         timepoint_index=0;
         for n = 1:length(files);
-            if isempty(strfind(files{n},'tif'))|| isempty(strfind(files{n},'png')) || isempty(strfind(files{n},'TIF'))
+            % check file name is an image and is not a hidden unix file
+            if (~isempty(strfind(files{n},'tif'))|| ~isempty(strfind(files{n},'png')) || ~isempty(strfind(files{n},'TIF')))...
+                    && isempty(regexp(files{n},'^\.','once'))
                 if ~isempty(strfind(files{n},searchString{ss}))
                     cTimelapse.cTimepoint(timepoint_index+1).filename{ss}=files{n};
                     cTimelapse.cTimepoint(timepoint_index+1).trapLocations=[];
@@ -95,7 +97,8 @@ else
     
     %Load first timepoint of this cTimelapse to fill out the remaining
     %details
-    image=cTimelapse.returnSingleTimepoint(1,searchString);
+    
+    image=cTimelapse.returnSingleTimepoint(1,find(strcmp(cTimelapse.channelNames,searchString)));
 end
 
 cTimelapse.imSize=size(image);

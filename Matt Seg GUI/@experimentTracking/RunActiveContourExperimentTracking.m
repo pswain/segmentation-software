@@ -184,7 +184,11 @@ for i=1:length(positionsToIdentify)
     end
     
     
+    try
     cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+    catch err
+    rethrow(err)
+    end
     cExperiment.saveTimelapseExperiment(currentPos);
     
     fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))

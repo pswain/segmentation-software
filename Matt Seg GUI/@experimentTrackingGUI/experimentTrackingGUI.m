@@ -47,17 +47,26 @@ classdef experimentTrackingGUI<handle
     %that has been loaded. It uses the trap positions identified in the DIC
     %image to display either the primary or secondary information.
     methods
-        function cExpGUI=experimentTrackingGUI()
+        function cExpGUI=experimentTrackingGUI(make_buttons)
+            % cExpGUI=experimentTrackingGUI(make_buttons)
+            % makes the cExpGUI
+            % make_buttons tells it whether to make the standard buttons. Default is true. 
             
+            if nargin<1 || isempty(make_buttons)
+                make_buttons = true;
+            end
             %Add Omero code to the path
+            
             if ispc
-                addpath(genpath('C:\Omero code\Omero code'));
+                addpath(genpath('C:\Users\Public\OmeroCode'));
             else
                 addpath(genpath(['/Users/' char(java.lang.System.getProperty('user.name')) '/Documents/Omero code']));
             end
             
             cExpGUI.channel=1;
-
+            
+            if make_buttons
+            
             scrsz = get(0,'ScreenSize');
             cExpGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(3)/2 scrsz(4)/2]);
             cExpGUI.expPanel = uipanel('Parent',cExpGUI.figure,...
@@ -137,7 +146,7 @@ classdef experimentTrackingGUI<handle
             cExpGUI.extractBirthsButton=uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Extract births info',...
                 'Units','normalized','Position',[.505 .0 .47 .15],'Callback',@(src,event)extractBirths(cExpGUI),'TooltipString','Extract data on budding events undergone by mother cells');
 
+            end
         end
-
     end
 end

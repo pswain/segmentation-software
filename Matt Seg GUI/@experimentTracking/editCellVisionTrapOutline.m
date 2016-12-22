@@ -9,7 +9,8 @@ if nargin<2 || isempty(pos)
     pos = pos(1);
 end
 
-load(fullfile(cExperiment.saveFolder,[ cExperiment.dirs{pos} 'cTimelapse']),'cTimelapse');
+cTimelapse=cExperiment.returnTimelapse(pos);
+%load(fullfile(cExperiment.saveFolder,[ cExperiment.dirs{pos} 'cTimelapse']),'cTimelapse');
 
 if nargin<3 || isempty(TP)
     TP = randperm(length(cTimelapse.timepointsToProcess));

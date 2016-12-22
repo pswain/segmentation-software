@@ -120,7 +120,7 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         if length(trapL)<1 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end
-        tpBefore=find(diff(smooth(tpCheck,3)>0,1)>0);
+        tpBefore=find(diff(smooth(double(tpCheck),3)>0,1)>0);
         tpCheckBefore=zeros(size(tpCheck));
         if ~isempty(tpBefore)
             tpCheckBefore(:,1:tpBefore)=1;
