@@ -1045,7 +1045,7 @@ for TP = Timepoints
     TimeOfTimepoint = toc;
     fprintf('timepoint analysed in %.2f seconds \n',TimeOfTimepoint);
     
-    disp.slider.Value = TP;
+    set(disp.slider,'Value',TP);
     disp.slider_cb;
     if ACparameters.visualise>1 && TP>=TPtoStartSegmenting
         OutlinesStack = [];

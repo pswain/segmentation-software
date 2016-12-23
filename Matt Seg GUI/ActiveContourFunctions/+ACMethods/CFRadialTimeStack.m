@@ -180,12 +180,14 @@ for ti = 1:length(timepoints_to_optimise)
                 radii_reordered = radii_mat(p,:);
                 %make max radii first entry
                 [~,mi] = max(radii_reordered);
-                radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                %radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                radii_reordered = circshift(radii_reordered,-(mi-1));
                 
                 % flip so 2nd entry is 2nd largest
                 if radii_reordered(2)<radii_reordered(end)
                     radii_reordered = fliplr(radii_reordered);
-                    radii_reordered = circshift(radii_reordered,1,2);
+                    %radii_reordered = circshift(radii_reordered,1,2);
+                    radii_reordered = circshift(radii_reordered,1);
                     
                 end
                 
@@ -198,12 +200,14 @@ for ti = 1:length(timepoints_to_optimise)
                     radii_reordered = radii_reordered_stack(i,:);
                     %make max radii first entry
                     [~,mi] = max(radii_reordered);
-                    radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                    %radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                    radii_reordered = circshift(radii_reordered,-(mi-1));
                     
                     % flip so 2nd entry is 2nd largest
                     if radii_reordered(1,2)<radii_reordered(1,end)
                         radii_reordered = fliplr(radii_reordered);
-                        radii_reordered = circshift(radii_reordered,1,2);
+                        %radii_reordered = circshift(radii_reordered,1,2);
+                        radii_reordered = circshift(radii_reordered,1);
                         
                     end
                     
