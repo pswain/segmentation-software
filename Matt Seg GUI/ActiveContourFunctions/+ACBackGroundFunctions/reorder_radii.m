@@ -14,12 +14,14 @@ for i=1:size(radii_mat,1)
     %make max radii first entry
     [~,mi] = max(radii);
     
-    radii = circshift(radii,-(mi-1),2);
+    %radii = circshift(radii,-(mi-1),2);
+    radii = circshift(radii,-(mi-1));
     
     % flip so 2nd entry is 2nd largest
     if radii(2)<radii(end)
         radii = fliplr(radii);
-        radii = circshift(radii,1,2);
+        %radii = circshift(radii,1,2);
+        radii = circshift(radii,1);
     end
     radii_mat(i,:) = radii;
 end
