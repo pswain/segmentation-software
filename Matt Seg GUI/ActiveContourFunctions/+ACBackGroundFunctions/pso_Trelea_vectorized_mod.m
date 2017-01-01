@@ -112,7 +112,7 @@ end
     
 g_descent_param = 2;
 
-rand('state',sum(100*clock));
+%rand('state',sum(100*clock));
 if nargin < 2
    error('Not enough arguments.');
 end
