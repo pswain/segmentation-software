@@ -87,6 +87,8 @@ CellPixExcludeThresh = cTimelapse.ACParams.ActiveContour.CellPixExcludeThresh; %
 
 OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
 
+TrapPresentBoolean = cTimelapse.trapsPresent;
+
 % cross correlation prior constructed from two parts:
 % a tight gaussian gaussian centered at the center spot (width JumpSize1)
 % a broader gaussian constrained to not go beyond front of the cell (width JumpSize2, truncated at JumpSize1)
@@ -94,18 +96,26 @@ OptPoints = cTimelapse.ACParams.ActiveContour.opt_points;
 
 %object to provide priors for cell movement based on position and location.
 jump_parameters = [4 81];
-CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
-
-% more stringent jump object for checking cell score
-jump_parameters_check = [1 81];
-CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
+if TrapPresentBoolean
+    CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
+    % more stringent jump object for checking cell score
+    jump_parameters_check = [1 81];
+    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
+else
+    CrossCorrelationPriorObject = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters);
+    % more stringent jump object for checking cell score
+    jump_parameters_check = [1 81];
+    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters_check);
+end
 
 
 PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;%true; %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
 MaxRegistration = cTimelapse.ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
 
-% default trapOutline used for normalisation.
-DefaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,strel('disk',3),'same');
+if TrapPresentBoolean
+    % default trapOutline used for normalisation.
+    DefaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,strel('disk',3),'same');
+end
 
 if cTimelapse.trapsPresent
     PerformRegistration = false; %registration should be covered by tracking in the traps.
@@ -180,9 +190,8 @@ threshold_score = -10;
 %CrossCorrelationPrior = ones(ProspectiveImageSize,ProspectiveImageSize);
 
 %variable assignments,mostly for convenience and parallelising.
-TrapPresentBoolean = cTimelapse.trapsPresent;
 TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
-TrapImageSize = cTimelapse.trapImSize;
+TrapImageSize = size(cTimelapse.defaultTrapDataTemplate);
 
 ImageTransformFunction = str2func(['ACImageTransformations.' cTimelapse.ACParams.ImageTransformation.ImageTransformFunction]);
 
@@ -259,14 +268,17 @@ ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
     
 DecisionImageChannel = cTimelapse.channelsForSegment;
 
-TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
-TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
-TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
-if isempty(TrapRefineParameters.starting_trap_outline);
-    TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
+if TrapPresentBoolean
+    TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
+    TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
+    TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
+    if isempty(TrapRefineParameters.starting_trap_outline);
+        TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
+    end
+    TrapRefineFunction = @(stack) TrapRefineFunction(stack,TrapRefineParameters);
+else
+    TrapRefineChannel = [];
 end
-TrapRefineFunction = @(stack) TrapRefineFunction(stack,TrapRefineParameters);
-
 CrossCorrelationMethod = 'just_DIM';
                     
 
@@ -303,7 +315,7 @@ for TP = Timepoints
             ACImage = ACImage + sign(ACImageChannel(channel==abs(ACImageChannel))) * TempIm;
         end
         
-        if ismember(channel,abs(TrapRefineChannel))
+        if TrapPresentBoolean &&    ismember(channel,abs(TrapRefineChannel))
             TrapRefineImage = TrapRefineImage + sign(TrapRefineChannel(channel==abs(TrapRefineChannel))) * TempIm;
         end
         
@@ -334,7 +346,8 @@ for TP = Timepoints
         WholeTrapImage = cTimelapse.returnWholeTrapImage(DefaultTrapImageStack,TP,DefaultTrapIndices);
         
     else
-        WholeTrapImage = zeros([size(CCImage,1) size(CCImage,2)]);
+        WholeTrapImage = zeros([size(CCImage,1), size(CCImage,2)]);
+        TrapTrapImageStack = zeros([size(CCImage,1), size(CCImage,2),length(TrapsToCheck)]);
     end
     
     % normalise AC image by gradient at traps
