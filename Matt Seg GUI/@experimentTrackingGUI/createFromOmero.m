@@ -66,7 +66,7 @@ if strcmp(dsStruct.action,'segment')
                 inputName='001';
             end
         end
-        cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
+        cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
         
         %Copy the channels lists to the cExperiment.
         cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
@@ -224,7 +224,7 @@ if strcmp(dsStruct.action,'segment')
                 %if experimentTracking is called with a non character first
                 %input this is assumed to be ab omerodatabase construction. The
                 %2nd input is then not used.
-                cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
+                cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
                 
                 %Copy the channels lists to the cExperiment.
                 cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;

@@ -162,9 +162,17 @@ classdef experimentTracking<handle
             
             
             %% default loading method: DO NOT CHANGE
-            cExperiment = experimentTracking(true);
             
             FieldNames = fieldnames(LoadStructure);
+            
+            % back compatibility with when Omero type was just a multi
+            % if'ed version of non-omero type
+            if any(ismember({'OmeroDatabase','OmeroDs'},FieldNames)) && ...
+                (~isempty(LoadStructure.OmeroDatabase) || ~isempty(LoadStructure.OmeroDs) )
+                cExperiment = experimentTrackingOmero(true);
+            else
+                cExperiment = experimentTracking(true);
+            end
             
             %only populate mutable fields occcuring in both the load object
             %and the cTimelapse object.
