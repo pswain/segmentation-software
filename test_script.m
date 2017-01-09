@@ -14,165 +14,83 @@
 
 
 
+% IMPORTANT NOTE ON PARFOR LOOP
+% because parfor loop is run in non-deterministic order, loops must be
+% made normal for loops IF they include the use of random numbers for this
+% script to work. 
+% strangely, this is not true for single core computers (like my laptop)
+% but is true even if you start parfor with only 1 worker on a multicore
+% machine. 
+
 %%
 clc
 clear all
 close all
 
-%% load  twostage default classifier
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_1_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
+%% normal timelapse
+% start at a specific seed - should lead to the same outcome every time.
+rng('default')
+rng(1)
 
-l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_1/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
-
-report_string = 'dfault classifier';
-
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/traps_few_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
-
-channels_to_extract = [5 6 7];
-
-%% load  wholTrap cCellVision type
-
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_wholeTrapIm_cCellVision_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_wholeTrapIm_cCellVision_test/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
-
-report_string = 'wholeTrap classifier';
-
-poses = 1:2;
-
-channels_to_extract = [5 6 7];
-
-%% load  wholIm cCellVision type
-
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_wholeIm_cCellVision_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_wholeIm_cCellVision_test/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
-
-report_string = 'wholeIm classifier';
-
-poses = 1:2;
-
-channels_to_extract = [5 6 7];
-
-%% load  no traps  cExperiments
-
-l1 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_notrap_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-l2 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_notrap_test/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
-
-report_string = 'no traps';
-
-poses = 1:2;
-
-channels_to_extract = [4];
-
-
-%%
-
-cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
-cCellVision = cExperiment_test.cCellVision;
-
-
-%% test cell identification, tracking and identification on very short timelapse
-
-% set to extract Matt's way so that they are comparable with old results.
-extractionParameters = timelapseTraps.defaultExtractParameters;
-extractionParameters.extractFunction = @extractCellDataMatt;
-extractionParameters.functionParameters = struct('channels',channels_to_extract,'cellSegType','segmented','type','max');
-
-cExperiment_test.setExtractParameters(1:2,extractionParameters);
-
-cExperiment_test.selectTPToProcess(1:2,1:4)
-
-cExperiment_test.trackTrapsOverwrite = true;
-cExperiment_test.segmentCellsDisplay(cExperiment_test.cCellVision,poses)
-cExperiment_test.trackTrapsOverwrite = false;
-
-cExperiment_test.trackCells(poses,5);
-
-paramsCombineTracklet.fraction=.1; %fraction of timelapse length that cells must be present or
-    paramsCombineTracklet.duration=3; %number of frames cells must be present
-    paramsCombineTracklet.framesToCheck=(max(cExperiment_test.timepointsToProcess));
-    paramsCombineTracklet.framesToCheckEnd=1;
-    paramsCombineTracklet.endThresh=2; %num tp after end of tracklet to look for cells
-    paramsCombineTracklet.sameThresh=4; %num tp to use to see if cells are the same
-    paramsCombineTracklet.classThresh=3.8; %classification threshold
-    
-combineTracklets(cExperiment_test,poses,paramsCombineTracklet);
-
+report_string = 'few traps standard';
 %
-%cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,2,false,false);
 
+cExperiment_test.trackTrapsInTime(poses);
+
+cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
 %
-% select cells
+% % retrack
+params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
+%cExperiment.trackCells(poses,params.trackingDistance);
 
-cTimelapse=cExperiment_test.returnTimelapse(poses(1));
-params.fraction=.8; %fraction of timelapse length that cells must be present or
-params.duration=4;  %length(cTimelapse.cTimepoint); %number of frames cells must be present
-params.framesToCheck=length(cTimelapse.timepointsToProcess);
-params.framesToCheckEnd=1;
-params.maximumNumberOfCells = Inf;
-cExperiment_test.selectCellsToPlotAutomatic(poses,params);
-
+%extract
+cExperiment_test.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
 cExperiment_test.extractCellInformation(poses,false);
+cExperiment_test.compileCellInformation(poses)
 
-cExperiment_test.compileCellInformation(poses);
-%%
-cExperiment_true.cTimelapse = [];
-cExperiment_test.cTimelapse = [];
-
-cExperiment_true.logger = [];
-cExperiment_test.logger = [];
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/traps_few_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
 
 
-if isequaln(cExperiment_test,cExperiment_true)
-    
-    fprintf('\n passed standard processing test - %s cCellVision\n',report_string)
-else
-    fprintf('\n             FAILED standard processing test - %s cCellvision\n',report_string)
-    report_differences(cExperiment_true,cExperiment_test,sprintf('cExperiment_true'),sprintf('cExperiment_test'));
-    
-end
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
 
-for diri=1:length(cExperiment_true.dirs)
-    
-    cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
-    cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
-    
-    cTimelapse_true.ActiveContourObject = [];
-    cTimelapse_test.ActiveContourObject = [];
-    
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
-    
-    if isequaln(cTimelapse_test,cTimelapse_true)
-        
-        fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)
-    else
-        fprintf('\n         FAILED standard processing %s test timelapse %d \n',report_string,diri)
-        report_differences(cTimelapse_true,cTimelapse_test,sprintf('cTimelapse_true_%d',diri),sprintf('cTimelapse_test_%d',diri));
-        
-    end
-    
-end
+%% non trap timelapse
 
-fprintf('\n\n')
+rng('default')
+rng(1)
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/no_traps_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'no traps standard';
+%
+
+cExperiment_test.trackTrapsInTime(poses);
+
+cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
+%
+% % retrack
+params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
+%cExperiment.trackCells(poses,params.trackingDistance);
+
+%extract
+cExperiment_test.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
+cExperiment_test.extractCellInformation(poses,false);
+cExperiment_test.compileCellInformation(poses)
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/no_traps_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
+
 
 %% more detailed tests
 
@@ -352,7 +270,7 @@ clc
 
 %% test constructor.
 
-cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01',...
+cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01_curtailed_1-4',...
     '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_test');
 createTimelapsePositions(cExperiment_test,{'DIC'},'all',[],0,[],60,[],true);
 
@@ -484,64 +402,68 @@ clc
 
 %% test continuous sementation
 
-% is sensible, this will not only have a small amount of timepoints but
-% point to a folder with a small amount of timepoints.
-l1 = load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_true/cExperiment');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-report_string = ' continuous segmentation ';
-
-cExperiment_true.copyExperiment('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_test');
-cExperiment_test = cExperiment_true;
-
-new_tp = 2;
-for diri = 1:length(cExperiment_test.dirs)
-    cExperiment_test.loadCurrentTimelapse(diri);
-    cExperiment_test.cTimelapse.cTimepoint((new_tp+1):end) = [];
-    cExperiment_test.cTimelapse.timepointsToProcess = 1:new_tp;
-    cExperiment_test.cTimelapse.timepointsProcessed = true(1,new_tp);
-    cExperiment_test.saveTimelapseExperiment(diri);
-end
-
-
-l1 = load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_true/cExperiment');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-
-cExperiment_test.segmentCellsDisplayContinuous(cExperiment_test.cCellVision,1:length(cExperiment_test.dirs),max(cExperiment_true.timepointsToProcess));
-
-if isequaln(cExperiment_test,cExperiment_true)
-    
-    fprintf('\n passed standard processing test - %s cCellVision\n',report_string)
-else
-    fprintf('\n             FAILED standard processing test - %s cCellvision\n',report_string)
-    report_differences(cExperiment_true,cExperiment_test,sprintf('cExperiment_true'),sprintf('cExperiment_test'));
-    
-end
-
-for diri=1:length(cExperiment_true.dirs)
-    
-    cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
-    cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
-    cTimelapse_true.ActiveContourObject = [];
-    cTimelapse_test.ActiveContourObject = [];
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
-
-    if isequaln(cTimelapse_test,cTimelapse_true)
-        
-        fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)
-    else
-        fprintf('\n         FAILED standard processing %s test timelapse %d \n',report_string,diri)
-        report_differences(cTimelapse_true,cTimelapse_test,sprintf('cTimelapse_true_%d',diri),sprintf('cTimelapse_test_%d',diri));
-        
-    end
-    
-end
-
-fprintf('\n\n')
+% Currently not used, not sure if it's worth repairing continuous
+% segmentation: wouldn't be hard I guess.
+ 
+% 
+% % is sensible, this will not only have a small amount of timepoints but
+% % point to a folder with a small amount of timepoints.
+% l1 = load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_true/cExperiment');
+% cExperiment_true = l1.cExperiment;
+% cExperiment_true.cCellVision = l1.cCellVision;
+% 
+% report_string = ' continuous segmentation ';
+% 
+% cExperiment_true.copyExperiment('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_test');
+% cExperiment_test = cExperiment_true;
+% 
+% new_tp = 2;
+% for diri = 1:length(cExperiment_test.dirs)
+%     cExperiment_test.loadCurrentTimelapse(diri);
+%     cExperiment_test.cTimelapse.cTimepoint((new_tp+1):end) = [];
+%     cExperiment_test.cTimelapse.timepointsToProcess = 1:new_tp;
+%     cExperiment_test.cTimelapse.timepointsProcessed = true(1,new_tp);
+%     cExperiment_test.saveTimelapseExperiment(diri);
+% end
+% 
+% 
+% l1 = load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_continuousSegment_true/cExperiment');
+% cExperiment_true = l1.cExperiment;
+% cExperiment_true.cCellVision = l1.cCellVision;
+% 
+% 
+% cExperiment_test.segmentCellsDisplayContinuous(cExperiment_test.cCellVision,1:length(cExperiment_test.dirs),max(cExperiment_true.timepointsToProcess));
+% 
+% if isequaln(cExperiment_test,cExperiment_true)
+%     
+%     fprintf('\n passed standard processing test - %s cCellVision\n',report_string)
+% else
+%     fprintf('\n             FAILED standard processing test - %s cCellvision\n',report_string)
+%     report_differences(cExperiment_true,cExperiment_test,sprintf('cExperiment_true'),sprintf('cExperiment_test'));
+%     
+% end
+% 
+% for diri=1:length(cExperiment_true.dirs)
+%     
+%     cTimelapse_true = cExperiment_true.loadCurrentTimelapse(diri);
+%     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
+%     cTimelapse_true.ActiveContourObject = [];
+%     cTimelapse_test.ActiveContourObject = [];
+%     cTimelapse_true.logger = [];
+%     cTimelapse_test.logger = [];
+% 
+%     if isequaln(cTimelapse_test,cTimelapse_true)
+%         
+%         fprintf('\n passed standard processing %s test timelapse %d \n',report_string,diri)
+%     else
+%         fprintf('\n         FAILED standard processing %s test timelapse %d \n',report_string,diri)
+%         report_differences(cTimelapse_true,cTimelapse_test,sprintf('cTimelapse_true_%d',diri),sprintf('cTimelapse_test_%d',diri));
+%         
+%     end
+%     
+% end
+% 
+% fprintf('\n\n')
 
 
 %%
@@ -586,47 +508,6 @@ TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,1,2,7,[1 3]);
 
 disp = experimentTrackingGUI
 
-%% test extraction and compilation with Matt's code
-
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_test/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
-
-cTimelapse = cExperiment_true.loadCurrentTimelapse(1);
-cCellVision = cExperiment_true.cCellVision;
-
-poses = 1:2;
-% Matt parameters
-%extractionParameters.extractFunction = @extractCellDataMatt
-%extractionParameters.functionParameters = struct('type','max','cellSegType','segmented','channels',[5 6 7 8])
-
-if false
-for posi = 1:2
-    
-    cTimelapse = cExperiment_test.loadCurrentTimelapse(posi);
-    cTimelapse.channelNames{8} = 'GFP';
-    cExperiment_test.saveTimelapseExperiment(posi);
-    
-end
-end
-
-cExperiment_test.extractCellInformation(1:2)
-cExperiment_test.compileCellInformation(1:2)
-report_differences(cExperiment_true.cellInf(1:3),cExperiment_test.cellInf(1:3),sprintf('cExperiment_true_'),sprintf('cExperiment_test'));
-    
-for posi = 1:2
-    
-    cTimelapse_test = cExperiment_test.loadCurrentTimelapse(posi);
-    cTimelapse_true = cExperiment_true.loadCurrentTimelapse(posi);
-    report_differences(cTimelapse_true.extractedData(1:3),cTimelapse_test.extractedData(1:3),sprintf('cTimelapse_true_%d',posi),sprintf('cTimelapse_test_%d',posi));
-        
-    
-end
-
 
 %% test default extraction
 
@@ -639,42 +520,6 @@ cExperiment_test.compileCellInformation(1:2)
 
 
 
-%% compare with Matt's ground truth in a few relevant fields.
-
-
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_compilation_test/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
-
-fields_to_check = {'mean',...
-    'median',...
-    'max5',...
-    'std',...
-    'smallmean',...
-    'smallmedian',...
-    'smallmax5',...
-    'min',...
-    'imBackground',...
-    'area',...
-    'radius',...
-    'xloc',...
-    'yloc',...
-    'membraneMax5',...
-    'membraneMedian',...
-    'pixel_sum'...
-};
-
-%fields_to_check = {'area','xloc','yloc','radius'};
-for chi=1:4
-    for fi = 1:length(fields_to_check)
-        fi = fields_to_check{fi};
-        diff_mat = cExperiment_test.cellInf(chi).(fi)(:,11:50) - cExperiment_true.cellInf(chi).(fi)(:,11:50);
-        if any(diff_mat~=0)
-            fprintf('field %s, channel %d\n',fi,chi)
-            %display(diff_mat)
-        end
-    end
-end
 
 %% check all possible standard extraction methods for function, though no real check on result.
 l1 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/tests_cExperiment_extraction_default_test/cExperiment.mat');
@@ -741,4 +586,4 @@ end
 
 % special GUI written for Ivan to extract data from slides.
 
-cExpGUI = experimentTrackingSlidesGUI
+cExpGUI = experimentTrackingSlidesGUI;

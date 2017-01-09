@@ -14,14 +14,24 @@ for i=1:size(radii_mat,1)
     %make max radii first entry
     [~,mi] = max(radii);
     
-    %radii = circshift(radii,-(mi-1),2);
-    radii = circshift(radii,-(mi-1));
-    
+    %TODO - remove this bit
+    % included for back compatibility with matlab 2013b
+    if nargin(@circshift) == 3
+        radii = circshift(radii,-(mi-1),2);
+    else
+        radii = circshift(radii,-(mi-1));
+    end
     % flip so 2nd entry is 2nd largest
     if radii(2)<radii(end)
         radii = fliplr(radii);
-        %radii = circshift(radii,1,2);
-        radii = circshift(radii,1);
+        
+        %TODO - remove this bit
+        % included for back compatibility with matlab 2013b
+        if nargin(@circshift) == 3
+            radii = circshift(radii,1,2);
+        else
+            radii = circshift(radii,1);
+        end
     end
     radii_mat(i,:) = radii;
 end

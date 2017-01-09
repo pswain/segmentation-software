@@ -115,7 +115,9 @@ if force
 end
 
 % Compile meta data into the cellInf:
-cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
+
+%TODO - put back and leave to Julian to worry about.
+%cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
 
 cExperiment.saveExperiment();
 

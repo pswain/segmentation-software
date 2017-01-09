@@ -56,12 +56,14 @@ end
 %% Run the tracking on the timelapse
 
 % Start logging protocol
+
 cExperiment.logger.add_arg('Fraction of timelapse that cells are present for',params.fraction);
 cExperiment.logger.add_arg('Number of frames a cell must be present',params.duration);
 cExperiment.logger.add_arg('Cell must appear by frame',params.framesToCheck);
 cExperiment.logger.add_arg('Cell must still be present by frame',params.framesToCheckEnd);
 cExperiment.logger.add_arg('Maximum number of cells',params.maximumNumberOfCells);
 cExperiment.logger.start_protocol('autoselecting cells',length(positionsToCheck));
+
 try
 
     for i=1:length(positionsToCheck)

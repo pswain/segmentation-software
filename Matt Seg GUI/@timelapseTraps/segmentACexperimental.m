@@ -640,16 +640,17 @@ for TP = Timepoints
             ACTrapImageStack = ACImage;
         end
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
+        fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
         cells_discarded = 0;
         cells_found = 0;
-        parfor TI = 1:length(TrapsToCheck)
+        for TI = 1:length(TrapsToCheck)
             
-            PreviousCurrentTrapInfo = [];
+            PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
-                PreviousCurrentTrapInfo = SliceablePreviousTrapInfo(TI);
+                PreviousCurrentTrapInfoPar = SliceablePreviousTrapInfo(TI);
             end
             
+            PreviousTimepointRadii = [];
             TrapDecisionImage = DecisionImageStack(:,:,TI);
             NormalisedTrapDecisionImage = NormalisedDecisionImageStack(:,:,TI);
             TrapTrapImage = TrapTrapImageStack(:,:,TI);
@@ -680,11 +681,11 @@ for TP = Timepoints
             CellTrapImage = [];
             CIpar = [];
             
-            if  ACparameters.visualise >1
-                TransformedImagesVISTrap = [];
-                OutlinesVISTrap = [];
-                CellStatsDebugTrap = [];
-            end
+            % for visualising if debugging code
+            TransformedImagesVISTrap = [];
+            OutlinesVISTrap = [];
+            CellStatsDebugTrap = [];
+
             
             %look for new cells
             while CellSearch
@@ -779,7 +780,7 @@ for TP = Timepoints
                     end
                     
                     if CrossCorrelating(TI)
-                        PreviousTimepointRadii = PreviousCurrentTrapInfo.cell(CIpar).cellRadii;
+                        PreviousTimepointRadii = PreviousCurrentTrapInfoPar.cell(CIpar).cellRadii;
                         
                         [RadiiResult,AnglesResult,ACscore] = ...
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
@@ -823,9 +824,11 @@ for TP = Timepoints
                         
                         end
                         
+                        % intended to supress matlab warnings
+                        PreviousTimepointRadii = [];
                         % calculate movement contribution
-                        old_cell_center = PreviousCurrentTrapInfo.cell(CIpar).cellCenter;
-                        old_cell_radius = mean(PreviousCurrentTrapInfo.cell(CIpar).cellRadii);
+                        old_cell_center = PreviousCurrentTrapInfoPar.cell(CIpar).cellCenter;
+                        old_cell_radius = mean(PreviousCurrentTrapInfoPar.cell(CIpar).cellRadii);
                         
                         movement_prior = CrossCorrelationPriorObjectCheck.returnPrior(old_cell_center, old_cell_radius);
                         
@@ -875,7 +878,7 @@ for TP = Timepoints
                     ParCurrentTrapInfo.cell(NCI) = NewCellStruct;
                     
                     if CrossCorrelating(TI)
-                        ParCurrentTrapInfo.cellLabel(NCI) = PreviousCurrentTrapInfo.cellLabel(CIpar);
+                        ParCurrentTrapInfo.cellLabel(NCI) = PreviousCurrentTrapInfoPar.cellLabel(CIpar);
                         OldCells = [OldCells CIpar];
                         NewCrossCorrelatedCells = [NewCrossCorrelatedCells NCI];
                     else
@@ -963,7 +966,7 @@ for TP = Timepoints
             %location and distance moved in previous timepoint.
             %for new cells it is simply their current location
             for CI = 1:length(NewCrossCorrelatedCells);
-                CellMove = (ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).cellCenter - PreviousCurrentTrapInfo.cell(OldCells(CI)).cellCenter);
+                CellMove = (ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).cellCenter - PreviousCurrentTrapInfoPar.cell(OldCells(CI)).cellCenter);
                 
                 if PerformRegistration
                     % so as not to confuse jumps in registration (which
@@ -994,7 +997,7 @@ for TP = Timepoints
                     ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) = 1;
                 end
                 
-                %ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfo.cell(OldCells(CI)).TPpresent+1;
+                %ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfoPar.cell(OldCells(CI)).TPpresent+1;
                 
             end
             

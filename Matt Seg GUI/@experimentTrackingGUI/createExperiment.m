@@ -1,5 +1,6 @@
 function createExperiment(cExpGUI)
-
+% createExperiment(cExpGUI)
+% create a new experiment from file location (as oppose to Omero)
 cExpGUI.cExperiment=experimentTracking();
 
 % createTimelapsePositions given with explicit arguments so that
@@ -18,3 +19,4 @@ cExpGUI.channel = 1;
 
 cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
 set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);
+end

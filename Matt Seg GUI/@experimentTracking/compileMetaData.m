@@ -38,6 +38,9 @@ end
 approxNtimepoints = size(cExperiment.metadata.logTimes,2);
 
 %% Determine the timepoints for which extraction was performed if not provided:
+
+% assumes each position provides at least on cell and throws error otherwise - potentially
+% problematic.
 extractedPositions = sort(unique(cExperiment.cellInf(1).posNum));
 if nargin<2 || isempty(extractedTimepoints)
     extractedTimepoints = false(max(extractedPositions(:)),approxNtimepoints);

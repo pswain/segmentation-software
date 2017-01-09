@@ -1,4 +1,9 @@
 classdef experimentTrackingGUI<handle
+    % EXPERIMENTTRACKINGGUI  gui for some of the experimentTracking
+    % processing and display functions. Most functions now called from the
+    % STANDARD_CEXPERIMENT_PROCESSING script, and GUI now mostly used for
+    % editing and checking.
+    % See also EXPERIMENTTRACKING, TIMELAPSETRACKING
     properties
         figure = [];
         expPanel
@@ -42,10 +47,7 @@ classdef experimentTrackingGUI<handle
         cCellVision=[];
         channel;
     end % properties
-    %% Displays timelapse for a single trap
-    %This can either dispaly the primary channel (DIC) or a secondary channel
-    %that has been loaded. It uses the trap positions identified in the DIC
-    %image to display either the primary or secondary information.
+   
     methods
         function cExpGUI=experimentTrackingGUI(make_buttons)
             % cExpGUI=experimentTrackingGUI(make_buttons)
@@ -89,7 +91,6 @@ classdef experimentTrackingGUI<handle
             cExpGUI.posList = uicontrol(cExpGUI.expPanel,'Style','listbox','String',{'None Loaded'},...
                 'Units','normalized','Position',[.025 .0 .95 .7],'Max',30,'Min',1);
             
-            
             cExpGUI.addSecondaryChannelButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Add Channel',...
                 'Units','normalized','Position',[.025 .85 .47 .15],'Callback',@(src,event)addSecondaryChannel(cExpGUI));
             cExpGUI.displayWholeTimelapseButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Disp Timelapse',...
@@ -103,11 +104,7 @@ classdef experimentTrackingGUI<handle
                 'Units','normalized','Position',[.505 .7 .47 .15],'Callback',@(src,event)timepointsToProcess(cExpGUI));
             cExpGUI.selectTrapsToProcessButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Select Traps',...
                 'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)selectTrapsToProcess(cExpGUI));
-
-
-            %
-%             cExpGUI.cropTimepointsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Crop Timepoints',...
-%                 'Units','normalized','Position',[.025 .7 .47 .15],'Callback',@(src,event)cropTimepoints(cExpGUI));            
+           
             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
                 'Units','normalized','Position',[.025 .55 .47 .15],'Callback',@(src,event)identifyCells(cExpGUI));
 
@@ -121,7 +118,6 @@ classdef experimentTrackingGUI<handle
            
             cExpGUI.extractSegAreaFlButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Get Fl Area',...
                 'Units','normalized','Position',[.505 .55 .25 .15],'Callback',@(src,event)extractSegAreaFl(cExpGUI));
-% [.505 .45 .47 .1]
             
             cExpGUI.autoSelectButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','AutoSelect',...
                 'Units','normalized','Position',[.025 .35 .47 .10],'Callback',@(src,event)autoSelect(cExpGUI));
@@ -135,8 +131,7 @@ classdef experimentTrackingGUI<handle
 
             cExpGUI.openCellResButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Open CellResGUI',...
                 'Units','normalized','Position',[.505 .15 .47 .10],'Callback',@(src,event)openCellResGUI(cExpGUI));
-            
-            %,'BackgroundColor',[.6 .6 .6]
+
             cExpGUI.RunActiveContourButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Run Active Contour',...
                 'Units','normalized','Position',[.505 .25 .47 .10],'Callback',@(src,event)RunActiveContourEperimentGUI(cExpGUI));
 

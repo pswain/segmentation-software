@@ -31,9 +31,9 @@ classdef experimentTrackingOmero < experimentTracking
             
             % Create a new logger to log changes for this cExperiment:
             %disp('Not generating log files now - to change open experimentTracking.m')
-            cExperimentOmero.logger = experimentLogging(cExperimentOmero,false);
             cExperimentOmero.shouldLog=True;
-
+            cExperimentOmero.logger = experimentLogging(cExperimentOmero,cExperimentOmero.shouldLog);
+            
             % If initialised with single input true, make an empty object
             % (used in load function)
             if nargin==1 && islogical(OmeroDataSet) && OmeroDataSet
@@ -145,6 +145,9 @@ classdef experimentTrackingOmero < experimentTracking
         function cExperimentOmero = loadobj(load_structure)
             % currently just calls experimentTracking load function, but
             % could be modified to be omero specific.
+            % has the nice property that it will load a non omero
+            % experimentTracking object if there is no omeroDs or
+            % OmeroDatabase (I think - Elco)
             cExperimentOmero = loadobj@experimentTracking(load_structure);
             
         end

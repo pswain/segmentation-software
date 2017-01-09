@@ -173,6 +173,7 @@ for ti = 1:length(timepoints_to_optimise)
     
         
         % trained logliklihood based term.
+        %TODO - make work for all
         if radii_length ==6 
             
             if t==1
@@ -180,15 +181,27 @@ for ti = 1:length(timepoints_to_optimise)
                 radii_reordered = radii_mat(p,:);
                 %make max radii first entry
                 [~,mi] = max(radii_reordered);
-                %radii_reordered = circshift(radii_reordered,-(mi-1),2);
-                radii_reordered = circshift(radii_reordered,-(mi-1));
+                
+                %TODO - remove this bit
+                % included for back compatibility with matlab 2013b
+                if nargin(@circshift) == 3
+                    radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                else
+                    radii_reordered = circshift(radii_reordered,-(mi-1));
+                end
                 
                 % flip so 2nd entry is 2nd largest
                 if radii_reordered(2)<radii_reordered(end)
                     radii_reordered = fliplr(radii_reordered);
-                    %radii_reordered = circshift(radii_reordered,1,2);
-                    radii_reordered = circshift(radii_reordered,1);
                     
+                    
+                    %TODO - remove this bit
+                    % included for back compatibility with matlab 2013b
+                    if nargin(@circshift) == 3
+                        radii_reordered = circshift(radii_reordered,1,2);
+                    else
+                        radii_reordered = circshift(radii_reordered,1);
+                    end
                 end
                 
                 F(p) = F(p) + radial_punishing_factor*(radii_reordered-mu_1cell)*inverted_cov_1cell*((radii_reordered - mu_1cell)');
@@ -200,15 +213,24 @@ for ti = 1:length(timepoints_to_optimise)
                     radii_reordered = radii_reordered_stack(i,:);
                     %make max radii first entry
                     [~,mi] = max(radii_reordered);
-                    %radii_reordered = circshift(radii_reordered,-(mi-1),2);
-                    radii_reordered = circshift(radii_reordered,-(mi-1));
+                    %TODO - remove this bit
+                    % included for back compatibility with matlab 2013b
+                    if nargin(@circshift) == 3
+                        radii_reordered = circshift(radii_reordered,-(mi-1),2);
+                    else
+                        radii_reordered = circshift(radii_reordered,-(mi-1));
+                    end
                     
                     % flip so 2nd entry is 2nd largest
                     if radii_reordered(1,2)<radii_reordered(1,end)
                         radii_reordered = fliplr(radii_reordered);
-                        %radii_reordered = circshift(radii_reordered,1,2);
-                        radii_reordered = circshift(radii_reordered,1);
-                        
+                        %TODO - remove this bit
+                        % included for back compatibility with matlab 2013b
+                        if nargin(@circshift) == 3
+                            radii_reordered = circshift(radii_reordered,1,2);
+                        else
+                            radii_reordered = circshift(radii_reordered,1);
+                        end
                     end
                     
                     radii_reordered_stack(i,:) = radii_reordered;

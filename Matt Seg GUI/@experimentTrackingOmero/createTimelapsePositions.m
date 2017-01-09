@@ -3,22 +3,22 @@ function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixel
 %
 % goes through the folders in the rootDir of cExperiment and creates a
 % timelapseTraps object for each one, instantiating the cTimepoint
-% structure array using the files containing the string searchString (see
+% structure array using the files containing the string searchStrinf (see
 % timelapseTraps.loadTimelapse for details). Any input not provided is
 % defined by GUI.
 %
 % inputs are all those passed to loadTimelapse method of timelapseTraps in
-% creating each timelapse.
+% creating each timelapse. Omero ignores the searchString input
 %
 % See also TIMELAPSETRAPS.LOADTIMELAPSE
 
-if nargin<2 || isempty(searchString)
-    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'DIC'});
-end
+oImages=cExperiment.omeroDs.linkedImageList;
 
-if nargin<3 || strcmp(positionsToLoad,'all')
-    positionsToLoad=1:length(cExperiment.dirs);
-end
+chNames=cExperiment.experimentInformation.channels;
+ch = menu('Choose channel used in segmentation (brightfield/DIC images)',chNames);
+searchString=chNames(ch);
+
+positionsToLoad=1:oImages.size;
 
 if nargin<4
     pixelSize=[];
@@ -58,13 +58,10 @@ cExperiment.imScale = imScale;
 cExperiment.trapsPresent = traps_present;
 cExperiment.channelNames{end+1}=searchString{1};
 % Start adding arguments to experiment creation protocol log:
-if isempty(cExperiment.OmeroDatabase)
-    cExperiment.logger.add_arg('Root folder',cExperiment.rootFolder);
-    cExperiment.logger.add_arg('Save folder',cExperiment.saveFolder);
-else
-    cExperiment.logger.add_arg('Omero experiment name',cExperiment.rootFolder);
-    cExperiment.logger.add_arg('Temporary working directory',cExperiment.saveFolder);
-end
+
+cExperiment.logger.add_arg('Omero experiment name',cExperiment.rootFolder);
+cExperiment.logger.add_arg('Temporary working directory',cExperiment.saveFolder);
+
 if isempty(cExperiment.timepointsToLoad)
     cExperiment.logger.add_arg('Timepoints to load','all');
 else
@@ -81,7 +78,9 @@ try
     %% Load timelapses
     for i=1:length(positionsToLoad)
         currentPos=positionsToLoad(i);
-        cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
+
+        cExperiment.cTimelapse=timelapseTraps(oImages.get(i-1),cExperiment.OmeroDatabase);
+        
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
         
@@ -90,9 +89,6 @@ try
         cExperiment.magnification=cExperiment.cTimelapse.magnification;
         cExperiment.imScale=cExperiment.cTimelapse.imScale;
         cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
-    
-        cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-
         cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
         cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
         

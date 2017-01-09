@@ -57,6 +57,9 @@ classdef experimentTracking<handle
                                 % object when this is run (if parameters
                                 % selected appropriately)
                                 
+        OmeroDatabase %TODO delete this at end
+        omeroDs %TODO delete this at end
+                                
     end
     
     properties (Transient)
@@ -71,8 +74,8 @@ classdef experimentTracking<handle
     
     methods
         
-        function cExperiment=experimentTracking(rootFolder,saveFolder, OmeroDatabase,  expName)
-            %cExperiment=experimentTracking(rootFolder,saveFolder, OmeroDatabase,  expName)
+        function cExperiment=experimentTracking(rootFolder,saveFolder)
+            %cExperiment=experimentTracking(rootFolder,saveFolder)
             % 
             % INPUTS 
             % rootFolder   -  EITHER :
@@ -91,9 +94,9 @@ classdef experimentTracking<handle
             
             % Create a new logger to log changes for this cExperiment:
             %disp('Not generating log files now - to change open experimentTracking.m')
-            cExperiment.logger = experimentLogging(cExperiment,false);
-            cExperiment.shouldLog=false;
-
+            cExperiment.shouldLog=true;
+            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
+            
             % Initialise source (root folder) and save paths
             if nargin<1
                 fprintf('\n   Select the Root of a single experimental set containing folders of multiple positions \n');
@@ -167,8 +170,8 @@ classdef experimentTracking<handle
             
             % back compatibility with when Omero type was just a multi
             % if'ed version of non-omero type
-            if any(ismember({'OmeroDatabase','OmeroDs'},FieldNames)) && ...
-                (~isempty(LoadStructure.OmeroDatabase) || ~isempty(LoadStructure.OmeroDs) )
+            if (ismember('OmeroDatabase',FieldNames) && ~isempty(LoadStructure.OmeroDatabase)) ||...
+                    (ismember('omeroDs',FieldNames) && ~isempty(LoadStructure.omeroDs) )
                 cExperiment = experimentTrackingOmero(true);
             else
                 cExperiment = experimentTracking(true);
@@ -191,7 +194,7 @@ classdef experimentTracking<handle
             
             % Create a new experimentLogging object when loading:
             if ~cExperiment.shouldLog
-                disp('Not generating log files now - to change open experimentTracking.m')
+                disp('Not generating log files now - to change open shouldLog property')
             end
             cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
