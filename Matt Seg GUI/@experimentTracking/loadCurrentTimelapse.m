@@ -14,4 +14,6 @@ function cTimelapse=loadCurrentTimelapse(cExperiment,positionsToLoad)
 cTimelapse=cExperiment.returnTimelapse(positionsToLoad);
 
 cExperiment.cTimelapse=cTimelapse;
+
+cExperiment.currentPos = positionsToLoad;
 end    

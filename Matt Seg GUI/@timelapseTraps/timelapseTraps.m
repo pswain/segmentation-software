@@ -1,16 +1,23 @@
 classdef timelapseTraps<handle
-    % class used to do the processing of the images for a particular
-    % positions. Each timepoint is stored as an entry in the cTimepoint
-    % structure array. This contains:
+    % TIMELAPSETRAPS This is the central class used in processing images in
+    % the swainlab segmentation software, with EXPERIMENTTRACKING
+    % organisining on of these TIMELAPSETRAPS objects per positions. It
+    % stores the location of the images for each channel at each timepoint,
+    % processing parameters and all the segmentation results (which are
+    % then compiled together in EXPERIMENTTRACKING). 
+    % Each timepoint is stored as an entry in the cTimepoint structure
+    % array. This contains:
     %
-    %filename:      cell array of the names of the files associated with that timepoint
+    % filename:      cell array of the names of the files associated with
+    %                that timepoint
     %
-    %after processing it also stores:
+    % after processing it also stores:
     %
-    %trapLocations: the location of the traps.
-    %trapInfo:      a structure that holds all the information about the
-    %               location, label and outline of each cell in each trap
-    %trapMaxCell :  the maximum cell label for the cells in that trap
+    % trapLocations: the location of the traps. 
+    % trapInfo:      a structure that holds all the information about the
+    %                location, label and outline of each cell in each trap
+    %
+    % See also EXPERIMENTTRACKING
     
     properties
         fileSoure = 'swain-batman' %a string informing the software where the files came from. Informs the addSecondaryChannel method.
@@ -30,7 +37,7 @@ classdef timelapseTraps<handle
                   % defines the size of the trap extracted in methods such
                   % as returnTrapsTimepoint/returnWholeTrapImage/returnTrapsFromImage etc.
                   % empty if there are not traps
-        image_rotation % to ensure that it lines up with the cCellVision Model
+        image_rotation % to ensure that it lines up with the trap images cCellVision Model
         imScale % used to scale down images if needed
                 % this isn't used much so the GUI sets it to a default of
                 % empty.
@@ -48,10 +55,10 @@ classdef timelapseTraps<handle
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
         extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
         channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
-        microscopeChannels%cell array of channel names as defined by the microscope software.
         imSize %the size of the images before rotation (i.e. raw images).
+        rawImSize % size of the images before any rescaling or rotation.
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
-        lineageInfo %structure array to hld everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
+        lineageInfo %structure array to hold everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
@@ -62,14 +69,7 @@ classdef timelapseTraps<handle
         %a parameter structure which the function makes use of.
         ACParams = []; % active contour parameters.
         ActiveContourObject = []; % there for legacy reasons. Will be removed soon but difficult to reprocess old data sets once it is.
-        
-        temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
-        %This allows the cell tracking and curating things to happen a
-        %whole lot faster and easier. This way you can just modify the
-        %returnTimepoint file to check to see if something is loaded.
-        % - channel
-        % - images
-        
+
         %stuff Ivan has added
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
@@ -97,6 +97,13 @@ classdef timelapseTraps<handle
     properties (Transient)
         % Transient properties won't be saved
         logger; % *optional* handle to an experimentLogging object to keep a log
+        temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
+        %This allows the cell tracking and curating things to happen a
+        %whole lot faster and easier. This way you can just modify the
+        %returnTimepoint file to check to see if something is loaded.
+        % - channel
+        % - images
+        
     end
     
     events
@@ -106,30 +113,33 @@ classdef timelapseTraps<handle
     
     methods
         
-
         function cTimelapse=timelapseTraps(folder,varargin)
-            % Read filenames from folder or Omero
-            % varargin{1} is a logical that will make the constructor run
-            % nothing if it is true. this was done to be able to write nice
-            % load functions.
-            if size(varargin,2)>=1 && islogical(varargin{1})
+            % cTimelapse=timelapseTraps(folder,varargin)
+            % instantiate a timelapseTraps object from a folder containing
+            % images. If folder is empty it is requested by uigetdir, and
+            % it becomes the timelapseDir.
+            % 
+            % varargin{1} can be a logical that will make the constructor
+            % run nothing if it is true. this was done to be able to write
+            % nice load functions.
+            %
+            % Most of the actual setting up is done by
+            % TIMELAPSETRAPS.LOADTIMELAPSE
+            %
+            % See also, TIMELAPSETRAPS.LOADTIMELAPSE
+            
+            if nargin>=2 && islogical(varargin{1})
                 NoAction = varargin{1};
             else
                 NoAction = false;
             end
+            
             if ~NoAction
                 if nargin<1 || isempty(folder)
                     folder=uigetdir(pwd,'Select the folder containing the images associated with this timelapse');
                     fprintf('\n    Select the folder containing the images associated with this timelapse\n');
                 end
-                if ischar(folder)
-                    cTimelapse.timelapseDir=folder;
-                else
-                    cTimelapse.omeroImage=folder;
-                    cTimelapse.OmeroDatabase=varargin{1};
-                    cTimelapse.channelNames=varargin{1}.Channels;
-                    cTimelapse.microscopeChannels=varargin{1}.MicroscopeChannels;
-                end
+                cTimelapse.timelapseDir=folder;
                 cTimelapse.cellsToPlot=sparse(100,1e3);
             end
         end

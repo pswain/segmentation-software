@@ -43,8 +43,6 @@ classdef experimentTrackingGUI<handle
         currentGUI;
 
         cExperiment;
-        cTimelapse=[]
-        cCellVision=[];
         channel;
     end % properties
    

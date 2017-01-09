@@ -1,5 +1,5 @@
-function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,magnification,imScale,traps_present)
-% createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,magnification,imScale,traps_present)
+function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,traps_present)
+% createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixelSize,image_rotation,timepointsToLoad,traps_present)
 %
 % goes through the folders in the rootDir of cExperiment and creates a
 % timelapseTraps object for each one, instantiating the cTimepoint
@@ -13,7 +13,8 @@ function createTimelapsePositions(cExperiment,searchString,positionsToLoad,pixel
 % See also TIMELAPSETRAPS.LOADTIMELAPSE
 
 if nargin<2 || isempty(searchString)
-    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'DIC'});
+    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'Brightfield_002'});
+    searchString = searchString{1};
 end
 
 if nargin<3 || strcmp(positionsToLoad,'all')
@@ -36,43 +37,25 @@ if nargin<6
 end
 
 if nargin<7
-    magnification = [];
-end
-
-if nargin<8
-    imScale = 'gui';
-end
-
-if nargin<9
     traps_present = cExperiment.trapsPresent;
 end
-
-
 
 cExperiment.searchString=searchString;
 cExperiment.pixelSize=pixelSize;
 cExperiment.image_rotation=image_rotation;
 cExperiment.timepointsToLoad=timepointsToLoad;
-cExperiment.magnification = magnification;
-cExperiment.imScale = imScale;
 cExperiment.trapsPresent = traps_present;
-cExperiment.channelNames{end+1}=searchString{1};
+cExperiment.channelNames{end+1}=searchString;
 % Start adding arguments to experiment creation protocol log:
-if isempty(cExperiment.OmeroDatabase)
-    cExperiment.logger.add_arg('Root folder',cExperiment.rootFolder);
-    cExperiment.logger.add_arg('Save folder',cExperiment.saveFolder);
-else
-    cExperiment.logger.add_arg('Omero experiment name',cExperiment.rootFolder);
-    cExperiment.logger.add_arg('Temporary working directory',cExperiment.saveFolder);
-end
+cExperiment.logger.add_arg('Root folder',cExperiment.rootFolder);
+cExperiment.logger.add_arg('Save folder',cExperiment.saveFolder);
+
 if isempty(cExperiment.timepointsToLoad)
     cExperiment.logger.add_arg('Timepoints to load','all');
 else
     cExperiment.logger.add_arg('Timepoints to load',cExperiment.timepointsToLoad);
 end
-if ~isempty(cExperiment.pixelSize)
-    cExperiment.logger.add_arg('Pixel size',cExperiment.pixelSize);
-end
+
 % The other arguments are added and the protocol started after the first
 % call to loadTimelapse below...
 
@@ -85,14 +68,11 @@ try
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
         
-        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.imScale);
+        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.pixelSize);
         
-        cExperiment.magnification=cExperiment.cTimelapse.magnification;
-        cExperiment.imScale=cExperiment.cTimelapse.imScale;
+        cExperiment.pixelSize=cExperiment.cTimelapse.pixelSize;
         cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;
-    
-        cExperiment.searchString=cExperiment.cTimelapse.channelNames;
-
+        
         cExperiment.trapsPresent = cExperiment.cTimelapse.trapsPresent;
         cExperiment.timepointsToProcess = cExperiment.cTimelapse.timepointsToProcess;
         
@@ -102,20 +82,16 @@ try
             cExperiment.logger.add_arg('Default segmentation channel',cExperiment.searchString);
             cExperiment.logger.add_arg('Traps present',cExperiment.trapsPresent);
             cExperiment.logger.add_arg('Image rotation',cExperiment.image_rotation);
-            cExperiment.logger.add_arg('Magnification',cExperiment.magnification);
-            if ~isempty(cExperiment.imScale)
-                cExperiment.logger.add_arg('Image scale',cExperiment.imScale);
-            end
+            cExperiment.logger.add_arg('Pixel size',cExperiment.pixelSize);
             cExperiment.logger.start_protocol('creating new experiment',length(positionsToLoad));
         end
         
-        cExperiment.saveTimelapseExperiment(currentPos,false);%The false input tells this function no to save the cExperiment each time. Will speed it up a bit
+        cExperiment.saveTimelapseExperiment(currentPos);
     end
     
     % load the default cellVision file.
     cCellVision = cExperiment.loadDefaultCellVision;
     cExperiment.cCellVision = cCellVision;
-    
     
     cExperiment.saveExperiment;
     

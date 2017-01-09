@@ -25,23 +25,21 @@ classdef experimentTracking<handle
         %are popualted and used to populate the timelapseTrap fields when calling
         %loadTimelapse
         searchString; 
-        pixelSize
-        magnification
+        pixelSize;
+        magnification;
         trapsPresent;
         image_rotation;
-        timepointsToLoad
-        timepointsToProcess
-        trackTrapsOverwrite
-        imScale
+        timepointsToLoad;
+        timepointsToProcess;
+        trackTrapsOverwrite;
+        imScale;
         
-        shouldLog %a parameter that tells the logger whether it should do things 
+        shouldLog; %a parameter that tells the logger whether it should do things 
         
-        channelNames %this has the list of the channel names  
-        currentTimelapseFilename; %name of where the current timelapse was loaded from
-        cTimelapse; %populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
-        cellInf % cell data compuled from extractedData in each of the individual timelapseTrap objects
-        experimentInformation %used by omero to store channel information; fields are .channels and .microscopeChannels
-        cellVisionThresh % used to overwrite the twoStageThresh of cellVision in 
+        channelNames; %this has the list of the channel names  
+        cellInf; % cell data compuled from extractedData in each of the individual timelapseTrap objects
+        experimentInformation; %used by omero to store channel information; fields are .channels and .microscopeChannels
+        cellVisionThresh; % used to overwrite the twoStageThresh of cellVision in 
                          %      experimentTrackingGUI.identifyCells
                          %importantly, not used in the experimentTracking
                          %method:
@@ -65,6 +63,8 @@ classdef experimentTracking<handle
     properties (Transient)
         % Transient properties won't be saved
         logger; % handle to an experimentLogging object to keep a log
+        cTimelapse; % populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
+        currentPos; % populated when loadCurrentTimelapse is called. Defaultfor where to then save the timelapse.
     end
     
     events
@@ -152,6 +152,23 @@ classdef experimentTracking<handle
             %cExperiment
             cExperiment.parseLogFile;
             
+        end
+        
+        function set.cCellVision(cExperiment,cCellVision)
+            %TODO - populate this to recaluclate rescale values when
+            %cellVision is loaded.
+            cExperiment.cCellVision = cCellVision;
+            
+        end
+        
+        function set.cTimelapse(cExperiment,cTimelapse)
+            
+            %though this is bad code, since both properties are transient
+            %it shouldn't be a problem.
+            if ~isequal(cExperiment.cTimelapse,cTimelapse)
+                cExperiment.currentPos = [];
+            end
+            cExperiment.cTimelapse = cTimelapse;
         end
         
     end
