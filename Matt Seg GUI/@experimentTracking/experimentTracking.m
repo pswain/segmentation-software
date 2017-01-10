@@ -92,10 +92,6 @@ classdef experimentTracking<handle
             %                 experimentTracking object and created
             %                 timelapseTraps objects should be saved.
             
-            % Create a new logger to log changes for this cExperiment:
-            %disp('Not generating log files now - to change open experimentTracking.m')
-            cExperiment.shouldLog=true;
-            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             % Initialise source (root folder) and save paths
             if nargin<1
@@ -106,6 +102,11 @@ classdef experimentTracking<handle
                 % function.
                 return
             end
+            
+            % Create a new logger to log changes for this cExperiment:
+            %disp('Not generating log files now - to change open experimentTracking.m')
+            cExperiment.shouldLog=true;
+            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');

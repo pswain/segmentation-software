@@ -95,6 +95,13 @@ try
     
     cExperiment.saveExperiment;
     
+    % if experiment has no traps, the trap tracking must still be run to
+    % initialise the trapsInfo. This causes no end of confusion, so I have
+    % done it here automatically.
+    if ~cExperiment.trapsPresent
+        cExperiment.trackTrapsInTime(positionsToLoad);
+    end
+    
     % Finish logging protocol
     cExperiment.logger.complete_protocol;
 catch err

@@ -69,7 +69,7 @@ try
     for i=1:length(positionsToLoad)
         currentPos=positionsToLoad(i);
 
-        cExperimentOmero.cTimelapse=timelapseTraps(oImages.get(i-1),cExperimentOmero.OmeroDatabase);
+        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(i-1),cExperimentOmero.OmeroDatabase);
         
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperimentOmero,currentPos,cExperimentOmero.cTimelapse);
@@ -99,6 +99,13 @@ try
     cExperimentOmero.cCellVision = cCellVision;
     
     cExperimentOmero.saveExperiment;
+    
+    % if experiment has no traps, the trap tracking must still be run to
+    % initialise the trapsInfo. This causes no end of confusion, so I have
+    % done it here automatically.
+    if ~cExperimentOmero.trapsPresent
+        cExperimentOmero.trackTrapsInTime(positionsToLoad);
+    end
     
     % Finish logging protocol
     cExperimentOmero.logger.complete_protocol;

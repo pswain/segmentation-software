@@ -11,7 +11,9 @@ function saveTimelapseExperiment(cExperiment,currentPos, saveCE)
 % putting it back. 
 %
 % If currentPos is not provided, cExperiment.currentPos (populated when
-% EXPERIMENTTRACKING.LOADCURRENTTIMELAPSE is called) is used.
+% EXPERIMENTTRACKING.LOADCURRENTTIMELAPSE is called) is used. It will be
+% empty if experimentTracking.TimelapseTraps has been replaced by a
+% non-identical object (see EXPERIMENTTRACKING.SET.CTIMELAPSE)
 % 
 % Third input is boolean - saveCE: logical - if true,
 % save the cExperiment file as well as the timelapse. Defaults to false.

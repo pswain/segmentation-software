@@ -11,6 +11,11 @@ cExperiment.OmeroDatabase=cExperiment.OmeroDatabase.Server;
 omeroDs=cExperiment.omeroDs;
 cExperiment.omeroDs=[];
 fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
+if iscell(fileName)
+    fileName=fileName{:};
+end
+
+
 %Save cCellVision as a seperate variable
 cCellVision=cExperiment.cCellVision;
 cExperiment.cCellVision=[];
@@ -18,6 +23,15 @@ cExperiment.cCellVision=[];
 save(fileName,'cExperiment','cCellVision');
 %Update or upload the file - first need to find the file annotation
 %object
+
+%Is there an existing file representing this cExperiment?
+fileAnnotations=getDatasetFileAnnotations(omeroDatabase.Session,omeroDs);
+%Create a cell array of file annotation names
+faNames = {};
+for n=1:length(fileAnnotations)
+    faNames{n}=char(fileAnnotations(n).getFile.getName.getValue);
+end
+
 faIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
 faIndex=find(faIndex);
 if ~isempty(faIndex)

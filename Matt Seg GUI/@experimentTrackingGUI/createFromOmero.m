@@ -72,13 +72,11 @@ if strcmp(dsStruct.action,'segment')
         cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
         cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
         
-        %Call createTimelapsePositions with default arguments - so that
-        % magnification and imScale are not set in the GUI. These are generally
-        % confusing arguments that are not widely used and necessarily supported.
-        % This way they will not be used until again supported
-        cExpGUI.cExperiment.createTimelapsePositions([],'all',...
-            [],[],[],...
-            60,[],[]);
+
+        % createTimelapsePositions given with explicit arguments so that all
+        % positions are loaded.
+        cExpGUI.cExperiment.createTimelapsePositions([],'all');
+
         cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
         cExpGUI.cExperiment.saveExperiment;%Uploads the cExperiment file to the database
     else
@@ -230,13 +228,10 @@ if strcmp(dsStruct.action,'segment')
                 cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
                 cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
                 
-                %Call createTimelapsePositions with default arguments - so that
-                % magnification and imScale are not set in the GUI. These are generally
-                % confusing arguments that are not widely used and necessarily supported.
-                % This way they will not be used until again supported
-                cExpGUI.cExperiment.createTimelapsePositions([],'all',...
-                    [],[],[],...
-                    60,[],[]);
+                % createTimelapsePositions given with explicit arguments so that all
+                % positions are loaded.
+                cExpGUI.cExperiment.createTimelapsePositions([],'all');
+
                 %Upload the new cExperiment file to the database
                 cExpGUI.cExperiment.saveExperiment;
         end
@@ -249,5 +244,14 @@ if strcmp(dsStruct.action,'segment')
     set(cExpGUI.figure,'Name',[char(cExpGUI.cExperiment.omeroDs.getName.getValue) '  ' cExpGUI.cExperiment.OmeroDatabase.getDate(cExpGUI.cExperiment.omeroDs)])
     set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
     set(cExpGUI.posList,'Value',1);
+    
+    if ~cExpGUI.cExperiment.trapsPresent
+        set(cExpGUI.selectTrapsToProcessButton,'Enable','off');
+    else
+        set(cExpGUI.selectTrapsToProcessButton,'Enable','on');
+    end
+    
+    set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
+    cExpGUI.channel = 1;
 
 end

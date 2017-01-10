@@ -4,21 +4,26 @@ classdef timelapseTrapsOmero<timelapseTraps
     % See also EXPERIMENTTRACKINGOMERO, TIMELAPSETRAPS
     
     properties
-        microscopeChannels%cell array of channel names as defined by the microscope software.
         
-        temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
+        %TODO reinstate when have finished decoupling omero.
+        %microscopeChannels%cell array of channel names as defined by the microscope software.
+        
+        
+        %stuff Ivan has added
+        %omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
+        %OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
+        
+    end
+    properties (Transient)
+        %TODO reinstate when have finished decoupling omero.
+        
+        %temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
         %This allows the cell tracking and curating things to happen a
         %whole lot faster and easier. This way you can just modify the
         %returnTimepoint file to check to see if something is loaded.
         % - channel
         % - images
-        
-        %stuff Ivan has added
-        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
-        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-        
     end
-    
     
     methods
         
@@ -41,6 +46,11 @@ classdef timelapseTrapsOmero<timelapseTraps
             else
                 NoAction = false;
             end
+            
+            % call timelapseTraps constructor as though loading (i.e. to
+            % make a bare object).
+            cTimelapseOmero@timelapseTraps([],true);
+            
             if ~NoAction
                 
                 cTimelapseOmero.omeroImage=omeroImage;

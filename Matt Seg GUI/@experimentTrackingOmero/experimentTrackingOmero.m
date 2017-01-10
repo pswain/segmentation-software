@@ -7,8 +7,9 @@ classdef experimentTrackingOmero < experimentTracking
     % See also EXPERIMENTTRACKING,EXPERIMENTTRACKINGGUI,TIMELAPSETRAPS
     
     properties
-        omeroDs%Omero dataset object - alternative source to rootFolder
-        OmeroDatabase%Omero database object
+        %TODO reenable when you remove from the super class.
+        %omeroDs%Omero dataset object - alternative source to rootFolder
+        %OmeroDatabase%Omero database object
         
     end
     
@@ -29,10 +30,9 @@ classdef experimentTrackingOmero < experimentTracking
             % 'bare' cExperiment (i.e. with no defined fields) or user
             % inputs. Used in loadobj method.
             
-            % Create a new logger to log changes for this cExperiment:
-            %disp('Not generating log files now - to change open experimentTracking.m')
-            cExperimentOmero.shouldLog=True;
-            cExperimentOmero.logger = experimentLogging(cExperimentOmero,cExperimentOmero.shouldLog);
+            % call super class constructor such that it does not initialise
+            % anything.
+            cExperimentOmero@experimentTracking(true);
             
             % If initialised with single input true, make an empty object
             % (used in load function)
@@ -41,7 +41,12 @@ classdef experimentTrackingOmero < experimentTracking
                 % function.
                 return
             end
-                     
+              
+            % Create a new logger to log changes for this cExperiment:
+            %disp('Not generating log files now - to change open experimentTracking.m')
+            cExperimentOmero.shouldLog=true;
+            cExperimentOmero.logger = experimentLogging(cExperimentOmero,cExperimentOmero.shouldLog);
+            
             if ischar(OmeroDataSet)
                 cExperimentOmero.rootFolder=OmeroDataSet;
                 cExperimentOmero.saveFolder=OmeroDataPath;
