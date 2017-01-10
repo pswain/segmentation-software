@@ -25,7 +25,6 @@ end
 
 
 if isfield(l1,'cCellVision')
-    cExpGUI.cCellVision= l1.cCellVision;
     cExpGUI.cExperiment.cCellVision=l1.cCellVision;
 end
 

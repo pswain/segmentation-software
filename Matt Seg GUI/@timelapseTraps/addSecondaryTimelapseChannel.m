@@ -1,8 +1,8 @@
 function addSecondaryTimelapseChannel(cTimelapse,searchString)
 % addSecondaryTimelapseChannel(cTimelapse,searchString)
 %
-% searchString   :  the string used to identify new
-%                   files.
+% searchString   -  the string used to identify new
+%                   files. 
 %
 % Associates new files to each timepoint of the timelapseTraps object by
 % extracting the timepoint number from the first file
@@ -14,12 +14,11 @@ function addSecondaryTimelapseChannel(cTimelapse,searchString)
 % for timepoint number.
 % Numerous files (e.g. z stacks) may be added by a single
 % addSecondaryTimelapseChannel call, these are handled by the
-% returnTimepoint code as a stack which is projected, but care should be
-% taken. the same file might also be added numerous time by irresponsible
-% calls (such as adding 'GFP' then 'GFP_001')
+% returnTimepoint code as a stack which is projected
 
 if nargin<2 || isempty(searchString)
-    searchString = inputdlg('Enter the string to search for the brightfield/DIC images','SearchString',1,{'GFP'});
+    searchString = inputdlg('Enter the string to search for the brightfield/DIC images'...
+                            ,'SearchString',1,cTimelapse.channelNames(end));
     searchString = searchString{1};
 elseif ~ischar(searchString)
     error('searchString should be a string')
@@ -28,7 +27,7 @@ end
 
 searchResult=regexp(cTimelapse.channelNames,searchString,'start');
 loc= ~cellfun('isempty',searchResult);
-if sum(loc)>0
+if any(loc)
     errordlg('Error, a channel with that name already exists');
     error('Error, a channel with that name already exists');
 end
@@ -64,27 +63,25 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
         %timepoint with a different channel.
         pattern='\d{5,9}';
         fileNum=regexp(cTimelapse.cTimepoint(i).filename{1},pattern,'match');
-        % match number
-        match1=regexp(files(:),fileNum{end},'match');
-        %match search string
-        match2=regexp(files(:),searchString,'match');
-        % not a hidden file
-        match3 = regexp(files(:),'^[^.]','match');
         
-        loc1= ~cellfun('isempty',match1);
-        loc2= ~cellfun('isempty',match2);
-        loc3= ~cellfun('isempty',match3);
+        % not hidden + timepoint + searchString
+        match_string = ['^[^.].*' fileNum{end} '.*' searchString ];
         
-        loc=loc1 & loc2 & loc3;
-        if sum(loc)>0
+        match = regexp(files(:),match_string,'start');
+        
+        loc=~cellfun('isempty',match);
+        
+        if any(loc)
             cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
             files(loc)=[];
-
         end
 
     end
 % images from the tyers lab are stored according to a different structure,
 % so have a different pattern recognition.
+%
+% Additional types can be added by adding additional elseif statements.
+
 elseif strcmp(cTimelapse.fileSoure,'tyers')
     for i=1:length(cTimelapse.cTimepoint)
         pattern = '_t\d{2}';
