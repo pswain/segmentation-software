@@ -5,8 +5,20 @@ classdef cTimelapseDisplay<handle
 % allowing the user to look at all the full timelapse for that position.
 % Takes one additional input, channel, a number defining which channel of
 % the cTimelapse should be shown. 
+%
+% By pressing up and down arrows onthe keyboard, one can change the channel
+% displayed.
+%
+% By scrolling with the mouse scroll wheel, one can scroll through the
+% timepoints of the timelapse.
+%
+% By pressing h, one can see the documentation for the GUI.
+% 
 % WARNING: each timepoint is normalised individually, so brightness between
 % timepoints is not comparable.
+%
+% For details on the effects of buttons pressed
+% See also CTIMELAPSEDISPLAY.KEYPRESS_CB
 
     properties
         figure = [];
@@ -59,11 +71,19 @@ classdef cTimelapseDisplay<handle
                 'Position',[.05 .01 .9 .05],...
                 'SliderStep',SliderStep,...
                 'Callback',@(src,event)slider_cb(cDisplay));
-            hListener = addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
+            
+            % add a listener to changes in the slider value to update the
+            % slider value if it is moved.
+            addlistener(cDisplay.slider,'Value','PostSet',@(src,event)slider_cb(cDisplay));
 
             cDisplay.slider_cb();
+            
+            % make the mouse scroll wheel apply to the 
             set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
-
+            
+            %keydown function - move channel up and down.
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)keyPress_cb(cDisplay,src,event));
+            
         end
 
         slider_cb(cDisplay)

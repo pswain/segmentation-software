@@ -9,4 +9,6 @@ image=repmat(image,[1 1 3]);
 
 
 set(cDisplay.subImage,'CData',image);
-set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint)]);
+set(cDisplay.figure,'Name',['Timepoint ' int2str(timepoint) ...
+                            ' , channel ' cDisplay.cTimelapse.channelNames{cDisplay.channel}...
+                            '   [index ' sprintf('%d',cDisplay.channel) ']']);
