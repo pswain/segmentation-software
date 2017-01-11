@@ -47,14 +47,6 @@ classdef experimentTracking<handle
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
-        cCellVision; % cellvision model applied throughout the segmentation, 
-                     % particularly in segmentCellDisplay and
-                     % identifyTrapsTimelapses.
-        ActiveContourParameters % parameters used in the ActiveContour 
-                                % methods, copied to each timelapseTraps
-                                % object when this is run (if parameters
-                                % selected appropriately)
-                                
         OmeroDatabase %TODO delete this at end
         omeroDs %TODO delete this at end
                                 
@@ -65,6 +57,27 @@ classdef experimentTracking<handle
         logger; % handle to an experimentLogging object to keep a log
         cTimelapse; % populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
         currentPos; % populated when loadCurrentTimelapse is called. Defaultfor where to then save the timelapse.
+    end
+    
+    properties (SetObservable, AbortSet)
+        % properties for which set events can be written
+        % AbortSet means they will not be triggered if the setting changes
+        % nothing.
+        cCellVision; % cellvision model applied throughout the segmentation, 
+                     % particularly in segmentCellDisplay and
+                     % identifyTrapsTimelapses.
+        ActiveContourParameters; % parameters used in the ActiveContour 
+                                 % methods, copied to each timelapseTraps
+                                 % object when this is run (if parameters
+                                 % selected appropriately)
+                                
+        
+    end
+    
+    properties (Hidden=true, Access=protected)
+        % these properties are not visible to the user and can only be
+        % changed by the class itself and its subclasses.
+        oldcCellVisionPixelSize = [];
     end
     
     events
@@ -153,13 +166,47 @@ classdef experimentTracking<handle
             %cExperiment
             cExperiment.parseLogFile;
             
+            % this will check the scaling of the new cCellVision is
+            % different from that of the old cCellVision.
+            addlistener(cExperiment,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperiment,eventData,propertyData));
+            addlistener(cExperiment,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperiment,eventData,propertyData));
+            
+        end
+        
+        function cCellVisionPreSet(cExperiment,eventData,propertyData)
+            % cCellVisionPreSet(cExperiment,eventData,propertyData)
+            % set the oldcCellVisionPixelSize so it can be used for
+            % comparison in the postSetMethod
+            if ~isempty(cExperiment.cCellVision) && isa(cExperiment.cCellVision,'cellVision')
+                cExperiment.oldcCellVisionPixelSize = cExperiment.cCellVision.pixelSize;
+            end
+        end
+        
+        function checkCellVisionScaling(cExperiment,eventData,propertyData)
+            % checkCellVisionScaling(cExperiment,eventData,propertyData)
+            % check if the new pixelSize is the same as the old pixelSize,
+            % and warn if not.
+            if ~isempty(cExperiment.cCellVision) && isa(cExperiment.cCellVision,'cellVision')
+                if ~isempty(cExperiment.oldcCellVisionPixelSize) && ...
+                        cExperiment.oldcCellVisionPixelSize ~= cExperiment.cCellVision.pixelSize;
+                    warndlg({'WARNING!!'...
+                            ;'the cellVision model you have just loaded has a different pixel size from the one you were using to analyze this experiment. This may lead to errors and strange results.'...
+                            ;''...
+                            ;'It is STRONGLY recommended you reselect traps'});
+                end
+            end
         end
         
         function set.cCellVision(cExperiment,cCellVision)
             %TODO - populate this to recaluclate rescale values when
             %cellVision is loaded.
-            cExperiment.cCellVision = cCellVision;
-            
+            if isempty(cCellVision) || isa(cCellVision,'cellVision')
+                cExperiment.cCellVision = cCellVision; 
+            else
+                warndlg({'WARNING! experimentTracking.cCellVision mut be empty or a cellVision object.';'Not setting cCellVision property';'(if you wih to change this change the set.cCellVision method of experimentTracking)'})
+                return
+            end
+                
         end
         
         function set.cTimelapse(cExperiment,cTimelapse)
@@ -207,6 +254,12 @@ classdef experimentTracking<handle
                 end
                 
             end
+            
+            % this will check the scaling of the new cCellVision is
+            % different from that of the old cCellVision.
+            addlistener(cExperiment,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperiment,eventData,propertyData));
+            addlistener(cExperiment,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperiment,eventData,propertyData));
+            
             
             %% addtional stuff for back compatability etc.
             

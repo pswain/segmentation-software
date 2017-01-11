@@ -52,10 +52,10 @@ else
 end
 if nargin<5 || isempty(pixel_size)
     
-    prompt = {'Enter the size of the pixels in this image in micrometers (for swainlab microscopes at 60x magnification this is 0.262 micrometers)'};
+    prompt = {'Enter the size of the pixels in this image in micrometers (for swainlab microscopes at 60x magnification this is 0.263 micrometers)'};
     dlg_title = 'Pixel Size';
     num_lines = 1;
-    def = {'0.262'};
+    def = {'0.263'};
     answer = inputdlg(prompt,dlg_title,num_lines,def,struct('Interpreter','tex'));
     cTimelapse.pixelSize=str2double(answer{1});
 else

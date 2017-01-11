@@ -22,6 +22,14 @@
 % but is true even if you start parfor with only 1 worker on a multicore
 % machine. 
 
+%% load generic
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/traps_few_test/cExperiment.mat');
+cExperiment = l1.cExperiment;
+cExperiment.cCellVision = l1.cCellVision;
+cCellVision = cExperiment.cCellVision;
+cTimelapse = cExperiment.loadCurrentTimelapse(1);
+
+
 %%
 clc
 clear all

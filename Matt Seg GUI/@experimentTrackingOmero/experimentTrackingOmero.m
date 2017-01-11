@@ -141,6 +141,11 @@ classdef experimentTrackingOmero < experimentTracking
             %TODO - check this works.
             cExperimentOmero.channelNames = cExperimentOmero.experimentInformation.channels;
             
+           % this will check the scaling of the new cCellVision is
+            % different from that of the old cCellVision.
+            addlistener(cExperiment,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperiment,eventData,propertyData));
+            addlistener(cExperiment,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperiment,eventData,propertyData));
+            
             
         end
     end
