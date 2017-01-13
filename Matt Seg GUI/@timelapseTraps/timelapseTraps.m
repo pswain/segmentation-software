@@ -80,10 +80,12 @@ classdef timelapseTraps<handle
         %TODO remove when finished decoupling Omero
         omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-        microscopeChannels
+        microscopeChannels%omero thing
     end
     
     properties(Dependent = true)
+        % not real properties,calculated from other data.
+        defaultTrapDataTemplate % a sparse array of the right size for holding semgmentation data
         cellInfoTemplate % template for the cellInfo structure.
         trapInfoTemplate % template for the trapInfo structure
         cTimepointTemplate % template for the cTimepoint structure.
@@ -96,6 +98,7 @@ classdef timelapseTraps<handle
     end
     
     properties(Constant)
+        %TODO - want parfor as standard extraction?
     defaultExtractParameters = struct('extractFunction',@extractCellDataStandardParfor,...
         'functionParameters',struct('type','max','channels','all','nuclearMarkerChannel',NaN,'maxPixOverlap',5,'maxAllowedOverlap',25));
     
@@ -112,6 +115,8 @@ classdef timelapseTraps<handle
         % - images
         
     end
+    
+   
     
     events
         LogMsg
@@ -206,29 +211,31 @@ classdef timelapseTraps<handle
             default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(tp)).trapInfo);
         end
         
-        function data_template = defaultTrapDataTemplate(cTimelapse)
+        function data_template = get.defaultTrapDataTemplate(cTimelapse)
             % data_template = defaultTrapDataTemplate(cTimelapse)
             % returns a sparse array of the default size for populating
             % cell and trapInfo structures. Used at various points in the
             % code where these things need to be populated.
             % for trap containing cTimelapses, this is the trapSize.
             % for those without traps, it is the image size.
-            
-            if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
-                data_template = sparse(false(2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1));
-            elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
-                data_template = sparse(false(cTimelapse.imSize));
+            data_template_size = cTimelapse.trapImSize;
+            if ~isempty(data_template_size)
+                data_template = spalloc(data_template_size(1),data_template_size(2),...
+                    ceil(data_template_size(1)*data_template_size(2)/8));
             else
-                data_template = [];
+                data_template =(sparse([]));
             end
             
         end
         
         function trapImSize = get.trapImSize(cTimelapse)
-            if isempty(cTimelapse.cTrapSize)
-                trapImSize = [];
-            else
+            % size of the trap if traps present or imSize if not.
+            if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
                 trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+            elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
+                trapImSize = cTimelapse.imSize;
+            else
+                trapImSize = [];
             end
         end
         

@@ -149,6 +149,10 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
                 cCellVision.imageProcessingMethod = cCellVision.method;
             end
             
+            %set pixelSize to default for swain 60x experiments if empty.
+            if isempty(cCellVision.pixelSize)
+                cCellVision.pixelSize = 0.263;
+            end
         end
     end
     
