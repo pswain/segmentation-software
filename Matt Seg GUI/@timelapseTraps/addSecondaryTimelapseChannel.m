@@ -25,9 +25,9 @@ elseif ~ischar(searchString)
 end
 
 
-searchResult=regexp(cTimelapse.channelNames,searchString,'start');
-loc= ~cellfun('isempty',searchResult);
-if any(loc)
+matching_channels=regexp(cTimelapse.channelNames,searchString,'start');
+matching_channels= ~cellfun('isempty',matching_channels);
+if any(matching_channels)
     errordlg('Error, a channel with that name already exists');
     error('Error, a channel with that name already exists');
 end

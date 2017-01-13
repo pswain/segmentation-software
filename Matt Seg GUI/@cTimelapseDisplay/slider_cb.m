@@ -3,8 +3,7 @@ timepoint = get(cDisplay.slider,'Value');
 timepoint=floor(timepoint);
 
 image=cDisplay.cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
-image=double(image);
-image=image/max(image(:))*.95;
+image = 0.95*SwainImageTransforms.min_max_normalise(image);
 image=repmat(image,[1 1 3]);
 
 

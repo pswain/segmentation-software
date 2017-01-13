@@ -50,6 +50,7 @@ classdef cTimelapseDisplay<handle
             
             
             image=cTimelapse.returnSingleTimepoint(1,cDisplay.channel);
+            image = SwainImageTransforms.min_max_normalise(image);
             image=repmat(image,[1 1 3]);
             index=1;
                     cDisplay.subAxes(index)=subplot('Position',[.05 .07 .9 .9]);

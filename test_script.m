@@ -280,7 +280,7 @@ clc
 
 cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01_curtailed_1-4',...
     '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_small_test');
-createTimelapsePositions(cExperiment_test,'DIC','all',0.262,0,[],true);
+createTimelapsePositions(cExperiment_test,'DIC','all',0.263,0,[],true);
 
 %createTimelapsePositions(cExperiment_test);
 l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_small_true/cExperiment.mat');
@@ -327,32 +327,35 @@ end
 fprintf('\n\n')
 
 
-%% test add secondary channel
+%% test add secondary channel, a stack one, another, and one which does not occur
 
-l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_addchannel_true/cExperiment.mat');
-cExperiment_true = l1.cExperiment;
-cExperiment_true.cCellVision = l1.cCellVision;
+cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01_curtailed_1-4',...
+    '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_addchannel_test');
+createTimelapsePositions(cExperiment_test,'DIC','all',0.263,0,[],true);
 
-l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_addchannel_test/cExperiment.mat');
-cExperiment_test = l2.cExperiment;
-cExperiment_test.cCellVision = l2.cCellVision;
+l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_addchannel_true/cExperiment.mat');
+cExperiment_true = l2.cExperiment;
+cExperiment_true.cCellVision = l2.cCellVision;
+
+cExperiment_test.addSecondaryChannel('GFP_');
+cExperiment_test.addSecondaryChannel('GFP_001');
+cExperiment_test.addSecondaryChannel('not found');
 
 cTimelapse_true = cExperiment_true.loadCurrentTimelapse(1);
 cTimelapse_test = cExperiment_test.loadCurrentTimelapse(1);
 
-cTimelapse_test.addSecondaryTimelapseChannel('GFP_001');
-
 cTimelapse_true.ActiveContourObject = [];
-    cTimelapse_test.ActiveContourObject = [];
-    
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
+cTimelapse_test.ActiveContourObject = [];
 
-if report_differences(cTimelapse_true,cTimelapse_test);
+cTimelapse_true.logger = [];
+cTimelapse_test.logger = [];
+
+if report_differences(cTimelapse_true,cTimelapse_test,'cTimelapse_true','cTimelapse_test');
     
     fprintf('\n\n add channel test passed \n \n')
     
 end
+
 %%
 clear
 close 
@@ -362,7 +365,7 @@ clc
  %uses constructor test/true cExperiments 
 cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01',...
     '/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_constructor_test');
-createTimelapsePositions(cExperiment_test,'DIC','all',0.262,0,[],true);
+createTimelapsePositions(cExperiment_test,'DIC','all',0.263,0,[],true);
 %createTimelapsePositions(cExperiment_test);
 
 l1 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cExperiment_addTimepoints_true/cExperiment.mat');

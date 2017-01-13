@@ -62,8 +62,14 @@ classdef timelapseTraps<handle
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
         BackgroundCorrection = {[]}; %correction matrix for image channels. If non empty, returnSingleTimepoint will '.multiply' the image by this matrix.
-        BackgroundOffset = {[]}; %scalar offset to be used with BackgroundCorrection matrix. If non empty, returnSingleTimepoint will subtract this offset before multiplying by the correction matrix.
-        ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise estimate for the cell.
+                                     %this is applied BEFORE rescaling, on the grounds that the background correction is generally found from the raw images. 
+        BackgroundOffset = {[]}; %scalar offset to be used with BackgroundCorrection matrix. If non empty, returnSingleTimepoint will subtract this offset 
+                                 %before multiplying by the correction matrix, then add it back after applying
+                                 %the correction matrix. This is to stop the flatfield correction inflating the noise
+                                 %where readings are low.
+                                 %Adding back is mostly to keep things compatible with older data. 
+        ErrorModel = {[]}; % an object of the error model class that returns an error based on pixel intensity to give a shot noise 
+                           %estimate for the cell.
         extractionParameters = timelapseTraps.defaultExtractParameters;
         %parameters for the extraction of cell Data, a function handle and
         %a parameter structure which the function makes use of.
