@@ -83,8 +83,9 @@ try
         if i==1
             % define ExclusionZone with which to exclude traps more than on quarter
             % out of image. at the first timpoint processed.
-            y_bound = round(cTimelapse.trapImSize(1)/4);
-            x_bound = round(cTimelapse.trapImSize(2)/4);
+            trap_size = size(cExperiment.cCellVision.cTrap.trap1);
+            y_bound = round(trap_size(1)/3);
+            x_bound = round(trap_size(2)/3);
             ExclusionZone = [1, 1, cTimelapse.imSize(2) - 1, y_bound;...
                 1, 1,  x_bound, cTimelapse.imSize(1) - 1;...
                 (cTimelapse.imSize(2) - x_bound), 1, x_bound - 1, cTimelapse.imSize(1) - 1;...
@@ -110,7 +111,7 @@ try
         
         previous_locations = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations;
         
-        cTSD = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,cTimelapse.timepointsToProcess(1),[],ExclusionZone);
+        cTSD = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,cTimelapse.timepointsToProcess(1),cTimelapse.channelsForTrapDetection,ExclusionZone);
         uiwait(cTSD.figure);
         
         if i==1 && TrackFirstTimepoint
@@ -148,9 +149,10 @@ try
             
             % for position 1, remove traps that are now identified as
             % falling outside the drift zone.
-            cTD.ExclusionZones = ExclusionZone;
-            trapsToRemove = cTD.identifyExcludedTraps(cTD.trapLocations,previous_locations);
+            cTSD.ExclusionZones = ExclusionZone;
+            trapsToRemove = cTSD.identifyExcludedTraps(cTSD.trapLocations,previous_locations);
             cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations(trapsToRemove) = [];
+            cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo(trapsToRemove) = [];
             
         end
         

@@ -330,8 +330,8 @@ fprintf('\n\n')
 
 cTimelapse_test.imSize = [200,200];
 
-if all(size(cTimelapse.returnSingleTimepoint(1,1))==cTimelapse_test.imSize) && ...
-        all(size(cTimelapse.returnSingleTimepointRaw(1,1))==cTimelapse_test.rawImSize)
+if all(size(cTimelapse_test.returnSingleTimepoint(1,1))==cTimelapse_test.imSize) && ...
+        all(size(cTimelapse_test.returnSingleTimepointRaw(1,1))==cTimelapse_test.rawImSize)
     
     fprintf('\n\n passed sizing test \n\n')
 else
@@ -501,17 +501,18 @@ cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1;
 report_string = 'trap selection GUI';
 
-cExperiment_test.identifyTrapsTimelapses(1,true,true);
-
 fprintf('\n\n  please remove some traps \n\n')
 
-cExperiment_test.identifyTrapsTimelapses(1,true);
+cExperiment_test.identifyTrapsTimelapses(1,true,true);
 
 fprintf('\n\n  these traps should still be gone \n\n')
 
-cExperiment_test.identifyTrapsTimelapses(1,true,true);
+cExperiment_test.identifyTrapsTimelapses(1,true);
 
 fprintf('\n\n  these traps should now be back \n\n')
+
+cExperiment_test.identifyTrapsTimelapses(1,true,true);
+
 
 
 %% 
@@ -543,6 +544,8 @@ poses = 1;
 
 cTimelapse = cExperiment_test.returnTimelapse(poses);
 
+cTimelapse.clearTrapInfo;
+
 cTSD = cTrapSelectDisplay(cTimelapse,cExperiment_test.cCellVision);
 %close(cTDS.figure);
 
@@ -552,14 +555,7 @@ cExperiment_true.cCellVision = l2.cCellVision;
 
 compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
 
-%%
-im = cTimelapse.generateTrapLocationPredictionImage(cExperiment_test.cCellVision,1,1);
-%im_old = im;
-if all(im==im_old)
-    fprintf('\n trap location prediction generation test passed\n')
-else
-    fprintf('\n failed!\n')
-end
+
 %% test ctrapDisplay GUI - in which cells are added and removed.
 % check hold down t type segmentation
 % check add/remove cells in full/empty traps

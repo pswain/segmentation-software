@@ -55,7 +55,7 @@ classdef cTrapSelectDisplay<handle
             cDisplay.timepoint=timepoint;
             
             if nargin<4 || isempty(channel)
-                cDisplay.channel=1;
+                cDisplay.channel=cTimelapse.channelsForTrapDetection;
             else
                 cDisplay.channel=channel;
             end

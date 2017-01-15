@@ -26,22 +26,21 @@ if strcmp(get(gcbf,'SelectionType'),'alt')
     
     cDisplay.trapLocations(loc)=[];
     
-    [cDisplay.trapLocations, trap_mask ]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc,cDisplay.wholeIm);
+    % refine trapLocations and set data in cDisplay.cTimelapse
+    cDisplay.trapLocations = cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,'none',cDisplay.cc);
     
-    cDisplay.setImage(trap_mask);
-    
-    cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
+    cDisplay.setImage;
     
     % Update the log
     logmsg(cDisplay.cTimelapse,'Remove trap at %s', num2str([Cx,Cy]));
 else %not right click.
     cDisplay.trapLocations(end+1).xcenter=Cx;
     cDisplay.trapLocations(end).ycenter=Cy;
-    [cDisplay.trapLocations, trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations),cDisplay.cc,cDisplay.wholeIm);
     
-    cDisplay.setImage(trap_mask);
+    % refine trapLocations and set data in cDisplay.cTimelapse
+    [cDisplay.trapLocations]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,length(cDisplay.trapLocations),cDisplay.cc);
     
-    cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
+    cDisplay.setImage;
     
     % Update the log
     logmsg(cDisplay.cTimelapse,'Add trap at %s',num2str([Cx,Cy]));

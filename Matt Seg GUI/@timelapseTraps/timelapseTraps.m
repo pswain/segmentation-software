@@ -58,6 +58,7 @@ classdef timelapseTraps<handle
         imSize %the size of the images before rotation (i.e. raw images).
         rawImSize % size of the images before any rescaling or rotation.
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
+        channelsForTrapDetection = 1; %channel used in cTrapSelectDisplay to identify traps. Traps should appear the same in this channel as they do in cellVision.cTrap.trap1/trap2.
         lineageInfo %structure array to hold everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
         %stuff Elco has added
         offset = [0 0] %a n x 2 offset of each channel compared to DIC. So [0 0; x1 y1; x2 y2]. Positive shifts left/up.
@@ -368,6 +369,10 @@ classdef timelapseTraps<handle
             if isprop(LoadStructure,'ActiveContourObject') && ~isempty(LoadStructure.ActiveContourObject)
                 cTimelapse.ACParams = LoadStructure.ActiveContourObject.Parameters;
                 cTimelapse.ActiveContourObject = [];
+            end
+            
+            if isempty(cTimelapse.channelsForTrapDetection)
+                cTimelapse.channelsForTrapDetection = 1;
             end
 
         end
