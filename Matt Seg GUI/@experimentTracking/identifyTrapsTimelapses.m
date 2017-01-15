@@ -11,10 +11,16 @@ function identifyTrapsTimelapses(cExperiment,positionsToIdentify,TrackFirstTimep
 %                       subsequent timepoints. Then need to reselect first
 %                       position.
 %
-% ClearTrapInfo      :  boolean array. if true
-%                       clears all the previous trapInfo
-%                       other than fielnames. Can be useful if changing
-%                       cCellvision models for example.
+% ClearTrapInfo      :  boolean . if true
+%                       clears all the previous trapInfo other than
+%                       fielnames. 
+%                       If false it doesn't clear the
+%                       trapInfo. 
+%                       If left empty it defaults to the hidden variable
+%                       EXPERIMENTTRACKING.CLEAROLDTRAPINFO 
+%                       A housekeeping variable that tells the software to
+%                       clear the trapInfo when appropriate: when changing
+%                       cCellVision models for example.
 %
 % See also, CTRAPSELECTDISPLAY
 
@@ -36,20 +42,25 @@ if nargin<3 || isempty(TrackFirstTimepoint)
     Positive ='track first timepoint' ;
     Negative ='no thanks' ;
     TrackFirstTimpointDlgOut = questdlg(...
-        ['Would you like to track the first timepoint to find drift and use this to try and rule out'...
+        {['Would you like to track the first timepoint to find drift and use this to try and rule out'...
         ' traps that will be lost due to drift? This will delete any cell information in the first timepoint'...
         ' submitted.This is only useful if selecting traps in numerous positions and if the experiment has a'...
-        ' reasonably large drift and if you only want analyse positions present for the whole duration.']...
+        ' reasonably large drift and if you only want analyse positions present for the whole duration.'],...
+        '',...
+        ['in any case, regions in which the software is not automatically detecting traps, for drift or '...
+        'because they are too close to the edge are shown as red boxes.']}...
         ,'track first timepoint to remove drift?',Positive,Negative,Negative);
     
     TrackFirstTimepoint = strcmp(TrackFirstTimpointDlgOut,Positive);
     
 end
 
-if nargin<4 || isempty(ClearTrapInfo) || ~(ClearTrapInfo)
+if nargin<4 || isempty(ClearTrapInfo) 
     ClearTrapInfo = cExperiment.clearOldTrapInfo;
-elseif ClearTrapInfo
+elseif all(ClearTrapInfo)
     ClearTrapInfo = true(size(positionsToIdentify));
+elseif  all(~(ClearTrapInfo))
+    ClearTrapInfo = false(size(positionsToIdentify));
 end
 
 % Start logging protocol

@@ -326,7 +326,18 @@ end
 
 fprintf('\n\n')
 
+%% check imsizing based on above
 
+cTimelapse_test.imSize = [200,200];
+
+if all(size(cTimelapse.returnSingleTimepoint(1,1))==cTimelapse_test.imSize) && ...
+        all(size(cTimelapse.returnSingleTimepointRaw(1,1))==cTimelapse_test.rawImSize)
+    
+    fprintf('\n\n passed sizing test \n\n')
+else
+    fprintf('\n\n*** FAILED!!! sizing test ******\n\n')
+    
+end
 %% test add secondary channel, a stack one, another, and one which does not occur
 
 cExperiment_test = experimentTracking('/Users/ebakker/Documents/microscope_files_swain_microscope/microscope characterisation/2015_07_07_str81_GT_segmentation/str81_GT_timelapse_01_curtailed_1-4',...
@@ -482,6 +493,73 @@ clc
 clear 
 close all
 
+%% test trap select GUI
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_select_GUI_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1;
+report_string = 'trap selection GUI';
+
+cExperiment_test.identifyTrapsTimelapses(1,true,true);
+
+fprintf('\n\n  please remove some traps \n\n')
+
+cExperiment_test.identifyTrapsTimelapses(1,true);
+
+fprintf('\n\n  these traps should still be gone \n\n')
+
+cExperiment_test.identifyTrapsTimelapses(1,true,true);
+
+fprintf('\n\n  these traps should now be back \n\n')
+
+
+%% 
+
+cTimelapse = cExperiment_test.returnTimelapse(1);
+
+cTimelapse.clearTrapInfo();
+
+cTD = cTrapSelectDisplay(cTimelapse,cExperiment_test.cCellVision,[],[],[20,20,200,200]);
+
+fprintf('\n please select some traps in the red box\n')
+
+uiwait(cTD.figure)
+
+fprintf('\n the traps selected should be present in this GUI \n')
+
+
+cTD = cTrapSelectDisplay(cTimelapse,cExperiment_test.cCellVision,[],[],[20,20,200,200]);
+
+
+%% test trapSelect Methods
+l2 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_identify_test/cExperiment.mat');
+cExperiment_test = l2.cExperiment;
+cExperiment_test.cCellVision = l2.cCellVision;
+
+report_string = 'trap identfy';
+
+poses = 1;
+
+cTimelapse = cExperiment_test.returnTimelapse(poses);
+
+cTSD = cTrapSelectDisplay(cTimelapse,cExperiment_test.cCellVision);
+%close(cTDS.figure);
+
+l2 =  load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_identify_reference/cExperiment.mat');
+cExperiment_true = l2.cExperiment;
+cExperiment_true.cCellVision = l2.cCellVision;
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
+
+%%
+im = cTimelapse.generateTrapLocationPredictionImage(cExperiment_test.cCellVision,1,1);
+%im_old = im;
+if all(im==im_old)
+    fprintf('\n trap location prediction generation test passed\n')
+else
+    fprintf('\n failed!\n')
+end
 %% test ctrapDisplay GUI - in which cells are added and removed.
 % check hold down t type segmentation
 % check add/remove cells in full/empty traps

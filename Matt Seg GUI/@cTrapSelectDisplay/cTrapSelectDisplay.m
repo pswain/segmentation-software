@@ -75,17 +75,21 @@ classdef cTrapSelectDisplay<handle
             cDisplay.trapLocations=cTimelapse.cTimepoint(timepoint).trapLocations;
             PreExistingTrapLocations = cTimelapse.cTimepoint(timepoint).trapLocations;
             
-            cDisplay.image=cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
+            cDisplay.image=cTimelapse.returnSingleTimepoint(cDisplay.timepoint,cDisplay.channel);
             
-            [cDisplay.trapLocations, trap_mask, tIm, cDisplay.cc, cDisplay.wholeIm]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc);
+            cDisplay.cc = generateTrapLocationPredictionImage(cTimelapse,cCellVision,cDisplay.timepoint,cDisplay.channel);
+            
+            [cDisplay.trapLocations]=cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,'none',cDisplay.cc);
 
             TrapsToRemove = cDisplay.identifyExcludedTraps(cDisplay.trapLocations,PreExistingTrapLocations);
             
             cDisplay.trapLocations(TrapsToRemove) = [];
             
-            [cDisplay.trapLocations, trap_mask, tIm, cDisplay.cc]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none',cDisplay.cc,cDisplay.wholeIm);
+            % this call simply updates the trapLocations and trapInfo of
+            % cTimelapse if any have been removed by the two lines above.
+            [cDisplay.trapLocations]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,'none',cDisplay.cc);
                 
-            cDisplay.setImage(trap_mask);
+            cDisplay.setImage;
             
             set(cDisplay.figure,'Name',cTimelapse.getName);
             
@@ -93,11 +97,26 @@ classdef cTrapSelectDisplay<handle
             set(cDisplay.imHandle,'HitTest','on'); %now image button function will work
         end
         
-        function setImage(cDisplay,trap_mask)
+        function setImage(cDisplay)
             % setImage(cDisplay,trap_mask)
             % set the
             
             im_mask=cDisplay.image;
+            
+            trap_locations_array = zeros(length(cDisplay.trapLocations),2);
+            for loci = 1:length(cDisplay.trapLocations);
+                trap_locations_array(loci,:) = [cDisplay.trapLocations(loci).ycenter,...
+                                                cDisplay.trapLocations(loci).xcenter];
+            end
+            
+            trap_locations_array = round(trap_locations_array);
+            
+            % make mask where all trap pixels are true.
+            trap_mask = PutSubStack(false(size(im_mask)),...
+                                    trap_locations_array,...
+                                    {true(cDisplay.cTimelapse.trapImSize)});
+                                
+            
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
             im_mask = SwainImageTransforms.min_max_normalise(im_mask);
             if isempty(cDisplay.imHandle)
