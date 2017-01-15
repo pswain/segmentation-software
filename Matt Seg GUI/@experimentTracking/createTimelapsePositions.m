@@ -102,6 +102,15 @@ try
         cExperiment.trackTrapsInTime(positionsToLoad);
     end
     
+    % set a housekeeping variables:
+    
+    %whether a position has been segmented
+    cExperiment.posSegmented = false(size(cExperiment.dirs));
+    
+    % this is true when it is appropriate to reset old trapInfo for some
+    % reason (changes in cellVision model typically).
+    cExperiment.clearOldTrapInfo = false(size(cExperiment.dirs));
+    
     % Finish logging protocol
     cExperiment.logger.complete_protocol;
 catch err

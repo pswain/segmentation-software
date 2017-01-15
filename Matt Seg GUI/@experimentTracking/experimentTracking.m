@@ -26,13 +26,11 @@ classdef experimentTracking<handle
         %loadTimelapse
         searchString; 
         pixelSize;
-        magnification;
         trapsPresent;
         image_rotation;
         timepointsToLoad;
         timepointsToProcess;
         trackTrapsOverwrite;
-        imScale;
         
         shouldLog; %a parameter that tells the logger whether it should do things 
         
@@ -74,10 +72,10 @@ classdef experimentTracking<handle
         
     end
     
-    properties (Hidden=true, Access=protected)
-        % these properties are not visible to the user and can only be
-        % changed by the class itself and its subclasses.
-        oldcCellVisionPixelSize = [];
+    properties (Hidden=true)
+        % these properties are not visible to the user
+        oldcCellVisionPixelSize = []; %used to keep track of if Pixel Size has changed and warn user that results will be weird.
+        clearOldTrapInfo = []; % if this is true, when reselecting the taps through IdentifyTrapsTimelapses it will clear trapInfo first.
     end
     
     events
@@ -201,6 +199,19 @@ classdef experimentTracking<handle
             %TODO - populate this to recaluclate rescale values when
             %cellVision is loaded.
             if isempty(cCellVision) || isa(cCellVision,'cellVision')
+                if isa(cCellVision,'cellVision') && isa(cExperiment.cCellVision,'cellVision')
+                    % if the cTrap properties (which has all the traps
+                    % defining features) is false
+                    if ~isequaln(cCellVision.cTrap,cExperiment.cCellVision.cTrap) || ...
+                        cCellVision.pixelSize ~= cExperiment.cCellVision.pixelSize
+                        % this is not very good code (see matlab warning)
+                        % but given that it is only set true if cCellVision
+                        % is being changed for another cCellVision I don't
+                        % think it will be a problem (like in the load,
+                        % where cCellVision would replace an empty field).
+                        cExperiment.clearOldTrapInfo = true(size(cExperiment.dirs));
+                    end
+                end
                 cExperiment.cCellVision = cCellVision; 
             else
                 warndlg({'WARNING! experimentTracking.cCellVision mut be empty or a cellVision object.';'Not setting cCellVision property';'(if you wih to change this change the set.cCellVision method of experimentTracking)'})
@@ -274,6 +285,10 @@ classdef experimentTracking<handle
             if isempty(cExperiment.channelNames)
                 cTimelapse = cExperiment.loadCurrentTimelapse(1);
                 cExperiment.channelNames = cTimelapse.channelNames;
+            end
+            
+            if isempty(cExperiment.clearOldTrapInfo)
+                cExperiment.clearOldTrapInfo = false(size(cExperiment.dirs));
             end
             
             

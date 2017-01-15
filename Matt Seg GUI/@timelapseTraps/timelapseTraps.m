@@ -49,7 +49,7 @@ classdef timelapseTraps<handle
                           % the experiment Tracking GUI sets it to a default of 60.
                           
         trapsPresent % a boolean whether traps are present or not in the image
-        pixelSize % the real size of pixels in the image (again, exercise caution in changing this)
+        pixelSize = 0.263; % the real size of pixels in the image. default of 0.263 is for swainlab microscopes at 60x.
         cellsToPlot %Array indicating which cells to extract data for. row = trap num, col is cell tracking number
         timepointsProcessed %a logical array of timepoints which have been processed
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
@@ -90,7 +90,6 @@ classdef timelapseTraps<handle
         trapInfoTemplate % template for the trapInfo structure
         cTimepointTemplate % template for the cTimepoint structure.
         trapImSize % uses the cTrapSize property to give the size of the image.
-        
     end
     
     properties(SetAccess = immutable)
@@ -156,6 +155,27 @@ classdef timelapseTraps<handle
             end
         end
             
+        function name = getName(cTimelapse)
+            % name = getName(cTimelapse)
+            % sometimes you want to have an identifiable name for a timelapseTraps
+            % object, for figure names and such.
+            try
+                if strcmp(cTimelapse.timelapseDir,'ignore')
+                    name = cTimelapse.cTimepoint(1).filename{1};
+                else
+                    name = [cTimelapse.timelapseDir '/'];
+                end
+                
+                % get section of this path between second to last /|\ and
+                % last /|\ in a reasonably robust way.
+                locs = regexp(name,'[\\|/]','start');
+                name = name(max(locs(max(length(locs)-2,1))+1,1):max(locs(end)-1,1));
+                
+            catch
+                name = [];
+            end
+        end
+        
         
         function cTimelapseOUT = copy(cTimelapseIN)
         %cTimelapseOUT = copy(cTimelapseIN)
@@ -188,7 +208,7 @@ classdef timelapseTraps<handle
             % this is empty it juse uses an empty array.
             
             if nargin<2
-                data_template = cTimelapse.defaultTrapDataTemplate();
+                data_template = cTimelapse.defaultTrapDataTemplate;
             elseif ~issparse(data_template)
                 error('data_template should be a sparse array')
                 
@@ -244,6 +264,10 @@ classdef timelapseTraps<handle
             %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
         end
         
+        function cTimelapse = set.defaultTrapDataTemplate(cTimelapse,input)    
+            % do nothing, just to stop errors
+            %fprintf('\n\n trapImSize cannot be set. change cTrapSize instead\n\n')
+        end
 
         function cTimelapse = set.cellInfoTemplate(cTimelapse,input)
             % do nothing, just to stop errors
@@ -287,7 +311,7 @@ classdef timelapseTraps<handle
                             'trapInfo',[],'trapMaxCell',[]); %template for the cTimepoint structure
 
         end
-        
+
     end
     
     
@@ -345,6 +369,7 @@ classdef timelapseTraps<handle
                 cTimelapse.ACParams = LoadStructure.ActiveContourObject.Parameters;
                 cTimelapse.ActiveContourObject = [];
             end
+
         end
         
         function cTimelapse_save = saveobj(cTimelapse_in)

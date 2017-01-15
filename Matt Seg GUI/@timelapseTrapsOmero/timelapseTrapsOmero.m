@@ -61,7 +61,13 @@ classdef timelapseTrapsOmero<timelapseTraps
                 cTimelapseOmero.cellsToPlot=sparse(100,1e3);
             end
         end
-
+        
+        function name = getName(cTimelapseOmero)
+            % name = getName(cTimelapse)
+            % sometimes you want to have an identifiable name for a timelapseTraps
+            % object, for figure names and such.
+            name = char(cTimelapseOmero.omeroImage.getName.getValue);
+        end
     end
     
     
