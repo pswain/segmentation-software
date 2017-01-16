@@ -555,6 +555,110 @@ cExperiment_true.cCellVision = l2.cCellVision;
 
 compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
 
+%% test trapTracking simply
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_1_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'trap tracking simple';
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_1_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'few traps standard';
+
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+cTimelapse.trackTrapsThroughTime;
+cExperiment_test.saveTimelapseExperiment;
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,1, report_string )
+
+
+%% test trapTracking with preservation 1
+% test with preservation without changing trapInfo dramatically.
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_2_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'trap tracking simple';
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_1_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'few traps preserve 1';
+
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+[cTimelapse.cTimepoint(2:end).trapInfo] = deal([]);
+[cTimelapse.cTimepoint(2:end).trapInfo] = deal([]);
+cTimelapse.trackTrapsThroughTime(1:100);
+%cTimelapse.cTimepoint(90).trapInfo.cell = 3;
+%cTimelapse.cTimepoint(100).trapInfo = [];
+cTimelapse.trackTrapsThroughTime(cTimelapse.timepointsToProcess,true);
+
+cExperiment_test.saveTimelapseExperiment;
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,1, report_string )
+
+%% test trapTracking with preservation 2
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_2_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'trap tracking simple';
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_2_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'few traps preserve 1';
+
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+[cTimelapse.cTimepoint(2:end).trapInfo] = deal([]);
+[cTimelapse.cTimepoint(2:end).trapInfo] = deal([]);
+cTimelapse.trackTrapsThroughTime(1:100);
+cTimelapse.cTimepoint(90).trapInfo(1).cell = 3;
+cTimelapse.cTimepoint(100).trapInfo = [];
+cTimelapse.trackTrapsThroughTime(cTimelapse.timepointsToProcess,true);
+
+cExperiment_test.saveTimelapseExperiment;
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,1, report_string )
+
+%% test tracking without traps
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_notraps_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'trap tracking simple';
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_notrap_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'few traps preserve 1';
+
+
+cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
+[cTimelapse.cTimepoint(:).trapInfo] = deal([]);
+[cTimelapse.cTimepoint(:).trapInfo] = deal([]);
+cTimelapse.trackTrapsThroughTime(1:2);
+cTimelapse.cTimepoint(1).trapInfo(1).cell = 3;
+cTimelapse.cTimepoint(2).trapInfo = [];
+cTimelapse.trackTrapsThroughTime(1:4,true);
+
+cExperiment_test.saveTimelapseExperiment;
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,1, report_string )
+
 
 %% test ctrapDisplay GUI - in which cells are added and removed.
 % check hold down t type segmentation
@@ -588,10 +692,13 @@ cCellVision = cExperiment_test.cCellVision;
 TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,1,2,7,[1 3]);
 
 
+%%
+clear all
+close all
 
 %% test full GUI based process.
 
-disp = experimentTrackingGUI
+cExpGUI = experimentTrackingGUI
 
 
 %% test default extraction

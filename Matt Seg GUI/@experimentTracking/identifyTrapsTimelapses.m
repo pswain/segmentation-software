@@ -30,15 +30,7 @@ end
 
 if nargin<3 || isempty(TrackFirstTimepoint)
     
-    
-    
-    Message=(['Each position of the experiment will be displayed one by one in two GUIs: one to select traps and one that allows you to scroll through the image and channels.'...
-        ' The program will guess where the traps are present at first, but you will need to add (left-click) or remove' ...
-        ' (right-click) traps to make sure that the trap selection is properly performed. It is generally advisable to look at the timelapse for a single position to make sure the stage ' ...
-        'didnt drift too much during the experiment. If it did drift you want to make sure not to select traps that will go out of the field of view during the experiment.']);
-    h = helpdlg(Message);
-    uiwait(h);
-    
+
     Positive ='track first timepoint' ;
     Negative ='no thanks' ;
     TrackFirstTimpointDlgOut = questdlg(...
@@ -112,12 +104,16 @@ try
         previous_locations = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations;
         
         cTSD = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,cTimelapse.timepointsToProcess(1),cTimelapse.channelsForTrapDetection,ExclusionZone);
+        
+        % bit of a work around. Function doesn't do anything but I use it's
+        % help string as the help string I want for the GUI.
+        cTSD.gui_help = HelpHoldingFunctions.trap_select_gui_help();
         uiwait(cTSD.figure);
         
         if i==1 && TrackFirstTimepoint
             
             
-            cTimelapse.trackTrapsThroughTime(cExperiment.cCellVision,cTimelapse.timepointsToProcess);
+            cTimelapse.trackTrapsThroughTime;
             TotalXDrift = mode([cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(end)).trapLocations(:).xcenter] - ...
                 [cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations(:).xcenter],2);
             TotalYDrift = mode([cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(end)).trapLocations(:).ycenter] - ...
@@ -127,23 +123,23 @@ try
             %add new exclusions zones based on drift.
             if TotalXDrift>0
                 ExclusionZone = [ExclusionZone ;(cTimelapse.imSize(2) - (TotalXDrift + x_bound)), 1, ...
-                    TotalXDrift + x_bound -1, cTimelapse.imSize(1)-1];
+                    (TotalXDrift + x_bound -1), cTimelapse.imSize(1)-1];
                 
             else
                 ExclusionZone = [ExclusionZone ;1, 1, ...
-                    (abs(TotalXDrift) + x_bound -1), cTimelapse.imSize(1)-1];
+                    (abs(TotalXDrift) + x_bound -1), (cTimelapse.imSize(1)-1)];
                 
             end
             
             if TotalYDrift>0
                 ExclusionZone = [ExclusionZone ;...
                     [1, (cTimelapse.imSize(1) - (TotalYDrift + y_bound)) ...
-                    cTimelapse.imSize(2)-1, (TotalYDrift + y_bound - 1)] ];
+                    (cTimelapse.imSize(2)-1), (TotalYDrift + y_bound - 1)] ];
                 
             else
                 ExclusionZone = [ExclusionZone ;...
                     [1, 1, ...
-                    cTimelapse.imSize(2) - 1, (abs(TotalYDrift) + y_bound)] ];
+                    (cTimelapse.imSize(2) - 1), (abs(TotalYDrift) + y_bound)] ];
                 
             end
             
@@ -167,3 +163,5 @@ catch err
 end
 
 end
+
+

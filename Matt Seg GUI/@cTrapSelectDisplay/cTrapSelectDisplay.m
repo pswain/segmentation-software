@@ -2,17 +2,33 @@ classdef cTrapSelectDisplay<handle
 % cTrapSelectDisplay
 %
 % a GUI used for identifying the traps in an image at a single timepoint
-% and user curation of the result. A single timepoint is provided and the
-% traps identified at that timpoint by the method
+% and user curation of the result. 
 %
-%   identifyTrapLocationsSingleTP
+% The GUI first automatically detects traps by cross correlation of the
+% image from the experiment with the trap image stored in the cellVision
+% model.
 %
-% This method always uses channel 1 of the cTimelapse to identify the
-% traps.
 % The user then adds and removes traps by left and right clicks on the
 % image respectively (selected traps are shown as a brighter square) and
-% the result is stored at the given timepoint of the cTimelapse object
-% used to instantiate the object.
+% the result is stored. These will be the traps used throughout the
+% processing.
+%
+% Red boxes are also shown. These are ExclusionsZones: areas in which traps
+% are not automatically identified.
+%
+%
+% DETAILS
+%
+% A single timepoint is provided and the traps identified at that timpoint
+% by the method
+%   identifyTrapLocationsSingleTP
+%
+% This method uses the:
+%       timelapseTraps.channelsForTrapDetection
+% channel to identify the traps by cross correlation with the images stored
+% in the loaded cellVision model (cellVision.cTrap.trap1/trap2).
+%
+
 
     properties
         figure = [];
@@ -27,7 +43,7 @@ classdef cTrapSelectDisplay<handle
         ExclusionZones = []; %zones in which to not look for traps automatically stored as 4 vector [xStart1 yStart1 xend1 yend1;xStart2 yStart2 xend2 yend2]
                              %traps in these zones before the GUI is
                              %initialised will not be removed.
-        
+        gui_help = {help('cTrapSelectDisplay')}; % text displayed if h pressed. 
         cc %cross correlation from identifyTrapLocationsSingleTP. Storing this prevents having to recalculate it each time the user adds or removes a trap. Much faster
         wholeIm %the whole image from returnSingleTimepoint so that each click doesn't require reloading the image
     end % properties
@@ -95,6 +111,9 @@ classdef cTrapSelectDisplay<handle
             
             set(cDisplay.imHandle,'ButtonDownFcn',@(src,event)addRemoveTraps(cDisplay)); % Set the motion detector.
             set(cDisplay.imHandle,'HitTest','on'); %now image button function will work
+            %keydown function - get help on h
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)keyPress_cb(cDisplay,src,event));
+            
         end
         
         function setImage(cDisplay)

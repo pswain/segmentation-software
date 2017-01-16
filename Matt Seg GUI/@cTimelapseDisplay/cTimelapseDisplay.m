@@ -98,7 +98,7 @@ classdef cTimelapseDisplay<handle
             % make the mouse scroll wheel apply to the 
             set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
             
-            %keydown function - move channel up and down.
+            %keydown function - move channel up and down and get help on h
             set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)keyPress_cb(cDisplay,src,event));
             
         end

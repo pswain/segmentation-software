@@ -251,12 +251,13 @@ classdef timelapseTraps<handle
         
         function trapImSize = get.trapImSize(cTimelapse)
             % size of the trap if traps present or imSize if not.
-            if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
-                trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
-            elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
-                trapImSize = cTimelapse.imSize;
-            else
-                trapImSize = [];
+            trapImSize = [];
+            if ~isempty(cTimelapse.trapsPresent)
+                if cTimelapse.trapsPresent &&  ~isempty(cTimelapse.cTrapSize)
+                    trapImSize = 2*[cTimelapse.cTrapSize.bb_height cTimelapse.cTrapSize.bb_width] + 1;
+                elseif   ~cTimelapse.trapsPresent &&  ~isempty(cTimelapse.imSize)
+                    trapImSize = cTimelapse.imSize;
+                end
             end
         end
         
@@ -286,11 +287,9 @@ classdef timelapseTraps<handle
         
         function cellInfoTemplate = get.cellInfoTemplate(cTimelapse)
             
-            if ~isempty(cTimelapse.cTrapSize)
-                segTemplate = sparse(false(cTimelapse.trapImSize));
-            else
-                segTemplate = [];
-            end
+            
+             segTemplate = cTimelapse.defaultTrapDataTemplate;
+            
              cellInfoTemplate = struct('cellCenter',[],...
                        'cellRadius',[],...
                        'segmented',segTemplate,...
@@ -309,7 +308,7 @@ classdef timelapseTraps<handle
         function cTimepointTemplate =get.cTimepointTemplate(cTimelapse)
             
             cTimepointTemplate = struct('filename',[],'trapLocations',[],...
-                            'trapInfo',[],'trapMaxCell',[]); %template for the cTimepoint structure
+                            'trapInfo',cTimelapse.trapInfoTemplate,'trapMaxCell',[]); %template for the cTimepoint structure
 
         end
 

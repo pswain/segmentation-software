@@ -26,7 +26,7 @@ elseif strcmp(event.Key,'uparrow')
     cDisplay.channel = new_channel;
     cDisplay.slider_cb;
 elseif strcmp(event.Key,'h')
-    doc cTimelapseDisplay
+    helpdlg(help('cTimelapseDisplay'));
 else
     cDisplay.keyPressed = event.Character;
 end

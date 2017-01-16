@@ -62,12 +62,9 @@ while min_tp<expected_final_timepoint
             %high drift.
             
             tp_to_track = [1:40:(max_old_tracked) (max_old_tracked+1):max_new_tp];
-            isCont=true;
-            cTimelapse.trackTrapsThroughTime(cCellVision,tp_to_track,isCont);
+            cTimelapse.trackTrapsThroughTime(tp_to_track,true);
             
-            if isempty(cTimelapse.magnification)
-                cTimelapse.magnification = 60;
-            end
+
             cTimelapse.timepointsToProcess = tp;
             cExperiment.timepointsToProcess = tp;
             cTimelapse.timepointsProcessed((end+1):max_new_tp) = 0;
