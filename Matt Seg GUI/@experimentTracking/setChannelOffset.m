@@ -1,16 +1,20 @@
-function setChannelOffset(cExperiment,positionsToExtract,offset)
-%setChannelOffset(cExperiment,positionsToExtract,offset)
-% sets the offset field for all cTimelapse objects in the cExperiment
-% class.
-%offset is an array as in cTimelapse. Can leave blank and write by GUI.
-
-
+function setChannelOffset(cExperiment,positionsToSet,offset)
+% setChannelOffset(cExperiment,positionsToSet,offset)
+%
+% sets the offset field for all positions speciified by the
+% positionsToSet.(defaults to all positions). If offset is blank it is set
+% by GUI.
+%
+% This GUI could really do with improvement if this is to be used
+% regularly.
+%
+% See also TIMELAPSETRAPS.RETURNSINGLETIMEPOINT
 if nargin<2
-    positionsToExtract=1:length(cExperiment.dirs);
+    positionsToSet=1:length(cExperiment.dirs);
 end
 
 if nargin<3
-    cTimelapse = cExperiment.loadCurrentTimelapse(positionsToExtract(1));
+    cTimelapse = cExperiment.loadCurrentTimelapse(positionsToSet(1));
 
     num_lines=1;
     dlg_title = 'ChannelOffsets?';
@@ -26,14 +30,6 @@ if nargin<3
     end
 end
 
-for i=1:length(positionsToExtract)
-    experimentPos=positionsToExtract(i);
-    cTimelapse = cExperiment.loadCurrentTimelapse(experimentPos);
-    %
-    cTimelapse.offset=offset;
-
-    cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(experimentPos);
-end
+cExperiment.setTimelapsesProperty(positionsToSet,'offset',offset);
 
 fprintf('finished setting offsets\n')

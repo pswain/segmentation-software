@@ -1,26 +1,34 @@
-function extractParameters = guiSetExtractParameters( cExperiment,extractParameters )
+function extractionParameters = guiSetExtractParameters( cExperiment,extractionParameters )
 %extractParameters = guiSetExtractParameters( cExperiment,extractParameters )
 %
 % a place for all the random GUI interfaces that have accumulated around
 % extractParameters. If you want some sort of dialog box for your
-% parameters extraciton method, put it here in the switch/case function
+% parameters extraction method, put it here in the switch/case function
 %
-% cExperiment           :   object of the experimentTracking class
-% extractParameters     :   parameters structure of the form:
-%                           extractFunction   : function handle for function usedin extraction
-%                           extractParameters : structure of parameters taken by that function
+% cExperiment              :   object of the experimentTracking class
+% extractionParameters     :   parameters structure of the form:
+%                              extractFunction    : function handle for function used in extraction
+%                              functionParameters : structure of parameters taken by that function
 %
-%
-if nargin<2 || isempty(extractParameters)
+% See also, TIMELAPSETRAPS.EXTRACTCELLDATA,
+% TIMELAPSETRAPS.EXTRACTCELLDATASTANDARD,
+% EXPERIMENTTRACKING.SETEXTRACTPARAMETERS
+
+if nargin<2 || isempty(extractionParameters)
     
-    extractParameters = timelapseTraps.defaultExtractParameters;
+    extractionParameters = timelapseTraps.defaultExtractParameters;
 end
 
-if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) ...
-        || isequal(extractParameters.extractFunction,@extractCellDataStandard)...
-        || isequal(extractParameters.extractFunction,@extractCellParamsOnly)...
+% Though there is now no alternative to these 3 methods, i have left in the
+% if statement so that it is clear how one might change the extraction
+% process. 
+
+% These 3 extraction methods share the same gui.
+if isequal(extractionParameters.extractFunction,@extractCellDataStandardParfor) ...
+        || isequal(extractionParameters.extractFunction,@extractCellDataStandard)...
+        || isequal(extractionParameters.extractFunction,@extractCellParamsOnly)...
         
-    functionParameters = extractParameters.functionParameters;
+    functionParameters = extractionParameters.functionParameters;
     
     list = {'max','mean','std','sum','basic'};
     dlg_title = 'What to extract?';
@@ -36,28 +44,21 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) ...
             % if someone selects basic they can later change their
             % selection to standard (i.e. basic extraction will run through
             % the gui).
-            if isequal(extractParameters.extractFunction,@extractCellParamsOnly)
-                extractParameters.extractFunction = @extractCellDataStandardParfor;
+            if isequal(extractionParameters.extractFunction,@extractCellParamsOnly)
+                extractionParameters.extractFunction = @extractCellDataStandardParfor;
                 functionParameters = struct;
             end
             functionParameters.type = type;
         case {'basic'}
-            extractParameters.extractFunction = @extractCellParamsOnly;
+            % if the extraction is basic there are not parameters, it
+            % simply extracts the cell size and positions. 
+            extractionParameters.extractFunction = @extractCellParamsOnly;
             functionParameters = [];
     end
     
     if ~strcmp(type,'basic')
         
-        % Ivan's set channel stuff
-        if ~isempty(cExperiment.OmeroDatabase)
-            channel_list = cExperiment.OmeroDatabase.Channels;
-        else
-            channel_list = cExperiment.channelNames;
-            if isempty(channel_list) %just in case it is old and doesn't have the channels in the cExperiment
-                cTimelapse = cExperiment.loadCurrentTimelapse(1);
-                channel_list = cTimelapse.channelNames;
-            end
-        end
+        channel_list = cExperiment.channelNames;
         
         dlg_title = 'Which channels to extract?';
         prompt = {['please select the channels for which you would like to extract data'],'',''};
@@ -65,6 +66,7 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) ...
             'ListSize',[300 100]);
         functionParameters.channels = answer;
         
+        % this rather ugly call 
         settings_dlg_struct = struct(...
             'title', 'nuclear label?',...
             'Description','If one of the channels is a nuclear label, please specify it here. This must be on of your extraction channels. If you have no particular marker please select '' not applicable '' ',...
@@ -84,45 +86,9 @@ if isequal(extractParameters.extractFunction,@extractCellDataStandardParfor) ...
         end
     end
     
-    extractParameters.functionParameters = functionParameters;
+    extractionParameters.functionParameters = functionParameters;
     
-elseif isequal(extractParameters.extractFunction,@extractCellDataMatt)
-    functionParameters = extractParameters.functionParameters;
-    
-    options.Default='No';
-    options.Interpreter = 'tex';
-    choice = questdlg('Change offsets before extracting the data? - 0 & 2 for Batgirl?','Offset Change',...
-        'Yes','No',options);
-    
-    if strcmp(choice,'Yes')
-        cExpGUI.cExperiment.setChannelOffset;
-    end
-    
-    dlg_title = 'extraction type?';
-    prompt = {['which property do you want to use to define the cell outline ']};
-    answer = inputdlg(prompt,dlg_title,1,{'segmented'});
-    functionParameters.cellSegType = answer{1};
-    % general set type stuff
-    list = {'max','basic'};
-    dlg_title = 'What to extract?';
-    prompt = {['All Params using max projection (max) or basic (basic)' ...
-        ' the basic measure only compiles the x, y locations of cells along with the estimated radius so it is much faster, but less informative.'],'','',''};
-    answer = listdlg('PromptString',prompt,'Name',dlg_title,'ListString',list,'SelectionMode','single',...
-        'ListSize',[300 100]);
-    
-    type=list{answer};
-    switch type
-        case {'max','std','mean'}
-            functionParameters.type = type;
-        case {'basic'}
-            extractParameters.extractFunction = @extractCellParamsOnly;
-            functionParameters = [];
-    end
-    
-    
-    
-    extractParameters.functionParameters = functionParameters;
-    
+  
 end
 
 end

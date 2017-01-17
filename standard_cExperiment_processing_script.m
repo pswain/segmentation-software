@@ -100,8 +100,8 @@ GFPch = 6;
 timepoint = 100;
 
 cTimelapse.offset(1,:) = [0 0];
-im1 = double(cTimelapse.returnSingleTimepoint(timepoint,DICch));
-im2 = double(cTimelapse.returnSingleTimepoint(timepoint,GFPch));
+im1 = cTimelapse.returnSingleTimepoint(timepoint,DICch);
+im2 = cTimelapse.returnSingleTimepoint(timepoint,GFPch);
 
 im1 = (im1-min(im1(:)))/iqr(im1(:));
 im2 = (im2-min(im2(:)))/iqr(im2(:));
@@ -291,7 +291,7 @@ num_traps = length(cTimelapse.cTimepoint(tp).trapInfo);
 
 tic;
 DIM = identifyCellCentersTrap(cTimelapse,cExpGUI.cExperiment.cCellVision,tp,1:num_traps);
-toc
+toc;
 
 %% opens the 3 images with colors
 % This block of code opens three images:
