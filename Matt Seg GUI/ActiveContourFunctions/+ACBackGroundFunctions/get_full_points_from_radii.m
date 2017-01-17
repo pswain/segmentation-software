@@ -12,13 +12,12 @@ function [px,py] = get_full_points_from_radii(radii,angles,center,image_size)
 % px           -   x coordinates of resultant end points.
 % py           -   y coordinates of resultant end points.
 
-if size(angles,1) < size(angles,2)
-    angles = angles';
-end
+angles = reshape(angles,length(angles),1);
 
-if size(radii,1) < size(radii,2)
-    radii = radii';
-end
+radii = reshape(radii,length(radii),1);
+
+% get dense spacing in angles to ensure all pixels the spline intersects
+% are present in px,py.
 pixel_diff = 0.1;
 angle_diff = pixel_diff/max(radii);
 steps = (0:angle_diff:(2*pi))';
@@ -29,7 +28,6 @@ radii = radii(indices_angles);
 
 %construct spline using file exchange function 'splinefit'
 r_spline = splinefit([angles; 2*pi],[radii;radii(1)],[angles; 2*pi],'p');%make the spline
-
 
 radii_full = ppval(r_spline,steps);
 
@@ -44,6 +42,7 @@ px(px>image_size(2)) = image_size(2);
 py(py<1) = 1;
 py(py>image_size(1)) = image_size(1);
 
+%remove repeats (i.e. pixels that do not differ from their neighbours)
 I = (diff(px)|diff(py));
 px = px(I);
 py = py(I);

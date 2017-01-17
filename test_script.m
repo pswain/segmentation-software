@@ -584,7 +584,6 @@ l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/t
 cExperiment_test = l1.cExperiment;
 cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
-report_string = 'trap tracking simple';
 
 l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_1_reference/cExperiment.mat');
 cExperiment_true = l1.cExperiment;
@@ -611,13 +610,12 @@ l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/t
 cExperiment_test = l1.cExperiment;
 cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
-report_string = 'trap tracking simple';
 
 l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_2_reference/cExperiment.mat');
 cExperiment_true = l1.cExperiment;
 cExperiment_true.cCellVision = l1.cCellVision;
 poses = 1:2;
-report_string = 'few traps preserve 1';
+report_string = 'few traps preserve 2';
 
 
 cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
@@ -779,3 +777,8 @@ end
 % special GUI written for Ivan to extract data from slides.
 
 cExpGUI = experimentTrackingSlidesGUI;
+
+%% test cell outline editing GUI
+
+small_im = cTimelapse.returnSingleTrapTimepoint(1,1);
+edit ACBackGroundFunctions.edit_AC_manual_TEST

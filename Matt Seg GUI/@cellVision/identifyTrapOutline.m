@@ -24,9 +24,9 @@ if ~isempty(cCellVision.cTrap)
         imshow(im,[]);
 
         if i==1
-            fprintf('please select the centre of one of the two traps and press enter\n')
+            fprintf('please select the centre of one of the two traps\n')
         else
-            fprintf('please select the centre of the other trap and press enter\n')
+            fprintf('please select the centre of the other trap\n')
         end
         
         [loc(1), loc(2)]=ginput(1);
@@ -48,9 +48,9 @@ if ~isempty(cCellVision.cTrap)
         TrapImage = TrapImage/median(TrapImage(:));
         ForcingImage = ACBackGroundFunctions.get_cell_image(TrapImage,min(size(TrapImage),[],2),[PntX PntY]);
         
-        [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,floor(size(ForcingImage)/2));
+        [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,ceil(size(ForcingImage)/2));
         
-        fprintf('\n\n please edit the outline by clicking on the image and press enter when you are satisfied \n\n ')
+        fprintf('please edit the outline by clicking on the image and press enter when you are satisfied\n ')
         
         [RadiiRes,AngleRes] = ACBackGroundFunctions.edit_AC_manual(TrapImage,[PntX PntY],RadiiRes',AngleRes');
         
@@ -68,6 +68,7 @@ if ~isempty(cCellVision.cTrap)
     
     h=figure;
     imshow(OverlapGreyRed(im,imflat,[],[],true),[]);
+    fprintf('\nDisplayed is the final trap outline. Please close when ready\n\n')
     title('Final Trap Outline - close when ready');
     uiwait(h);
     cCellVision.cTrap.trapOutline=imflat>0;

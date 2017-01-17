@@ -2,6 +2,9 @@
 
 % assumes the existence of small_im
 
+%%
+small_im = cTimelapse.returnSingleTrapTimepoint(1,1);
+
 %% minimum inputs
 [radii,angles,center] = ACBackGroundFunctions.edit_AC_manual(small_im);
 radii

@@ -1,12 +1,16 @@
 function show_image = get_cell_image(image,size_subimage,centerStack,m)
-%function show_image = get_cell_image(image,size_subimage,centerStack,m)
+% function show_image = get_cell_image(image,size_subimage,centerStack,m)
 %
-%get a stack of size_subimage by size_sub_image chunks of the image
-%centered on centers in the centre vector.
-%size_subimage should be odd and can be a [vertical_size horiontal_size]
-%sub image.
-%m is the value with which to padarray if necessary
-%centerStack = [x's  y's]
+% get a stack of size_subimage by size_sub_image chunks of the image
+% centered on centers in the centre vector.
+% size_subimage should be odd and can be a [vertical_size horiontal_size]
+% sub image.
+% m is the value with which to padarray if necessary - defaults to false or
+% image median depending on class of image.
+% centerStack = [x's  y's]
+% uses GETSUBSTACK from GeneralFunctions swainlab package.
+%
+% See also, GETSUBSTACK
 
 if numel(size_subimage) ==1
     size_subimage = [1 1] * size_subimage;

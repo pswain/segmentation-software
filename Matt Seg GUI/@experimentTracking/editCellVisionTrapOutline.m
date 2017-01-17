@@ -39,10 +39,10 @@ cTimelapse = cExperiment.returnTimelapse(pos);
 
 if nargin<4 || isempty(channel)
     
-    fprintf('\n\n please select the channel you wish to use for identifying traps. The channel this GUI is on when you close it will be the one used.\n\n'); 
+    fprintf('\n\n please select the channel you wish to use for identifying traps by pressing the UP and DOWN arrows on you keyboard.\nThe channel this GUI is on when you close it will be the one used.\n\n'); 
     
     channel_display_gui = cTimelapseDisplay(cTimelapse,1,[TP,TP]);
-    channel_display_gui.gui_help = ['please select the channel you wish to use for identifying traps.',...
+    channel_display_gui.gui_help = ['please select the channel you wish to use for identifying traps by pressing the up and down arrows on your keyboard.',...
                                     'This should be a channel in which the traps are clearly visible',...
                                     ' The channel this GUI is on when you close it will be the one used.'];
     uiwait(channel_display_gui.channel);
@@ -53,12 +53,12 @@ end
 %function.
 setTimelapsesProperty(cExperiment,[],'channelForTrapDetection',channel);
 
-fprintf('\n\n please select a single, representative trap in the following image. \n\n')
+fprintf('please select a single, representative trap in the following image, and then close the image \n\n')
 
 cTimelapse.clearTrapInfo;
 trap_select_gui = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,TP,channel);
 trap_select_gui.trapLocations = [];
-trap_select_gui.gui_help = 'please select a single, representative trap in the following image.';
+trap_select_gui.gui_help = 'please select a single, representative trap in the following image., then close the GUI.You can change your selection by right clicking to remove the previous trap, and left clicking to add a new one.';
 trap_select_gui.setImage;
 uiwait(trap_select_gui.figure);
 
