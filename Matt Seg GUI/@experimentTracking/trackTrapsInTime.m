@@ -6,6 +6,9 @@ function trackTrapsInTime(cExperiment,positionToTrack,first_timepoint,last_timep
 % If there are no traps it populates the trapInfo and trapLocations fields
 % of cTimelapse.cTimepoint(:) as though there were one large trap of size
 % cTimelapse.imSize.
+%
+% See also, CTRAPSELECTDISPLAY, EXPERIMENTTRACKING.IDENTIFYTRAPSTIMELAPSES,
+% TIMELAPSETRAPS.IDENTIFYTRAPLOCATIONSSSINGLETP
 
 if nargin<2 || isempty(positionToTrack)
     positionToTrack = 1:numel(cExperiment.dirs);

@@ -12,8 +12,6 @@ function keyPress_cb(cDisplay,src,event)
 
 if strcmp(event.Key,'h')
     helpdlg(cDisplay.gui_help);
-else
-    cDisplay.keyPressed = event.Character;
 end
 
 

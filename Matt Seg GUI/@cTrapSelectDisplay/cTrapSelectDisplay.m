@@ -24,7 +24,7 @@ classdef cTrapSelectDisplay<handle
 %   identifyTrapLocationsSingleTP
 %
 % This method uses the:
-%       timelapseTraps.channelsForTrapDetection
+%       timelapseTraps.channelForTrapDetection
 % channel to identify the traps by cross correlation with the images stored
 % in the loaded cellVision model (cellVision.cTrap.trap1/trap2).
 %
@@ -71,7 +71,7 @@ classdef cTrapSelectDisplay<handle
             cDisplay.timepoint=timepoint;
             
             if nargin<4 || isempty(channel)
-                cDisplay.channel=cTimelapse.channelsForTrapDetection;
+                cDisplay.channel=cTimelapse.channelForTrapDetection;
             else
                 cDisplay.channel=channel;
             end

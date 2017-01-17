@@ -103,7 +103,7 @@ try
         
         previous_locations = cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapLocations;
         
-        cTSD = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,cTimelapse.timepointsToProcess(1),cTimelapse.channelsForTrapDetection,ExclusionZone);
+        cTSD = cTrapSelectDisplay(cTimelapse,cExperiment.cCellVision,cTimelapse.timepointsToProcess(1),cTimelapse.channelForTrapDetection,ExclusionZone);
         
         % bit of a work around. Function doesn't do anything but I use it's
         % help string as the help string I want for the GUI.

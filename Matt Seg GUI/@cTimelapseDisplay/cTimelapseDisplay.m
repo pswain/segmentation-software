@@ -28,6 +28,7 @@ classdef cTimelapseDisplay<handle
         cTimelapse=[]
         channel=[]
         trapNum;
+        gui_help = help('cTimelapseDisplay');
     end % properties
     
     methods

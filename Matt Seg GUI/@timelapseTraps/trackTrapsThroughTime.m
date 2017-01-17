@@ -63,7 +63,7 @@ if cTimelapse.trapsPresent
     
     timepoint = timepoints(1);
     % take central region of first timepoint for registration.
-    reg_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelsForTrapDetection);
+    reg_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelForTrapDetection);
     bb=ceil(min(cTimelapse.imSize)/20);
     bb=floor(size(reg_im,1)*.2);
     accum_col=0;
@@ -88,7 +88,7 @@ if cTimelapse.trapsPresent
         % Trigger the TimepointChanged event for experimentLogging
         experimentLogging.changeTimepoint(cTimelapse,timepoint);
         
-        new_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelsForTrapDetection);
+        new_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelForTrapDetection);
         
         new_im=new_im(bb:end-bb,bb:end-bb);
         new_im_fft2 = fft2(new_im/mean(new_im(:)));
