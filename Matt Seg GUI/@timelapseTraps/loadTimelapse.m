@@ -76,10 +76,8 @@ for n = 1:length(files);
     end
 end
 
-
 cTimelapse.timepointsToProcess = 1:timepoint_index;
 cTimelapse.timepointsProcessed = false(1,timepoint_index);
-
 
 if nargin>=6 && ~isempty(timepointsToLoad)
     if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
@@ -87,8 +85,9 @@ if nargin>=6 && ~isempty(timepointsToLoad)
     end
     cTimelapse.cTimepoint=cTimelapse.cTimepoint(timepointsToLoad);
 end
-image=imread([folder cTimelapse.cTimepoint(1).filename{1}]);
 
+% load this first image via imread since the following property 
+image = cTimelapse.returnSingleTimepointRaw(1,1);
 
 cTimelapse.initializeImageProperties(image,image_rotation,trapsPresent,pixel_size);
 

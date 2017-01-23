@@ -59,7 +59,6 @@ cTimelapse.OmeroDatabase=cTimelapse.OmeroDatabase.Server;
 fileName=[cExperimentOmero.saveFolder filesep dsName 'cTimelapse_' cExperimentOmero.rootFolder '.mat'];
 save(fileName,'cTimelapse');
 %Restore image and OmeroDatabase objects
-cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
 cTimelapse.omeroImage=omeroImage;
 cTimelapse.OmeroDatabase=oD;
 faIndex=strcmp([dsName 'cTimelapse_' cExperimentOmero.rootFolder '.mat'],faNames);

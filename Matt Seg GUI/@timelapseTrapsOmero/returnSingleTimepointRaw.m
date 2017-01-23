@@ -36,12 +36,9 @@ while done==false
         done=false;
     end
 end
-sizeZ = pixels.getSizeZ().getValue(); % The number of z-sections.
-sizeT = pixels.getSizeT().getValue(); % The number of timepoints.
-sizeC = pixels.getSizeC().getValue(); % The number of channels.
+sizeZ = pixels.getSizeZ().getValue(); % The number of z-sections available for this channel
 sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
 sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
-timepointIm=zeros(sizeY, sizeX, sizeZ);
 
 if any(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels))
     chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
@@ -56,7 +53,8 @@ else
     end
 end
 
-for z=zsections
+for zi=1:length(zsections)
+    z = zsections(zi);
     folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];
     if exist(folderName)==0
         mkdir(folderName);
@@ -78,7 +76,14 @@ for z=zsections
         plane=store.getPlane(z-1, chNum-1, timepoint-2);
         timepoint=timepoint-1;
     end
-    timepointIm(:,:,z) = toMatrix(plane, pixels)';
+    
+    tempIm = toMatrix(plane, pixels)';
+    
+    if zi ==1
+        timepointIm=zeros([sizeY, sizeX, length(zsections)],'like',tempIm);
+    end
+    
+    timepointIm(:,:,zi) = tempIm;
     
 end
 store.close();

@@ -77,7 +77,6 @@ if strcmp(dsStruct.action,'segment')
         % positions are loaded.
         cExpGUI.cExperiment.createTimelapsePositions([],'all');
 
-        cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
         cExpGUI.cExperiment.saveExperiment;%Uploads the cExperiment file to the database
     else
         %There is at least one existing cExperiment file

@@ -45,8 +45,7 @@ cTimelapseOmero.timepointsToProcess = 1:sizeT;
 
 %Load first timepoint of this cTimelapse to fill out the remaining
 %details
-
-image=cTimelapseOmero.returnSingleTimepoint(1,find(strcmp(cTimelapseOmero.channelNames,searchString)));
+image=cTimelapseOmero.returnSingleTimepointRaw(1,find(strcmp(cTimelapseOmero.channelNames,searchString)));
 
 cTimelapseOmero.initializeImageProperties(image,image_rotation,trapsPresent,pixel_size);
 

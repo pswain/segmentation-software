@@ -227,9 +227,9 @@ classdef timelapseTraps<handle
             % default_trap_indices = defaultTrapIndices(cTimelapse,tp=1)
             % return the default trap indices to run anything over.
             if nargin<2
-                tp=1;
+                tp = cTimelapse.timepointsToProcess(1);
             end
-            default_trap_indices = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(tp)).trapInfo);
+            default_trap_indices = 1:length(cTimelapse.cTimepoint(tp).trapInfo);
         end
         
         function data_template = get.defaultTrapDataTemplate(cTimelapse)
@@ -319,7 +319,15 @@ classdef timelapseTraps<handle
         function cTimelapse = loadobj(LoadStructure)
             
             %% default loading method: DO NOT CHANGE
-            cTimelapse = timelapseTraps([],true);
+            
+            % if OmeroDatabase is present, then this should be an Omero
+            % type timelapse. Little ugly but keeps back compatability.
+            %TODO - take away the isempty?
+            if isa(LoadStructure ,'timelapseTrapsOmero') && ~isempty(LoadStructure.OmeroDatabase)
+                cTimelapse = timelapseTrapsOmero([],true);
+            else
+                cTimelapse = timelapseTraps([],true);
+            end
             
             FieldNames = fieldnames(LoadStructure);
             %only populate mutable fields occcuring in both the load object

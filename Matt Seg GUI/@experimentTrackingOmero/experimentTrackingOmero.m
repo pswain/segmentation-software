@@ -109,7 +109,7 @@ classdef experimentTrackingOmero < experimentTracking
             acqName=[expName(1:end-3) 'Acq.txt'];
             logPath=cExperimentOmero.OmeroDatabase.downloadFile(OmeroDataSet,logName);
             [~]=cExperimentOmero.OmeroDatabase.downloadFile(OmeroDataSet,acqName);
-            cExperimentOmero.parseLogFile(logPath);
+            parseFailed = cExperimentOmero.parseLogFile(logPath);
             
             %Set the channels field - add a separate channel for each section in case
             %they are required for data extraction or segmentation:
@@ -118,22 +118,35 @@ classdef experimentTrackingOmero < experimentTracking
             pixels=im.getPrimaryPixels;
             sizeZ=pixels.getSizeZ.getValue;
             %Get the list of channels from the microscope log
+            % if parseFailed, the parseLogFile method was not able to find
+            % the acq file or the log file, and so the channel names are
+            % unknown.
+            if ~parseFailed
             origChannels=cExperimentOmero.metadata.acq.channels.names;
+            else
+                numChannels=pixels.getSizeC.getValue;
+                origChannels = cell(1,numChannels);
+                for nc = 1:numChannels
+                    origChannels{nc} = sprintf('CH_%d',nc);
+                end
+            end
+            
             cExperimentOmero.OmeroDatabase.MicroscopeChannels = origChannels;
             cExperimentOmero.experimentInformation.MicroscopeChannels=origChannels;
+            
             %The first entries in
             %cExperiment.experimentInformation.channels are the
             %original channels - then followed by a channel for each
             %section.
             if sizeZ>1
                 for ch=1:length(origChannels)
-                    if cExperimentOmero.metadata.acq.channels.zsect(ch)==1%Does the channel do z sectioning?
+                    if parseFailed || cExperimentOmero.metadata.acq.channels.zsect(ch)==1%Does the channel do z sectioning?
                         for z=1:sizeZ
-                            if cExperimentOmero.metadata.acq.channels.zsect(ch)==1
-                                cExperimentOmero.OmeroDatabase.Channels{length(cExperimentOmero.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
-                            end
+                            cExperimentOmero.OmeroDatabase.Channels{end+1}=...
+                                                            [origChannels{ch} '_' num2str(z)];
                         end
                     end
+                    
                 end
             end
             cExperimentOmero.experimentInformation.channels=cExperimentOmero.OmeroDatabase.Channels;
@@ -143,8 +156,8 @@ classdef experimentTrackingOmero < experimentTracking
             
            % this will check the scaling of the new cCellVision is
             % different from that of the old cCellVision.
-            addlistener(cExperiment,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperiment,eventData,propertyData));
-            addlistener(cExperiment,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperiment,eventData,propertyData));
+            addlistener(cExperimentOmero,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperimentOmero,eventData,propertyData));
+            addlistener(cExperimentOmero,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperimentOmero,eventData,propertyData));
             
             
         end

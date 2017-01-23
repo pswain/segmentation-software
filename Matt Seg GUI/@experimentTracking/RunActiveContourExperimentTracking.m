@@ -173,7 +173,7 @@ for i=1:length(positionsToIdentify)
     end
     
     if TrackTrapsInTime
-        cExperiment.cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
+        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
         cExperiment.cTimelapse = cTimelapse;
         

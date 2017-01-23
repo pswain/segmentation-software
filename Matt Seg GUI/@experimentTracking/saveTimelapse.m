@@ -5,7 +5,7 @@ function saveTimelapse(cExperiment,currentPos)
 % save experiment set to false.
 % only kept for legacy reasons.
 
-cExperiment.saveExperiment(currentPos,false);
+cExperiment.saveTimelapseExperiment(currentPos,false);
 
 
 end

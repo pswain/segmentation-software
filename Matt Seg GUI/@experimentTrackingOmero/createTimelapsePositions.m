@@ -97,6 +97,15 @@ try
     % load the default cellVision file.
     cCellVision = cExperimentOmero.loadDefaultCellVision;
     cExperimentOmero.cCellVision = cCellVision;
+     
+    % set a housekeeping variables:
+    
+    %whether a position has been segmented
+    cExperimentOmero.posSegmented = false(size(cExperimentOmero.dirs));
+    
+    % this is true when it is appropriate to reset old trapInfo for some
+    % reason (changes in cellVision model typically).
+    cExperimentOmero.clearOldTrapInfo = false(size(cExperimentOmero.dirs));
     
     cExperimentOmero.saveExperiment;
     

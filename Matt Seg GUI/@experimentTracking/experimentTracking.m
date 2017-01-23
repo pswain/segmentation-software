@@ -291,6 +291,10 @@ classdef experimentTracking<handle
                 cExperiment.clearOldTrapInfo = false(size(cExperiment.dirs));
             end
             
+            if isempty(cExperiment.posSegmented)
+                cExperiment.posSegmented = false(size(cExperiment.dirs));
+            end
+            
             
         end
                 

@@ -191,7 +191,7 @@ cExpGUI.cExperiment.editCellVisionTrapOutline(1,1)
 % The selection of the traps defines the areas in which the code will look
 % for cells, and also sets up the organisation of the cTimelapse.
 
-cExperiment.identifyTrapsTimelapses(cExperiment.cCellVision,poses)
+cExperiment.identifyTrapsTimelapses(poses)
 
 
 %% setting parameters for active contour cell identification
@@ -254,7 +254,7 @@ tp = 1; % time point to inspect
 channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
 thresh1 = -3; %yellow: new cells (more stringent)
 thresh2 = -1; % green : tracked cells (less stringent)
-pos = poses(11); % position to inspect
+pos = poses(1); % position to inspect
 
 %% track this position 
 % The traps in this position must first be tracked and their pixels
@@ -397,21 +397,9 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(c
 % usually take a day.
 
 %track traps
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true,false);
-
-% refine trap outlines
-for diri=poses
-    
-    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    cTimelapse.refineTrapOutline(cExperiment.cCellVision.cTrap.trapOutline,trap_outline_refine_channel,[],[],false,true);
-    cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);
-    fprintf('%d ',diri)
-    
-end
 
 % identification and active contour
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
 
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
@@ -429,7 +417,7 @@ cExperiment.compileCellInformation(poses)
 for diri=poses
     
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    cTimelapse.findMotherIndex('refined_trap');
+    cTimelapse.findMotherIndex('cell_centre');
     cExperiment.cTimelapse = cTimelapse;
     cExperiment.saveTimelapseExperiment(diri,false);
 

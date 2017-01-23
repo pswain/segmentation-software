@@ -45,7 +45,7 @@ if nargin<4 || isempty(channel)
     channel_display_gui.gui_help = ['please select the channel you wish to use for identifying traps by pressing the up and down arrows on your keyboard.',...
                                     'This should be a channel in which the traps are clearly visible',...
                                     ' The channel this GUI is on when you close it will be the one used.'];
-    uiwait(channel_display_gui.channel);
+    uiwait(channel_display_gui.figure);
     channel = channel_display_gui.channel;
 end
 
