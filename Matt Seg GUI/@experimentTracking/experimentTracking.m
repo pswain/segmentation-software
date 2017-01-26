@@ -157,6 +157,8 @@ classdef experimentTracking<handle
 
             
             cExperiment.cellsToPlot=cell(1);
+            
+            %TODO - update this to remove timelapseTrapsActiveContour
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
             
             %Parse the microscope acquisition metadata and attach the structure to the
