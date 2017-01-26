@@ -1,4 +1,4 @@
-function CellRes_slider_cb( CellResGUI)
+function CellRes_slider_cb(CellResGUI,src,event)
 %CellRes_slider_cb( CellResGUI) slider call back, just updates plot and
 %cell image when slider value changes.
 

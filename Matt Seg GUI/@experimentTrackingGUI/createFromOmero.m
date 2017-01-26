@@ -1,9 +1,11 @@
 function createFromOmero(cExpGUI)
-%Creates a cExperiment from a user-selected Omero dataset and saves it as a
-%file attachment to the database.
+%Runs the Omero gui and if the user loads an experiment for segmentation, 
+%creates or downloads a cExperiment from the user-selected Omero dataset.
+%Newly-created cExperiment and cTimelapse files are saved as file
+%attachments to the database.
 
 %Get a dataset selection from the user:
-dsStruct=omeroGUI('upload','sce-bio-c04287.bio.ed.ac.uk');
+dsStruct=omeroGUI('download','sce-bio-c04287.bio.ed.ac.uk');
 %There are options other than selecting a dataset for segmentation in that
 %gui - so only create a dataset if the correct button has been pressed
 if strcmp(dsStruct.action,'segment')
@@ -15,17 +17,7 @@ if strcmp(dsStruct.action,'segment')
         if exist(dsStruct.OmeroDatabase.DataPath)==0
             mkdir(dsStruct.OmeroDatabase.DataPath);
         else
-            d=dir(dsStruct.OmeroDatabase.DataPath);
-            if any([d(~(strcmp({d.name},'.')|strcmp({d.name},'..'))).isdir])%This avoids an error - only run rmdir if there are subfolders (other than .. and .) in this folder
-                directories=[d.isdir];
-                dirNames={d.name};
-                directories((strcmp({d.name},'.')|strcmp({d.name},'..')))=0;
-                directories=find(directories);
-                for n=1:nnz(directories)
-                    rmdir([dsStruct.OmeroDatabase.DataPath '/' dirNames{directories(n)}],'s');
-                end
-            end
-            delete([dsStruct.OmeroDatabase.DataPath '\*']);
+            delete([dsStruct.OmeroDatabase.DataPath '*']);
         end
     else
         %Choose a mac version here.
@@ -35,20 +27,27 @@ if strcmp(dsStruct.action,'segment')
         if exist(dsStruct.OmeroDatabase.DataPath)==0
             mkdir(dsStruct.OmeroDatabase.DataPath);
         else
-            d=dir(dsStruct.OmeroDatabase.DataPath);
-            if any([d(~(strcmp({d.name},'.')|strcmp({d.name},'..'))).isdir])%This avoids an error - only run rmdir if there are subfolders (other than .. and .) in this folder
-                directories=[d.isdir];
-                dirNames={d.name};
-                directories((strcmp({d.name},'.')|strcmp({d.name},'..')))=0;
-                directories=find(directories);
-                for n=1:nnz(directories)
-                    rmdir([dsStruct.OmeroDatabase.DataPath '/' dirNames{directories(n)}],'s');
-                end
-            end
-            delete([dsStruct.OmeroDatabase.DataPath '\*']);
+            delete([dsStruct.OmeroDatabase.DataPath '*']);
         end
     end
-    
+    %Code below has now been moved to the experimentTracking constructor -
+    %delete once this is tested.
+    % %Set the channels field - add a separate channel for each section in case
+    % %they are required for data extraction or segmentation:
+    % %Get the number of Z sections
+    % ims=dsStruct.dataset.linkedImageList;
+    % im=ims.get(0);%the first image - assumes all images have the same dimensions
+    % pixels=im.getPrimaryPixels;
+    % sizeZ=pixels.getSizeZ.getValue;
+    % origChannels=dsStruct.OmeroDatabase.Channels;
+    % dsStruct.OmeroDatabase.MicroscopeChannels = origChannels;
+    % if sizeZ>1
+    %     for ch=1:length(origChannels)
+    %         for z=1:sizeZ
+    %             dsStruct.OmeroDatabase.Channels{length(dsStruct.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
+    %         end
+    %     end
+    % end
     
     %First check if a cExperiment exists for this dataset:
     fileAnnotations=getDatasetFileAnnotations(dsStruct.OmeroDatabase.Session,dsStruct.dataset);
@@ -67,16 +66,17 @@ if strcmp(dsStruct.action,'segment')
                 inputName='001';
             end
         end
-        cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
+        cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
         
-        %Call createTimelapsePositions with default arguments - so that
-        % magnification and imScale are not set in the GUI. These are generally
-        % confusing arguments that are not widely used and necessarily supported.
-        % This way they will not be used until again supported
-        cExpGUI.cExperiment.createTimelapsePositions([],'all',...
-            [],[],[],...
-            60,[],[]);
-        cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
+        %Copy the channels lists to the cExperiment.
+        cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+        cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
+        
+
+        % createTimelapsePositions given with explicit arguments so that all
+        % positions are loaded.
+        cExpGUI.cExperiment.createTimelapsePositions([],'all');
+
         cExpGUI.cExperiment.saveExperiment;%Uploads the cExperiment file to the database
     else
         %There is at least one existing cExperiment file
@@ -117,8 +117,12 @@ if strcmp(dsStruct.action,'segment')
                 cExperiment.omeroDs=dsStruct.dataset;
                 cExpGUI.cExperiment=cExperiment;
                 
+                %Copy the channels lists to the cExperiment.
+                cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
+                cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
+                
                 %If the current user is not the creator of this cExperiment then they will be prevented from making changes
-                %In that case they will load an editable copy.
+                %Make this clear before offering the option to make an editable copy
                 if ispc
                     userNames=dsStruct.OmeroDatabase.getSynonyms(getenv('USERNAME'));
                 else
@@ -126,17 +130,16 @@ if strcmp(dsStruct.action,'segment')
                     userNames=dsStruct.OmeroDatabase.getSynonyms(username);
                 end
                 if ~any(strcmp(userNames,cExperiment.creator))
-                    msgbox('Because you did not create this experiment a copy will be loaded. This prevents you from modifying someone else''s work');
-                    makeCopy=true;
+                    promptString='You did not create this dataset so you will not be able to make changes. You can make an editable copy or load the file as read only.';
+                    loadString='Load read only';
                 else
-                    promptString='Load (and modify) original file or make an editable copy?';                    
+                    promptString='Load (and modify) original file or make an editable copy?';
                     loadString='Load original';
-                    makeCopy=questdlg(promptString,'Make copy?',loadString,'Make copy',loadString);
-                    makeCopy=strcmp(makeCopy,'Make copy');
                 end
                 
+                makeCopy=questdlg(promptString,'Make copy?',loadString,'Make copy',loadString);
                 switch makeCopy
-                    case false
+                    case loadString
                         %Use the the original cExperiment file loaded from the database
                         %Loaded file will lack Omero objects - copy from dsStruct
                         cExperiment.OmeroDatabase.Session=dsStruct.OmeroDatabase.Session;
@@ -152,12 +155,14 @@ if strcmp(dsStruct.action,'segment')
                                 getFileAnnotationContent(dsStruct.OmeroDatabase.Session, fileAnnotations(annotationMatch), [dsStruct.OmeroDatabase.DataPath origName]);
                             end
                         end
-                                                                        
-                    case true%Make a copy of the existing cExperiment file
+                        
+                        
+                        
+                    case 'Make copy'
                         %Get a new file name suffix
                         newName=false;
                         while ~newName
-                            inputName=inputdlg('Enter a name for your cExperiment copy','cExperiment name',1,{getenv('USERNAME')});
+                            inputName=inputdlg('Enter a name for your cExperiment','cExperiment name',1,{getenv('USERNAME')});
                             inputName=inputName{:};
                             fullInputName=['cExperiment_' inputName '.mat'];
                             if ~any(strcmp(fullInputName, faNames))
@@ -216,19 +221,16 @@ if strcmp(dsStruct.action,'segment')
                 %if experimentTracking is called with a non character first
                 %input this is assumed to be ab omerodatabase construction. The
                 %2nd input is then not used.
-                cExpGUI.cExperiment=experimentTracking(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
+                cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
                 
                 %Copy the channels lists to the cExperiment.
                 cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
                 cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
                 
-                %Call createTimelapsePositions with default arguments - so that
-                % magnification and imScale are not set in the GUI. These are generally
-                % confusing arguments that are not widely used and necessarily supported.
-                % This way they will not be used until again supported
-                cExpGUI.cExperiment.createTimelapsePositions([],'all',...
-                    [],[],[],...
-                    60,[],[]);
+                % createTimelapsePositions given with explicit arguments so that all
+                % positions are loaded.
+                cExpGUI.cExperiment.createTimelapsePositions([],'all');
+
                 %Upload the new cExperiment file to the database
                 cExpGUI.cExperiment.saveExperiment;
         end
@@ -242,4 +244,13 @@ if strcmp(dsStruct.action,'segment')
     set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
     set(cExpGUI.posList,'Value',1);
     
+    if ~cExpGUI.cExperiment.trapsPresent
+        set(cExpGUI.selectTrapsToProcessButton,'Enable','off');
+    else
+        set(cExpGUI.selectTrapsToProcessButton,'Enable','on');
+    end
+    
+    set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
+    cExpGUI.channel = 1;
+
 end

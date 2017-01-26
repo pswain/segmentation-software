@@ -27,23 +27,23 @@ if strcmp(key,cDisplay.CurateTracksKey)
     
     
 else
-
-if strcmp(get(gcbf,'SelectionType'),'alt')
+    
+    if strcmp(get(gcbf,'SelectionType'),'alt')
     % Update the log
     logmsg(cDisplay.cTimelapse,'Unselecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
-    selection=0;
-else
+        selection=0;
+    else
     % Update the log
     logmsg(cDisplay.cTimelapse,'Selecting cell at (%0.0f,%0.0f) in trap %d',Cx,Cy,trap);
-    selection=1;
-end
-
-
-loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
-cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
-
-
-
+        selection=1;
+    end
+    
+    
+    loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
+    cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
+    
+    
+    
 end
 %
 slider_cb(cDisplay);

@@ -1,4 +1,5 @@
 %% make sure cells are present after stimulus
+load('/Users/mcrane2/OneDrive/Matlab/CellSegMatt/Matt Seg GUI/cExperiment Files/whi5/cExperiment - whi5 april 10.mat')
 cExperiment.correctSkippedFramesInf
 %%
 h=figure(10);

@@ -1,5 +1,5 @@
 *.txt text
-*.m text
+*.m -crlf
 
 *.png binary
 *.mat binary

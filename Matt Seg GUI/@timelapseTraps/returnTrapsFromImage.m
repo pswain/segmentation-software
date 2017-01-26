@@ -1,4 +1,4 @@
-function trapsTimepoint=returnTrapsFromImage(cTimelapse,image,timepoint,traps)
+function trapsTimepoint=returnTrapsFromImage(cTimelapse,image,timepoint,traps,padding_value)
 % trapsTimepoint=returnTrapsFromImage(cTimelapse,image,timepoint,traps)
 %
 % fairly niche function. Takes an image that is either a strip of trap
@@ -16,6 +16,9 @@ function trapsTimepoint=returnTrapsFromImage(cTimelapse,image,timepoint,traps)
 %                   extraction. If in 'strip image' mode then they are
 %                   counted along the width from the left hand side.
 %                   Defaults to all traps if empty.
+% padding_value :   Used to pad output when it moves out of image.
+%                   defaults to falsefor logical and image mean for all
+%                   others.
 %
 % if there are not traps present in this timelapse it just gives the image
 % back.
@@ -24,18 +27,20 @@ if nargin<4
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
 end
 
+if nargin<5 || isempty(padding_value)
+    if islogical(image)
+        padding_value=0;
+    else
+        padding_value=mean(image(:));
+    end
+end
+
 if cTimelapse.trapsPresent
     
     cTrap=cTimelapse.cTrapSize;
     bb=max([cTrap.bb_width cTrap.bb_height])+100;
-    
-    if islogical(image)
-        pdval=0;
-    else
-        pdval=mean(image(:));
-    end
-    
-    bb_image=padarray(image,[bb bb],pdval);
+
+    bb_image=padarray(image,[bb bb],padding_value);
     %if the traps have been converted to be flat in a single image
     if size(image,1)==(cTrap.bb_height*2+1)
         trapsTimepoint=zeros(2*cTrap.bb_height+1,2*cTrap.bb_width+1,length(traps),'double');

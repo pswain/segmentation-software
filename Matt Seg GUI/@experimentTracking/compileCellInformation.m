@@ -14,7 +14,7 @@ function compileCellInformation(cExperiment,positionsToExtract,force)
 %                           match those of the first timelapse.
 
 if nargin<2 || isempty(positionsToExtract)
-    positionsToExtract=1:length(cExperiment.dirs);
+    positionsToExtract=find(cExperiment.posTracked);
 end
 
 if nargin<3 || isempty(force)
@@ -61,6 +61,7 @@ for posi=2:length(positionsToExtract)
                     %assumes only 50 percent of timepoints will be present on
                     %average.
                 end
+                
                 cExperiment.cellInf(chi).(fn)((index+1):(index+tempLen),:)=data_template;
             end
             cExperiment.cellInf(chi).trapNum((index+1):(index+tempLen)) = zeros(1,tempLen);
@@ -83,7 +84,7 @@ for posi=2:length(positionsToExtract)
     for chi = 1:length(cExperiment.cellInf)
         for fi = 1:length(fields_to_treat)
             fn = fields_to_treat{fi};
-            cExperiment.cellInf(chi).(fn)((index+1):(index+num_cells),:)=cTimelapse.extractedData(chi).(fn);
+           cExperiment.cellInf(chi).(fn)((index+1):(index+num_cells),:)=cTimelapse.extractedData(chi).(fn);
         end
         cExperiment.cellInf(chi).trapNum((index+1):(index+num_cells)) = cTimelapse.extractedData(chi).trapNum;
         cExperiment.cellInf(chi).cellNum((index+1):(index+num_cells)) = cTimelapse.extractedData(chi).cellNum;
@@ -114,7 +115,9 @@ if force
 end
 
 % Compile meta data into the cellInf:
-cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
+
+%TODO - put back and leave to Julian to worry about.
+%cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
 
 cExperiment.saveExperiment();
 

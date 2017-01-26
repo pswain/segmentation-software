@@ -62,6 +62,7 @@ end
 %maxmimumNumberOfCells.
 cellsLeft = params.maximumNumberOfCells;
 
+cTimelapse.cellsToPlot=zeros(length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo),5000);
 cTimepoint=cTimelapse.cTimepoint;
 for trap=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo)
     %disp(['Trap Number ' int2str(trap)]); % SUPERSEDED BY experimentLogging

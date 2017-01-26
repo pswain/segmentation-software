@@ -8,6 +8,9 @@ cTimelapse.correctSkippedFramesInf;
 
 if nargin<2
     params.motherDurCutoff=(.6);
+    
+    %mother distcutoff is the motherRad + daughterRad + distcutoff that a
+    %cell needs to be within
     params.motherDistCutoff=2.1;
     params.budDownThresh=0;
     params.birthRadiusThresh=8;
@@ -112,12 +115,11 @@ for trap=1:length(cTimelapse.cTimepoint(1).trapInfo)
         mother=cTimelapse.lineageInfo.motherLabel(trap,mCell);
         trapL=find(cTimelapse.extractedData(1).trapNum==trap);
         motherLoc=find(cTimelapse.extractedData(1).trapNum==trap & cTimelapse.extractedData(1).cellNum==mother);
-
+        
         tpCheck=full(cTimelapse.extractedData(1).xloc(motherLoc,:))>0;
         if length(trapL)<1 || ~all(size(tpCheck)) || sum(tpCheck)==0
             break;
         end
-        
         tpBefore=find(diff(smooth(double(tpCheck),3)>0,1)>0);
         tpCheckBefore=zeros(size(tpCheck));
         if ~isempty(tpBefore)

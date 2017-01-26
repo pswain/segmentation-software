@@ -40,7 +40,7 @@ traps = 1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapIn
 switch centre_method
     case 'cell_centre'
 ind=1;
-for timepoint=cTimelapse.timepointsToProcess
+for timepoint=find(cTimelapse.timepointsProcessed)
     indM=1;
     if cTimelapse.timepointsProcessed(timepoint)
         trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
