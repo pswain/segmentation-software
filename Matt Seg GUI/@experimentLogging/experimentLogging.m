@@ -23,6 +23,16 @@ classdef experimentLogging<handle
         cancel = false
     end
     
+    properties (Dependent)
+        gui
+        stop_on_error
+    end
+    
+    properties (Access=private)
+        gui_val = true;
+        stop_on_error_val = true;
+    end
+    
     properties (Transient)
         % Handles to all of the listeners are stored here
         listenPositionChanged

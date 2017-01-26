@@ -31,7 +31,7 @@ cTimelapse=cExperiment.returnTimelapse(positionsToExtract(1));
 
 cExperiment.cellInf=cTimelapse.extractedData;
 
-[cExperiment.cellInf(:).posNum]=deal(ones(size(cExperiment.cellInf(1).trapNum)));
+[cExperiment.cellInf(:).posNum]=deal(positionsToExtract(1)*ones(size(cExperiment.cellInf(1).trapNum)));
 
 % Track extracted timepoints for compilation of times from meta data:
 extractedTimepoints = false(length(cExperiment.dirs),...
