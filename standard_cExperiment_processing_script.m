@@ -45,7 +45,7 @@ poses = cExpGUI.posList.Value;
 % object, changes to it will also affect the cExperiment object in the
 % cExpGUI.
 
-cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(1);
+cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(poses(1));
 cExperiment = cExpGUI.cExperiment;
 
 
@@ -257,28 +257,14 @@ thresh2 = -1; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect
 
 %% track this position 
-% The traps in this position must first be tracked and their pixels
-% refined. 
+% The traps in this position must first be tracked 
 % This only needs to be run on the first occasion and then if you
 % pick a different position to inspect (i.e. the result is saved for a
 % particular position). If you want to go back and change the thresholds,
 % inspect different timepoints etc. you do not need to run this again.
 
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true,false);
+cExperiment.trackTrapsInTime(pos);
 
-% refine trap pixels for this position
-trap_outline_refine_channel = lower_brightfield_channel;
-
-
-for diri=pos
-    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    cTimelapse.refineTrapOutline(cExperiment.cCellVision.cTrap.trapOutline,trap_outline_refine_channel,[],[],false,true);
-    cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);
-
-    fprintf('finished. please continue \n')
-
-end
 
 %% calculates the decision image
 % this only needs to be run the first time you inspect a particular
