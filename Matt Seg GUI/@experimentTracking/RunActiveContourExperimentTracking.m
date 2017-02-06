@@ -1,5 +1,5 @@
 function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
-%RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+%RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
 %OverwriteTimelapseParameters controls if experiment or timelapse parameters are used
@@ -140,27 +140,10 @@ for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     
     cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
-    
-    if isempty(cTimelapse.ActiveContourObject)
-        cTimelapse.InstantiateActiveContourTimelapseTraps(cExperiment.ActiveContourParameters);
-    else
-        cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-        %necessary to make sure that a loaded cTimelapse in the ActiveContourObject points to the
-        %right place.
-    end
-    
+
     if i==1
         
-        if nargin<6 || isempty(ACmethod)
-            [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod;
-        else
-            [ACmethod,method_dialog_answer_value] = cTimelapse.ActiveContourObject.SelectACMethod(ACmethod);
-        end
-        
-        if method_dialog_answer_value == false;
-            fprintf('\n\n   Active contour method cancelled\n\n')
-            return
-        end
+       
         
         % if channel field is empty, get user to select a channel
         % bit laborious but resilient to people putting the wrong numbers
@@ -190,35 +173,21 @@ for i=1:length(positionsToIdentify)
     end
     
     if TrackTrapsInTime
-        cExperiment.cTimelapse.trackTrapsThroughTime(cCellVision,cExperiment.timepointsToProcess);
+        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.timepointsToProcess);
         cExperiment.saveTimelapseExperiment(currentPos);
         cExperiment.cTimelapse = cTimelapse;
         
     end
     
     if OverwriteTimelapseParameters
-        cTimelapse.ActiveContourObject.Parameters = cExperiment.ActiveContourParameters;
+        cTimelapse.ACParams = cExperiment.ActiveContourParameters;
     end
     
-    %on the first position find the trap images and then just assign all the relevant fields for
-    %other positions.
-    if  ( (OverwriteTimelapseParameters || isempty(cTimelapse.ActiveContourObject.TrapPixelImage))) || isempty(cTimelapse.ActiveContourObject.cCellVision)
-            getTrapInfoFromCellVision(cTimelapse.ActiveContourObject,cCellVision);
-    end
     
-    if isempty(cTimelapse.ActiveContourObject.TrapLocation) || OverwriteTimelapseParameters
-        cTimelapse.ActiveContourObject.getTrapLocationsFromCellVision;
-    end
-    
-    % put in try catch since Andy's images kept screwing up the
-    % segmentation
     try
-        cTimelapse.RunActiveContourTimelapseTraps(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,ACmethod,CellsToUse{currentPos});
-    
+    cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
     catch err
-        fprintf('\n\n error on position %s \n\n',cExperiment.dirs{currentPos})
-        rethrow(err)
-        fprintf('\n\n saving position and continuing \n\n')
+    rethrow(err)
     end
     cExperiment.saveTimelapseExperiment(currentPos);
     

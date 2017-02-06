@@ -148,10 +148,10 @@ for timepoint=1:frame_ss:total_num_timepoints
                 elseif trapInfo.cellRadius<9
                     training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
                     nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                elseif trapInfo.cellRadius<14
+                elseif trapInfo.cellRadius<12
                     training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se3);
                     nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
-                elseif trapInfo.cellRadius<22
+                elseif trapInfo.cellRadius<19
                     training_class(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se4);
                     nearCenterTraining(:,:,num_cells)=imdilate(training_class(:,:,num_cells),se2);
                 elseif trapInfo.cellRadius<27

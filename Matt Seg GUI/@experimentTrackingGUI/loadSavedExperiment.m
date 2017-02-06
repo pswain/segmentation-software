@@ -1,6 +1,11 @@
 function loadSavedExperiment(cExpGUI)
 
-[FileName,PathName,FilterIndex] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+[FileName,PathName] = uigetfile('*.mat','Name of previously created cExperiment variable') ;
+
+if isequal(FileName,0) || isequal(PathName,0)
+    return
+end
+
 l1 = load(fullfile(PathName,FileName));
 cExpGUI.cExperiment=l1.cExperiment;
 
@@ -20,7 +25,6 @@ end
 
 
 if isfield(l1,'cCellVision')
-    cExpGUI.cCellVision= l1.cCellVision;
     cExpGUI.cExperiment.cCellVision=l1.cCellVision;
 end
 
@@ -29,7 +33,17 @@ switch answer
         cExpGUI.cExperiment.saveExperiment;
 end
 
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
+cExpGUI.channel = 1;
+
+% select traps not necessary for non-trap timelapses
+if ~cExpGUI.cExperiment.trapsPresent && all(cExpGUI.cExperiment.posTracked ~=0)
+    set(cExpGUI.selectTrapsToProcessButton,'Enable','off');
+else
+    set(cExpGUI.selectTrapsToProcessButton,'Enable','on');
+end
 
 set(cExpGUI.posList,'Value',1);
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
 set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
 set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);

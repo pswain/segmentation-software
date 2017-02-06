@@ -1,4 +1,6 @@
 function [IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical)
+% [IMoutPOS,IMoutNEG] = ElcoImageFilter(IMin,RadRange,grd_thresh,do_neg,pixels_to_ignore,make_image_logical)
+%
 % attempt to, make a circular hough like function that takes account of
 % whether the image shows a white cicle in a black background or a black
 % circle on a white background. IMoutPos is high for the former, IMoutNeg

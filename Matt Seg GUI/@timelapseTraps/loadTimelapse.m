@@ -1,160 +1,96 @@
-function loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad,imScale)
-%loadTimelapse(cTimelapse,searchString,magnfication,image_rotation,trapsPresent,timepointsToLoad,imScale)
+function loadTimelapse(cTimelapse,searchString,image_rotation,trapsPresent,timepointsToLoad,pixel_size)
+% loadTimelapse(cTimelapse,searchString,image_rotation,trapsPresent,timepointsToLoad,pixel_size)
 %
-%populates the cTimpoint field, determining how many timepoints there are
-%in the timelapse by identifying images with a certain searchString.
+% populates the cTimpoint field, determining how many timepoints there are
+% in the timelapse by identifying images who's name contains the searchString.
 %
-%seaches through the timelapseDir for filenames with one of the strings
-%given by the cell array of search strings searchStrings. Uses the ordered
-%list of these to populate the cTimepoints - one cTimepoint for each
-%matching file. It should be noted that if a searchString with numerous
-%files is used it will first populate cTimpoint structures with all those
-%matching searchString{1}, then with all those matching searchString{2}
-%etc. etc. this is probably not desired, and as such only a single entry
-%should be provided for searchString (e.g. searchString = {'DIC'})).
+% INPUTS
+% 
+% cTimelapse            -  object of the timelapseTraps class.
+% searchString          -  string.the string that appears in each image
+%                          associated with a particular timepoint
+% image_rotation        -  counter clockwise rotation of images (in
+%                          degrees) to perform when an image is requested.
+%                          Generally rotated to align traps with the base
+%                          trap in the cellVision model.
+% trapsPresent          -  a boolean that states whether there are traps
+%                          present. Used at various stages of the
+%                          processing.
+% timepointsToLoad      -  scalar. Declares the maximum number of
+%                          timepoints to load. Largely superceded by
+%                          timepointsToProcess - set later and just limits
+%                          the timepoints to segment and extract.
+% pixel_size            -  width of a pixel in the image in micrometers.
+%                          Default is 0.262 - the value for the swainlab
+%                          miscroscopes at 60X.
 %
-%expects images to be png,tif or TIF format.
 %
-% other fields (imScale,rotation,trapsPresent etc.) are also populated, by
-% GUI if necessary.
+% seaches through the timelapseDir for filenames containing the string
+% searchString. Uses the ordered list of these to populate the cTimepoints
+% - one cTimepoint for each matching file.
 %
-% imScale can be set to the string 'gui' to populate it via user interface.
+% expects images to be png,tif or TIF format.
+%
+% other properties:
+%   - rotation
+%   - trapsPresent
+%   - imSize
+%   - rawImSize
+% are also populated, by GUI if not provided.
+%
+% See also EXPERIMENTTRACKING.CREATETIMELAPSEPOSITIONS
 
-cTimelapse.channelNames=searchString;
-if isempty(cTimelapse.omeroImage)
-    %get names of all files in the timelapseDir folder
-    folder=cTimelapse.timelapseDir;
-    tempdir=dir(folder);
-    if size(tempdir,1)==2
-        %Folder is empty - go up one level
-        k=strfind(folder,'\');
-        folder=folder(1:k(end)-1);
-        temdir=dir(folder);
-    end
-    names=cell(1);
-    for i=1:length(tempdir)
-        names{i}=tempdir(i).name;
-    end
-    
-    files=sort(names);
-    folder=[folder filesep];
-    %% Read images into timelapse class
-    % Timelapse is a seletion of images from a file. These images must be
-    % loaded in the correct order from low to high numbers to ensure that the
-    % cell tracking performs correctly, and they must be rotated to ensure the
-    % trap correctly aligns with the images
-    
-    cTimepointTemplate = cTimelapse.cTimepointTemplate;
-    
-    cTimelapse.cTimepoint = cTimepointTemplate;
-    
-    largestTimepoint = 0;
-    if length(searchString)>1
-        
-        fprintf('\n\n WARNING!! numerous search string entries may produce strange results. \n\n')
-    end
-    for ss=1:length(searchString)
-        timepoint_index=0;
-        for n = 1:length(files);
-            % check file name is an image and is not a hidden unix file
-            if (~isempty(strfind(files{n},'tif'))|| ~isempty(strfind(files{n},'png')) || ~isempty(strfind(files{n},'TIF')))...
-                    && isempty(regexp(files{n},'^\.','once'))
-                if ~isempty(strfind(files{n},searchString{ss}))
-                    cTimelapse.cTimepoint(timepoint_index+1).filename{ss}=files{n};
-                    cTimelapse.cTimepoint(timepoint_index+1).trapLocations=[];
-                    timepoint_index=timepoint_index+1;
-                end
-            end
+
+%get names of all files in the timelapseDir folder
+cTimelapse.channelNames={searchString};
+folder=cTimelapse.timelapseDir;
+tempdir=dir(folder);
+names={tempdir(:).name};
+files=sort(names);
+folder=[folder filesep];
+
+% Read images into timelapse class
+% Timelapse is a seletion of images from a file. These images must be
+% loaded in the correct order from low to high numbers to ensure that the
+% cell tracking performs correctly, and they must be rotated to ensure the
+% trap correctly aligns with the images
+
+cTimepointTemplate = cTimelapse.cTimepointTemplate;
+
+cTimelapse.cTimepoint = cTimepointTemplate;
+
+
+timepoint_index=0;
+for n = 1:length(files);
+    % check file name is an image and is not a hidden unix file
+    if (~isempty(strfind(files{n},'tif'))|| ~isempty(strfind(files{n},'png')) || ~isempty(strfind(files{n},'TIF')))...
+            && isempty(regexp(files{n},'^\.','once'))
+        if ~isempty(strfind(files{n},searchString))
+            
+            cTimelapse.cTimepoint(timepoint_index+1) = cTimepointTemplate;
+            cTimelapse.cTimepoint(timepoint_index+1).filename{end+1}=files{n};
+            
+            cTimelapse.cTimepoint(timepoint_index+1).trapLocations=[];
+            timepoint_index=timepoint_index+1;
         end
-        largestTimepoint = max([timepoint_index;largestTimepoint]);
     end
-    
-    cTimelapse.timepointsToProcess = 1:largestTimepoint;
-    cTimelapse.timepointsProcessed = false(1,largestTimepoint);
-    
-    
-    if nargin>=6 && ~isempty(timepointsToLoad)
-        if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
-            timepointsToLoad=timepointsToLoad(timepointsToLoad<=length(cTimelapse.cTimepoint));
-        end
-        cTimelapse.cTimepoint=cTimelapse.cTimepoint(timepointsToLoad);
-    end
-    image=imread([folder cTimelapse.cTimepoint(1).filename{1}]);
-    
-else
-    %Image is from Omero database
-    cTimepointTemplate = cTimelapse.cTimepointTemplate;
-    
-    cTimelapse.cTimepoint = cTimepointTemplate;
-    
-    %Correct Z position - load image from the middle of the stack
-    pixels=cTimelapse.omeroImage.getPrimaryPixels;
-    sizeT=pixels.getSizeT().getValue();
-    cTimelapse.cTimepoint(sizeT).filename=[];%This makes sure cTimepoint has the correct length
-    cTimelapse.timepointsToProcess = 1:sizeT;
-    
-    %Load first timepoint of this cTimelapse to fill out the remaining
-    %details
-    image=cTimelapse.returnSingleTimepoint(1,find(strcmp(cTimelapse.microscopeChannels,searchString)));
 end
 
-cTimelapse.imSize=size(image);
-if nargin<3 || isempty(magnfication)
-    h=figure;imshow(image,[]);
-    prompt = {'Enter the magnification of the objective used'};
-    dlg_title = 'magnification';
-    num_lines = 1;
-    def = {'60'};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    cTimelapse.magnification=str2num(answer{1});
-    close(h);
-else
-    cTimelapse.magnification=magnfication;
+cTimelapse.timepointsToProcess = 1:timepoint_index;
+cTimelapse.timepointsProcessed = false(1,timepoint_index);
+
+if nargin>=6 && ~isempty(timepointsToLoad)
+    if max(timepointsToLoad)>length(cTimelapse.cTimepoint)
+        timepointsToLoad=timepointsToLoad(timepointsToLoad<=length(cTimelapse.cTimepoint));
+    end
+    cTimelapse.cTimepoint=cTimelapse.cTimepoint(timepointsToLoad);
 end
 
-%
-if nargin<5 || isempty(trapsPresent)
-    prompt = {'Are traps present in this Timelapse?'};
-    dlg_title = 'TrapsPresent';
-    num_lines = 1;
-    def = {'Yes'};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    if ~strcmp(answer{1},'Yes')
-        cTimelapse.trapsPresent=false;
-    else
-        cTimelapse.trapsPresent=true;
-    end
-else
-    cTimelapse.trapsPresent=trapsPresent;
-end
+% load this first image via imread since the following property 
+image = cTimelapse.returnSingleTimepointRaw(1,1);
 
-if (nargin<4 || isempty(image_rotation))
-    if cTimelapse.trapsPresent
-        h=figure;imshow(image,[]);
-        prompt = {'Enter the rotation (in degrees) required to orient opening of traps to the left'};
-        dlg_title = 'Rotation';
-        num_lines = 1;
-        def = {'0'};
-        answer = inputdlg(prompt,dlg_title,num_lines,def);
-        cTimelapse.image_rotation=str2num(answer{1});
-        close(h);
-    else
-        cTimelapse.image_rotation=0;
-    end
-else
-    cTimelapse.image_rotation=image_rotation;
-end
-if nargin<7 || strcmp(imScale,'gui')
-    
-    prompt = {'Enter desired image rescaling value'};
-    dlg_title = 'Scaling';
-    num_lines = 1;
-    def = {''};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    cTimelapse.imScale=str2num(answer{1});
-else
-    cTimelapse.imScale=imScale;
-end
+cTimelapse.initializeImageProperties(image,image_rotation,trapsPresent,pixel_size);
+
 
 end
 

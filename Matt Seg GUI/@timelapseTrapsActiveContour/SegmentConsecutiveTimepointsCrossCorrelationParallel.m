@@ -248,9 +248,11 @@ for TP = Timepoints
     TrapLocations = ttacObject.TimelapseTraps.cTimepoint(TP).trapLocations;
     
     if ttacObject.TrapPresentBoolean
-        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false);
+        %[~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,WholeTrapImage>CrossCorrelationTrapThreshold,false);
+        WholeImageElcoHough = repmat(WholeImage,[1 1 length(RadRanges)]);
     else
-        [~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false);
+        %[~,WholeImageElcoHough] = ElcoImageFilter(WholeImage,RadRanges,CrossCorrelationGradThresh,-1,[],false);
+        WholeImageElcoHough = repmat(WholeImage,[1 1 length(RadRanges)]);
     end
     WholeImageElcoHoughSum = sqrt(sum(WholeImageElcoHough.^2,3));
     WholeImageElcoHoughSum(WholeImageElcoHoughSum==0) = 1;

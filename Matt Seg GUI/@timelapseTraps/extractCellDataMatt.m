@@ -23,6 +23,12 @@ end
 numCells=sum(cTimelapse.cellsToPlot(:));
 [trap, cells]=find(cTimelapse.cellsToPlot);
 
+% annoying necessary line to deal with find behaviour. If find is applied
+% to a row vector, it returns a row vector. If it is applied to a matrix it
+% returns a column vector.
+trap = trap(:);
+cells = cells(:);
+
 s1=strel('disk',2);
 % convMatrix2=single(getnhood(strel('disk',2)));
 

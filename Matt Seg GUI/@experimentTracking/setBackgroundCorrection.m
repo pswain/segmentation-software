@@ -1,8 +1,8 @@
-function setBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToIdentify)
-%setBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToIdentify)
+function setBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToSet)
+%setBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positionsToSet)
 %
 % set the flat field correction for each cTimelapse specified by
-% positionsToIdentify
+% positionsToSet (defaults to all positions)
 %
 % BackgroundCorrection  :   Flat field correction: an image of the size of
 %                           the images extracted.Image are dot multipled by
@@ -10,31 +10,31 @@ function setBackgroundCorrection(cExperiment,BackgroundCorrection,channel,positi
 %                           returnTimepoint.
 % channel               :   array of channel indices which should have this
 %                           multiplication applied.
+%
+% See also TIMELAPSETRAPS.RETURNSINGLETIMEPOINT
 
    
-if nargin<4 || isempty(positionsToIdentify)
-    positionsToIdentify=1:length(cExperiment.dirs);
+if nargin<4 || isempty(positionsToSet)
+    positionsToSet=1:length(cExperiment.dirs);
 end
 
 
-
-%% Load timelapses
-for i=1:length(positionsToIdentify)
-    currentPos=positionsToIdentify(i);
+for i=1:length(positionsToSet)
+    currentPos=positionsToSet(i);
     cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
     
+    % if channel was not provided, request by gui.
     if i==1 && (nargin<3 || isempty(channel))
         [channel,ok] = listdlg('ListString',cTimelapse.channelNames,...
             'SelectionMode','single',...
             'Name','channel to correct',...
             'PromptString','Please select the channel to which to apply the background correction');
-        %uiwait();
+
         if ~ok
             return
         end
     end
     
     cTimelapse.BackgroundCorrection{channel} = BackgroundCorrection;
-    cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(currentPos);
+    cExperiment.saveTimelapseExperiment;
 end

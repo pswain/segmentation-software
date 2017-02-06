@@ -2,17 +2,34 @@ classdef cTrapSelectDisplay<handle
 % cTrapSelectDisplay
 %
 % a GUI used for identifying the traps in an image at a single timepoint
-% and user curation of the result. A single timepoint is provided and the
-% traps identified at that timpoint by the method
+% and user curation of the result. 
 %
-%   identifyTrapLocationsSingleTP
+% The GUI first automatically detects traps by cross correlation of the
+% image from the experiment with the trap image stored in the cellVision
+% model.
 %
-% This method always uses channel 1 of the cTimelapse to identify the
-% traps.
 % The user then adds and removes traps by left and right clicks on the
 % image respectively (selected traps are shown as a brighter square) and
-% the result is stored at the given timepoint of the cTIimslapse object
-% used to instantiate the object.
+% the result is stored. These will be the traps used throughout the
+% processing.
+%
+% Red boxes are also shown. These are ExclusionsZones: areas in which traps
+% are not automatically identified.
+%
+%
+% DETAILS
+%
+% A single timepoint is provided and the traps identified at that timpoint
+% by the method
+%   identifyTrapLocationsSingleTP
+%
+% This method uses the:
+%       timelapseTraps.channelForTrapDetection
+% channel to identify the traps by cross correlation with the images stored
+% in the loaded cellVision model (cellVision.cTrap.trap1/trap2).
+%
+
+
     properties
         figure = [];
         imHandle = [];
@@ -26,7 +43,9 @@ classdef cTrapSelectDisplay<handle
         ExclusionZones = []; %zones in which to not look for traps automatically stored as 4 vector [xStart1 yStart1 xend1 yend1;xStart2 yStart2 xend2 yend2]
                              %traps in these zones before the GUI is
                              %initialised will not be removed.
-        
+        gui_help = {help('cTrapSelectDisplay')}; % text displayed if h pressed. 
+        cc %cross correlation from identifyTrapLocationsSingleTP. Storing this prevents having to recalculate it each time the user adds or removes a trap. Much faster
+        wholeIm %the whole image from returnSingleTimepoint so that each click doesn't require reloading the image
     end % properties
 
     methods
@@ -52,7 +71,7 @@ classdef cTrapSelectDisplay<handle
             cDisplay.timepoint=timepoint;
             
             if nargin<4 || isempty(channel)
-                cDisplay.channel=1;
+                cDisplay.channel=cTimelapse.channelForTrapDetection;
             else
                 cDisplay.channel=channel;
             end
@@ -62,7 +81,7 @@ classdef cTrapSelectDisplay<handle
             else
                 cDisplay.ExclusionZones = ExclusionZones;
             end
-            
+            cDisplay.cc=[];
             
             cDisplay.cCellVision=cCellVision;
             cDisplay.cTimelapse=cTimelapse;
@@ -72,99 +91,66 @@ classdef cTrapSelectDisplay<handle
             cDisplay.trapLocations=cTimelapse.cTimepoint(timepoint).trapLocations;
             PreExistingTrapLocations = cTimelapse.cTimepoint(timepoint).trapLocations;
             
-            cDisplay.image=cTimelapse.returnSingleTimepoint(timepoint,cDisplay.channel);
+            cDisplay.image=cTimelapse.returnSingleTimepoint(cDisplay.timepoint,cDisplay.channel);
             
-            [cDisplay.trapLocations trap_mask]=cTimelapse.identifyTrapLocationsSingleTP(timepoint,cCellVision);
+            cDisplay.cc = generateTrapLocationPredictionImage(cTimelapse,cCellVision,cDisplay.timepoint,cDisplay.channel);
+            
+            [cDisplay.trapLocations]=cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,'none',cDisplay.cc);
 
-            TrapsToRemove = [];
-            for trapi = 1:length(cDisplay.trapLocations)
-                for zonei = 1:size(cDisplay.ExclusionZones,1)
-                    
-                    if cDisplay.trapLocations(trapi).xcenter>=cDisplay.ExclusionZones(zonei,1) && ...
-                            cDisplay.trapLocations(trapi).xcenter<=cDisplay.ExclusionZones(zonei,3) && ...
-                            cDisplay.trapLocations(trapi).ycenter>=cDisplay.ExclusionZones(zonei,2) && ...
-                            cDisplay.trapLocations(trapi).ycenter<=cDisplay.ExclusionZones(zonei,4);
-                        TrapsToRemove = [TrapsToRemove trapi];
-                    end
-                end
-                
-            end
+            TrapsToRemove = cDisplay.identifyExcludedTraps(cDisplay.trapLocations,PreExistingTrapLocations);
+            
             cDisplay.trapLocations(TrapsToRemove) = [];
             
-            %bit ugly, but don't want to remove traps that are in the
-            %ctimelapse already since they may have been added by user.
-            if ~isempty(PreExistingTrapLocations)
-            [~,TrapsToPutBack] = setdiff([[PreExistingTrapLocations(:).xcenter]' [PreExistingTrapLocations(:).ycenter]'],...
-                    [[cDisplay.trapLocations(:).xcenter]' [cDisplay.trapLocations(:).ycenter]'],'rows');
-            
-                for trapi = TrapsToPutBack'
-                    cDisplay.trapLocations(end+1) = PreExistingTrapLocations(trapi);
-                end
-            end
-            
-            [cDisplay.trapLocations, trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
+            % this call simply updates the trapLocations and trapInfo of
+            % cTimelapse if any have been removed by the two lines above.
+            [cDisplay.trapLocations]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,'none',cDisplay.cc);
                 
-            im_mask=cDisplay.image;
-            im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-            cDisplay.imHandle=imshow(im_mask,[],'Parent',cDisplay.axesHandle);
+            cDisplay.setImage;
             
-            if ~isempty(cTimelapse.omeroImage)
-                figHandle=get(cDisplay.axesHandle,'Parent');
-                set(figHandle,'Name',char(cTimelapse.omeroImage.getName.getValue));
-            end
+            set(cDisplay.figure,'Name',cTimelapse.getName);
             
             set(cDisplay.imHandle,'ButtonDownFcn',@(src,event)addRemoveTraps(cDisplay)); % Set the motion detector.
             set(cDisplay.imHandle,'HitTest','on'); %now image button function will work
+            %keydown function - get help on h
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)keyPress_cb(cDisplay,src,event));
+            
         end
         
-        function addRemoveTraps(cDisplay)
-        % addRemoveTraps(cDisplay)
-        % 
-        % function add and remove traps from cTimelapse. If SelectionType is
-        % 'alt' this is a right click and the trap is removed, if not then
-        % it is a left click and it is added. In both cases the
-        % identifyTrapLocationsSingleTP method of timelapseTraps is used to
-        % fix the location of the traps and produce the overlap image.
-            cp=get(cDisplay.axesHandle,'CurrentPoint');
-            cp=round(cp);
-            Cx=cp(1,1);
-            Cy=cp(1,2);
+        function setImage(cDisplay)
+            % setImage(cDisplay,trap_mask)
+            % set the
             
-            if strcmp(get(gcbf,'SelectionType'),'alt')
-                pts=[];
-                pts(:,1)=[cDisplay.trapLocations.xcenter];
-                pts(:,2)=[cDisplay.trapLocations.ycenter];
-                
-                trapPt=[Cx Cy];
-                D = pdist2(pts,trapPt,'euclidean');
-                [minval loc]=min(D);
-                
-                cDisplay.trapLocations(loc)=[];
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],'none');
-                im_mask=cDisplay.image;
-                im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-                set(cDisplay.imHandle,'CData',im_mask);
-                set(cDisplay.axesHandle,'CLim',[min(im_mask(:)) max(im_mask(:))])
-
-                cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
-                
-                % Update the log
-                logmsg(cDisplay.cTimelapse,'Remove trap at %s', num2str([Cx,Cy]));
-            else
-                cDisplay.trapLocations(end+1).xcenter=Cx;
-                cDisplay.trapLocations(end).ycenter=Cy;
-                [cDisplay.trapLocations trap_mask]=cDisplay.cTimelapse.identifyTrapLocationsSingleTP(cDisplay.timepoint,cDisplay.cCellVision,cDisplay.trapLocations,[],length(cDisplay.trapLocations));
-                im_mask=cDisplay.image;
-                im_mask(trap_mask)=im_mask(trap_mask)*1.5;
-                set(cDisplay.imHandle,'CData',im_mask);
-                set(cDisplay.axesHandle,'CLim',[min(im_mask(:)) max(im_mask(:))])
-                
-                cDisplay.cTimelapse.cTimepoint(cDisplay.timepoint).trapLocations=cDisplay.trapLocations;
-
-                % Update the log
-                logmsg(cDisplay.cTimelapse,'Add trap at %s',num2str([Cx,Cy]));
+            im_mask=cDisplay.image;
+            
+            trap_locations_array = zeros(length(cDisplay.trapLocations),2);
+            for loci = 1:length(cDisplay.trapLocations);
+                trap_locations_array(loci,:) = [cDisplay.trapLocations(loci).ycenter,...
+                                                cDisplay.trapLocations(loci).xcenter];
             end
+            
+            trap_locations_array = round(trap_locations_array);
+            
+            % make mask where all trap pixels are true.
+            trap_mask = PutSubStack(false(size(im_mask)),...
+                                    trap_locations_array,...
+                                    {true(cDisplay.cTimelapse.trapImSize)});
+                                
+            
+            im_mask(trap_mask)=im_mask(trap_mask)*1.5;
+            im_mask = SwainImageTransforms.min_max_normalise(im_mask);
+            if isempty(cDisplay.imHandle)
+                cDisplay.imHandle=imshow(im_mask,[0,1],'Parent',cDisplay.axesHandle);
+            else
+                set(cDisplay.imHandle,'CData',im_mask);
+            end
+            
+            if ~isempty(cDisplay.ExclusionZones)
+                for i = 1:size(cDisplay.ExclusionZones,1)
+                    rh = rectangle('Parent',cDisplay.axesHandle,'Position',cDisplay.ExclusionZones(i,:));
+                    set(rh,'EdgeColor','r');
+                end
+            end
+            
         end
-
     end
 end

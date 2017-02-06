@@ -1,9 +1,14 @@
 function trackTrapsInTime(cExperiment,positionToTrack,first_timepoint,last_timepoint)
 % function trackTrapsInTime(cExperiment,positionToTrack,first_timepoint,last_timepoint)
 %
-% tracks the traps in time after they have been selected. If there are no
-% traps it populates the trapInfo and trapLocations fields of cTimelapse.cTimepoint(:) as
-% as though there were one large trap of size image size.
+% tracks the traps in time from first_timepoint to last_timepoint. If traps
+% are present, requires that they have been selected. 
+% If there are no traps it populates the trapInfo and trapLocations fields
+% of cTimelapse.cTimepoint(:) as though there were one large trap of size
+% cTimelapse.imSize.
+%
+% See also, CTRAPSELECTDISPLAY, EXPERIMENTTRACKING.IDENTIFYTRAPSTIMELAPSES,
+% TIMELAPSETRAPS.IDENTIFYTRAPLOCATIONSSSINGLETP
 
 if nargin<2 || isempty(positionToTrack)
     positionToTrack = 1:numel(cExperiment.dirs);
@@ -20,8 +25,8 @@ end
 for posi = 1:numel(positionToTrack)
     pos = positionToTrack(posi);
     cExperiment.loadCurrentTimelapse(pos);
-    cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.cCellVision,first_timepoint:last_timepoint);
-    cExperiment.saveTimelapseExperiment(pos,false);
+    cExperiment.cTimelapse.trackTrapsThroughTime(first_timepoint:last_timepoint);
+    cExperiment.saveTimelapseExperiment;
     
 end
 end

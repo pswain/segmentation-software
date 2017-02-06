@@ -1,8 +1,14 @@
-function parseLogFile(cExperiment,logFile,progress_bar)
+function fail_flag = parseLogFile(cExperiment,logFile,progress_bar)
 %parseLogFile Parse experiment's log file to obtain meta data
 %   cExperiment: this object
 %   logFile (optional): if specified, that log file is used, otherwise
 %       a good guess is made by searching 'cExperiment.rootFolder'
+%
+%   fail_flag : boolean
+%       an indicator of success. Is set to true if either the log file or
+%       the acq file could not be found. Consider refining.
+
+fail_flag = false;
 
 if nargin<2 || isempty(logFile)
     logFile = dir(fullfile(cExperiment.rootFolder,'*log.txt'));
@@ -11,6 +17,7 @@ if nargin<2 || isempty(logFile)
         warning('More than one log file available in "cExperiment.rootFolder". Using first found...');
     end
     if isempty(logFile)
+        fail_flag = true;
         warning('Cannot find log file. "metadata" property not set.');
         return
     end
@@ -85,6 +92,8 @@ while ischar(tline)
             % Attempt to find and parse the Acq file:
             if exist(fullfile(logdir,acqfile),'file')
                 acq = parseAcqFile(fullfile(logdir,acqfile));
+            else
+                fail_flag = true;
             end
             acqfileline = false;
         end

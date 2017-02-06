@@ -48,7 +48,7 @@ if nargin<7 || isempty(do_close)
 end
 
 %% get labelled trap
-dilation_length =4;
+dilation_length =8;
 strel_1 = strel('disk',dilation_length);
 %for enlarging large trap outline.
 strel_2 = strel('disk',1);

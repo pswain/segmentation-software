@@ -23,6 +23,8 @@ classdef cellResultsViewingGUI<handle
         ImageRange = [0 65536]; % range of pixel values that form the min and max of the image. Updated when the 'Reset Image Scale' button is pressed
         cellImageSize = []; % can set to be the size of the cell image to show. Useful if there are not traps and it will show a smaller area
         
+        needToSave; %does the experiment need to be saved before continuing along - only if any edits have been made.
+        birthTypeUse='HMM'; %which birthtime dataset should be shown. Can be 'HMM' or 'Manual';
     end % properties
 
     methods
@@ -43,9 +45,17 @@ classdef cellResultsViewingGUI<handle
                 end
                 
             end
-            
             CellResGUI.cExperiment = cExperiment;
-
+            
+            if isempty(cExperiment.cellInf)
+                
+                warndlg('please extract data before running the cellResultsViewingGUI (the clue is in the name)')
+                uiwait
+                return
+                
+            end
+            
+            CellResGUI.needToSave=false;
             scrsz = get(0,'ScreenSize');
             CellResGUI.figure=figure('MenuBar','none','Position',[scrsz(3)/3 scrsz(4)/3 scrsz(4) 2*scrsz(4)/3]);
             
@@ -57,8 +67,8 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellSelectListInterface = uicontrol(CellResGUI.TopPanel,'Style','listbox','String',{'no cells selected'},...
                 'Units','normalized','Position',[.33 .015 .3 .97],'Max',1,'Min',1,'Callback',@(src,event)SelectCell(CellResGUI));
             
-            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum' cExperiment.cellInf(1).trapNum' cExperiment.cellInf(1).cellNum'];
-            
+            CellResGUI.CellsForSelection = [cExperiment.cellInf(1).posNum(:) cExperiment.cellInf(1).trapNum(:) cExperiment.cellInf(1).cellNum(:)];
+
             CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
@@ -156,18 +166,23 @@ classdef cellResultsViewingGUI<handle
                 'Value',CellResGUI.cExperiment.timepointsToProcess(1),...
                 'Position',[0.015 0.015 0.97 0.03],...
                 'SliderStep',...
-                [1 max(round((CellResGUI.cExperiment.timepointsToProcess(end) - CellResGUI.cExperiment.timepointsToProcess(1))/10),1)],...
-                'Callback',@(src,event)CellRes_slider_cb(CellResGUI));
-            addlistener(CellResGUI.slider,'Value','PostSet',@(src,event)CellRes_slider_cb(CellResGUI));
-            addlistener(CellResGUI.CellSelectListInterface,'Value','PostSet',@(src,event)SelectCell(CellResGUI));
+                [1/(length(CellResGUI.cExperiment.timepointsToProcess)-1) ...
+                1/(max(round((CellResGUI.cExperiment.timepointsToProcess(end) - CellResGUI.cExperiment.timepointsToProcess(1))/10),1))],...
+                'Callback',@CellResGUI.CellRes_slider_cb);
+            addlistener(CellResGUI.slider,'Value','PostSet',@CellResGUI.CellRes_slider_cb);
+            addlistener(CellResGUI.CellSelectListInterface,'Value','PostSet',@CellResGUI.SelectCell);
 
+            set(CellResGUI.figure,'BusyAction','cancel');
+            
             %scroll wheel function
-            set(CellResGUI.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(CellResGUI,src,event));
+            set(CellResGUI.figure,'WindowScrollWheelFcn',@CellResGUI.Generic_ScrollWheel_cb);
             
             %keydown function
-            set(CellResGUI.figure,'WindowKeyPressFcn',@(src,event)CellRes_key_press_cb(CellResGUI,src,event));
-
-            %CellResGUI.SelectCell();
+            set(CellResGUI.figure,'WindowKeyPressFcn',@CellResGUI.CellRes_key_press_cb);
+            
+            CellResGUI.CellSelected = 0;
+            set(CellResGUI.CellSelectListInterface,'Value',1);
+            CellResGUI.SelectCell();
             
         end
 
@@ -188,6 +203,15 @@ classdef cellResultsViewingGUI<handle
                 error('setting cell should be an array of the form \n\n     [position_array trap_array cell_number_array] \n\nwhere the columns of the array are vectors of the position, trapnumber and cell number of each cell to be viewable.')
             end
             
+            % this is a bit involved and is to make sure the right
+            % cTimelapse gets loaded
+            if CellResGUI.CellSelected~=0;
+                set_cell = true;
+                old_id = CellResGUI.CellsForSelection(CellResGUI.CellSelected,:);
+            else
+                set_cell = false;
+            end
+            
             CellResGUI.CellsForSelection = setting_array;
             CellResGUI.CellsforSelectionDiplayString = {};
             
@@ -197,8 +221,24 @@ classdef cellResultsViewingGUI<handle
                 
             end
             
+            
             set(CellResGUI.CellSelectListInterface,'String',CellResGUI.CellsforSelectionDiplayString);
+            if set_cell
+                
+                [cell_present,new_cell_id] = ismember(old_id,setting_array,'rows');
+                if cell_present
+                    CellResGUI.CellSelected = new_cell_id;
+                    set(CellResGUI.CellSelectListInterface,'Value',new_cell_id);
+                else
+                    CellResGUI.CellSelected = 0;
+                    set(CellResGUI.CellSelectListInterface,'Value',1);
+                end
+            
+                    
+                
+            else
             set(CellResGUI.CellSelectListInterface,'Value',1);
+            end
             
         end
         

@@ -38,9 +38,15 @@ for i=1:length(dirsToSearch)
     newDir=fullfile(newRootFolder , cExperiment.dirs{posIndex});
     cTimelapse.timelapseDir=newDir;
     
-        cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(posIndex);
+    cExperiment.cTimelapse=cTimelapse;
+    if i==length(dirsToSearch)
+        cExperiment.saveTimelapseExperiment(posIndex);
+    else
+        cExperiment.saveTimelapse(posIndex);
+    end
+    
     fprintf('%d ',i);
+    
 end
 cExperiment.rootFolder=newRootFolder;
 cExperiment.saveExperiment;
