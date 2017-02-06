@@ -21,6 +21,8 @@ function motherIndex=findMotherIndex(cTimelapse,centre_method,offset)
 %identify the center of the trap by finding themode of the x and y
 %locations
 
+if cTimelapse.trapsPresent
+
 if nargin<2 || isempty(centre_method)
     centre_method = 'cell_centre';
 end
@@ -142,6 +144,9 @@ end
 
 
 cTimelapse.lineageInfo.motherIndex=motherIndex;
+else
+    motherIndex=1;
+end
 %%
 % During the tracking step, deal with mothers differently
 

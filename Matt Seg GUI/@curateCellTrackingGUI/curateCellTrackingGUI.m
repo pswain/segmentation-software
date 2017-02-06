@@ -93,7 +93,7 @@ classdef curateCellTrackingGUI<handle
                 TrackingCurator.StripWidth = maxTimepoint;
             end
             
-            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.cTimelapse.timepointsToProcess(1)).trapMaxCell(TrackingCurator.trapIndex));
+            TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.returnMaxCellLabel(TrackingCurator.trapIndex));
 
             dis_h=(length(TrackingCurator.Channels));
             

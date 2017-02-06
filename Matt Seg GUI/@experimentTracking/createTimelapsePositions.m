@@ -106,8 +106,7 @@ for i=1:length(positionsToLoad)
     % Trigger a PositionChanged event to notify experimentLogging
     experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
     
-    cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.magnification,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.imScale);
-    
+     
     cExperiment.magnification=cExperiment.cTimelapse.magnification;
     cExperiment.imScale=cExperiment.cTimelapse.imScale;
     

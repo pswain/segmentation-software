@@ -22,6 +22,8 @@ function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timep
 % the result is only the inner region, and should probably be dilated by
 % about 4 or 5 to give the best guess of the trap pixels 
 
+if cTimelapse.trapsPresent
+
 if nargin<3 || isempty(channels)
     channels =  selectChannelGUI(cTimelapse,'Trap Refine Channel',...
         'please select a channel with which to refine the trap outline. Traps are expected to be bright with a dark halo.',...
@@ -169,4 +171,5 @@ end
 close(wh);
 
 
+end
 end

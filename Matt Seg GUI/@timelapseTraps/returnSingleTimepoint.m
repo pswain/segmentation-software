@@ -146,7 +146,9 @@ if isempty(cTimelapse.OmeroDatabase)
             if ~isempty(regexp(ffile,'TIF$'))
                 timepointIm(:,:,i)=imread(ffile,'Index',i);
             else
+                
                 timepointIm(:,:,i)=imread(ffile);
+               
             end
             %if it is a stack, preallocate. Done in this strange way to
             %preserve data type without making single slices unduly

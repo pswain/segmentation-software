@@ -33,8 +33,12 @@ if strcmp(key,cDisplay.CurateTracksKey)
     CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
     
     if ~isempty(CellNumNearestCell)
-        
-        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap);
+        if cDisplay.cTimelapse.trapsPresent
+            strip_width = 5;
+        else
+            strip_width = 1;
+        end
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap,strip_width);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
         TrackingCurator.UpdateImages;
         

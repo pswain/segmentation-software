@@ -49,21 +49,23 @@ cExpGUI = experimentTrackingGUI;
 
 %% change active contour parameters for cExperiment
 % this is particularly necessary if the new images are of a different
-% maginification.
+% maginification. - Skip this step if cells are already annotated
 
 % set some parameters
-cExperiment = cExpGUI.cExperiment;
+%cExperiment = cExpGUI.cExperiment;
 cExperiment.ActiveContourParameters.ImageTransformation.channel = 1; %set to what you want
-cExperiment.ActiveContourParameters.ActiveContour.R_min = 5;
-cExperiment.ActiveContourParameters.ActiveContour.R_max = 50;
+cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
+cExperiment.ActiveContourParameters.ActiveContour.R_max = 20;
 % bit slower but more fine grained outline for large images.
-cExperiment.ActiveContourParameters.ImageSegmentation.OptPoints = 10;
+cExperiment.ActiveContourParameters.ImageSegmentation.OptPoints = 8;
 
 cExperiment.ActiveContourParameters.ImageSegmentation.SubImageSize = 2*(cExperiment.ActiveContourParameters.ActiveContour.R_max + 10) + 1; 
 
 % this line runs the tracking and sets the active contour parameters of
 % each timelapse to be the active contour parameters of the cExperiment.
 % this is useful if using the 'elcoAC' method to add cells.
+%This will wipe out all data - do not run this if you have manually
+%annotated cells
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(cExperiment.dirs),...
     min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true);
 
@@ -76,6 +78,13 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(c
 edit cTrapDisplay.addRemoveCells
 
 %% now make sure all cells are selected and look good
+
+% - Annotate cells here using Edit Segmentation button
+
+
+%% get cExperiment from gui
+
+cExperiment = cExpGUI.cExperiment;
 %% make training timelapse from cExperiment - WARNING, generally will load a cCellVision
 %  Needs to already be segmented and curated (can't do it afterwards unless non trap timelapse)
 
@@ -167,7 +176,6 @@ imshow(trap_inner_log+2*trap_im,[]);
 
 cCellVision.cTrap.trapInner = trap_inner;
 
-
 %% set segmentation method
 
 %% Elcos BF filter set
@@ -199,11 +207,25 @@ SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoGFP_1(CSVM,image);
 %% Julian 100x no trap slim
 SegMethod = @(CSVM,image) createImFilterSetNoTrapSlim100x(CSVM,image);
 
+%% Slides Brightfield classifier
+SegMethod = @(CSVM,image,trapOutline) createImFilterBFStackSlides(CSVM,image,trapOutline);
+
+
 %% set normalisation method for cCellVision
+
+%% set segmentation channels you want to use
+
+cTimelapse.channelsForSegment =  cTimelapse.selectChannelGUI('segmentation channels',...
+                                    'set channels you want to use for segmentation',true);
+                                
+%% show them
+for chi = cTimelapse.channelsForSegment
+    cTimelapseDisplay(cTimelapse,chi);
+end
 
 %%
 
-cCellVision.imageProcessingMethod = 'twostage_norm';
+cCellVision.imageProcessingMethod = 'twostage_norm';%Less risky but slower when no traps
 
 %% 
 cCellVision.imageProcessingMethod = 'wholeIm';
@@ -291,7 +313,7 @@ gui.LaunchGUI
 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=50000; %set to 750 ish for traps 5000 for whole field images
+cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -343,7 +365,8 @@ maxTP = 1000;
 step_size=max(length(cTimelapse.cTimepoint),max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1])); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchLinear(step_size,cmd);
 %% linear training
-maxTP = 1000;
+maxTP = 1000; 
+
 step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); 
 %cCellVision.trainingParams.cost=1;
 %cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
@@ -357,6 +380,18 @@ cCellVision.trainSVMLinear(step_size,cmd);toc
 %% open a timelapse to check how good it is
 
 disp = experimentTrackingGUI
+
+%% save
+% you can now save the cellVision. We normally save it once as is. i.e
+% save('some/path/and/file.mat','cCellVision')
+% and once without it's training data. This is the one that you should use
+% for analysis.
+% cCellVision.trainingData = [];
+% save('some/other/path/and/file.mat','cCellVision')
+% 
+
+%% stuff from here on is for the two stage classifier, which no one uses anymore (slow, little benfit)
+
 
 %% 
 %From matt's original code, doesn't seem to do anything but make very
@@ -468,7 +503,7 @@ fprintf('two stage training complete \n')
 
 [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellVision,A,trapOutline);
 
-figure;imshow(A,[]);
+figure;imshow(A(:,:,1),[]);
 imtool(decision_im,[]);
 
 

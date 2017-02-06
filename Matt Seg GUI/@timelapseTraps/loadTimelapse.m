@@ -25,6 +25,12 @@ if isempty(cTimelapse.omeroImage)
     %get names of all files in the timelapseDir folder
     folder=cTimelapse.timelapseDir;
     tempdir=dir(folder);
+    if size(tempdir,1)==2
+        %Folder is empty - go up one level
+        k=strfind(folder,'\');
+        folder=folder(1:k(end)-1);
+        temdir=dir(folder);
+    end
     names=cell(1);
     for i=1:length(tempdir)
         names{i}=tempdir(i).name;

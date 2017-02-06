@@ -12,8 +12,7 @@ function editSegmentationGUI(cExpGUI)
 % one is closed.
 %
 % See Also curateCellTrackingGUI
-cExpGUI.trackAllPositions;
-            
+           
 cExperiment = cExpGUI.cExperiment;
 cCellVision = cExpGUI.cExperiment.cCellVision;
 positionsToIdentify = get(cExpGUI.posList,'Value');

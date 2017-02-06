@@ -10,10 +10,6 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
     % contour method. 
     % tracking of traps and cells is automatically taken care of.
     
-    properties(Access=private)
-        positionsTracked = false; % flag to ensure traps are tracked once at instantiation and never again.
-    end
-    
     methods
         function cExpGUI = experimentTrackingSlidesGUI(make_buttons)
             % cExpGUI = experimentTrackingSlidesGUI(make_buttons)
@@ -81,11 +77,11 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             current_top = current_top - button_total_v;
             % uncomment when we have a cellVision model.
             
-%             cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
-%                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)identifyCells(cExpGUI));
-% 
-%             current_top = current_top - button_total_v;
-%             
+            cExpGUI.identifyCellsButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Identify Cells',...
+                'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)identifyCells(cExpGUI));
+
+            current_top = current_top - button_total_v;
+            
             cExpGUI.editSegmentationButton = uicontrol(cExpGUI.processingPanel,'Style','pushbutton','String','Edit Segmentation',...
                 'Units','normalized','Position',[button_space_h current_top  button_width button_height],'Callback',@(src,event)editSegmentationGUI(cExpGUI));
            
@@ -101,16 +97,7 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
 
 
         end
-        function cExpGUI = trackAllPositions(cExpGUI)
-            % trackAllPositions(cExpGUI)
-            % tracks all the positions to initialise the trapInfo fields.
-            % Only does anything if they haven't been tracked before.
-            
-            if ~cExpGUI.positionsTracked
-                cExpGUI.cExperiment.trackTrapsInTime;
-            end
-            cExpGUI.positionsTracked = true;
-        end
+
         
         function createExperiment(cExpGUI)
             % createExperiment(cExpGUI)
@@ -127,15 +114,23 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
             cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
             set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);
-            
-            cExpGUI.trackAllPositions;
+
+            cExpGUI.cExperiment.trackTrapsInTime;
+            cExpGUI.cExperiment.saveExperiment;
         end
+        
         
         function identifyCells(cExpGUI)
             % identifyCells(cExpGUI)
             % actually does the active contour method on first time point.
-            cExpGUI.trackAllPositions;
             poses = get(cExpGUI.posList,'Value');
+            
+            % set active contour channel to first cell identification
+            % channel. Should usually work ok for standard brightfield
+            % classifier.
+            cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(poses(1));
+            cExpGUI.cExperiment.ActiveContourParameters.ImageTransformation.channel = cTimelapse.channelsForSegment(1);
+            %cExpGUI.cExperiment.setSegmentationChannels;
             cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cExperiment.cCellVision,poses,1,1,true,1,false,false);
 
         end

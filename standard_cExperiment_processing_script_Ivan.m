@@ -1,6 +1,3 @@
- 
-
-
 %% processing script for cExperiment files.
 
 % COPY THIS FILE TO A NEW LOCATION BEFORE CHANGING IT FOR YOUR OWN USES.
@@ -58,7 +55,8 @@ cExperiment = cExpGUI.cExperiment;
 %This step is not necessary for cExperiments created from the Omero
 %database as they should have all channels added automatically
 
-channels = {'Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','cy5_'};
+%channels = {'Brightfield_001','Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','tdTomato','tdTomato_001','tdTomato_002','tdTomato_003','tdTomato_004','tdTomato_005'};
+channels = {'Brightfield','GFP','pHluorin405_'};
 
 for chi=1:length(channels)
     cExperiment.addSecondaryChannel(channels{chi});
@@ -188,7 +186,7 @@ cExperiment.identifyTrapsTimelapses(cExperiment.cCellVision,poses)
 % (these are only correct if you have added the channels as prescribed -
 % adjust as necessary).
 
-lower_brightfield_channel = 2; % lower z stack slice of brightfield
+lower_brightfield_channel = 1; % lower z stack slice of brightfield
 % in this channel all cells should appear as a reasonably sharp white
 % objects with black halos (a little out of focus is best)
 
@@ -234,10 +232,10 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 %% pick position, timepoint and threshold to inspect.
 
 tp = 1; % time point to inspect
-channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
-thresh1 = -4; %yellow: new cells (more stringent)
-thresh2 = -1.5; % green : tracked cells (less stringent)
-pos = poses(11); % position to inspect
+channel_to_view = 1; % channel on which to overlay thresholds
+thresh1 = -2; %yellow: new cells (more stringent)
+thresh2 = -1; % green : tracked cells (less stringent)
+pos = poses(1); % position to inspect
 
 %% track this position 
 % The traps in this position must first be tracked and their pixels
@@ -267,7 +265,6 @@ end
 % this only needs to be run the first time you inspect a particular
 % timepoint of a particular position. (i.e. if you change the thresholds
 % and reimage you don't re run this stage.
-
 
 cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(pos);
 
@@ -427,7 +424,6 @@ cExperiment.compileLineageInfo(poses);
 cExperiment.extractHMMTrainingStates;
 cExperiment.trainBirthHMM;
 cExperiment.classifyBirthsHMM;
-
 
 % save experiment 
 cExperiment.saveExperiment;

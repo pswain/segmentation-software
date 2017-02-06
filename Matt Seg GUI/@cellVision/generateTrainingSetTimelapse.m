@@ -98,7 +98,9 @@ else
 end
 % figure;imshow(cTimelapse.returnSingleTrapTimepoint(1,1,1),[]);
 % fig1=gca;
-for timepoint=1:frame_ss:total_num_timepoints
+%for timepoint=1:frame_ss:total_num_timepoints
+
+for timepoint=1:frame_ss:890
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
     image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.imageProcessingMethod);
     for trap=1:max(traps)

@@ -1,6 +1,3 @@
- 
-
-
 %% processing script for cExperiment files.
 
 % COPY THIS FILE TO A NEW LOCATION BEFORE CHANGING IT FOR YOUR OWN USES.
@@ -58,7 +55,7 @@ cExperiment = cExpGUI.cExperiment;
 %This step is not necessary for cExperiments created from the Omero
 %database as they should have all channels added automatically
 
-channels = {'Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','cy5_'};
+channels = {'Brightfield_001','Brightfield_002','Brightfield_004','Brightfield_005','GFP','pHluorin405'};
 
 for chi=1:length(channels)
     cExperiment.addSecondaryChannel(channels{chi});
@@ -79,50 +76,7 @@ cExperiment.selectTPToProcess;
 % up/down/left/right to get them to 'overlap' properly. This is done using
 % the setChannelOffset method of the cExperiment.
 
-%% try an offset
-% this stage can usually be ignored but is included for completeness.
 
-% here we set the offset of the DIC channel by comparing it to another
-% channel (GFP) and checking the outcome by eye. DIC is most often poorly
-% registered with the other channels. 
-% Play with the offset assignment and see how the outcome looks.
-
-cTimelapse = cExperiment.loadCurrentTimelapse(poses(1));
-
-DICch = 1;
-GFPch = 6;
-timepoint = 100;
-
-cTimelapse.offset(1,:) = [0 0];
-im1 = double(cTimelapse.returnSingleTimepoint(timepoint,DICch));
-im2 = double(cTimelapse.returnSingleTimepoint(timepoint,GFPch));
-
-im1 = (im1-min(im1(:)))/iqr(im1(:));
-im2 = (im2-min(im2(:)))/iqr(im2(:));
-
-figure(5);
-imshow(OverlapGreyRed(im1,im2),[]);
-
-%% set offset
-% this stage can usually be ignored but is included for completeness.
-
-% having found a good offset above, we set it for all positions.
-cExpGUI.cExperiment.setChannelOffset;
-
-%% set flat field (optional)
-% this stage can usually be ignored but is included for completeness.
-
-% often a fluorescent channel has an uneven illumination, and therefore
-% response, across the field. This can be compensated by providing a flat
-% field correction, by which an image is premultiplied before it is
-% returned.
-%
-% Elco has some methods for finding this, but it is generally the inverse
-% of an image of a fluorescent slide of constant brightness. It is set
-% using the following method.
-
-cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
-%BGcorrGFP is the image by which the final image will be premultiplied.
 
 %% load a cCellVision
 
@@ -133,14 +87,10 @@ cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
 % open a GUI to select a cCellVsion from anywhere
 cExpGUI.loadCellVision
 %% load standard brightfield classifier
-l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_Brightfield_2_slices_default.mat');
+l1 = load('c:\Users\Public\Segmentation code\Matt Seg GUI\cCellvisionFiles\cCellVision_Brightfield_2_slices_default.mat');
 cExperiment.cCellVision = l1.cCellVision;
 cExpGUI.cCellVision = l1.cCellVision;
-
-%% load standard DIC classifier
-l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_DIC_default.mat');
-cExperiment.cCellVision = l1.cCellVision;
-cExpGUI.cCellVision = l1.cCellVision;
+cExpGUI.cExperiment.setSegmentationChannels;
 
 %% set segmentation channels
 % You have to match the channels from your segmentation to the imaging
@@ -188,7 +138,7 @@ cExperiment.identifyTrapsTimelapses(cExperiment.cCellVision,poses)
 % (these are only correct if you have added the channels as prescribed -
 % adjust as necessary).
 
-lower_brightfield_channel = 2; % lower z stack slice of brightfield
+lower_brightfield_channel = 1; % lower z stack slice of brightfield
 % in this channel all cells should appear as a reasonably sharp white
 % objects with black halos (a little out of focus is best)
 
@@ -235,9 +185,9 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 tp = 1; % time point to inspect
 channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
-thresh1 = -4; %yellow: new cells (more stringent)
-thresh2 = -1.5; % green : tracked cells (less stringent)
-pos = poses(11); % position to inspect
+thresh1 = -inf; %yellow: new cells (more stringent)
+thresh2 = 0.5; % green : tracked cells (less stringent)
+pos = poses(1);% position to inspect
 
 %% track this position 
 % The traps in this position must first be tracked and their pixels
@@ -268,7 +218,6 @@ end
 % timepoint of a particular position. (i.e. if you change the thresholds
 % and reimage you don't re run this stage.
 
-
 cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(pos);
 
 num_traps = length(cTimelapse.cTimepoint(tp).trapInfo);
@@ -276,6 +225,7 @@ num_traps = length(cTimelapse.cTimepoint(tp).trapInfo);
 tic;
 DIM = identifyCellCentersTrap(cTimelapse,cExpGUI.cExperiment.cCellVision,tp,1:num_traps);
 toc
+
 
 %% opens the 3 images with colors
 % This block of code opens three images:
@@ -302,6 +252,7 @@ n = 1;
 for i=1:mega_image_size
     temp_col = [];
     temp_col2 = [];
+
     temp_col_acwe = [];
     for j=1:mega_image_size
         temp_col = [temp_col;DIM(:,:,n)];
@@ -374,16 +325,35 @@ cExperiment.ActiveContourParameters.ActiveContour.opt_points = 6;
 % for inspecting the decision image earlier. When you are happy that you
 % have seen enough, press ctrl C to stop it.
 
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+% RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged)
+%cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,1,1,true,1,false,false);
 
+%% if no traps
+
+cExperiment.ActiveContourParameters.CrossCorrelation.JumpWeight = 0;
+
+%% to make lenient on tracking
+
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationDIMthreshold = 2;
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThreshold = -1000;
+
+
+%% find cells only at first time point
+cExperiment.ActiveContourParameters.CrossCorrelation.twoStageThresh = 0.2;
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,1,1,true,1,false,false);
+
+
+%% run without replacing the first time point but do not identify any new cells
+cExperiment.ActiveContourParameters.CrossCorrelation.twoStageThresh = -Inf;
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,true);
 %% Actual long run (Elco standard extraction); run when happy with all the rest!
 % this block is the actual extraction for the whole experiment. It will
 % usually take a day.
 
-%track traps
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true,false);
-
-% refine trap outlines
+%track traps - this will delete any cells already segmented!
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true,true);
+% refine trap outlines 
 for diri=poses
     
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
@@ -427,7 +397,6 @@ cExperiment.compileLineageInfo(poses);
 cExperiment.extractHMMTrainingStates;
 cExperiment.trainBirthHMM;
 cExperiment.classifyBirthsHMM;
-
 
 % save experiment 
 cExperiment.saveExperiment;
