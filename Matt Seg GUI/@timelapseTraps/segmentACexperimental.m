@@ -640,10 +640,10 @@ for TP = Timepoints
             ACTrapImageStack = ACImage;
         end
         %parfor actually looking for cells
-        fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
         cells_discarded = 0;
         cells_found = 0;
-        for TI = 1:length(TrapsToCheck)
+        parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)

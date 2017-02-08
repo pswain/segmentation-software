@@ -107,12 +107,10 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             % magnification and imScale are not set in the GUI. These are generally
             % confusing arguments that are not widely used and necessarily supported.
             % This way they will not be used until again supported and
-            cExpGUI.cExperiment.createTimelapsePositions([],'all',...
-                [],[],[],...
-                60,[],false);
+           cExpGUI.cExperiment.createTimelapsePositions([],'all',[],[],[],false);
+
             
             set(cExpGUI.posList,'String',cExpGUI.cExperiment.dirs);
-            cExpGUI.cCellVision = cExpGUI.cExperiment.cCellVision;
             set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);
 
             cExpGUI.cExperiment.trackTrapsInTime;
@@ -135,12 +133,6 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
 
         end
         
-        function loadCellVision(cExpGUI)
-            %loadCellVision(cExpGUI)
-            % as experiment Tracking but also runs setSegmentationChannels
-            loadCellVision@experimentTrackingGUI(cExpGUI);
-            cExpGUI.cExperiment.setSegmentationChannels;
-        end
         
     end
     
