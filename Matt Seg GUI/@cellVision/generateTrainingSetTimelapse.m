@@ -100,7 +100,7 @@ end
 % fig1=gca;
 %for timepoint=1:frame_ss:total_num_timepoints
 
-for timepoint=1:frame_ss:890
+for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
     traps=1:length(cTimelapse.cTimepoint(timepoint).trapInfo);
     image=cTimelapse.returnSegmenationTrapsStack(traps,timepoint,cCellVision.imageProcessingMethod);
     for trap=1:max(traps)

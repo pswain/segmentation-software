@@ -92,9 +92,9 @@ cExperiment = cExpGUI.cExperiment;
 %load(fullfile(path,file),'cExperiment');
 
 
-for di = 1:length(cExperiment.dirs)
-    
-    cTimelapse = cExperiment.loadCurrentTimelapse(di);
+for di = 1:length(poses)%1:length(cExperiment.dirs)
+    d = poses(di);
+    cTimelapse = cExperiment.loadCurrentTimelapse(d);
         if di==1
             cTimelapseAll = fuseTimlapses({cTimelapse});
         else
@@ -226,12 +226,16 @@ end
 %%
 
 cCellVision.imageProcessingMethod = 'twostage_norm';%Less risky but slower when no traps
+%%
+cCellVision.imageProcessingMethod = 'twostage_mean_div';%Less risky but slower when no traps
 
 %% 
 cCellVision.imageProcessingMethod = 'wholeIm';
 
 %% check histrogram of images
 
+%Methods for histogram equalisation can be played with - in
+%processSegmentationTrapStack method
 % not really sure what I hoped to learn from these image but good to know
 % that it isn't crazy.
 figure;
@@ -304,17 +308,18 @@ gui.LaunchGUI;
 
 
 %% classify image A and show result
-
+%Don't do this unless you have already trained - this is for improving and
+%testing cellvisions.
 decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
 %[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
 gui.stack = cat(3,A,decision_im);
 gui.LaunchGUI
 %% generate training set
-
+ 
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage=5000; %set to 750 ish for traps 5000 for whole field images
-step_size=1;
+cCellVision.negativeSamplesPerImage= floor(0.1*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
+step_size=3;
 
 debugging = true; %set to false to not get debug outputs
 %debugging = false;
