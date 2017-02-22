@@ -12,14 +12,9 @@ function editSegmentationGUI(cExpGUI)
 % one is closed.
 %
 % See Also curateCellTrackingGUI
-cExpGUI.trackAllPositions;
-            
+           
 cExperiment = cExpGUI.cExperiment;
-cCellVision = cExpGUI.cExperiment.cCellVision;
 positionsToIdentify = get(cExpGUI.posList,'Value');
-pos_traps_to_show = [];
-channel= 1;
-pos_traps_to_show_given = false;
 
 
 if isempty(cExperiment.ActiveContourParameters)
@@ -30,15 +25,6 @@ end
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     cTimelapse=loadCurrentTimelapse(cExperiment,currentPos);
-    
-    
-    if isempty(cTimelapse.ActiveContourObject)
-        cTimelapse.InstantiateActiveContourTimelapseTraps(cExperiment.ActiveContourParameters);
-    else
-        cTimelapse.ActiveContourObject.TimelapseTraps = cTimelapse;
-        %necessary to make sure that a loaded cTimelapse in the ActiveContourObject points to the
-        %right place.
-    end
     
     if i==1
         
@@ -69,7 +55,7 @@ for i=1:length(positionsToIdentify)
         
     end
     
-    cTimelapse.ActiveContourObject.Parameters = cExperiment.ActiveContourParameters;
+    cTimelapse.ACParams = cExperiment.ActiveContourParameters;
 
     curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,1,1,1,1);
     uiwait();
@@ -84,5 +70,5 @@ for i=1:length(positionsToIdentify)
     cExperiment.posSegmented(currentPos)=1;
     
     cExperiment.cTimelapse=cTimelapse;
-    cExperiment.saveTimelapseExperiment(currentPos);
+    cExperiment.saveTimelapseExperiment;
 end

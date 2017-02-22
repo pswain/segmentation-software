@@ -42,27 +42,31 @@ function [ imagestack_out ] = processSegmentationTrapStack( cTimelapse,image_sta
 %
 if nargin<5
     type = 'twostage';
+    if ~cTimelapse.trapsPresent
+    type = 'wholeIm';
+    end
 end
 
-if ~cTimelapse.trapsPresent
-    type = 'wholeIm';
-end
 
 
 
 for ci = 1:size(image_stack,3)
-    if ismember(type,{'twostage','linear','trap','twostage_norm','twostage_norm_fluor'}) %trap option is for legacy reasons
+    if ismember(type,{'twostage','linear','trap','twostage_norm','twostage_norm_fluor','twostage_mean_div'}) %trap option is for legacy reasons
         % return a cell array with each element being an image stack for
         % the trap in the traps array provided
         temp_im = image_stack(:,:,ci);
         if ismember(type,{'twostage_norm'})
-            temp_im = temp_im - median(temp_im(:));
-            prctile_range = prctile(temp_im(:),[2 98]);
+            prctile_range = prctile(temp_im(:),[2, 50, 98]);
             % using this percentile range was arbitrarily chosen to try and
             % get a range defined by the trap pixels that would be somewhat
             % robust to hot pixels. Seemed to work well even for crowded
-            % images.
-            temp_im = temp_im./(prctile_range(2) - prctile_range(1));
+            % images.%temp_im = temp_im - prctile_range(2);
+            temp_im = temp_im - prctile_range(2);
+            temp_im = temp_im./(prctile_range(3) - prctile_range(1));
+        end
+        if ismember(type,{'twostage_mean_div'})
+            %useful for slides
+            temp_im = temp_im/mean(temp_im(:));
         end
         if ismember(type,{'twostage_norm_fluor'})
             % heuristic normalisation for fluorescent images intended to

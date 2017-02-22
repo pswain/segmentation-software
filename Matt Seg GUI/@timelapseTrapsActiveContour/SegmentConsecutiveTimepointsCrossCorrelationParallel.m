@@ -323,7 +323,7 @@ for TP = Timepoints
                 PreviousCurrentTrapInfo = PreviousTrapInfo(trap);
             end
             
-            if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && ~isinf(CrossCorrelationValueThreshold) && ~isempty(PreviousCurrentTrapInfo.cell(1).cellCenter)
+            if TP>FirstTimepoint && (PreviousCurrentTrapInfo.cellsPresent) && CrossCorrelationValueThreshold~=Inf && ~isempty(PreviousCurrentTrapInfo.cell(1).cellCenter)
                 
                 %register images and use to inform expeted position
                 if PerformRegistration
@@ -444,7 +444,7 @@ for TP = Timepoints
                         end
                     end
                     end
-                    PredictedCellLocation = CrossCorrelationPrior.*PredictedCellLocation;
+                    PredictedCellLocation = PredictedCellLocation+log(CrossCorrelationPrior);
                     
                     %this for loop might seem somewhat strange and
                     %unecessary, but it is to deal with the 'TrapImage'
@@ -835,13 +835,15 @@ for TP = Timepoints
                     ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).ExpectedCentre(2) = 1;
                 end
                 
-                ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfo.cell(OldCells(CI)).TPpresent+1;
+                % commented by Elco. Not actually used and throwing errors.
+                % same for below.
+                %ParCurrentTrapInfo.cell(NewCrossCorrelatedCells(CI)).TPpresent = PreviousCurrentTrapInfo.cell(OldCells(CI)).TPpresent+1;
                 
             end
             
             for CI = 1:length(NewCells);
                 ParCurrentTrapInfo.cell(NewCells(CI)).ExpectedCentre = ParCurrentTrapInfo.cell(NewCells(CI)).cellCenter;
-                ParCurrentTrapInfo.cell(NewCells(CI)).TPpresent = 1;
+                %ParCurrentTrapInfo.cell(NewCells(CI)).TPpresent = 1;
             end
             
 

@@ -640,10 +640,11 @@ for TP = Timepoints
         else
             ACTrapImageStack = ACImage;
         end
+
         cells_discarded = 0;
         cells_found = 0;
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN %s\n',mfilename)
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
         parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
