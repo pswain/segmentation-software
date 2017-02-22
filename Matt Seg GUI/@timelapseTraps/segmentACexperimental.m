@@ -4,8 +4,6 @@ function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoi
 %Complete segmentation function that uses the cCellVision and cross correlation to find images of
 %cells and performs the active contour to get the edges.
 %
-%not yet parallelised
-%
 %   INPUTS
 % FirstTimepoint    - time point at which to start
 % LastTimepoint     - and to end
@@ -285,7 +283,10 @@ CrossCorrelationMethod = 'just_DIM';
 %% loop through timepoints
 for TP = Timepoints
     tic;
-    fprintf('timepoint %d \n',TP)
+    
+    % fprintf('timepoint %d \n',TP)
+    % Trigger the TimepointChanged event for experimentLogging
+    experimentLogging.changeTimepoint(cTimelapse,TP);
     
     AllChannelsToLoad = unique(abs([CrossCorrelationChannel ACImageChannel TrapRefineChannel DecisionImageChannel]));
     
@@ -639,11 +640,11 @@ for TP = Timepoints
         else
             ACTrapImageStack = ACImage;
         end
-        %parfor actually looking for cells
-        fprintf('CHANGE BACK TO PARFOR IN SegmentConsecutiveTimepointsCrossCorrelationParallel\n')
         cells_discarded = 0;
         cells_found = 0;
-        for TI = 1:length(TrapsToCheck)
+        %parfor actually looking for cells
+        %fprintf('CHANGE BACK TO PARFOR IN %s\n',mfilename)
+        parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
