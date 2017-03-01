@@ -76,7 +76,7 @@ classdef cTrapDisplay<handle
             end
             
             if isempty(cTimelapse.timepointsProcessed)
-                cTimelapse.timepointsProcessed = false(1:max(cTimelapse.timepointsToProcess));
+                cTimelapse.timepointsProcessed = false(1,max(cTimelapse.timepointsToProcess));
             end
             
             
