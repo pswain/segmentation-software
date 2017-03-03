@@ -55,7 +55,7 @@ cExperiment = cExpGUI.cExperiment;
 %This step is not necessary for cExperiments created from the Omero
 %database as they should have all channels added automatically
 
-channels = {'Brightfield_001','Brightfield_002','Brightfield_004','Brightfield_005','GFP','pHluorin405'};
+channels = {'Brightfield_001','Brightfield_002','Brightfield_003','Brightfield_004','Brightfield_005','DIC','GFP','pHluorin405'};
 
 for chi=1:length(channels)
     cExperiment.addSecondaryChannel(channels{chi});
@@ -89,7 +89,7 @@ cExpGUI.loadCellVision
 %% load standard brightfield classifier
 l1 = load('c:\Users\Public\Segmentation code\Matt Seg GUI\cCellvisionFiles\cCellVision_Brightfield_2_slices_default.mat');
 cExperiment.cCellVision = l1.cCellVision;
-cExpGUI.cCellVision = l1.cCellVision;
+cExpGUI.cExperiment.cCellVision = l1.cCellVision;
 cExpGUI.cExperiment.setSegmentationChannels;
 
 %% set segmentation channels
