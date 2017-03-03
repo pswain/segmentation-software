@@ -4,10 +4,8 @@ classdef experimentLogging<handle
     %   iterating through time-consuming procedures
     
     properties
-        progress_bar
         cExperiment
         
-        file_handle = []
         file_name
         file_dir
         
@@ -21,7 +19,21 @@ classdef experimentLogging<handle
         
         window_closed = false
         cancel = false
+    end
+    
+    properties (Dependent)
+        progress_bar
         shouldLog
+        use_gui
+        stop_on_error
+    end
+    
+    properties (Transient,Access=private)
+        progress_bar_obj = [];
+        shouldLog_val
+        use_gui_val = true;
+        stop_on_error_val = true;
+        file_handle = []
     end
     
     properties (Transient)
@@ -36,9 +48,10 @@ classdef experimentLogging<handle
         function this = experimentLogging(cExperiment,shouldLog)
             %Constructor Construct an experimentLogging object
             %   Pass in an experimentTracking object to intialise
-            if nargin<2
-                shouldLog=true;
+            if nargin<2 || isempty(shouldLog)
+                shouldLog = true;
             end
+            
             if isempty(cExperiment.OmeroDatabase);
                 this.file_name = 'cExperiment_log_.txt';
             else
@@ -55,18 +68,57 @@ classdef experimentLogging<handle
             this.listenExptLogMsg = ...
                 addlistener(cExperiment,'LogMsg',@this.log_message);
             
-            % Initialise the progress bar class
-            this.progress_bar = Progress('0;'); % Dummy callback to create 'finalise' button
-            this.progress_bar.finalise_button.setLabel('Cancel...');
-            button_handle = handle(this.progress_bar.finalise_button,'callbackproperties');
-            set(button_handle, 'MouseClickedCallback', {@this.cancel_protocol});
-            
-            % Centre the dialog box
-            this.progress_bar.frame.setLocationRelativeTo([]);
-            
             % Initialise the log file properties
             this.file_dir = cExperiment.saveFolder;
-            this.shouldLog=shouldLog;
+            this.shouldLog = shouldLog;
+        end
+        
+        function val = get.progress_bar(this)
+            % Only initialise the progress bar if it hasn't already been
+            % initialised:
+            if isempty(this.progress_bar_obj)
+                % Initialise the progress bar class
+                this.progress_bar_obj = Progress('0;'); % Dummy callback to create 'finalise' button
+                this.progress_bar_obj.finalise_button.setLabel('Cancel...');
+                button_handle = handle(this.progress_bar_obj.finalise_button,'callbackproperties');
+                set(button_handle, 'MouseClickedCallback', {@this.cancel_protocol});
+                % Centre the dialog box
+                this.progress_bar_obj.frame.setLocationRelativeTo([]);
+            end
+            val = this.progress_bar_obj;
+        end
+        
+        function val = get.shouldLog(this)
+            val = this.shouldLog_val;
+        end
+        function set.shouldLog(this,val)
+            this.shouldLog_val = val;
+            if ~val
+                % Logging has been turned off so safely delete the GUI 
+                % components if they have been initialised and close the
+                % file handle if it is still open:
+                this.close_gui;
+                this.close_logfile;
+            end
+        end
+        
+        function val = get.use_gui(this)
+            val = this.use_gui_val;
+        end
+        function set.use_gui(this,val)
+            this.use_gui_val = val;
+            if ~val
+                % GUI has been turned off so safely delete the GUI 
+                % components if they have been initialised:
+                this.close_gui;
+            end
+        end
+        
+        function val = get.stop_on_error(this)
+            val = this.stop_on_error_val;
+        end
+        function set.stop_on_error(this,val)
+            this.stop_on_error = val;
         end
         
         function add_arg(this,name,value)
@@ -93,7 +145,9 @@ classdef experimentLogging<handle
                 end
                 this.start_time = datetime('now');
                 this.protocol_name = name;
-                this.progress_bar.frame.setTitle(name);
+                if this.use_gui
+                    this.progress_bar.frame.setTitle(name);
+                end
                 % The following should automatically open the log file if it
                 % isn't already open:
                 if isempty(this.protocol_args)
@@ -158,8 +212,13 @@ classdef experimentLogging<handle
                             this.time_taken,'.\n---------------------\n']);
                     end
                     
-                    e = errordlg(['Oh no! There was an error when ',this.protocol_name,'.']);
-                    uiwait(e);
+                    if this.use_gui
+                        e = errordlg(sprintf('Oh no! There was an error when %s.',...
+                            this.protocol_name));
+                        if this.stop_on_error
+                            uiwait(e);
+                        end
+                    end
                 end
                 
                 this.reset;
@@ -170,17 +229,19 @@ classdef experimentLogging<handle
             % Reset the state of the logger
             if this.shouldLog
                 % Pop bars off the progress bar until it is closed
-                while this.progress_bar.bar_count > 0
-                    this.progress_bar.pop_bar;
-                end
-                % Note that the above automatically removes the ticker when the
-                % bar count reaches 0.
+                if this.use_gui
+                    while this.progress_bar.bar_count > 0
+                        this.progress_bar.pop_bar;
+                    end
+                    % Note that the above automatically removes the ticker 
+                    % when the bar count reaches 0.
                 
-                % Just in case the user closed the window manually in
-                % the previous run:
-                assignin('base', ['prog_terminate',...
-                    num2str(this.progress_bar.window_number)], false);
-                this.window_closed = false;
+                    % Just in case the user closed the window manually in
+                    % the previous run:
+                    assignin('base', ['prog_terminate',...
+                        num2str(this.progress_bar.window_number)], false);
+                    this.window_closed = false;
+                end
                 
                 % Reset the cancel flag in case it got set
                 this.cancel = false;
@@ -211,7 +272,7 @@ classdef experimentLogging<handle
             % Unlike the default behaviour of the Progress class, here we
             % just want window closure to be silent.
             
-            if this.shouldLog
+            if this.shouldLog && this.use_gui
                 % Only call the following if the window has not been closed
                 % already:
                 if ~this.window_closed
@@ -252,14 +313,18 @@ classdef experimentLogging<handle
                     % Update progress bar:
                     if isempty(this.position)
                         this.position = 1;
-                        this.progress_bar.push_bar('Position',1,this.npos);
+                        if this.use_gui
+                            this.progress_bar.push_bar('Position',1,this.npos);
+                        end
                     else
                         if this.position > 0 && this.position < this.npos
-                            % If a timepoint was set, then we should now pop
-                            % that bar off the stack:
-                            if ~isempty(this.timepoint) && ...
-                                    this.progress_bar.bar_count > 1
-                                this.progress_bar.pop_bar;
+                            % If a timepoint was set, then we should start 
+                            % a new line in the command window and pop
+                            % a bar off the stack:
+                            if ~isempty(this.timepoint)
+                                if this.use_gui && this.progress_bar.bar_count > 1
+                                    this.progress_bar.pop_bar;
+                                end
                                 fprintf('\n'); % New line for command window dot tracking
                                 this.timepoint = []; % Reset the timepoint tracker
                             end
@@ -270,18 +335,21 @@ classdef experimentLogging<handle
                         else
                             % If the number of positions supplied to
                             % start_protocol was correct, then this should
-                            % never be called, but to future proof:
+                            % never be called, but to bullet proof:
                             
                             % Looping of the positions should have finished, so
                             % pop the necessary progress bars:
-                            if ~isempty(this.timepoint) && ...
-                                    this.progress_bar.bar_count > 1
-                                this.progress_bar.pop_bar;
+                            if ~isempty(this.timepoint)
+                                if this.use_gui && this.progress_bar.bar_count > 1
+                                    this.progress_bar.pop_bar;
+                                end
                                 fprintf('\n'); % New line for command window dot tracking
                                 this.timepoint = []; % Reset the timepoint tracker
                             end
                             
-                            this.progress_bar.pop_bar;
+                            if this.use_gui
+                                this.progress_bar.pop_bar;
+                            end
                         end
                     end
                     
@@ -302,7 +370,9 @@ classdef experimentLogging<handle
                     % Update progress bar:
                     if isempty(this.timepoint)
                         this.timepoint = 1;
-                        this.progress_bar.push_bar('Time point',1,this.ntimes);
+                        if this.use_gui
+                            this.progress_bar.push_bar('Time point',1,this.ntimes);
+                        end
                         fprintf('.');
                     else
                         if this.timepoint > 0 && this.timepoint < this.ntimes
@@ -316,7 +386,9 @@ classdef experimentLogging<handle
                         else
                             % If this.ntimes was correct, then this should never
                             % be called, but just in case...
-                            this.progress_bar.pop_bar;
+                            if this.use_gui
+                                this.progress_bar.pop_bar;
+                            end
                             this.timepoint = [];
                         end
                     end
@@ -350,7 +422,7 @@ classdef experimentLogging<handle
                     this.file_dir = this.cExperiment.saveFolder;
                     % Open the file
                     this.file_handle = ...
-                        fopen([this.file_dir,filesep,this.file_name],'at');
+                        fopen(fullfile(this.file_dir,this.file_name),'at');
                 elseif ~strcmp(this.file_dir,this.cExperiment.saveFolder)
                     % Close the old file handle
                     this.close_logfile;
@@ -367,22 +439,43 @@ classdef experimentLogging<handle
         end
         
         function close_logfile(this)
-            if this.shouldLog
-                if ~isempty(this.file_handle)
+            % Close the log file handle only if it is not already closed:
+            if ~isempty(this.file_handle)
+                try
                     fclose(this.file_handle);
+                catch
+                    warning('Could not close log file in experimentLogging class.');
                 end
-                this.file_handle = [];
             end
+            this.file_handle = [];
+        end
+        
+        function close_gui(this)
+            % Close the GUI only if it is not already closed:
+            if ~isempty(this.progress_bar_obj)
+                try
+                    assignin('base', ['prog_terminate',...
+                        num2str(this.progress_bar_obj.window_number)], false);
+                    while this.progress_bar_obj.bar_count > 0
+                        this.progress_bar_obj.pop_bar;
+                    end
+                    this.progress_bar_obj.frame.dispose;
+                    this.window_closed = true;
+                catch
+                    warning('The experimentLogging progress_bar could not be closed properly.');
+                end
+            end
+            this.progress_bar_obj = [];
         end
         
         function delete(this)
-            if this.shouldLog
-                if ~isempty(this.progress_bar)
-                    this.progress_bar.frame.dispose;
-                end
-                if ~isempty(this.file_handle)
-                    fclose(this.file_handle);
-                end
+            % Close the GUI and file handle.
+            % Note that any errors are suppressed in delete functions.
+            if ~isempty(this.progress_bar_obj)
+                this.progress_bar_obj.frame.dispose;
+            end
+            if ~isempty(this.file_handle)
+                fclose(this.file_handle);
             end
         end
         

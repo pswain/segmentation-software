@@ -37,7 +37,8 @@ set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value
 cExpGUI.channel = 1;
 
 % select traps not necessary for non-trap timelapses
-if ~cExpGUI.cExperiment.trapsPresent && all(cExpGUI.cExperiment.posTracked ~=0)
+if (isempty(cExpGUI.cExperiment.trapsPresent) || ~cExpGUI.cExperiment.trapsPresent) ...
+        && all(cExpGUI.cExperiment.posTracked ~=0)
     set(cExpGUI.selectTrapsToProcessButton,'Enable','off');
 else
     set(cExpGUI.selectTrapsToProcessButton,'Enable','on');

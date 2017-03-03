@@ -134,67 +134,82 @@ if nargin<10 || isempty(CellsToUse)
     [CellsToUse{:}] = deal([]);
     
 end
-    
-%% Load timelapses
-for i=1:length(positionsToIdentify)
-    currentPos=positionsToIdentify(i);
-    
-    cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
 
-    if i==1
+% Load the first cTimelapse:
+cTimelapse = cExperiment.loadCurrentTimelapse(positionsToIdentify(1));
+
+% If channel field is empty, get user to select a channel
+% bit laborious but resilient to people putting the wrong numbers
+% in the boxes (i.e. only cares about sign).
+while isempty(cExperiment.ActiveContourParameters.ImageTransformation.channel)
+    prompts = cTimelapse.channelNames;
+    prompts{1} = sprintf(['The image used for the active contour method is constructed by'...
+        ' the addition and subtraction of channels, and should be constructed such that '...
+        'cell edges are regions that go from bright to dark moving out from the cell.\n'...
+        'Please select channels such that this is so but putting a 1 in channels that '...
+        'should be contributed positively and -1 for thos that should contribute negatively. leave all others blank.\n'...
+        'If you are unsure, but a 1 in DIC/Brightfield_001 and a -1 in DIC/Brightfield_003 \n \n %s'...
+        ],prompts{1});
+    answer = inputdlg(prompts,'select active contour channels',1);
+    if isempty(answer)
+        fprintf('\n\n   Active contour method cancelled\n\n')
+        return
+    else
+        answer = answer';
+        answer_array = sign(cellfun(@(x) str2double(x),answer,'UniformOutput',true));
+        channels_to_use = find(~isnan(answer_array));
+        cExperiment.ActiveContourParameters.ImageTransformation.channel = channels_to_use.*answer_array(channels_to_use);
+        cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = 1;
+    end
+end
+            
+% Start logging protocol
+cExperiment.logger.add_arg('TrackTrapsInTime',TrackTrapsInTime);
+cExperiment.logger.add_arg('ActiveContourParameters',cExperiment.ActiveContourParameters);
+cExperiment.logger.start_protocol('active contour segmentation',length(positionsToIdentify));
+% The first timelapse is pre-loaded, so trigger a PositionChanged event to 
+% notify experimentLogging:
+experimentLogging.changePos(cExperiment,positionsToIdentify(1),cTimelapse);
+
+try
+    %% Load timelapses
+    for i=1:length(positionsToIdentify)
+        currentPos=positionsToIdentify(i);
         
-       
-        
-        % if channel field is empty, get user to select a channel
-        % bit laborious but resilient to people putting the wrong numbers
-        % in the boxes (i.e. only cares about sign).
-        while isempty(cExperiment.ActiveContourParameters.ImageTransformation.channel)
-            prompts = cTimelapse.channelNames;
-            prompts{1} = sprintf(['The image used for the active contour method is constructed by'...
-                ' the addition and subtraction of channels, and should be constructed such that '...
-                'cell edges are regions that go from bright to dark moving out from the cell.\n'...
-                'Please select channels such that this is so but putting a 1 in channels that '...
-                'should be contributed positively and -1 for thos that should contribute negatively. leave all others blank.\n'...
-                'If you are unsure, but a 1 in DIC/birghtfield_001 and a -1 in DIC/Brightfield_003 \n \n %s'...
-                ],prompts{1});
-            answer = inputdlg(prompts,'select active contour channels',1);
-            if isempty(answer)
-                fprintf('\n\n   Active contour method cancelled\n\n')
-                return
-            else
-            answer = answer';
-            answer_array = sign(cellfun(@(x) str2double(x),answer,'UniformOutput',true));
-            channels_to_use = find(~isnan(answer_array));
-            cExperiment.ActiveContourParameters.ImageTransformation.channel = channels_to_use.*answer_array(channels_to_use);
-            cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = 1;
-            end
+        if i~=1
+            cTimelapse = cExperiment.loadCurrentTimelapse(currentPos);
         end
         
-    end
-    
-    if TrackTrapsInTime
-        cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.timepointsToProcess);
-        cExperiment.saveTimelapseExperiment(currentPos);
-        cExperiment.cTimelapse = cTimelapse;
+        if TrackTrapsInTime
+            cExperiment.cTimelapse.trackTrapsThroughTime(cExperiment.timepointsToProcess);
+            cExperiment.saveTimelapseExperiment(currentPos);
+            cExperiment.cTimelapse = cTimelapse;
+            
+        end
         
+        if OverwriteTimelapseParameters
+            cTimelapse.ACParams = cExperiment.ActiveContourParameters;
+        end
+        
+        
+        try
+            cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+        catch err
+            rethrow(err)
+        end
+        cExperiment.saveTimelapseExperiment(currentPos);
+        
+        % fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))
+        
+        disp.cExperiment.posSegmented(currentPos) = true;
+        disp.cExperiment.posTracked(currentPos) = true;
     end
     
-    if OverwriteTimelapseParameters
-        cTimelapse.ACParams = cExperiment.ActiveContourParameters;
-    end
-    
-    
-    try
-    cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
-    catch err
-    rethrow(err)
-    end
-    cExperiment.saveTimelapseExperiment(currentPos);
-    
-    fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))
-    
-    disp.cExperiment.posSegmented(currentPos) = true;
-    disp.cExperiment.posTracked(currentPos) = true;
+    % Finish logging protocol
+    cExperiment.logger.complete_protocol;
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
 end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
