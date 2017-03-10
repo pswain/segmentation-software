@@ -52,9 +52,21 @@ classdef experimentTracking<handle
     
     properties (Transient)
         % Transient properties won't be saved
-        logger; % handle to an experimentLogging object to keep a log
         cTimelapse; % populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
         currentPos; % populated when loadCurrentTimelapse is called. Defaultfor where to then save the timelapse.
+    end
+    
+    properties (Dependent)
+        id % A unique ID that links this experiment to Omero (filled by experimentTracking.parseLogFile); cannot be set
+        logger; % handle to an experimentLogging object to keep a log
+    end
+    
+    properties (Access=private)
+        id_val = '' % This should never be updated if non-empty
+    end
+    
+    properties (Transient,Access=private)
+        logger_val = []
     end
     
     properties (SetObservable, AbortSet)
@@ -114,10 +126,8 @@ classdef experimentTracking<handle
                 return
             end
             
-            % Create a new logger to log changes for this cExperiment:
-            %disp('Not generating log files now - to change open experimentTracking.m')
+            % Default to enabling logging:
             cExperiment.shouldLog=true;
-            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');
@@ -161,10 +171,13 @@ classdef experimentTracking<handle
             %TODO - update this to remove timelapseTrapsActiveContour
             cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
             
-            %Parse the microscope acquisition metadata and attach the structure to the
-            %cExperiment object - this populates the metadata field of
-            %cExperiment
-            cExperiment.parseLogFile;
+            %Parse the microscope acquisition metadata and attach the 
+            %structure to the cExperiment object - this populates the 
+            %metadata field of cExperiment. Only the meta data is collected
+            %at this stage; the full log file can be parsed at extraction
+            %since this can take an annoyingly long time with lots of
+            %positions/timepoints...
+            cExperiment.parseLogFile([],'meta_only');
             
             % this will check the scaling of the new cCellVision is
             % different from that of the old cCellVision.
@@ -232,6 +245,50 @@ classdef experimentTracking<handle
             cExperiment.cTimelapse = cTimelapse;
         end
         
+        function val = get.id(cExperiment)
+            if isempty(cExperiment.id_val)
+                % The ID will only be missing if the latest parseLogFile 
+                % function has not yet been run on the experiment
+                if isempty(cExperiment.metadata) || ~isfield(cExperiment.metadata,'acqFile')
+                    fail_flag = cExperiment.parseLogFile([],'meta_only');
+                    if fail_flag
+                        val = '';
+                    else
+                        cExperiment.saveExperiment; % Save changes made by parseLogFile
+                        val = cExperiment.id_val; % Updated by parseLogFile script
+                    end
+                else
+                    val = cExperiment.parseAcqFileIntoID(cExperiment.metadata.acqFile);
+                    cExperiment.id_val = val;
+                    cExperiment.saveExperiment; % Save the new id into the cExperiment
+                end
+            else
+                val = cExperiment.id_val;
+            end
+        end
+        
+        function val = get.logger(cExperiment)
+            if isempty(cExperiment.logger_val)
+                % Create a new logger to log changes for this cExperiment:
+                cExperiment.logger_val = experimentLogging(cExperiment);
+            end
+            % Always ensure that the 'shouldLog' state of the logger 
+            % matches that of the cExperiment:
+            cExperiment.logger_val.shouldLog = cExperiment.shouldLog;
+            val = cExperiment.logger_val;
+        end
+    end
+    
+    methods (Static,Access=private)
+        function val = parseAcqFileIntoID(acqfile)
+            [acqdir,~,~] = fileparts(acqfile);
+            val = regexprep(acqdir,...
+                ['^.*AcquisitionData(?<mic>[^/\\]+)[/\\]',... % Microscope ID
+                'Swain Lab[/\\](?<user>[^/\\]+)[/\\]RAW DATA[/\\]',... % User ID
+                '(?<year>\d+)[/\\](?<month>\w+)[/\\](?<day>\d+)',... % Date
+                '[^/\\]*[/\\](?<name>.*)$'],... % Experiment name
+                '$<user>_$<mic>_$<year>_$<month>_$<day>_$<name>'); % Replacement string
+        end
     end
     
     methods(Static)
@@ -239,7 +296,7 @@ classdef experimentTracking<handle
         function cExperiment = loadobj(LoadStructure)
             % cExperiment = loadobj(LoadStructure)
             % load function to help maintain back compatability and take
-            % care of fiddly loading behaviour (such as logger)
+            % care of fiddly loading behaviour
             
             
             %% default loading method: DO NOT CHANGE
@@ -276,11 +333,10 @@ classdef experimentTracking<handle
             
             %% addtional stuff for back compatability etc.
             
-            % Create a new experimentLogging object when loading:
+            % Warn the user when loading if shouldLog is false
             if ~cExperiment.shouldLog
-                disp('Not generating log files now - to change open shouldLog property')
+                warning('Logging is not active. To change, set "cExperiment.shouldLog = true"');
             end
-            cExperiment.logger = experimentLogging(cExperiment,cExperiment.shouldLog);
             
             % back compatibility to put channel names into cExperiment
             % channelNames
