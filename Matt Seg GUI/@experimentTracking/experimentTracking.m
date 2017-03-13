@@ -54,10 +54,13 @@ classdef experimentTracking<handle
         % Transient properties won't be saved
         cTimelapse; % populated when loadCurrentTimelapse is used, and the cTimelapse saved when saveCurrentTimelapse is called.
         currentPos; % populated when loadCurrentTimelapse is called. Defaultfor where to then save the timelapse.
+        kill_logger = false; % convenience property for test functions. Allows me to make the logger return nothing so that I can test differences (Elco).
+                             % transient because most code now breaks of you
+                             % don't have the logger operational.
     end
     
     properties (Dependent)
-        id % A unique ID that links this experiment to Omero (filled by experimentTracking.parseLogFile); cannot be set
+        id; % A unique ID that links this experiment to Omero (filled by experimentTracking.parseLogFile); cannot be set
         logger; % handle to an experimentLogging object to keep a log
     end
     
@@ -266,8 +269,20 @@ classdef experimentTracking<handle
                 val = cExperiment.id_val;
             end
         end
+        function set.id(cExperiment,val)
+            % currently does nothing, just stops warnings.
+            fprintf('setting id has no effect. It is a dependent property.')
+        end
         
         function val = get.logger(cExperiment)
+            
+            % put in temporarily by Elco. Logger is breaking my test
+            % scripts.
+            if cExperiment.kill_logger
+                val = [];
+                return
+            end
+            
             if isempty(cExperiment.logger_val)
                 % Create a new logger to log changes for this cExperiment:
                 cExperiment.logger_val = experimentLogging(cExperiment);
@@ -276,6 +291,9 @@ classdef experimentTracking<handle
             % matches that of the cExperiment:
             cExperiment.logger_val.shouldLog = cExperiment.shouldLog;
             val = cExperiment.logger_val;
+        end
+        function set.logger(cExperiment,val)
+            fprintf('setting logger has no effect. It is a dependent property.')
         end
     end
     

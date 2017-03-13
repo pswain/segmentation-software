@@ -113,7 +113,9 @@ classdef timelapseTraps<handle
         %returnTimepoint file to check to see if something is loaded.
         % - channel
         % - images
-        
+        kill_logger = false; % convenience property for test functions. Allows me to make the logger return nothing so that I can test differences (Elco).
+                             % transient because most code now breaks of you
+                             % don't have the logger operational.
     end
     
    
@@ -310,6 +312,13 @@ classdef timelapseTraps<handle
             cTimepointTemplate = struct('filename',[],'trapLocations',[],...
                             'trapInfo',cTimelapse.trapInfoTemplate,'trapMaxCell',[]); %template for the cTimepoint structure
 
+        end
+        function val = get.logger(cTimelapse)
+            if cTimelapse.kill_logger
+                val = [];
+                return
+            end
+            val = cTimelapse.logger;
         end
 
     end
