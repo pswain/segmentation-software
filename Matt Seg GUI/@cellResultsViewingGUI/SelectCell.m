@@ -8,11 +8,11 @@ cell_to_be_selected = get(CellResGUI.CellSelectListInterface,'Value');
 %check if position has changed and update if necessary
 % if zero is just for first selection - crude I know
 if CellResGUI.CellSelected == 0 || CellResGUI.CellsForSelection(cell_to_be_selected,1) ~= CellResGUI.CellsForSelection(CellResGUI.CellSelected,1)
-    if CellResGUI.needToSave
+    if CellResGUI.needToSave && CellResGUI.CellSelected ~= 0 
         h = warndlg('Going to save data ... may take a minute');  
         CellResGUI.cExperiment.saveTimelapseExperiment;
+        CellResGUI.needToSave=false;
     end
-    CellResGUI.needToSave=false;
     CellResGUI.cExperiment.loadCurrentTimelapse(CellResGUI.CellsForSelection(cell_to_be_selected,1));
 end
 CellResGUI.CellSelected = cell_to_be_selected;

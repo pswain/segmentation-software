@@ -55,59 +55,23 @@ switch event.Key
     case 'b'
         currTP =  get(CellResGUI.slider,'Value');
         fprintf(['\nAdded a new birth at ' num2str(currTP)]);
-        if ~isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'birthTimeManual') ...
-                | isempty(CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual)
-            CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual= ...
-                CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM;
-            %in case the cell numbers are editted in the future, want to
-            %record the current list of mother trap/pos numbers
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.trapNum=CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap;
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.posNum=CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum;
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.motherLabel=CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel;
-        end
-        birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index,:);
-        birth_times=birth_times(birth_times>0);
-        birth_times(end+1)=currTP;birth_times=sort(birth_times,'ascend');
-        CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index,1:length(birth_times))= ...
-            birth_times;
-        CellResGUI.birthTypeUse='Manual';CellResGUI.CellRes_plot;
-        CellResGUI.needToSave=true;
+        
+        CellResGUI.needToSave = ...
+            editBirthManual( CellResGUI.cExperiment,'+', currTP,cell_position,trap_number,cell_tracking_number,NaN ) || ...
+            CellResGUI.needToSave;
+        CellResGUI.CellRes_plot;
+        
     case 'x'
         currTP =  get(CellResGUI.slider,'Value');
         fprintf(['\nRemove birth closest to TP ' num2str(currTP)]);
-        if ~isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'birthTimeManual') ...
-                | isempty(CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual)
-            CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual= ...
-                CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeHMM;
-                 %in case the cell numbers are editted in the future, want to
-            %record the current list of mother trap/pos numbers
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.trapNum=CellResGUI.cExperiment.lineageInfo.motherInfo.motherTrap;
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.posNum=CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum;
-            CellResGUI.cExperiment.lineageInfo.motherInfo.manualInfo.motherLabel=CellResGUI.cExperiment.lineageInfo.motherInfo.motherLabel;
-        end
-        birth_times = CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index,:);
-        birth_times=birth_times(birth_times>0);
-        dist_births=pdist2(birth_times',currTP);
-        [v ind]=min(dist_births);
-        isdeath=false;
-        if isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'deathTimeManual')
-            deathTime=CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual(cell_mother_index);
-            dist_death=pdist2(deathTime,currTP);
-            if dist_death<v
-                isdeath=true;
-                CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index)=0;
-            end
-        end
-        if ~isdeath
-            birth_times(ind)=[];birth_times=sort(birth_times,'ascend');
-            birth_times(end+1)=0;
-            CellResGUI.cExperiment.lineageInfo.motherInfo.birthTimeManual(cell_mother_index,1:length(birth_times))= ...
-                birth_times;
-        end
-        CellResGUI.birthTypeUse='Manual';CellResGUI.CellRes_plot;
-        CellResGUI.needToSave=true;
+        % didn't understand all that stuff to do with death. seemed janky,
+        % so I deleted it.
+        CellResGUI.needToSave = ...
+            editBirthManual( CellResGUI.cExperiment,'-', currTP,cell_position,trap_number,cell_tracking_number,NaN ) || ...
+            CellResGUI.needToSave ;
+        CellResGUI.CellRes_plot;
+        
     case 't'
-        %         CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
         trap=trap_number;
         CellNumNearestCell=cell_tracking_number;
         currTP =  floor(get(CellResGUI.slider,'Value'));
@@ -115,21 +79,15 @@ switch event.Key
         TrackingCurator.CellLabel = CellNumNearestCell;
         TrackingCurator.UpdateImages;
         CellResGUI.needToSave=true;
-    case 'd'
+    case 'd' %death
         currTP =  get(CellResGUI.slider,'Value');
         fprintf(['\nAdded death at ' num2str(currTP)]);
-        if ~isfield(CellResGUI.cExperiment.lineageInfo.motherInfo,'deathTimeManual') ...
-                || isempty(CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual)
-            CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual=...
-                zeros([length(CellResGUI.cExperiment.lineageInfo.motherInfo.motherPosNum) 1]);
-        end
         CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual(cell_mother_index)=currTP;
         CellResGUI.birthTypeUse='Manual';CellResGUI.CellRes_plot;
         CellResGUI.needToSave=true;
 
 
 end
-% CellResGUI.slider.Enable='on';
 
 
 end

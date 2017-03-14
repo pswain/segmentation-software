@@ -271,7 +271,7 @@ classdef experimentTracking<handle
         end
         function set.id(cExperiment,val)
             % currently does nothing, just stops warnings.
-            fprintf('setting id has no effect. It is a dependent property.')
+            % fprintf('setting id has no effect. It is a dependent property.')
         end
         
         function val = get.logger(cExperiment)
@@ -293,7 +293,8 @@ classdef experimentTracking<handle
             val = cExperiment.logger_val;
         end
         function set.logger(cExperiment,val)
-            fprintf('setting logger has no effect. It is a dependent property.')
+            % just to stop bugs and warnings on load.
+            % fprintf('setting logger has no effect. It is a dependent property.')
         end
     end
     

@@ -182,6 +182,11 @@ classdef cellResultsViewingGUI<handle
             
             CellResGUI.CellSelected = 0;
             set(CellResGUI.CellSelectListInterface,'Value',1);
+            
+            % make manual info
+            CellResGUI.needToSave = CellResGUI.cExperiment.populateManualLineageInfo;
+            CellResGUI.birthTypeUse = 'Manual';
+            
             CellResGUI.SelectCell();
             
         end
@@ -287,6 +292,7 @@ classdef cellResultsViewingGUI<handle
         setCellsWithLogical(CellResGUI,true(size(CellResGUI.cExperiment.cellInf(1).posNum)));
         
         end
+
         
     end
 end
