@@ -7,8 +7,6 @@ cell_tracking_number = CellResGUI.CellsForSelection(CellResGUI.CellSelected,3);
 
 timepoint = CellResGUI.TimepointSelected;
 
-cell_number = find(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel == cell_tracking_number);
-
 image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
 % inserted by Matt for smooth image scrolling. Consider altering or leaving
@@ -18,42 +16,81 @@ image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
 cell_image = CellResGUI.cExperiment.cTimelapse.returnSingleTrapTimepoint(trap_number,timepoint,image_channel_number);
 
-if ~isempty(cell_number) && CellResGUI.ShowcellOutline
-    cell_outline = CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cell(cell_number).segmented;
-else
-    cell_outline = false([CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_width CellResGUI.cExperiment.cTimelapse.cTrapSize.bb_height]*2 + 1);
-end
+empty_outline = false(size(cell_image));
+cell_outline = empty_outline;
+curr_daughter_outline = empty_outline;
+other_daughter_outlines = empty_outline;
+other_cell_outlines = empty_outline;
 
+trap_info = CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number);
+mother_label = [];
+curr_daughter = [];
+other_daughters = [];
 
 %mother stuff
 if ~isempty(CellResGUI.cExperiment.lineageInfo)
     mother_info = CellResGUI.cExperiment.lineageInfo.motherInfo;
-    %check if it is a mother cell
     if ~isempty(mother_info.motherPosNum)
+        %check if the selected cell is a mother cell
         mother_index = ismember([mother_info.motherPosNum' mother_info.motherTrap' mother_info.motherLabel'], ...
-            CellResGUI.CellsForSelection(CellResGUI.CellSelected,:), ...
-            'rows');
-    else
-        mother_index = [];
+            CellResGUI.CellsForSelection(CellResGUI.CellSelected,:), 'rows');
+        if any(mother_index)
+            %This is a mother, so set the mother label
+            mother_label = cell_tracking_number;
+            %Update labels for daughters
+            if isfield(mother_info,'daughterLabelManual') && ...
+                    ~isempty(mother_info.daughterLabelManual)
+                daughter_labels = mother_info.daughterLabelManual(mother_index,:);
+                birth_times = mother_info.birthTimeManual(mother_index,:);
+            else
+                daughter_labels = mother_info.daughterLabelHMM(mother_index,:);
+                birth_times = mother_info.birthTimeHMM(mother_index,:);
+            end
+            daughter_labels = daughter_labels(daughter_labels~=0);
+            birth_times = birth_times(birth_times~=0);
+            % Find the most recent birth time event
+            recentBirth = find((birth_times(end:-1:1)-timepoint-1)<0,1);
+            if isempty(recentBirth)
+                % There is no current daughter yet
+                other_daughters = daughter_labels;
+            else
+                curr_daughter_filter = (length(birth_times):-1:1)==recentBirth;
+                curr_daughter = daughter_labels(curr_daughter_filter);
+                other_daughters = daughter_labels(~curr_daughter_filter);
+            end
+        end
     end
-else
-    mother_index = [];
 end
 
-if any(mother_index)
-    daughter_cell_numbers = find(ismember(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel, ...
-        mother_info.daughterLabelHMM(mother_index,:)) & ~(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel==0));
-    daughter_outlines = false(size(cell_outline));
-    for di = daughter_cell_numbers
-        daughter_outlines = daughter_outlines | full(CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cell(di).segmented);
+for icell=1:length(trap_info.cellLabel)
+    ilabel = trap_info.cellLabel(icell);
+    if ~isequal(ilabel,0) && CellResGUI.ShowcellOutline
+        seg_outline = full(trap_info.cell(icell).segmented);
+        if ismember(ilabel,mother_label)
+            cell_outline = seg_outline;
+        elseif ismember(ilabel,curr_daughter)
+            curr_daughter_outline = seg_outline;
+        elseif ismember(ilabel,other_daughters)
+            other_daughter_outlines = other_daughter_outlines | seg_outline;
+        else
+            other_cell_outlines = other_cell_outlines | seg_outline;
+        end
     end
-    
-else
-    daughter_outlines = false(size(cell_outline));
-    
 end
 
-show_image = OverlapGreyRed(double(cell_image),cell_outline,[],daughter_outlines,true,true,CellResGUI.ImageRange);
+alpha_scaling = 0.8;
+dim_scaling = 0.6;
+im = alpha_scaling*(cell_image-CellResGUI.ImageRange(1))/diff(CellResGUI.ImageRange);
+red_highlight = im;
+red_highlight(cell_outline) = 1;
+red_highlight(other_daughter_outlines) = dim_scaling*red_highlight(other_daughter_outlines);
+green_highlight = im; 
+green_highlight(curr_daughter_outline) = 1;
+green_highlight(other_daughter_outlines) = dim_scaling;
+blue_highlight = im; 
+blue_highlight(other_cell_outlines) = 1;
+blue_highlight(other_daughter_outlines) = dim_scaling*blue_highlight(other_daughter_outlines);
+show_image = cat(3,red_highlight,green_highlight,blue_highlight);
 
 if ~isempty(CellResGUI.cellImageSize)
     
