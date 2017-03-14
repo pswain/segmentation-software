@@ -1,8 +1,9 @@
 function deleteAllData(cExperiment,positionsToDelete)
 % deleteAllData(cExperiment,positionsToDelete)
 %
-% Delete the data from cExperiment and each of the cTimelapse objects.
-% Usually done to make loading faster and save space when reprocessing.
+% Delete the extracted data (i.e. cellInf and extractedData) from
+% cExperiment and each of the cTimelapse objects. Usually done to make
+% loading faster and save space when reprocessing.
 
 
 if nargin<2
@@ -14,7 +15,7 @@ for i=1:length(positionsToDelete)
     cTimelapse=cExperiment.loadCurrentTimelapse(currentPos);
     cTimelapse.extractedData = [];
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(currentPos,false);   
+    cExperiment.saveTimelapseExperiment;   
     clear cTimelapse;
 end
 
