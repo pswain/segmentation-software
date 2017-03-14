@@ -9,7 +9,7 @@ cExperiment.cTimelapse=[];
 omeroDatabase=cExperiment.OmeroDatabase;
 cExperiment.OmeroDatabase=cExperiment.OmeroDatabase.Server;
 omeroDs=cExperiment.omeroDs;
-cExperiment.omeroDs=[];
+cExperiment.omeroDs=double(omeroDs.getId.getValue);
 fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
 if iscell(fileName)
     fileName=fileName{:};
