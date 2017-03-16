@@ -105,7 +105,11 @@ if ~isempty(CellResGUI.cellImageSize)
     end
 end
 
-imshow(show_image,'Parent',CellResGUI.CellImageHandle);
+fun = CellResGUI.CellImageHandle.ButtonDownFcn;
+I = imshow(show_image,'Parent',CellResGUI.CellImageHandle);
+set(CellResGUI.CellImageHandle,'ButtonDownFcn',fun);
+set(I,'ButtonDownFcn',fun);
+set(I,'HitTest','on'); 
 drawnow
 end
 

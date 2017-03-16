@@ -60,6 +60,7 @@ switch event.Key
             editBirthManual( CellResGUI.cExperiment,'+', currTP,cell_position,trap_number,cell_tracking_number,NaN ) || ...
             CellResGUI.needToSave;
         CellResGUI.CellRes_plot;
+        CellResGUI.CellRes_draw_cell;
         
     case 'x'
         currTP =  get(CellResGUI.slider,'Value');
@@ -70,6 +71,7 @@ switch event.Key
             editBirthManual( CellResGUI.cExperiment,'-', currTP,cell_position,trap_number,cell_tracking_number,NaN ) || ...
             CellResGUI.needToSave ;
         CellResGUI.CellRes_plot;
+        CellResGUI.CellRes_draw_cell;
         
     case 't'
         trap=trap_number;
@@ -85,7 +87,8 @@ switch event.Key
         CellResGUI.cExperiment.lineageInfo.motherInfo.deathTimeManual(cell_mother_index)=currTP;
         CellResGUI.birthTypeUse='Manual';CellResGUI.CellRes_plot;
         CellResGUI.needToSave=true;
-
+        CellResGUI.CellRes_plot;
+        CellResGUI.CellRes_draw_cell;
 
 end
 

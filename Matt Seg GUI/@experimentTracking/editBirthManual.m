@@ -18,7 +18,7 @@ function anything_changed = editBirthManual( cExperiment,add_or_remove, timepoin
 % anything_changed  -    flag. true of anything changed. false otherwise.
 %
 % See also, EXPERIMENTTRACKING.POPULATEMANUALLINEAGEINFO
-if nargin<6 || isempty(daughter_label)
+if nargin<7 || isempty(daughter_label)
     daughter_label = NaN;
 end
 
