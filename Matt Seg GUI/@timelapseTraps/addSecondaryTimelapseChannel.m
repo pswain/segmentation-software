@@ -70,12 +70,14 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
     % Determine files to add for each timepoint:
     for i=1:length(cTimelapse.cTimepoint)
         % Filter files to those at this timepoint:
+        
         match_timepoint_regexp = ['^[^.].*',fileNums{i}];
         timepoint_loc = ~cellfun(@isempty,...
             regexp(files(:),match_timepoint_regexp,'start','once'));
+        
+        %reg_occurrences = cellfun('length',regexp(files(:),fileNums{i},'start'));
+        %timepoint_loc = reg_occurrences == max(reg_occurrences(:));
         timepoint_files = files(timepoint_loc);
-        files_index = 1:length(files);
-        files_index = files_index(timepoint_loc);
         
         % Add each of the requested channels for this timepoint:
         for j=1:length(searchString)
@@ -92,13 +94,10 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
                 % horzcat used to preserve back compatibility
                 cTimelapse.cTimepoint(i).filename = ...
                     unique([cTimelapse.cTimepoint(i).filename(:)' timepoint_files(loc)]);
-%                 timepoint_files(loc) = [];
-%                 files(files_index(loc)) = [];
-%                 files_index = files_index(1:(end-sum(loc)));
             end
         end
-        % Ignore all files from this timepoint in future iterations
-        files(timepoint_loc) = [];
+        % Ignore all files added to this timepoint in future iterations
+        files(loc) = [];
     end
     fprintf('Matching channels: %.2f s',toc(code_timing));
 elseif strcmp(cTimelapse.fileSoure,'tyers')

@@ -1,0 +1,56 @@
+
+
+\documentclass[a4paper,10pt]{book}
+%\documentclass[a4paper,10pt]{scrartcl}
+
+\usepackage[utf8x]{inputenc}
+\usepackage{fullpage}
+\usepackage[final]{pdfpages}
+\usepackage{wrapfig}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsbsy}
+\usepackage{hyperref}
+\usepackage{cite}
+\graphicspath{{./documentation_images/}}
+\usepackage{subfigure}
+\usepackage{graphicx}
+\usepackage[rightcaption]{sidecap}
+%\usepackage{breqn}
+%\usepackage{dsfont}
+\usepackage{listings} %for writing code in the document
+\setlength{\parindent}{0cm}
+\usepackage{todonotes}
+\usepackage{color,soul}
+\usepackage{bm}
+
+%for blank pages
+\usepackage{afterpage}
+
+\newcommand\blankpage{%
+	\null
+	\thispagestyle{empty}%
+	\addtocounter{page}{-1}%
+	\newpage}
+
+
+
+
+\title{Documentation for DISCO: the swain lab segmentation software}
+\author{Elco Bakker}
+
+\begin{document}
+\maketitle
+
+\include{./documentation_sections/using_software_with_other_systems}
+
+
+
+ \bibliographystyle{apalike}
+ \bibliography{./library.bib}
+
+%
+\end{document}
+
+

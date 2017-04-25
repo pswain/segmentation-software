@@ -100,15 +100,15 @@ if isempty(cExperiment_orig)
     cExperiment_orig.cellInf = [];
 end
 
-if length(cExperiment_new.dirs)>num_timepoints
+if length(DirToAdd)>num_timepoints
     
-    DirToAdd = randperm(length(cExperiment_new.dirs));
+    DirToAdd = DirToAdd(randperm(length(DirToAdd)));
     DirToAdd = DirToAdd(1:num_timepoints);
     TPtoUse = ones(size(DirToAdd));
     
 end
 
-if length(cExperiment_new.dirs)<num_timepoints
+if length(DirToAdd)<num_timepoints
     
     TPtoUse = floor(num_timepoints/length(cExperiment_new.dirs))*ones(size(DirToAdd));
     remainder = mod(num_timepoints,length(cExperiment_new.dirs));

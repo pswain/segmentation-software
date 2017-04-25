@@ -171,7 +171,7 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             nearCenterTraining=nearCenterTraining>0;
             exclude_from_negs = nearCenterTraining;
             fix_in_negs = false(size(exclude_from_negs));
-            
+
             %exclude pixels around right next to centre pixels to try and
             %make classification more robust
             %             exclude_from_negs = imdilate(training_class,se1);
@@ -181,8 +181,18 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo(trap);
             
             training_class=zeros([size(image{trap},1) size(image{trap},2) length(trapInfo.cell)+1]);
+            
             % not to include in negative training set (pixels near cells)
             exclude_from_negs = training_class;
+            
+            % trapInnerLog is a logical array of the area between the
+            % pillars. If it has been calculated, draw many negative
+            % samples from this region.
+            if isfield(cCellVision.cTrap,'trapInnerLog')
+                fix_in_negs = cCellVision.cTrap.trapInnerLog;
+            else
+                fix_in_negs = false([size(exclude_from_negs,1),size(exclude_from_negs,2)]);
+            end
             
             % how many (dilated) cells a pixel occurs in
             all_cell_im = zeros([size(image{trap},1) size(image{trap},2)]);
@@ -219,7 +229,7 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             exclude_from_negs = exclude_from_negs | exclude_boundary;
             % ensure pixels on cell boundary are included in negatives if
             % the are not in exclusion zone
-            fix_in_negs = all_cell_edge_im>0;
+            fix_in_negs = fix_in_negs | all_cell_edge_im>0;
             fix_in_negs = fix_in_negs & ~exclude_from_negs;
             
             % ensure pixels between two cells are included in negatives in

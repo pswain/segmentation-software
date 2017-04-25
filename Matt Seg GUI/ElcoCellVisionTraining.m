@@ -24,13 +24,13 @@ load(fullfile(path,file),'cCellVision');
 %% initialise for cExperiment compilation
 
 cExperiment =[];
-num_timepoints = Inf;
+num_timepoints = 5;
 
 %% select cExperiments you want to add to the gound truth set.
 % num_timpoints timepoints will be added from each one.
 
-a = inputdlg('provide append name');
-cExperiment = append_cExperiment(cExperiment,num_timepoints,[],[]);
+%a = inputdlg('provide append name');
+cExperiment = append_cExperiment(cExperiment,[],num_timepoints,[],[]);
 
 % run append_cExperiment as many times as necessary to compile all the
 % cExperiment files.
@@ -68,6 +68,32 @@ cExperiment.ActiveContourParameters.ImageSegmentation.SubImageSize = 2*(cExperim
 %annotated cells
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(cExperiment.dirs),...
     min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,5,true);
+
+%% editing GUI
+% can also use this block of script to curate the cell outline for each
+% cell using the curateCellTrackingGUI.
+
+channel_to_curate = 1;
+
+for posi = 1:length(cExperiment.dirs)
+    cTimelapse = cExperiment.loadCurrentTimelapse(posi);
+    TPs = 1:length(cTimelapse.cTimepoint);
+    Traps = cTimelapse.defaultTrapIndices;
+    for i = 1:numel(TPs)
+        
+        TP = TPs(i);
+        for TI = Traps
+            gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TP,TI,1,channel_to_curate);
+            gui.slider.Value = TP;
+            gui.slider.Min = TP;
+            gui.slider.Max = TP;
+            uiwait();
+        end
+    end
+    cExperiment.saveTimelapseExperiment;
+end
+
+
 
 %% change function
 % this is a little annoying but it is also advisable to change the 'method'
@@ -175,6 +201,7 @@ figure(2);
 imshow(trap_inner_log+2*trap_im,[]);
 
 cCellVision.cTrap.trapInner = trap_inner;
+cCellVision.cTrap.trapInnerLog = trap_inner_log & ~trap_im;
 
 %% set segmentation method
 
@@ -319,7 +346,7 @@ gui.LaunchGUI
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
 cCellVision.negativeSamplesPerImage= floor(0.1*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
-step_size=3;
+step_size=1;
 
 debugging = true; %set to false to not get debug outputs
 %debugging = false;
@@ -367,7 +394,7 @@ ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class=
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
 maxTP = 1000;
-step_size=max(length(cTimelapse.cTimepoint),max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1])); % set step size so never using more than 30 timepoints
+step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchLinear(step_size,cmd);
 %% linear training
 maxTP = 1000; 
