@@ -31,6 +31,14 @@ if isempty(cTimelapse.pixelSize)
     cTimelapse.pixelSize=str2double(answer{1});
 end
 
+% if rawImSize is empty
+TP = 1;
+while isempty(cTimelapse.rawImSize)
+    % should always be populated.
+    cTimelapse.returnSingleTimepointRaw(TP,1);
+    TP = TP+1;
+end
+
 imSize = round(cTimelapse.rawImSize*cTimelapse.pixelSize/cellVision_pixel_size);
 cTimelapse.imSize = imSize;
 
