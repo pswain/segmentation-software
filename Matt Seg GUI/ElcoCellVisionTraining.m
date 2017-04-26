@@ -341,12 +341,16 @@ decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
 %[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
 gui.stack = cat(3,A,decision_im);
 gui.LaunchGUI
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  CENTRE ONLY CLASSIFICATION
+
 %% generate training set
  
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
 cCellVision.negativeSamplesPerImage= floor(0.1*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
-step_size=1;
+step_size=50;
 
 debugging = true; %set to false to not get debug outputs
 %debugging = false;
@@ -422,6 +426,154 @@ disp = experimentTrackingGUI
 % save('some/other/path/and/file.mat','cCellVision')
 % 
 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  EDGE CLASSIFICATION
+
+%% clear old
+cCellVision.SVMModel = [];
+cCellVision.SVMModelGPU = [];
+cCellVision.SVMModelLinear = [];
+
+%% generate training set
+ 
+cCellVision.trainingParams.cost=4;
+cCellVision.trainingParams.gamma=1;
+cCellVision.negativeSamplesPerImage= floor(0.1*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
+step_size=1;
+
+debugging = true; %set to false to not get debug outputs
+%debugging = false;
+
+debug_outputs  =  cCellVision.generateTrainingSetTimelapseCellEdge(cTimelapse,step_size,SegMethod,debugging);
+
+%debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
+
+
+%% show debug outputs
+% red = inner
+% blue = edge
+% green = outer
+numTraps = size(debug_outputs{1},3);
+debugStack = zeros(size(debug_outputs{1},1),size(debug_outputs{1},2),numTraps*3);
+nT = 1;
+nTr = 1;
+nTrT = 1;
+show_channel = 2;
+while nTrT<=numTraps
+    TrapIm = cTimelapse.returnTrapsTimepoint([],nT,show_channel);
+    for iT = 1:size(TrapIm,3)
+        image_to_show = repmat(double(TrapIm(:,:,iT)),[1,1,3]);
+        image_to_show = image_to_show.*(1 + ...
+        cat(3,debug_outputs{2}(:,:,nTrT),debug_outputs{1}(:,:,nTrT),debug_outputs{5}(:,:,nTrT)));
+        image_to_show = (image_to_show - min(image_to_show(:)))./(max(image_to_show(:)) - min(image_to_show(:)));
+        debugStack(:,:,3*nTrT + [-2 -1 0]) = image_to_show;
+        nTrT = nTrT + 1;
+    end
+    fprintf('timepoint nT of some\n')
+    nT = nT +step_size;
+    
+    
+end
+
+gui.stack = debugStack;
+gui.type = 'tri-stack';
+gui.LaunchGUI;
+
+
+%% CELL TO OUTER 
+fprintf('\n\n    grid search cell to outer SVM \n\n')
+
+% Guess the cost/gamma parameters
+cCellVision.trainingParams.cost=2
+cCellVision.trainingParams.gamma=1
+% parameter grid search
+%cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
+ws = [(sum(cCellVision.trainingData.class==1)+sum(cCellVision.trainingData.class==2))/sum(cCellVision.trainingData.class==0) 1];
+%ws = round(ws./min(ws,[],2));
+cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
+maxTP = 1000;
+step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); % set step size so never using more than 30 timepoints
+cCellVision.runGridSearchCellToOuterLinear(step_size,cmd);
+% linear training
+
+fprintf('\n\n    training cell to outer SVM \n\n')
+
+maxTP = 1000; 
+
+step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); 
+%cCellVision.trainingParams.cost=1;
+%cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
+
+cmd=sprintf('-s 1 -w0 %f -w1 %f -c %f'...
+    ,ws(1),ws(2),cCellVision.trainingParams.cost); %sets positive and negative weights to be such that total of negative and positive is the same
+
+tic
+cCellVision.trainSVMCellToOuterLinear(step_size,cmd);toc
+
+
+
+
+% INNER TO EDGE
+
+fprintf('\n\n    grid search inner to edge SVM \n\n')
+
+
+% Guess the cost/gamma parameters
+cCellVision.trainingParams.cost=2
+cCellVision.trainingParams.gamma=1
+% parameter grid search
+%cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
+ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==2) 1];
+%ws = round(ws./min(ws,[],2));
+cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
+maxTP = 1000;
+step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); % set step size so never using more than 30 timepoints
+cCellVision.runGridSearchInnerToEdgeLinear(step_size,cmd);
+% linear training
+
+fprintf('\n\n    training edge to inner SVM \n\n')
+
+maxTP = 1000; 
+
+step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); 
+%cCellVision.trainingParams.cost=1;
+%cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
+
+cmd=sprintf('-s 1 -w0 %f -w1 %f -c %f'...
+    ,ws(1),ws(2),cCellVision.trainingParams.cost); %sets positive and negative weights to be such that total of negative and positive is the same
+
+tic
+cCellVision.trainSVMInnerToEdgeLinear(step_size,cmd);toc
+
+%% flip second model
+% This was necessary when I trained the model, but I'm not sure it will
+% always be the case. Performing this made the centres in the InnerToEdge
+% classifiers negative, and the edges positive, but didn't change the
+% actual scores.
+cCellVision.SVMModelInnerToEdgeLinear.Label = [0;1];
+cCellVision.SVMModelInnerToEdgeLinear.w = -cCellVision.SVMModelInnerToEdgeLinear.w;
+
+
+%% classify image A and show result
+%Don't do this unless you have already trained - this is for improving and
+%testing cellvisions.
+decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
+%[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
+gui.stack = cat(3,A,decision_im);
+gui.LaunchGUI
+
+
+%% open a timelapse to check how good it is
+
+disp = experimentTrackingGUI
+
+
+
+
+
+
 %% stuff from here on is for the two stage classifier, which no one uses anymore (slow, little benfit)
 
 
@@ -456,8 +608,8 @@ predict_label=zeros(size(normalised_features,1),1);
 % report
 
 fprintf('non cell pixels: %2.2f %% correct \n cell pixels: %2.2f %% correct\n',...
-    100*sum(dec_valuesLin>0 & ~cCellVision.trainingData.class')/sum(~cCellVision.trainingData.class),...
-    100*sum(dec_valuesLin<0 & cCellVision.trainingData.class')/sum(cCellVision.trainingData.class));
+    100*sum(dec_valuesLin>0 & ~ismember(cCellVision.trainingData.class',[1,2]))/sum(~cCellVision.trainingData.class),...
+    100*sum(dec_valuesLin<0 & ismember(cCellVision.trainingData.class',[1,2]))/sum(cCellVision.trainingData.class));
 
 %% use to select kernel features
 

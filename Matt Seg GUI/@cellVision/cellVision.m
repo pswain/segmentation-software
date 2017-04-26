@@ -14,6 +14,8 @@ classdef cellVision<handle
         cPatchParameters
         SVMModel
         SVMModelLinear
+        SVMModelCellToOuterLinear
+        SVMModelInnerToEdgeLinear
         SVMModelGPU
         twoStageThresh
         scaling

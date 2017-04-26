@@ -1,5 +1,5 @@
-function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellSVM,image,trapOutline)
-% [predicted_im decision_im filtered_image]=classifyImage2Stage(cCellSVM,image,trapOutline)
+function  [predicted_im, decision_im, filtered_image,raw_SVM_res]=classifyImage2Stage(cCellSVM,image,trapOutline)
+% [predicted_im decision_im filtered_imagemraw_SVM_res]=classifyImage2Stage(cCellSVM,image,trapOutline)
 %
 % runs the two stage classification, if the model is linear it will just run
 % the linear segmentation.
@@ -24,6 +24,11 @@ function  [predicted_im, decision_im, filtered_image]=classifyImage2Stage(cCellS
 % filtered_image    :   array of filter values used. Not reshaped, so each
 %                       row is the filter values for the corresponding
 %                       pixel.
+% raw_raw_SVM_res   :   the raw decision image values for the two
+%                       classifiers (cell to background and inner to edge)
+%                       as an [n x n x 2] stack. NOTE unlike decision image
+%                       they do not have the traps blotted out. Assume you
+%                       know what to do.
 %
 % calculates the transformation image using the getFilteredImage function
 % of the cellVision class. Applies the necessary transformations and then
@@ -52,62 +57,103 @@ filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.
 
 labels=ones(size(image,1)*size(image,2),1);
 dec_values=zeros(size(image,1)*size(image,2),1);
+dec_values1=zeros(size(image,1)*size(image,2),1);
 dec_values2=zeros(size(image,1)*size(image,2),1);
 
 predict_label=zeros(size(image,1)*size(image,2),1);
 
-% mex file that does the linear prediction.
-[predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
-
-dec_values(~trapOutline(:))=dec_valuesLin(:,1);
-% Matt and elco differed on what value the trap pixels should have in the decision image
-% ensure there are not problems for matt from this
-dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
-if size(dec_valuesLin,2)>2
-    dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
-    dec_values2(~trapOutline(:))=dec_valuesLin(:,3);
-    dec_values2(trapOutline(:))=0;
-else
-    dec_values2=[];
-end
-
-
-predict_label(~trapOutline(:))=predict_labelLin(:);
-predict_label(trapOutline(:))=0;
-
-if ~isempty(cCellSVM.SVMModel) && ~strcmp(cCellSVM.method,'linear')
-    %if the model has a two stage component apply it to those elements
-    %closest to the twoStageThreshold.
-    b=dec_values;
-    b=abs(b-cCellSVM.twoStageThresh);
-    [B,IX]=sort(b(:),'ascend');
+% simple linear prediction
+if ~isempty(cCellSVM.SVMModelLinear)
+    % mex file that does the linear prediction.
+    [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
+    dec_values(~trapOutline(:))=dec_valuesLin(:,1);
     
-    % look at only pixels within a certain distance of the two stage
-    % threshold.
-    IX(B>cCellSVM.linearToTwoStageParams.threshold) = [];
-    IX(ismember(IX,find(trapOutline))) = [];
-    
-    % apply an upper boundary of the number of pixels to apply the two
-    % stage model to
-    switch cCellSVM.linearToTwoStageParams.upperBoundType
-        case 'fraction'
-            l=round(sum(~trapOutline(:))*cCellSVM.linearToTwoStageParams.upperBound);
-        case 'absolute'
-            l=round(cCellSVM.linearToTwoStageParams.upperBound);
-        otherwise
-            error('linearToTwoStageParams.upperBoundType should be fraction or absolute')
+    % Matt and elco differed on what value the trap pixels should have in the decision image
+    % ensure there are not problems for matt from this
+    dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
+    if size(dec_valuesLin,2)>2
+        dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
+        dec_values2(~trapOutline(:))=dec_valuesLin(:,3);
+        dec_values2(trapOutline(:))=0;
+    else
+        dec_values2=[];
     end
-    loc=IX(1:min(l,length(IX)));
     
-    % libsvm method for two stage model.
-    [predict_label_kernel, ~, dec_values_kernel] = svmpredict(ones(length(loc),1), (filtered_image(loc,:)), cCellSVM.SVMModel); % test the training data]\
     
-    dec_values(loc)=dec_values_kernel;
-    predict_label(loc)=predict_label_kernel;
+    predict_label(~trapOutline(:))=predict_labelLin(:);
+    predict_label(trapOutline(:))=0;
+    
+    
+    if ~isempty(cCellSVM.SVMModel) && ~strcmp(cCellSVM.method,'linear')
+        %if the model has a two stage component apply it to those elements
+        %closest to the twoStageThreshold.
+        b=dec_values;
+        b=abs(b-cCellSVM.twoStageThresh);
+        [B,IX]=sort(b(:),'ascend');
+        
+        % look at only pixels within a certain distance of the two stage
+        % threshold.
+        IX(B>cCellSVM.linearToTwoStageParams.threshold) = [];
+        IX(ismember(IX,find(trapOutline))) = [];
+        
+        % apply an upper boundary of the number of pixels to apply the two
+        % stage model to
+        switch cCellSVM.linearToTwoStageParams.upperBoundType
+            case 'fraction'
+                l=round(sum(~trapOutline(:))*cCellSVM.linearToTwoStageParams.upperBound);
+            case 'absolute'
+                l=round(cCellSVM.linearToTwoStageParams.upperBound);
+            otherwise
+                error('linearToTwoStageParams.upperBoundType should be fraction or absolute')
+        end
+        loc=IX(1:min(l,length(IX)));
+        
+        % libsvm method for two stage model.
+        [predict_label_kernel, ~, dec_values_kernel] = svmpredict(ones(length(loc),1), (filtered_image(loc,:)), cCellSVM.SVMModel); % test the training data]\
+        
+        dec_values(loc)=dec_values_kernel;
+        predict_label(loc)=predict_label_kernel;
+    end
+    predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
+    decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);
+    if ~isempty(dec_values2)
+        decision_im2=reshape(dec_values2(:,1),[size(image,1) size(image,2)]);
+        decision_im(:,:,2)=decision_im2;
+    end
 end
-predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
-decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);
-if ~isempty(dec_values2)
-    decision_im2=reshape(dec_values2(:,1),[size(image,1) size(image,2)]);
-    decision_im(:,:,2)=decision_im2;
+
+
+% if using two classifiers (other and centre|edge and centre|edge).
+if ~isempty(cCellSVM.SVMModelCellToOuterLinear) && ~isempty(cCellSVM.SVMModelInnerToEdgeLinear)
+    [predict_label1lin, ~, dec_values1lin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelCellToOuterLinear); % test the training data]\
+    dec_values1(~trapOutline(:))=dec_values1lin(:,1);
+    
+    predict_label1(~trapOutline(:))=predict_label1lin(:);
+    
+    [predict_label2lin, ~, dec_values2lin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelInnerToEdgeLinear); % test the training data]\
+    dec_values2(~trapOutline(:))=dec_values2lin(:,1);
+    
+    predict_label2(~trapOutline(:))=predict_label2lin(:);
+    
+    % make predict labels. True for centres.
+    predict_label = predict_label1 & predict_label2;
+    predict_label(trapOutline(:)) = false;
+    predicted_im=reshape(predict_label,[size(image,1) size(image,2)]);
+    
+    % slightly complicated, but gives log bayes factor for centres assuming
+    % that the other two quantities are the log bayes factor for edges or
+    % centre and for edges.
+    dec_values = dec_values1 + dec_values2 ...
+        + log((1 + exp(-dec_values1) + exp(-dec_values2))) ;
+    
+    dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
+    
+    decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);
+    
+    
+    raw_SVM_res = cat(3, ...
+    reshape(dec_values1(:,1),[size(image,1) size(image,2)]),...
+    reshape(dec_values2(:,1),[size(image,1) size(image,2)]));
+end
+
 end
