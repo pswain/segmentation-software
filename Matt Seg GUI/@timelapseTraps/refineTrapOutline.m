@@ -1,18 +1,18 @@
 function refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output,do_close)
-% refineTrapOutline(cTimelapse,starting_trap_outline,channel,traps,timepoints)
+% refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output,do_close)
 %
 % calculate a refined trap outline by simple thresholding and store it in
 % trapInfo of each trap and each timepoint.
 %
 % cTimelapse                :   timelapseTraps object
-% traps                     :   (optional)array of trap Indices for which to refine
-%                               trap outline
-% timepoints                :   (optional)timepoints at which to refine trap outline.
 % starting_trap_outline     :   logical of where the traps are likely to
 %                               be.
 % channels                  :   image channel to use. Can be array with
 %                               positive and negative entries for adding or
 %                               subtracting channels
+% traps                     :   (optional)array of trap Indices for which to refine
+%                               trap outline
+% timepoints                :   (optional)timepoints at which to refine trap outline.
 %
 % performs refinement by seperating the image into those regions above the
 % median and finding the connected regions that most overlap with the
@@ -48,7 +48,7 @@ if nargin<7 || isempty(do_close)
 end
 
 %% get labelled trap
-dilation_length =8;
+dilation_length =2;
 strel_1 = strel('disk',dilation_length);
 %for enlarging large trap outline.
 strel_2 = strel('disk',1);

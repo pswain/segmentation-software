@@ -208,6 +208,9 @@ FauxCentersStack = round(SubImageSize/2)*ones(1,2);
 
 Timepoints = FirstTimepoint:LastTimepoint;
 
+GetCellImage = @(im,centre) ACBackGroundFunctions.get_cell_image(im,...
+                            SubImageSize,...
+                            centre );
 
 %% set TP at which to start segmenting
 
@@ -393,13 +396,46 @@ for TP = Timepoints
         
         DecisionImageStack = zeros(size(TrapTrapImageStack));
         EdgeImageStack = DecisionImageStack;
-        
+        RawBgDIM = DecisionImageStack;
+        RawCentreDIM = DecisionImageStack;
+        have_raw_dims = false(1,size(TrapTrapImageStack,3));
+        %fprintf('change back to parfor in DIM calculation\n')
         parfor k=1:length(TrapsToCheck)
-            [~, d_im_temp]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
+            [~, d_im_temp,~,raw_dims]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
             DecisionImageStack(:,:,k)=d_im_temp(:,:,1);
             if size(d_im_temp,3)>1
                 EdgeImageStack(:,:,k)=d_im_temp(:,:,2);
             end
+            if ~isempty(raw_dims)
+                have_raw_dims(k) = true;
+                RawBgDIM(:,:,k) = raw_dims(:,:,1);
+                RawCentreDIM(:,:,k) = raw_dims(:,:,2);
+            end
+        end
+        have_raw_dims = all(have_raw_dims);
+        
+        % calculate log (1-P)/P 's for each pixel type
+        % i.e. images that are more negative the more likely a pixel is to
+        % be a centre/edge/BG
+        if have_raw_dims
+            PCentre =  RawBgDIM + RawCentreDIM ...
+                       - log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
+            PCentre(TrapTrapImageStack==1) = max(PCentre(:));
+            
+            PEdge   =  RawBgDIM - RawCentreDIM ...
+                       - log(1 + exp(RawBgDIM)) -log(1 + exp(-RawCentreDIM)) ;
+            PEdge(TrapTrapImageStack==1) = max(PEdge(:));
+            
+            PBG     = -RawBgDIM - log(1 + exp(-RawBgDIM));   
+            PBG(TrapTrapImageStack==1) = min(PBG(:));
+            
+            PTot = exp(PCentre) + exp(PEdge) + exp(PBG);
+            
+            % normalise
+            PCentre = log(exp(PCentre)./PTot);
+            PEdge = log(exp(PEdge)./PTot);
+            PBG = log(exp(PBG)./PTot);
+            
         end
         
         TransformedImagesVIS = cell(length(TrapInfo));
@@ -661,6 +697,16 @@ for TP = Timepoints
             
             NormalisedTrapDecisionImage = -NormalisedTrapDecisionImage;
             
+            if have_raw_dims
+                PCentreTrap = PCentre(:,:,TI);
+                PEdgeTrap = PEdge(:,:,TI);
+                PBGTrap = PBG(:,:,TI);
+            else
+                PCentreTrap = [];
+                PEdgeTrap = [];
+                PBGTrap = [];
+            end
+            
             ParCurrentTrapInfo = SliceableTrapInfo(TI);
             
             NotCells = TrapTrapLogical;
@@ -741,11 +787,22 @@ for TP = Timepoints
                     
                     if TrapPresentBoolean
                         CellTrapImage = ACBackGroundFunctions.get_cell_image(TrapTrapImage,...
-                            SubImageSize,...
-                            NewCellCentre );
-                        %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
-                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
+                                                                             SubImageSize, ...
+                                                                             NewCellCentre );
                         
+                        
+                        if have_raw_dims
+                            PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
+                            PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
+                            PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
+                            
+                            
+                            TransformedCellImage = TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
+                        else
+                            %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
+                            TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
+                        
+                        end
                     else
                         %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
                         TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters);
@@ -1016,7 +1073,7 @@ for TP = Timepoints
             SliceableTrapInfo(TI) = ParCurrentTrapInfo;
             
             
-            
+            TransformedCellImage = [];
             
         end %end traps loop
         fprintf('%d cells of %d discarded\n',cells_discarded,(cells_found+cells_discarded));
@@ -1115,3 +1172,34 @@ end
 
 end
 
+function TransformedCellImage = TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell)
+% make a cell edge image from Centre/Edge/BG probabilitiy images. 
+% each image is log((1-P)/P) that pixel is of that type (i.e. inverse bayes
+% factor.
+% Assumed cell centre is at centre.
+
+X_centre = cumsum(PCentreCell,2,'forward');
+Y_centre = cumsum(PCentreCell,1,'forward');
+
+X_edge = cumsum(PEdgeCell,2,'forward');
+Y_edge = cumsum(PEdgeCell,1,'forward');
+
+X_BG = cumsum(PBGCell,2,'forward');
+Y_BG = cumsum(PBGCell,1,'forward');
+
+
+
+[~,angle_mat] = ACBackGroundFunctions.radius_and_angle_matrix(size(PCentreCell));
+
+% this formulation should make it:
+%   sum of the centre pixels inside the cell 
+%   - sum of the BG pixels inside the cell 
+%   + the score of the edge pixels on the cell edge.
+% TransformedCellImage = ( - X_BG - X_edge).*cos(angle_mat) + ...
+%     ( - Y_BG - Y_edge).*sin(angle_mat) + ...
+%     PEdgeCell;
+
+%TransformedCellImage =  ( X_centre - X_BG - X_edge).*cos(angle_mat) + (Y_centre - Y_BG - Y_edge).*sin(angle_mat) + PEdgeCell - PCentreCell - PBGCell;
+TransformedCellImage =   PEdgeCell - PCentreCell - PBGCell;
+
+end

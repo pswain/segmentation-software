@@ -122,7 +122,8 @@ if ~isempty(cCellSVM.SVMModelLinear)
     end
 end
 
-
+% only used if doing to edge/centre classifer.
+raw_SVM_res = [];
 % if using two classifiers (other and centre|edge and centre|edge).
 if ~isempty(cCellSVM.SVMModelCellToOuterLinear) && ~isempty(cCellSVM.SVMModelInnerToEdgeLinear)
     [predict_label1lin, ~, dec_values1lin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelCellToOuterLinear); % test the training data]\
