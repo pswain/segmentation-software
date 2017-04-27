@@ -1,4 +1,4 @@
-function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat,radial_punishing_factor,time_change_punishing_factor,image_size,first_timepoint_fixed,A,n,breaks,jj,C,varargin)
+function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat,radial_punishing_factor,time_change_punishing_factor,image_size,first_timepoint_fixed,A,n,breaks,jj,C,region_image_stack,varargin)
 %cost function for snakes algorithm written to be used used with the
 %particle optimisation toolbox from the file exchange:
 
@@ -64,6 +64,7 @@ inverted_cov_1cell =...
 
 mu_1cell = [9.1462    8.0528    6.7623    6.1910    6.0670    6.8330];
 
+c = 0.5*det(inv(inverted_cov_1cell));
 % for trained time change punishment
 % gaussian parameters from pairs of curated cells.
 inverted_cov_2cell_small =...
@@ -110,6 +111,9 @@ else
 
 end
 
+% TODO - remove when you do region stuff properly.
+erode_s = strel('disk',1);
+
 % make previous_radii_mat the matrix for timepoint 1, whether optimising it
 % or not.
 previous_radii_mat = radii_stack_mat(:,1:radii_length);
@@ -118,6 +122,7 @@ for ti = 1:length(timepoints_to_optimise)
     t= timepoints_to_optimise(ti);
     radii_mat = radii_stack_mat(:,(1+(t-1)*radii_length):(t*radii_length));
     im = im_stack(:,:,ti);
+    region_im = region_image_stack(:,:,ti);
     center = center_stack(ti,:);
     
     %number of points, length of radii vector
@@ -163,10 +168,45 @@ for ti = 1:length(timepoints_to_optimise)
             F(p) = F_image(p,timepoints_to_optimise(ti));
             
         else
-            F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2));
-            %F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2))/sum(I,2);
-        
+            % testing change to mean  
+            %F(p) = (sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2));
+            
+            m = sum(im(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))),2);
+            if isnan(m);
+                m=0;
+            end
+            F(p) = m;
+            
         end
+        
+        % region forcing term:
+        map = false(size(im));
+        map(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))) = true;
+        map = imfill(map,center);
+        s = sum(map(:));
+        map = imerode(map,erode_s);
+        
+        % testing change to mean     
+        %F(p) = F(p) + sum(region_im(map));
+        m = sum(region_im(map));
+        if isnan(m)
+            m=0;
+        end
+        
+        F(p) = F(p) +m; 
+        
+        % this choice of use of pixel size is a little confusing, but based
+        % on a mean field idea of how the score should be. Imagine there
+        % are T 'good pixels', that will be divided between m cells. Cells
+        % have an average per pixel score of f, a size of N and adding a
+        % new cell to the set incurs a cost A (due to the flat addition
+        % term). Then the total score over all cells will be :
+        %   (f + A/N)T
+        % so want the individual cell to maximise something like 
+        % (f + A/N)
+        % this means it's good for cells to be bigger, provided their mean
+        % pixel value f does not drop dramatically.
+        F(p) = F(p)/s + 100*c/s;
 
         %add radial punishing term
 
@@ -205,6 +245,7 @@ for ti = 1:length(timepoints_to_optimise)
                 end
                 
                 F(p) = F(p) + radial_punishing_factor*(radii_reordered-mu_1cell)*inverted_cov_1cell*((radii_reordered - mu_1cell)');
+                
             else
             % apply time change factor
                 radii_reordered_stack = cat(1,previous_radii_mat(p,:),radii_mat(p,:));

@@ -63,6 +63,8 @@ else
     TrapsToCheck = intersect(TrapsToUse(:,1),cTimelapse.defaultTrapIndices)';
 end
 
+% TODO - remove
+TrapsToCheck = 1;
 
 ACparameters = cTimelapse.ACParams.ActiveContour;
 SubImageSize = cTimelapse.ACParams.ImageSegmentation.SubImageSize;%61;
@@ -179,7 +181,7 @@ threshold_radius = 6;
 threshold_probability = 2e-30;
 
 %throw away cells with a score higher than this.
-threshold_score = -10;
+threshold_score = Inf;%-10;
 %threshold_score = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -418,16 +420,14 @@ for TP = Timepoints
         % i.e. images that are more negative the more likely a pixel is to
         % be a centre/edge/BG
         if have_raw_dims
-            PCentre =  RawBgDIM + RawCentreDIM ...
-                       - log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
-            PCentre(TrapTrapImageStack==1) = max(PCentre(:));
+            PCentre =  -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
+            PCentre(TrapTrapImageStack==1) = min(PCentre(:));
             
-            PEdge   =  RawBgDIM - RawCentreDIM ...
-                       - log(1 + exp(RawBgDIM)) -log(1 + exp(-RawCentreDIM)) ;
-            PEdge(TrapTrapImageStack==1) = max(PEdge(:));
+            PEdge   =  RawCentreDIM -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM));
+            PEdge(TrapTrapImageStack==1) = min(PEdge(:));
             
-            PBG     = -RawBgDIM - log(1 + exp(-RawBgDIM));   
-            PBG(TrapTrapImageStack==1) = min(PBG(:));
+            PBG     = RawBgDIM - log(1 + exp(RawBgDIM));   
+            PBG(TrapTrapImageStack==1) = max(PBG(:));
             
             PTot = exp(PCentre) + exp(PEdge) + exp(PBG);
             
@@ -679,9 +679,24 @@ for TP = Timepoints
 
         cells_discarded = 0;
         cells_found = 0;
+        
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+                %%%%%%%%%%%%%%% PARALLLEL LOOP %%%%%%%%%%%%%%% 
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        
+        
+        
+        
+        
+        
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        parfor TI = 1:length(TrapsToCheck)
+        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        for TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -791,17 +806,22 @@ for TP = Timepoints
                                                                              NewCellCentre );
                         
                         
-                        if have_raw_dims
+                        if false%have_raw_dims
                             PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
                             PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
                             
                             
-                            TransformedCellImage = TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
+                            TransformedCellImage = -PEdgeCell;%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
+                            CellRegionImage = -PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
+                            CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
+                        SubImageSize,...
+                        NewCellCentre );
+                            
                             TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
-                        
+                            CellRegionImage =CellDecisionImage;
                         end
                     else
                         %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
@@ -814,9 +834,7 @@ for TP = Timepoints
                     %%%%%%  proportion of the cell image to the transformed
                     %%%%%%  image.
                     
-                    CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
-                        SubImageSize,...
-                        NewCellCentre );
+                    
                     
                     %take cell decision image, isolate those parts which
                     %are above TwoStageThreshold(and therefore a partof
@@ -842,10 +860,10 @@ for TP = Timepoints
                         PreviousTimepointRadii = PreviousCurrentTrapInfoPar.cell(CIpar).cellRadii;
                         
                         [RadiiResult,AnglesResult,ACscore] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical);
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,FauxCentersStack,PreviousTimepointRadii,PreviousTimepointRadii,ExcludeLogical,CellRegionImage);
                     else
                         [RadiiResult,AnglesResult,ACscore] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,FauxCentersStack,[],[],ExcludeLogical);
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,FauxCentersStack,[],[],ExcludeLogical,CellRegionImage);
                         
                     end
                     
@@ -1200,6 +1218,6 @@ Y_BG = cumsum(PBGCell,1,'forward');
 %     PEdgeCell;
 
 %TransformedCellImage =  ( X_centre - X_BG - X_edge).*cos(angle_mat) + (Y_centre - Y_BG - Y_edge).*sin(angle_mat) + PEdgeCell - PCentreCell - PBGCell;
-TransformedCellImage =   PEdgeCell - PCentreCell - PBGCell;
+TransformedCellImage =   PEdgeCell;
 
 end

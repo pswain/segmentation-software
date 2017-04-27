@@ -460,7 +460,7 @@ debugStack = zeros(size(debug_outputs{1},1),size(debug_outputs{1},2),numTraps*3)
 nT = 1;
 nTr = 1;
 nTrT = 1;
-show_channel = 2;
+show_channel = 1;
 while nTrT<=numTraps
     TrapIm = cTimelapse.returnTrapsTimepoint([],nT,show_channel);
     for iT = 1:size(TrapIm,3)
@@ -486,8 +486,8 @@ gui.LaunchGUI;
 fprintf('\n\n    grid search cell to outer SVM \n\n')
 
 % Guess the cost/gamma parameters
-cCellVision.trainingParams.cost=2
-cCellVision.trainingParams.gamma=1
+cCellVision.trainingParams.cost=2;
+cCellVision.trainingParams.gamma=1;
 % parameter grid search
 %cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
 ws = [(sum(cCellVision.trainingData.class==1)+sum(cCellVision.trainingData.class==2))/sum(cCellVision.trainingData.class==0) 1];
@@ -521,8 +521,8 @@ fprintf('\n\n    grid search inner to edge SVM \n\n')
 
 
 % Guess the cost/gamma parameters
-cCellVision.trainingParams.cost=2
-cCellVision.trainingParams.gamma=1
+cCellVision.trainingParams.cost=2;
+cCellVision.trainingParams.gamma=1;
 % parameter grid search
 %cmd='-s 1 -w0 1 -w1 1 -v 5 -c ';
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==2) 1];
@@ -559,9 +559,9 @@ cCellVision.SVMModelInnerToEdgeLinear.w = -cCellVision.SVMModelInnerToEdgeLinear
 %% classify image A and show result
 %Don't do this unless you have already trained - this is for improving and
 %testing cellvisions.
-decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
+[~, decision_im, ~,raw_SVM_res]=classifyImage2Stage(cCellVision,A,trapOutline>1);
 %[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
-gui.stack = cat(3,A,decision_im);
+gui.stack = cat(3,A,decision_im,raw_SVM_res);
 gui.LaunchGUI
 
 

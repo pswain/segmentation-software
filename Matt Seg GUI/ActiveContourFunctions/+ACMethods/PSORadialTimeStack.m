@@ -1,5 +1,5 @@
-function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
-%function [radii_res,angles,score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack)
+function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack,region_image)
+%function [radii_res,angles,score] = PSORadialTimeStack(forcing_images,ACparameters,Centers_stack,prior,radii_previous_time_point,exclude_logical_stack,region_image)
 
 % Segment_elco_fmc_radial ---
 %
@@ -46,6 +46,7 @@ function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_images,ACpara
 
 
 forcing_images = double(forcing_images);
+region_image = double(region_image);
 
 %this is done to try and stop average pixels contributing to outline so that no average of pixel
 %values need be taken.
@@ -271,9 +272,9 @@ switch method
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
         if use_previous_timepoint
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C);    
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image);    
         else
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C);   
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image);   
         end
         
         % refine seeds to smaller set
