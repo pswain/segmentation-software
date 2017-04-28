@@ -64,7 +64,7 @@ else
 end
 
 % TODO - remove
-TrapsToCheck = 1;
+% TrapsToCheck = 1;
 
 ACparameters = cTimelapse.ACParams.ActiveContour;
 SubImageSize = cTimelapse.ACParams.ImageSegmentation.SubImageSize;%61;
@@ -249,11 +249,14 @@ end
 disp = cTrapDisplay(cTimelapse,[],true,cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
 
 % gui\s for visualising outputs if that is desired.
-if ACparameters.visualise>1
+if ACparameters.visualise>0
     guiDI = GenericStackViewingGUI;
     guiTransformed = GenericStackViewingGUI;
     guiOutline = GenericStackViewingGUI;
     guiTrapIM = GenericStackViewingGUI;
+    guiEdge = GenericStackViewingGUI;
+    guiCentre = GenericStackViewingGUI;
+    guiBG = GenericStackViewingGUI;
 end
 
 % active contour code throws errors if asked to visualise in the parfor
@@ -441,8 +444,15 @@ for TP = Timepoints
         TransformedImagesVIS = cell(length(TrapInfo));
         OutlinesVIS = TransformedImagesVIS;
         CellStatsDebug = TransformedImagesVIS;
-        if ACparameters.visualise>1
+        if ACparameters.visualise>0
             DecisionImageStackVIS = DecisionImageStack;
+            guiEdge.stack = PEdge;
+            guiEdge.LaunchGUI();
+            guiCentre.stack = PCentre;
+            guiCentre.LaunchGUI;
+            guiBG.stack = PBG;
+            guiBG.LaunchGUI;
+            pause;
         end
         
         % stored to add to forcing image later
@@ -695,8 +705,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        for TI = 1:length(TrapsToCheck)
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -806,14 +816,15 @@ for TP = Timepoints
                                                                              NewCellCentre );
                         
                         
-                        if false%have_raw_dims
+                        if true%have_raw_dims
                             PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
                             PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
                             
                             
                             TransformedCellImage = -PEdgeCell;%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
-                            CellRegionImage = -PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
+                            CellRegionImage = zeros(size(TransformedCellImage));
+                            %CellRegionImage = log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
                             CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
@@ -821,7 +832,11 @@ for TP = Timepoints
                         NewCellCentre );
                             
                             TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
-                            CellRegionImage =CellDecisionImage;
+
+                            TransformedCellImage = TransformedCellImage;
+                            
+                            %CellRegionImage =CellDecisionImage;
+                            CellRegionImage = zeros(size(TransformedCellImage));
                         end
                     else
                         %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);

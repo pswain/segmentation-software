@@ -252,8 +252,8 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 tp = 1; % time point to inspect
 channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
-thresh1 = -3; %yellow: new cells (more stringent)
-thresh2 = -1; % green : tracked cells (less stringent)
+thresh1 = -0.5; %yellow: new cells (more stringent)
+thresh2 = -0; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect
 
 %% track this position 
@@ -344,11 +344,11 @@ cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThresh
 %% active contour search parameters:
 
 % more is potentially more accurate but slower
-cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 20;
+cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 15;
 
 % always needs to be bigger than the one above. Not very significant so
 % leave high.
-cExperiment.ActiveContourParameters.ActiveContour.seeds = 100;
+cExperiment.ActiveContourParameters.ActiveContour.seeds = 15;
 
 cExperiment.ActiveContourParameters.ActiveContour.TerminationEpoch = 30;
 

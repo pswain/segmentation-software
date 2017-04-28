@@ -50,8 +50,6 @@ radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
 
-radial_punishing_factor = mean(radial_punishing_factor);
-
 % for trained radius punishment
 % gaussian parameters trained from cellVision training set
 inverted_cov_1cell =...
@@ -175,26 +173,29 @@ for ti = 1:length(timepoints_to_optimise)
             if isnan(m);
                 m=0;
             end
-            F(p) = m;
+            F(p) = m/sum(I);
             
         end
         
-        % region forcing term:
-        map = false(size(im));
-        map(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))) = true;
-        map = imfill(map,center);
-        s = sum(map(:));
-        map = imerode(map,erode_s);
-        
-        % testing change to mean     
-        %F(p) = F(p) + sum(region_im(map));
-        m = sum(region_im(map));
-        if isnan(m)
-            m=0;
+        if any(region_im(:)~=0)
+            % region forcing term:
+            map = false(size(im));
+            map(cordy_full(p,I)+(image_size(1,1)*(cordx_full(p,I)-1))) = true;
+            map = imfill(map,center);
+            s = sum(map(:));
+            map = imerode(map,erode_s);
+            
+            % testing change to mean
+            %F(p) = F(p) + sum(region_im(map));
+            m = sum(region_im(map));
+            if isnan(m)
+                m=0;
+            end
+            
+            F(p) = F(p) +(m/s);
+        else
+            s = pi*(sum(I)/2*pi)^2;
         end
-        
-        F(p) = F(p) +m; 
-        
         % this choice of use of pixel size is a little confusing, but based
         % on a mean field idea of how the score should be. Imagine there
         % are T 'good pixels', that will be divided between m cells. Cells
@@ -206,8 +207,10 @@ for ti = 1:length(timepoints_to_optimise)
         % (f + A/N)
         % this means it's good for cells to be bigger, provided their mean
         % pixel value f does not drop dramatically.
-        F(p) = F(p)/s + 100*c/s;
-
+        
+        % make a mean
+         F(p) = F(p) + 100*c/s;
+        %F(p) = F(p)/s;
         %add radial punishing term
 
     

@@ -50,13 +50,13 @@ region_image = double(region_image);
 
 %this is done to try and stop average pixels contributing to outline so that no average of pixel
 %values need be taken.
-forcing_images = forcing_images - median(forcing_images(:));
+%forcing_images = forcing_images - median(forcing_images(:));
 Timepoints = size(forcing_images,3);%number of time points being considered
 
 %parameters set by user
 
-alpha = ACparameters.alpha;%0.01%weighs non image parts (none at the moment)
-betaElco =ACparameters.beta;%0.01 %weighs difference between consecutive time points.
+radial_punishing_factor = ACparameters.alpha;%0.01%weighs non image parts (none at the moment)
+time_change_punishing_factor =ACparameters.beta;%0.01 %weighs difference between consecutive time points.
 R_min = ACparameters.R_min;%1;
 R_max = ACparameters.R_max;%15; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
 MaximumRadiusChange = ACparameters.MaximumRadiusChange;
@@ -264,10 +264,6 @@ switch method
         
         %default [100 2000 24 2 2 0.9 0.4 1500 1e-25 250 NaN 0 0];
         P = [0 EVALS seeds_for_PSO 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
-        
-        %stopped multiplying by the interquartile range. Now try and use tanh to keep image at good range. 
-        radial_punishing_factor = alpha*ones(opt_points,1);
-        time_change_punishing_factor = betaElco;
         
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
