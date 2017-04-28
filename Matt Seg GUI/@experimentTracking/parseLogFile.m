@@ -20,12 +20,23 @@ if nargin<2 || isempty(logFile)
     if length(logFile)>1
         warning('More than one log file available in "cExperiment.rootFolder". Using first found...');
     end
-    if isempty(logFile)
-        fail_flag = true;
-        warning('Cannot find log file. "metadata" property not set.');
-        return
+    if ~isempty(logFile)
+        logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
+    else
+        % Try the saveFolder instead:
+        logFile = dir(fullfile(cExperiment.saveFolder,'*log.txt'));
+        logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+        if length(logFile)>1
+            warning('More than one log file available in "cExperiment.saveFolder". Using first found...');
+        end
+        if ~isempty(logFile)
+            logFile = fullfile(cExperiment.saveFolder,logFile(1).name);
+        else
+            fail_flag = true;
+            warning('Cannot find log file. "metadata" property not set.');
+            return
+        end
     end
-    logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
 end
 
 close_progress = false;
