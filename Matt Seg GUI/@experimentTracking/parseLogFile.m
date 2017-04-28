@@ -26,11 +26,6 @@ if nargin<2 || isempty(logFile)
         warning(['More than one log file available in "%s". ',...
             'Using first found...'],logDirs{d});
     end
-    if isempty(logFile)
-        fail_flag = true;
-        warning('Cannot find log file. "metadata" property not set.');
-        return
-    end
     logFile = fullfile(logDirs{d},logFile(1).name);
 end
 
