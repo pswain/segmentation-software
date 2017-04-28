@@ -4,8 +4,8 @@ function anything_changed = editBirthManual( cExperiment,add_or_remove, timepoin
 % add_or_remove     -   '+' for add, '-' for remove.
 % timepoint         -   timepoint at which to add birth. If remove, removes
 %                       the nearest to this timepoint. 
-% position          -   position index of mother.
-% trap              -   trap number at which to remove birth
+% position_index    -   position index of mother.
+% trap_index        -   trap number at which to remove birth
 % mother_label      -   cell label of mother
 % daughter_label    -   cell label of daughter. If not provided, is set to
 %                       NaN

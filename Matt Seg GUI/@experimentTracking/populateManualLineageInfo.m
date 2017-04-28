@@ -4,6 +4,7 @@ function info_added = populateManualLineageInfo( cExperiment)
 % be manually curated
 % only does anything if the field isn't already there. Returns flag
 %   info_added : true if info was added, false if it was already there.
+%
 % See also, EXPERIMENTTRACKING.EDITBIRTHMANUAL
 info_added = false;
 
