@@ -258,6 +258,10 @@ PSOseed(I) = SuperUB(I);
 %group of functions taken out of splinefit to speed up optimisation.
 [A,n,breaks,dim,jj,C] = ACBackGroundFunctions.splinefit_prep([angles; 2*pi],ones([seeds_for_PSO (opt_points+1)]),[angles; 2*pi],'p');
 
+% now used on cost function calculation.
+[radii_mat,angles_mat] = ACBackGroundFunctions.radius_and_angle_matrix([six,siy]);
+
+
 switch method
     %%Using particle swarm
     case 'PSO'
@@ -268,9 +272,9 @@ switch method
         %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
         %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
         if use_previous_timepoint
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image);    
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);    
         else
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image);   
+            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);   
         end
         
         % refine seeds to smaller set

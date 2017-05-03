@@ -64,7 +64,7 @@ else
 end
 
 % TODO - remove
-% TrapsToCheck = 1;
+ TrapsToCheck = 1;
 
 ACparameters = cTimelapse.ACParams.ActiveContour;
 SubImageSize = cTimelapse.ACParams.ImageSegmentation.SubImageSize;%61;
@@ -424,13 +424,19 @@ for TP = Timepoints
         % be a centre/edge/BG
         if have_raw_dims
             PCentre =  -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
+            PCentre(TrapTrapImageStack>=0.5) = log(0.1);
             PCentre(TrapTrapImageStack==1) = min(PCentre(:));
             
+            
             PEdge   =  RawCentreDIM -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM));
+            PEdge(TrapTrapImageStack>=0.5) = log(0.4);
             PEdge(TrapTrapImageStack==1) = min(PEdge(:));
             
+            
             PBG     = RawBgDIM - log(1 + exp(RawBgDIM));   
+            PBG(TrapTrapImageStack>=0.5) = log(0.4);
             PBG(TrapTrapImageStack==1) = max(PBG(:));
+            
             
             PTot = exp(PCentre) + exp(PEdge) + exp(PBG);
             
@@ -705,8 +711,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        parfor TI = 1:length(TrapsToCheck)
+        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        for TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -824,7 +830,7 @@ for TP = Timepoints
                             
                             TransformedCellImage = -PEdgeCell;%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
                             CellRegionImage = zeros(size(TransformedCellImage));
-                            %CellRegionImage = log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
+                            %CellRegionImage = log(1-exp(PCentreCell));%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
                             CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
@@ -833,7 +839,6 @@ for TP = Timepoints
                             
                             TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
 
-                            TransformedCellImage = TransformedCellImage;
                             
                             %CellRegionImage =CellDecisionImage;
                             CellRegionImage = zeros(size(TransformedCellImage));
