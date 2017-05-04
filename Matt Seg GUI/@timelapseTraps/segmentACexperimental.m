@@ -64,7 +64,7 @@ else
 end
 
 % TODO - remove
- TrapsToCheck = 1;
+%TrapsToCheck = 1:3;
 
 ACparameters = cTimelapse.ACParams.ActiveContour;
 SubImageSize = cTimelapse.ACParams.ImageSegmentation.SubImageSize;%61;
@@ -711,8 +711,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        for TI = 1:length(TrapsToCheck)
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -822,15 +822,15 @@ for TP = Timepoints
                                                                              NewCellCentre );
                         
                         
-                        if true%have_raw_dims
+                        if have_raw_dims
                             PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
                             PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
                             
                             
                             TransformedCellImage = -PEdgeCell;%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
-                            CellRegionImage = zeros(size(TransformedCellImage));
-                            %CellRegionImage = log(1-exp(PCentreCell));%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
+                            %CellRegionImage = zeros(size(TransformedCellImage));
+                            CellRegionImage = log(1-exp(PCentreCell));% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
                             CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
@@ -1013,8 +1013,13 @@ for TP = Timepoints
                     
                     ParCurrentTrapInfo.cell(NCI).segmented = sparse(SegmentationBinary);
                     SegmentationBinary = imfill(SegmentationBinary,'holes');
-                    DilateSegmentationBinary = imdilate(SegmentationBinary,strel('disk',PostCellIdentificationDilateValue),'same');
+                    DilateSegmentationBinary = SegmentationBinary;
+                    if PostCellIdentificationDilateValue>0
+                        DilateSegmentationBinary = imdilate(SegmentationBinary,strel('disk',PostCellIdentificationDilateValue),'same');
+                    elseif PostCellIdentificationDilateValue<0
+                        DilateSegmentationBinary = imerode(SegmentationBinary,strel('disk',PostCellIdentificationDilateValue),'same');
                     
+                    end
                     if CrossCorrelating(TI)
                         %remove cell that has been successfully cross
                         %correlated from cross correlation matrix

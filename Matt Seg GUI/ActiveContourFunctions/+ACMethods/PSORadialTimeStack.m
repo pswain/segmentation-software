@@ -283,12 +283,29 @@ switch method
         [~,Iscores] = sort(preliminary_scores,1,'ascend');
         refinedPSOseeds = PSOseed(Iscores(1:seeds_for_PSO),:);
         
-        
+        if false
         [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds);
         
         
         radii_stack = optOUT(1:(end-1));
         opt_score = optOUT(end);
+        end
+        % attempted new method:
+        %grad_seeds = [radii_init_score_all;LB';radii_previous_time_point];
+        grad_seeds = [LB'];
+        num_seeds = size(grad_seeds,1);
+        bests = zeros(size(grad_seeds));
+        scores = zeros(num_seeds,1);
+        
+        for i = 1:num_seeds
+            [bests(i,:),scores(i)] = ACMethods.spline_grad_search(function_to_optimise,[LB UB],grad_seeds(i,:));
+        end
+        [opt_score,i] = min(scores);
+        radii_stack = bests(i,:)';
+        
+        %TODO remove this bit
+        
+        %fprintf('optimisation best result was seed %d\n',i);
 
 %%%%%%%%%%%%%%%%%%%% NOT WELL MAINTAINED  -   CHECK DIFFERENCE WITH PSO CASE BEFORE UNCOMMENTING AND USING   %%%%%%%%%%%%%%%%%        
 %     case 'fmincon' 

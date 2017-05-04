@@ -48,7 +48,7 @@ function [Ftot] = CFRadialTimeStack(im_stack,center_stack,angles,radii_stack_mat
 %radii_mat = radii_mat(:,indices))
 
 %TODO remoe
-do_old = true;
+do_old = false;
 
 all_outputs = false;
 
@@ -122,7 +122,7 @@ if nargin> 13 && any(region_image_stack(:)~=0)
 end
 
 %TODO = remove
-do_region_image = false;
+%do_region_image = false;
 
 % make previous_radii_mat the matrix for timepoint 1, whether optimising it
 % or not.
