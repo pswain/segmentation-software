@@ -181,7 +181,7 @@ threshold_radius = 6;
 threshold_probability = 2e-30;
 
 %throw away cells with a score higher than this.
-threshold_score = Inf;%-10;
+threshold_score = 4;%-10;
 %threshold_score = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -822,7 +822,7 @@ for TP = Timepoints
                                                                              NewCellCentre );
                         
                         
-                        if have_raw_dims
+                        if false;%have_raw_dims
                             PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
                             PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
@@ -833,15 +833,15 @@ for TP = Timepoints
                             CellRegionImage = log(1-exp(PCentreCell));% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
-                            CellDecisionImage = ACBackGroundFunctions.get_cell_image(NormalisedTrapDecisionImage,...
+                            CellDecisionImage = ACBackGroundFunctions.get_cell_image(TrapDecisionImage,...
                         SubImageSize,...
                         NewCellCentre );
                             
                             TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
-
+                            %TransformedCellImage = zeros(size(SubImageSize));
                             
-                            %CellRegionImage =CellDecisionImage;
-                            CellRegionImage = zeros(size(TransformedCellImage));
+                            CellRegionImage =CellDecisionImage;
+                            %CellRegionImage = zeros(size(TransformedCellImage));
                         end
                     else
                         %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);

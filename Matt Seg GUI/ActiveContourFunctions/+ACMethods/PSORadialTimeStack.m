@@ -277,14 +277,16 @@ switch method
             function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);   
         end
         
-        % refine seeds to smaller set
-
-        preliminary_scores = function_to_optimise(PSOseed);
-        [~,Iscores] = sort(preliminary_scores,1,'ascend');
-        refinedPSOseeds = PSOseed(Iscores(1:seeds_for_PSO),:);
+        
         
         if false
-        [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds);
+            % refine seeds to smaller set
+            
+            preliminary_scores = function_to_optimise(PSOseed);
+            [~,Iscores] = sort(preliminary_scores,1,'ascend');
+            refinedPSOseeds = PSOseed(Iscores(1:seeds_for_PSO),:);
+            
+            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds);
         
         
         radii_stack = optOUT(1:(end-1));
