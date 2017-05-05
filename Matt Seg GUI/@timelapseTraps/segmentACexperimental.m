@@ -424,17 +424,17 @@ for TP = Timepoints
         % be a centre/edge/BG
         if have_raw_dims
             PCentre =  -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
-            PCentre(TrapTrapImageStack>=0.5) = log(0.1);
+            %PCentre(TrapTrapImageStack>=0.5) = log(0.1);
             PCentre(TrapTrapImageStack==1) = min(PCentre(:));
             
             
             PEdge   =  RawCentreDIM -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM));
-            PEdge(TrapTrapImageStack>=0.5) = log(0.4);
+            %PEdge(TrapTrapImageStack>=0.5) = log(0.4);
             PEdge(TrapTrapImageStack==1) = min(PEdge(:));
             
             
             PBG     = RawBgDIM - log(1 + exp(RawBgDIM));   
-            PBG(TrapTrapImageStack>=0.5) = log(0.4);
+            %PBG(TrapTrapImageStack>=0.5) = log(0.4);
             PBG(TrapTrapImageStack==1) = max(PBG(:));
             
             
@@ -711,8 +711,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        for TI = 1:length(TrapsToCheck)
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        parfor TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -733,6 +733,7 @@ for TP = Timepoints
                 PCentreTrap = PCentre(:,:,TI);
                 PEdgeTrap = PEdge(:,:,TI);
                 PBGTrap = PBG(:,:,TI);
+                median_PCentreTrap = median(PCentreTrap(:));
             else
                 PCentreTrap = [];
                 PEdgeTrap = [];
@@ -823,15 +824,15 @@ for TP = Timepoints
                                                                              NewCellCentre );
                         
                         
-                        if false;%have_raw_dims
+                        if have_raw_dims
                             PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
                             PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
                             
                             
-                            TransformedCellImage = -PEdgeCell + log(1-exp(PCentreCell));%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
+                            TransformedCellImage = -PEdgeCell + log(1-exp(PEdgeCell));%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
                             %CellRegionImage = zeros(size(TransformedCellImage));
-                            CellRegionImage = log(1-exp(PCentreCell));% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
+                            CellRegionImage = log(1-exp(PCentreCell))-PCentreCell;% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else
                             %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
                             CellDecisionImage = ACBackGroundFunctions.get_cell_image(TrapDecisionImage,...
@@ -1038,8 +1039,8 @@ for TP = Timepoints
                     end
                     %remove pixels identified as cell pixels from
                     %decision image
-                    TrapDecisionImage(DilateSegmentationBinary) = 2*abs(max(TwoStageThreshold,mDIM));
-                    
+                    TrapDecisionImage(DilateSegmentationBinary) = 2*abs(TwoStageThreshold)+1;
+                    PCentreTrap(SegmentationBinary) =  median_PCentreTrap;
                     
                     %update trap image so that it includes all
                     %segmented cells
