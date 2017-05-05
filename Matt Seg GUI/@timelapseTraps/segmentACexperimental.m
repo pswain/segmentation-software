@@ -121,7 +121,7 @@ if cTimelapse.trapsPresent
     PerformRegistration = false; %registration should be covered by tracking in the traps.
 end
 
-Recentering =true; %recalcluate the centre of the cells each time as the average ofthe outline
+Recentering =false;%true; %recalcluate the centre of the cells each time as the average ofthe outline
 
 
 %multiplier od decision image added to Transformed image.
@@ -828,7 +828,7 @@ for TP = Timepoints
                             PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
                             
                             
-                            TransformedCellImage = -PEdgeCell;%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
+                            TransformedCellImage = -PEdgeCell + log(1-exp(PCentreCell));%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
                             %CellRegionImage = zeros(size(TransformedCellImage));
                             CellRegionImage = log(1-exp(PCentreCell));% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                         else

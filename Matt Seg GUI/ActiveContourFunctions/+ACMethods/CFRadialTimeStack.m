@@ -187,6 +187,7 @@ for ti = 1:length(timepoints_to_optimise)
         area_stack = repmat(region_im,[1,1,points]);
         area_stack(~area_map) = 0;
         F = F + sum(reshape(permute(area_stack,[3,2,1]),points,[]),2)./area_sum + 100*c./area_sum;
+        %F = F + sum(reshape(permute(area_stack,[3,2,1]),points,[]),2)./area_sum;
         
     else
         % use approximation from edge sum

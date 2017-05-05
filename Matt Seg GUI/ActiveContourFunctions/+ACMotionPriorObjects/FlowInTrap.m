@@ -81,7 +81,10 @@ classdef FlowInTrap
             size_prior = self.sizeLookUpTable(:,:,size_index);
             
             prior_array =  (size_prior+loc_prior)/2;
-     
+            
+            %% add flat 'move anywhere' possibility
+            anywhere = 0.2;
+            prior_array = prior_array*(1-anywhere) + anywhere;
         end
     end
     
