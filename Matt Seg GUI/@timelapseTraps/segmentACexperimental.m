@@ -711,8 +711,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        parfor TI = 1:length(TrapsToCheck)
+        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        for TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -721,6 +721,7 @@ for TP = Timepoints
             
             PreviousTimepointRadii = [];
             TrapDecisionImage = DecisionImageStack(:,:,TI);
+            mDIM = median(TrapDecisionImage(:));
             NormalisedTrapDecisionImage = NormalisedDecisionImageStack(:,:,TI);
             TrapTrapImage = TrapTrapImageStack(:,:,TI);
             
@@ -1037,7 +1038,7 @@ for TP = Timepoints
                     end
                     %remove pixels identified as cell pixels from
                     %decision image
-                    TrapDecisionImage(DilateSegmentationBinary) = 2*abs(TwoStageThreshold);
+                    TrapDecisionImage(DilateSegmentationBinary) = 2*abs(max(TwoStageThreshold,mDIM));
                     
                     
                     %update trap image so that it includes all
