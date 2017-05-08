@@ -56,6 +56,7 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
                                 % default structure is chosen to maintain
                                 % default behaviour from before parameter
                                 % structure was imposed.
+                                trainingImageExample = [] ; %example of images used to train cellVision.
 
     end
     

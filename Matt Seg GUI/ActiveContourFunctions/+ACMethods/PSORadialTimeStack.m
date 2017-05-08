@@ -46,8 +46,11 @@ function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_images,ACpara
 
 
 forcing_images = double(forcing_images);
-region_image = double(region_image);
-
+if nargin<7 || isempty(region_image)
+    region_image = zeros(size(forcing_images)); 
+else
+    region_image = double(region_image);
+end
 %this is done to try and stop average pixels contributing to outline so that no average of pixel
 %values need be taken.
 %forcing_images = forcing_images - median(forcing_images(:));

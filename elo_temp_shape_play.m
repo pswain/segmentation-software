@@ -120,3 +120,40 @@ score
 radii
 RadiiResult
 
+
+%% timing functions
+
+%% speed check calls
+%%
+rng('default');rng(1);
+%%
+rng('default');rng(1);
+t=tic;feval(functname,pos);toc(t)
+
+%%
+rng('default');rng(1);
+t=tic;feval(functname,pos(1,:));toc(t)
+
+%%
+rng('default');rng(1);
+t=tic;feval(functname,repmat(pos,[5,1]));toc(t)
+
+%%
+rng('default');rng(1);
+t= tic;ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,FauxCentersStack,[],[],ExcludeLogical,CellRegionImage)
+toc(t);
+
+
+%%
+rng('default');rng(1);
+t= tic;optOut_PSO = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds)
+toc(t)
+
+%%
+rng('default');rng(1);
+t = tic;
+optOut_grad = ACMethods.spline_grad_search(function_to_optimise,[LB UB],PSOseed(1,:));
+toc(t)
+
+
+

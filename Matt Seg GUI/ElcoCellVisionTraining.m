@@ -73,9 +73,9 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(c
 % can also use this block of script to curate the cell outline for each
 % cell using the curateCellTrackingGUI.
 
-channel_to_curate = 1;
+channel_to_curate = 2;
 
-for posi = 1:length(cExperiment.dirs)
+for posi = (length(cExperiment.dirs)-10):length(cExperiment.dirs)%1:length(cExperiment.dirs)
     cTimelapse = cExperiment.loadCurrentTimelapse(posi);
     TPs = 1:length(cTimelapse.cTimepoint);
     Traps = cTimelapse.defaultTrapIndices;
@@ -135,37 +135,41 @@ clear cTimelapseAll
 
 cTdisp = cTimelapseDisplay(cTimelapse);
 
+
+
+
 %% see trap outline on an image
 clear cExperiment currentPos di file path
 
 figure;imshow(OverlapGreyRed(double(cCellVision.cTrap.trap1),cCellVision.cTrap.trapOutline,[],[],true),[]);
 
+%% improve trap outline
+
+%% select image
+trap_channel = 2;
+TP = randi(length(cTimelapse.cTimepoint),1);
+TI = randi(length(cTimelapse.cTimepoint(TP).trapInfo),1);
+
+trap_image = cTimelapse.returnSingleTrapTimepoint(TI,TP,trap_channel);
+imshow(trap_image,[])
+
+%% refine
+
+cCellVision.cTrap.trap1 = trap_image;
+cCellVision.identifyTrapOutline;
+
+%% refine trap outline
+
+cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,trap_channel,[],[],false,true)
+
 %% show refined trap outline
 TP = randi(length(cTimelapse.cTimepoint),1);
 TI = randi(length(cTimelapse.cTimepoint(TP).trapInfo),1);
 
-imshow(OverlapGreyRed(double(cTimelapse.returnSingleTrapTimepoint(TI,TP,1)),full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsBig),[],full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsInner),true),[]);
+imshow(OverlapGreyRed(double(cTimelapse.returnSingleTrapTimepoint(TI,TP,trap_channel)),full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsBig),[],full(cTimelapse.cTimepoint(TP).trapInfo(TI).refinedTrapPixelsInner),true),[]);
 figure(gcf)
 
 
-%% improve cCellvision trap outline
-
-    which_cell_to_use = 2;
-
-%this file should only have the cCellVision variable
-
-ttacObject.cCellVision = cCellVision;
-
-if which_cell_to_use==1
-
-    TrapIM = double(cCellVision.cTrap.trap1);
-else
-    TrapIM = double(cCellVision.cTrap.trap2);
-end
-
-
-TrapPixelImage = ACTrapFunctions.make_trap_pixels_from_image(TrapIM);
-cCellVision.cTrap.trapOutline = TrapPixelImage;
 
 
 %% make trap_inner region
@@ -201,6 +205,11 @@ figure(2);
 imshow(trap_inner_log+2*trap_im,[]);
 
 cCellVision.cTrap.trapInner = trap_inner;
+%%
+trap_inner_log = imdilate(trap_inner_log & ~trap_im,strel('disk',12));
+imshow(trap_inner_log+trap_im,[])
+
+%%
 cCellVision.cTrap.trapInnerLog = trap_inner_log & ~trap_im;
 
 %% set segmentation method
@@ -227,6 +236,11 @@ SegMethod = @(CSVM,image) createImFilterSetNoTrapSlimGFP(CSVM,image);
 
 SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoBF_1_3(CSVM,image,trapOutline);
 
+%% 1 and 3 Bright field classifier for edges
+
+SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoBF_1_3_EdgeCentre(CSVM,image,trapOutline);
+
+
 %% single GFP slice
 
 SegMethod = @(CSVM,image,trapOutline) createImFilterSetElcoGFP_1(CSVM,image);
@@ -246,9 +260,8 @@ cTimelapse.channelsForSegment =  cTimelapse.selectChannelGUI('segmentation chann
                                     'set channels you want to use for segmentation',true);
                                 
 %% show them
-for chi = cTimelapse.channelsForSegment
-    cTimelapseDisplay(cTimelapse,chi);
-end
+cTimelapseDisplay(cTimelapse);
+
 
 %%
 
@@ -303,9 +316,9 @@ gui2 = GenericStackViewingGUI(imStacks{2});
 
 %% look at single image from cCellVision
 %TI = 1;
-%TP =6;
+TP =60;
 
-TP = round(rand*length(cTimelapse.cTimepoint));
+%TP = round(rand*length(cTimelapse.cTimepoint));
 TI = round(rand*length(cTimelapse.cTimepoint(TP).trapInfo));
 
 
@@ -323,6 +336,8 @@ if cTimelapse.trapsPresent
 else
     trapOutline = false(size(A,1),size(A,2));
 end
+
+cCellVision.trainingImageExample = A;
 %% show filters for this image
 if nargin(SegMethod)==3
 tic;B = SegMethod(cCellVision,A,trapOutline);toc;
@@ -440,7 +455,7 @@ cCellVision.SVMModelLinear = [];
  
 cCellVision.trainingParams.cost=4;
 cCellVision.trainingParams.gamma=1;
-cCellVision.negativeSamplesPerImage= floor(0.1*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
+cCellVision.negativeSamplesPerImage= floor(0.2*(size(A,1)*size(A,2)));%set to 750 ish for traps and 5000 for whole field images
 step_size=1;
 
 debugging = true; %set to false to not get debug outputs
@@ -449,7 +464,7 @@ debugging = true; %set to false to not get debug outputs
 debug_outputs  =  cCellVision.generateTrainingSetTimelapseCellEdge(cTimelapse,step_size,SegMethod,debugging);
 
 %debug_outputs = { negatives_stack , positive_stack , neg_exclude_stack}
-
+fprintf('\n  training set obtained \n')
 
 %% show debug outputs
 % red = inner
@@ -460,7 +475,7 @@ debugStack = zeros(size(debug_outputs{1},1),size(debug_outputs{1},2),numTraps*3)
 nT = 1;
 nTr = 1;
 nTrT = 1;
-show_channel = 1;
+show_channel = 2;
 while nTrT<=numTraps
     TrapIm = cTimelapse.returnTrapsTimepoint([],nT,show_channel);
     for iT = 1:size(TrapIm,3)

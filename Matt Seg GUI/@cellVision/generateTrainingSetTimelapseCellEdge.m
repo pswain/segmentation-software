@@ -186,6 +186,7 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             all_cell_im = false([size(image{trap},1) size(image{trap},2)]);
             all_cell_edge_im = all_cell_im;
             all_cell_centre_im = all_cell_im;
+            all_cell_big_edge_im = all_cell_im;
             
             % exclude pixel from the edge in training.
             exclude_boundary = true(size(all_cell_im));
@@ -200,8 +201,11 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
                         dist_im = dist_im/max(dist_im(:));
                         all_cell_centre_im(round(trapInfo.cell(num_cells).cellCenter(2)),round(trapInfo.cell(num_cells).cellCenter(1))) = true;
                         all_cell_edge_im = all_cell_edge_im | (cell_im - imerode(cell_im,se1));
-                        all_cell_im = all_cell_im | imdilate(cell_im,se2);
-                        all_cell_centre_im = all_cell_centre_im | dist_im>0.4;
+                        all_cell_big_edge_im = all_cell_big_edge_im |  (imdilate(cell_im,se1) -cell_im);
+                        %all_cell_im = all_cell_im | imdilate(cell_im,se2);
+                        all_cell_im = all_cell_im | cell_im;
+                        %all_cell_centre_im = all_cell_centre_im | dist_im>0.4;
+                        all_cell_centre_im = all_cell_centre_im | imerode(cell_im,se1);
                         
                     end
                 end
@@ -220,7 +224,7 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             exclude_from_negs = exclude_from_negs | exclude_boundary;
             % ensure pixels on cell boundary are included in negatives if
             % the are not in exclusion zone
-            fix_in_negs = fix_in_negs | all_cell_edge_im>0;
+            fix_in_negs = fix_in_negs | all_cell_big_edge_im>0;
             fix_in_negs = fix_in_negs & ~exclude_from_negs;
             
         end
