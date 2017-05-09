@@ -205,7 +205,7 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
                         %all_cell_im = all_cell_im | imdilate(cell_im,se2);
                         all_cell_im = all_cell_im | cell_im;
                         %all_cell_centre_im = all_cell_centre_im | dist_im>0.4;
-                        all_cell_centre_im = all_cell_centre_im | imerode(cell_im,se1);
+                        all_cell_centre_im = all_cell_centre_im | imerode(cell_im,se2);
                         
                     end
                 end
@@ -217,14 +217,13 @@ for timepoint=1:frame_ss:length(cTimelapse.cTimepoint)
             training_class(all_cell_edge_im) = 2;
             
             % exclude cells from negative set.
-            exclude_from_negs = exclude_from_negs | all_cell_im;
+            exclude_from_negs = exclude_from_negs | all_cell_im | all_cell_big_edge_im;
             
             % exclude pixels around right next to centre pixels to try and
             % make classification more robust
             exclude_from_negs = exclude_from_negs | exclude_boundary;
             % ensure pixels on cell boundary are included in negatives if
             % the are not in exclusion zone
-            fix_in_negs = fix_in_negs | all_cell_big_edge_im>0;
             fix_in_negs = fix_in_negs & ~exclude_from_negs;
             
         end

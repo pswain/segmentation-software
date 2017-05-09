@@ -159,8 +159,8 @@ cCellVision.cTrap.trap1 = trap_image;
 cCellVision.identifyTrapOutline;
 
 %% refine trap outline
-
-cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,trap_channel,[],[],false,true)
+if_show = false;
+cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,trap_channel,[],[],if_show,true)
 
 %% show refined trap outline
 TP = randi(length(cTimelapse.cTimepoint),1);
@@ -508,14 +508,14 @@ cCellVision.trainingParams.gamma=1;
 ws = [(sum(cCellVision.trainingData.class==1)+sum(cCellVision.trainingData.class==2))/sum(cCellVision.trainingData.class==0) 1];
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
-maxTP = 1000;
+maxTP = 30;
 step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchCellToOuterLinear(step_size,cmd);
 % linear training
 
 fprintf('\n\n    training cell to outer SVM \n\n')
 
-maxTP = 1000; 
+maxTP = 100; 
 
 step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); 
 %cCellVision.trainingParams.cost=1;
@@ -543,24 +543,28 @@ cCellVision.trainingParams.gamma=1;
 ws = [sum(cCellVision.trainingData.class==1)/sum(cCellVision.trainingData.class==2) 1];
 %ws = round(ws./min(ws,[],2));
 cmd=sprintf('-s 1 -w0 %f -w1 %f -v 5 -c ',ws(1),ws(2)); %sets negative weights to be such that total of negative and positive is hte same
-maxTP = 1000;
+maxTP = 30;
 step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); % set step size so never using more than 30 timepoints
 cCellVision.runGridSearchInnerToEdgeLinear(step_size,cmd);
 % linear training
 
 fprintf('\n\n    training edge to inner SVM \n\n')
 
-maxTP = 1000; 
+maxTP = 100; 
 
 step_size=max([floor(length(cTimelapse.cTimepoint)/maxTP) ; 1]); 
 %cCellVision.trainingParams.cost=1;
 %cmd = ['-s 1 -w0 1 -w1 1 -c ', num2str(cCellVision.trainingParams.cost)];
 
-cmd=sprintf('-s 1 -w0 %f -w1 %f -c %f'...
-    ,ws(1),ws(2),cCellVision.trainingParams.cost); %sets positive and negative weights to be such that total of negative and positive is the same
+cmd=sprintf('-s 1 -w0 %f -w1 %f -c %f'... 
+   ,ws(1),ws(2),cCellVision.trainingParams.cost); %sets positive and negative weights to be such that total of negative and positive is the same
 
-tic
-cCellVision.trainSVMInnerToEdgeLinear(step_size,cmd);toc
+% might be faster but not sure of the implications.
+% cmd=sprintf('-s 2 -w0 %f -w1 %f -c %f'...
+%     ,ws(1),ws(2),cCellVision.trainingParams.cost); %sets positive and negative weights to be such that total of negative and positive is the same
+
+t= tic;
+cCellVision.trainSVMInnerToEdgeLinear(step_size,cmd);toc(t)
 
 %% flip second model
 % This was necessary when I trained the model, but I'm not sure it will

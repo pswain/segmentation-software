@@ -1,11 +1,11 @@
 function [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point)
 % simple gradient descent based method for searching.
 
-max_iterations = 10;
+max_iterations = 50;
 step_num = 5;
 jump = 4;
-max_lin_iter = 3;
-thresh = 1e-3;
+max_lin_iter = 5;
+thresh = 1e-2;
 
 dims = length(starting_point);
 vs = dims+1;
@@ -23,12 +23,13 @@ current_point = starting_point;
 
 multiD_iteration = 0;
 
+new_jump = jump;
 while multiD_iteration<max_iterations
 iter_point = current_point;
 % search 
 current_best = old_score;
 for vi = 1:vs
-    iter_jump = jump;
+    iter_jump = new_jump;
     iter = 0;
     iter_score = zeros(step_num,1);
     steps = linspace(-iter_jump,iter_jump,2*step_num)';
@@ -59,13 +60,19 @@ for vi = 1:vs
     
 end
 
+if multiD_iteration==max_iterations
+    fprintf('\n\noptimiser maxed out!!\n\n');
+end
+
 % replace best performing vector
 improvement = diff([old_score;new_scores]);
 [best_improvement,I] = min(improvement);
-if all(current_point==iter_point) || (-best_improvement)<thresh
+if all(current_point==iter_point) || (-best_improvement/abs(new_scores(end)))<thresh
     break
 end
+
 new_vec = iter_point - current_point;
+new_jump = min(jump,2*max(abs(new_vec)));
 new_vec = new_vec/max(new_vec);
 vectors(1,:) = new_vec;
 current_point = iter_point;
