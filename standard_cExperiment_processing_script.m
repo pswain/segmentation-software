@@ -250,8 +250,8 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 %% pick position, timepoint and threshold to inspect.
 
-tp = 32; % time point to inspect
-channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
+tp = 75; % time point to inspect
+channel_to_view = 2; % channel on which to overlay thresholds
 thresh1 = 0; %yellow: new cells (more stringent)
 thresh2 = 0.; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect

@@ -294,7 +294,7 @@ switch method
         end
         % attempted new method:
         %grad_seeds = [radii_init_score_all;LB';radii_previous_time_point];
-        grad_seeds = [LB'];
+        grad_seeds = [LB';radii_previous_time_point];
         %grad_seeds = refinedPSOseeds(1,:);
         
         num_seeds = size(grad_seeds,1);
