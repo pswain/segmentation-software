@@ -178,7 +178,7 @@ log_det_cov_2cell_large = log(det(inverted_cov_2cell_large));
 threshold_radius = 6;
 
 % selected rather arbitrarily from histogram of trained values.
-threshold_probability = 1e-10;
+threshold_probability = 2e-30;
 
 %throw away cells with a score higher than this.
 threshold_score = 4;%-10;
