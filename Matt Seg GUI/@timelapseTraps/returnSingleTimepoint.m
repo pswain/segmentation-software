@@ -124,12 +124,12 @@ end
 
 
 
-% if imSize (the size of the final image) and rawImSize (the size of the
-% loaded image) are different, then rescale
-if  any(cTimelapse.imSize ~= cTimelapse.rawImSize)
+% if scaledImSize (the size of the final image before rotation) and
+% rawImSize (the size of the loaded image) are different, then rescale
+if  any(cTimelapse.scaledImSize ~= cTimelapse.rawImSize)
     new_im = zeros([cTimelapse.imSize stack_depth]);
     for si = 1:stack_depth
-        new_im(:,:,si) = imresize(timepointIm,cTimelapse.imSize);
+        new_im(:,:,si) = imresize(timepointIm,cTimelapse.scaledImSize);
     end
     timepointIm = new_im;
     clear new_im
@@ -140,7 +140,7 @@ end
 % rotate image. It is first padded to try and prevent zeros occuring in the
 % final image as an artefact of the padding.
 if cTimelapse.image_rotation~=0
-    bbN = ceil(0.5*max(cTimelapse.imSize)); tIm=[];
+    bbN = ceil(0.5*max(cTimelapse.scaledImSize)); tIm=[];
     for slicei = 1:stack_depth;
         tpImtemp = padarray(timepointIm(:,:,slicei),[bbN bbN],medVal,'both');
         tpImtemp = imrotate(tpImtemp,cTimelapse.image_rotation,'bilinear','loose');
@@ -161,6 +161,11 @@ if isprop(cTimelapse,'offset') && size(cTimelapse.offset,1)>=channel && any(cTim
     upper_boundaries = [size(timepointIm,1) size(timepointIm,2)] + boundaries + abs(boundaries);
     timepointIm = padarray(timepointIm,[abs(boundaries) 0],medVal);
     timepointIm = timepointIm(lower_boundaries(1):upper_boundaries(1),lower_boundaries(2):upper_boundaries(2),:);
+end
+
+% populate this if 
+if isempty(cTimelapse.imSize)
+    cTimelapse.imSize = [size(timepointIm,1),size(timepointIm,2)];
 end
 
 end

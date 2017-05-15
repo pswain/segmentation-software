@@ -24,7 +24,7 @@ load(fullfile(path,file),'cCellVision');
 %% initialise for cExperiment compilation
 
 cExperiment =[];
-num_timepoints = 5;
+num_timepoints = 15;
 
 %% select cExperiments you want to add to the gound truth set.
 % num_timpoints timepoints will be added from each one.
@@ -73,17 +73,20 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,1:numel(c
 % can also use this block of script to curate the cell outline for each
 % cell using the curateCellTrackingGUI.
 
-channel_to_curate = 2;
+channel_to_curate = 1;
 
-for posi = (length(cExperiment.dirs)-10):length(cExperiment.dirs)%1:length(cExperiment.dirs)
+for posi = 1:length(cExperiment.dirs)
     cTimelapse = cExperiment.loadCurrentTimelapse(posi);
+    cTimelapse.ACParams = cExperiment.ActiveContourParameters;
     TPs = 1:length(cTimelapse.cTimepoint);
     Traps = cTimelapse.defaultTrapIndices;
     for i = 1:numel(TPs)
         
         TP = TPs(i);
         for TI = Traps
-            gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TP,TI,1,channel_to_curate);
+            %gui = curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,TP,TI,1,channel_to_curate);
+            gui = curateCellTrackingGUI(cTimelapse,cCellVision,TP,TI,1,channel_to_curate);
+            
             gui.slider.Value = TP;
             gui.slider.Min = TP;
             gui.slider.Max = TP;
@@ -146,7 +149,7 @@ figure;imshow(OverlapGreyRed(double(cCellVision.cTrap.trap1),cCellVision.cTrap.t
 %% improve trap outline
 
 %% select image
-trap_channel = 2;
+trap_channel = 1;
 TP = randi(length(cTimelapse.cTimepoint),1);
 TI = randi(length(cTimelapse.cTimepoint(TP).trapInfo),1);
 
@@ -159,8 +162,8 @@ cCellVision.cTrap.trap1 = trap_image;
 cCellVision.identifyTrapOutline;
 
 %% refine trap outline
-if_show = false;
-cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,trap_channel,[],[],if_show,true)
+if_show = true;
+cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,[],[],if_show)
 
 %% show refined trap outline
 TP = randi(length(cTimelapse.cTimepoint),1);
@@ -316,9 +319,9 @@ gui2 = GenericStackViewingGUI(imStacks{2});
 
 %% look at single image from cCellVision
 %TI = 1;
-TP =60;
+%TP =60;
 
-%TP = round(rand*length(cTimelapse.cTimepoint));
+TP = round(rand*length(cTimelapse.cTimepoint));
 TI = round(rand*length(cTimelapse.cTimepoint(TP).trapInfo));
 
 
@@ -475,7 +478,7 @@ debugStack = zeros(size(debug_outputs{1},1),size(debug_outputs{1},2),numTraps*3)
 nT = 1;
 nTr = 1;
 nTrT = 1;
-show_channel = 2;
+show_channel = 1;
 while nTrT<=numTraps
     TrapIm = cTimelapse.returnTrapsTimepoint([],nT,show_channel);
     for iT = 1:size(TrapIm,3)
@@ -566,7 +569,7 @@ cmd=sprintf('-s 1 -w0 %f -w1 %f -c %f'...
 t= tic;
 cCellVision.trainSVMInnerToEdgeLinear(step_size,cmd);toc(t)
 
-%% flip second model
+% flip second model
 % This was necessary when I trained the model, but I'm not sure it will
 % always be the case. Performing this made the centres in the InnerToEdge
 % classifiers negative, and the edges positive, but didn't change the

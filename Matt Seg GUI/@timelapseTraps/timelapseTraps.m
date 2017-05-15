@@ -55,8 +55,9 @@ classdef timelapseTraps<handle
         timepointsToProcess %list of timepoints that should be processed (i.e. checked for cells and what not)
         extractedData %a structure array of sparse arrays of extracted statistics for the cell. One entry for each channel extracted, one row in the array for each cell with zeros where the cell is absent.
         channelNames % cell array of channel names. Used in selecting the file(s) to load when a particular channel is selected in returnImage method
-        imSize %the size of the images before rotation (i.e. raw images).
+        imSize %the size of the images after rotation.
         rawImSize % size of the images before any rescaling or rotation.
+        scaledImSize % size of images after rescaling but before rotation.
         channelsForSegment = 1; %index of the channels to use in the centre finding segmentation .default to 1 (normally DIC)
         channelForTrapDetection = 1; %channel used in cTrapSelectDisplay to identify traps. Traps should appear the same in this channel as they do in cellVision.cTrap.trap1/trap2.
         lineageInfo %structure array to hold everything associated with daughter counting (namely, the birth times, mother labels, daughter labels etc.)
@@ -389,6 +390,10 @@ classdef timelapseTraps<handle
             
             if isempty(cTimelapse.channelForTrapDetection)
                 cTimelapse.channelForTrapDetection = 1;
+            end
+            
+            if isempty(cTimelapse.scaledImSize)
+                cTimelapse.scaledImSize = cTimelapse.imSize;
             end
 
         end

@@ -41,14 +41,18 @@ if ~isempty(cCellVision.cTrap)
         % improved but doesn't seem worth it given the rarity with which
         % this needs to be done.
         ImageTransformParameters = struct('postprocessing','invert');
-        ACparameters = struct('alpha',0.1,'beta',0,'R_min',3,'R_max',max(size(im)),'opt_points',12,...
+        ACparameters = struct('alpha',0.1,'beta',0,'R_min',3,'R_max',max(size(im)),'opt_points',25,...
             'visualise',0,'EVALS',3000,'spread_factor',1,'spread_factor_prior',0.05,'seeds_for_PSO',30,'seeds',100,'TerminationEpoch',500,'MaximumRadiusChange',Inf);
         
         TrapImage = double(cCellVision.cTrap.trap1);
         TrapImage = TrapImage/median(TrapImage(:));
         ForcingImage = ACBackGroundFunctions.get_cell_image(TrapImage,min(size(TrapImage),[],2),[PntX PntY]);
         
-        [RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,ceil(size(ForcingImage)/2));
+        %[RadiiRes,AngleRes] = ACMethods.PSORadialTimeStack(ForcingImage,ACparameters,ceil(size(ForcingImage)/2));
+        
+        RadiiRes = 5*ones(1,ACparameters.opt_points);
+        AngleRes = linspace(0,2*pi,ACparameters.opt_points+1);
+        AngleRes = AngleRes(1:ACparameters.opt_points);
         
         fprintf('please edit the outline by clicking on the image and press enter when you are satisfied\n ')
         

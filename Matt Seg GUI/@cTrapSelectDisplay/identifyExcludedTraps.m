@@ -32,17 +32,19 @@ if ~isempty(trapLocationsNotToRemove)
 end
 
 TrapsToRemove = [];
-for trapi = 1:length(trapLocations)
-    for zonei = 1:size(cDisplay.ExclusionZones,1)
-        
-        if trapLocations(trapi).xcenter>=cDisplay.ExclusionZones(zonei,1) && ...
-                trapLocations(trapi).xcenter<=cDisplay.ExclusionZones(zonei,1) + cDisplay.ExclusionZones(zonei,3) && ...
-                trapLocations(trapi).ycenter>=cDisplay.ExclusionZones(zonei,2) && ...
-                trapLocations(trapi).ycenter<=cDisplay.ExclusionZones(zonei,2) + cDisplay.ExclusionZones(zonei,4);
-            TrapsToRemove = [TrapsToRemove trapi];
+if~isempty(trapLocations) && ~isempty(trapLocations(1).xcenter)
+    for trapi = 1:length(trapLocations)
+        for zonei = 1:size(cDisplay.ExclusionZones,1)
+            
+            if trapLocations(trapi).xcenter>=cDisplay.ExclusionZones(zonei,1) && ...
+                    trapLocations(trapi).xcenter<=cDisplay.ExclusionZones(zonei,1) + cDisplay.ExclusionZones(zonei,3) && ...
+                    trapLocations(trapi).ycenter>=cDisplay.ExclusionZones(zonei,2) && ...
+                    trapLocations(trapi).ycenter<=cDisplay.ExclusionZones(zonei,2) + cDisplay.ExclusionZones(zonei,4);
+                TrapsToRemove = [TrapsToRemove trapi];
+            end
         end
+        
     end
-    
 end
 
 

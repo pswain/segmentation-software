@@ -40,6 +40,10 @@ while isempty(cTimelapse.rawImSize)
 end
 
 imSize = round(cTimelapse.rawImSize*cTimelapse.pixelSize/cellVision_pixel_size);
-cTimelapse.imSize = imSize;
+cTimelapse.scaledImSize = imSize;
+
+% allow this to be reset the next time an image is opened, just in case it
+% has been populated and the images need to be rescaled.
+cTimelapse.imSize = [];
 
 end

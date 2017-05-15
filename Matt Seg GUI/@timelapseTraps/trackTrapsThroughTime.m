@@ -64,13 +64,12 @@ if cTimelapse.trapsPresent
     timepoint = timepoints(1);
     % take central region of first timepoint for registration.
     reg_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelForTrapDetection);
-    bb=ceil(min(cTimelapse.imSize)/20);
-    bb=floor(size(reg_im,1)*.2);
+    bb=floor(size(reg_im)*.2);
     accum_col=0;
     accum_row=0;
     
     reg_im=double(reg_im);
-    reg_im=reg_im(bb:end-bb,bb:end-bb);
+    reg_im=reg_im(bb(1):end-bb(1),bb(2):end-bb(2));
     reg_im_fft=fft2(reg_im/mean(reg_im(:)));
     timepoint_reg=timepoint;
         
@@ -90,7 +89,7 @@ if cTimelapse.trapsPresent
         
         new_im=cTimelapse.returnSingleTimepoint(timepoint,cTimelapse.channelForTrapDetection);
         
-        new_im=new_im(bb:end-bb,bb:end-bb);
+        new_im=new_im(bb(1):end-bb(1),bb(2):end-bb(2));
         new_im_fft2 = fft2(new_im/mean(new_im(:)));
         
         [output, ~] = dftregistration(reg_im_fft,new_im_fft2,1);

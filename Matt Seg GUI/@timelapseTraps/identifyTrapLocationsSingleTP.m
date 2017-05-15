@@ -114,6 +114,11 @@ while max_dynamic> val_thresh
     [max_dynamic, imax] = max(trap_prediction_image(:));   
 end
 
+% no traps found
+if trap_index==1
+    trapLocations = [];
+end
+
 end
 
 

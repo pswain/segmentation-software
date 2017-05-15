@@ -122,12 +122,15 @@ classdef cTrapSelectDisplay<handle
             
             im_mask=cDisplay.image;
             
-            trap_locations_array = zeros(length(cDisplay.trapLocations),2);
-            for loci = 1:length(cDisplay.trapLocations);
-                trap_locations_array(loci,:) = [cDisplay.trapLocations(loci).ycenter,...
-                                                cDisplay.trapLocations(loci).xcenter];
-            end
-            
+           % trap_locations_array = zeros(length(cDisplay.trapLocations),2);
+            if ~isempty(cDisplay.trapLocations)
+            trap_locations_array = [[cDisplay.trapLocations(:).ycenter]',...
+                                                [cDisplay.trapLocations(:).xcenter]'];
+%             for loci = 1:length(cDisplay.trapLocations);
+%                 trap_locations_array(loci,:) = [cDisplay.trapLocations(loci).ycenter,...
+%                                                 cDisplay.trapLocations(loci).xcenter];
+%             end
+%             
             trap_locations_array = round(trap_locations_array);
             
             % make mask where all trap pixels are true.
@@ -137,6 +140,7 @@ classdef cTrapSelectDisplay<handle
                                 
             
             im_mask(trap_mask)=im_mask(trap_mask)*1.5;
+            end
             im_mask = SwainImageTransforms.min_max_normalise(im_mask);
             if isempty(cDisplay.imHandle)
                 cDisplay.imHandle=imshow(im_mask,[0,1],'Parent',cDisplay.axesHandle);

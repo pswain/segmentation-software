@@ -250,10 +250,10 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 
 %% pick position, timepoint and threshold to inspect.
 
-tp = 75; % time point to inspect
-channel_to_view = 2; % channel on which to overlay thresholds
-thresh1 = 0; %yellow: new cells (more stringent)
-thresh2 = 0.; % green : tracked cells (less stringent)
+tp = 300; % time point to inspect
+channel_to_view = 1; % channel on which to overlay thresholds
+thresh1 = -0; %yellow: new cells (more stringent)
+thresh2 = -0; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect
 
 %% track this position 
@@ -318,7 +318,7 @@ for i=1:mega_image_size
 end
 
 imtool(mega_image,[])
-figure;imshow(OverlapGreyRed(mega_trap_image,mega_image<thresh1,[],mega_image<thresh2),[])
+figure;imshow(OverlapGreyRed(mega_trap_image,mega_image<thresh1,[],mega_image<thresh2,true),[])
 figure;imshow(mega_trap_image,[])
 
 
@@ -359,7 +359,7 @@ cExperiment.ActiveContourParameters.ActiveContour.MaximumRadiusChange = Inf;
 
 
 % maximum allowed radius of cell
-cExperiment.ActiveContourParameters.ActiveContour.R_max = 18;
+cExperiment.ActiveContourParameters.ActiveContour.R_max = 25;
 
 % minimum allowed radius of cell
 cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
@@ -368,6 +368,7 @@ cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
 % increasing this number slows the script but allows more varied shapes.
 cExperiment.ActiveContourParameters.ActiveContour.opt_points = 6;
 
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationChannel = 1;
 
 %% Look at the results for the test position
 % it is often useful to look at the results from a single position and see
