@@ -30,10 +30,9 @@ end
 cTimelapse = cExperiment.cTimelapse;
 cTimelapseFilename=[cExperiment.saveFolder filesep cExperiment.dirs{currentPos},'cTimelapse'];
 save(cTimelapseFilename,'cTimelapse');
-cExperiment.cTimelapse=[];
 
 if saveCE
-    cExperiment.saveExperiment;
+    cExperiment.saveExperiment; 
 end
 
 end

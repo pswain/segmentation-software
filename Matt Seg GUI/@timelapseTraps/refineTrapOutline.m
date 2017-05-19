@@ -1,5 +1,5 @@
 function refineTrapOutline(cTimelapse,starting_trap_outline,traps,timepoints,show_output)
-% refineTrapOutline(cTimelapse,starting_trap_outline,channels,traps,timepoints,show_output,do_close)
+% refineTrapOutline(cTimelapse,starting_trap_outline,traps,timepoints,show_output)
 %
 % calculate a refined trap outline by simple thresholding and store it in
 % trapInfo of each trap and each timepoint.

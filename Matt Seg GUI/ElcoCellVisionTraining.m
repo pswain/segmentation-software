@@ -24,7 +24,7 @@ load(fullfile(path,file),'cCellVision');
 %% initialise for cExperiment compilation
 
 cExperiment =[];
-num_timepoints = 15;
+num_timepoints = 5;
 
 %% select cExperiments you want to add to the gound truth set.
 % num_timpoints timepoints will be added from each one.
@@ -55,12 +55,27 @@ cExpGUI = experimentTrackingGUI;
 %cExperiment = cExpGUI.cExperiment;
 cExperiment.ActiveContourParameters.ImageTransformation.channel = 1; %set to what you want
 cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
-cExperiment.ActiveContourParameters.ActiveContour.R_max = 20;
+cExperiment.ActiveContourParameters.ActiveContour.R_max = 25;
 % bit slower but more fine grained outline for large images.
-cExperiment.ActiveContourParameters.ImageSegmentation.OptPoints = 8;
+cExperiment.ActiveContourParameters.ImageSegmentation.OptPoints = 6;
 
 cExperiment.ActiveContourParameters.ImageSegmentation.SubImageSize = 2*(cExperiment.ActiveContourParameters.ActiveContour.R_max + 10) + 1; 
 
+cExperiment.ActiveContourParameters.ActiveContour.alpha = 0.01;
+cExperiment.ActiveContourParameters.ActiveContour.beta = 0.01;
+cExperiment.ActiveContourParameters.TrapDetection.channel = -1;
+cExperiment.ActiveContourParameters.TrapDetection.function = 'forPhaseContrast';
+cExperiment.ActiveContourParameters.TrapDetection.functionParams.dilate_length = 2;
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThreshold = Inf; %don't use mutliple timepoints
+cExperiment.ActiveContourParameters.CrossCorrelation.twoStageThresh = 0;
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationChannel = 1;
+cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = 1;
+
+%% run active contour method
+poses = 1:2;
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,1,num_timepoints,true,1,false,false);
+
+%%
 % this line runs the tracking and sets the active contour parameters of
 % each timelapse to be the active contour parameters of the cExperiment.
 % this is useful if using the 'elcoAC' method to add cells.
@@ -90,6 +105,7 @@ for posi = 1:length(cExperiment.dirs)
             gui.slider.Value = TP;
             gui.slider.Min = TP;
             gui.slider.Max = TP;
+            gui.figure.Position = [582 195 939 818];
             uiwait();
         end
     end
@@ -97,7 +113,13 @@ for posi = 1:length(cExperiment.dirs)
 end
 
 
-
+%% refine trap outline
+for pos = poses
+if_show = true;
+cTimelapse = cExperiment.loadCurrentTimelapse(pos);
+cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,[],[],if_show)
+cExperiment.saveTimelapseExperiment;
+end
 %% change function
 % this is a little annoying but it is also advisable to change the 'method'
 % of the cTrapDisplay.addRemoveCells function to 'elcoAC' (line 59). This
@@ -161,9 +183,6 @@ imshow(trap_image,[])
 cCellVision.cTrap.trap1 = trap_image;
 cCellVision.identifyTrapOutline;
 
-%% refine trap outline
-if_show = true;
-cTimelapse.refineTrapOutline(cCellVision.cTrap.trapOutline,[],[],if_show)
 
 %% show refined trap outline
 TP = randi(length(cTimelapse.cTimepoint),1);
@@ -268,9 +287,9 @@ cTimelapseDisplay(cTimelapse);
 
 %%
 
-cCellVision.imageProcessingMethod = 'twostage_norm';%Less risky but slower when no traps
+cCellVision.imageProcessingMethod = 'twostage_norm';
 %%
-cCellVision.imageProcessingMethod = 'twostage_mean_div';%Less risky but slower when no traps
+cCellVision.imageProcessingMethod = 'twostage_mean_div';
 
 %% 
 cCellVision.imageProcessingMethod = 'wholeIm';

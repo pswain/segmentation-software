@@ -146,7 +146,7 @@ for k=1:length(trap)
     if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
         cTimelapse.cTimepoint(timepoint).trapInfo = cTimelapse.createTrapInfoTemplate(data_template);
     end
-    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
+    %cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
     cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
 end
 end

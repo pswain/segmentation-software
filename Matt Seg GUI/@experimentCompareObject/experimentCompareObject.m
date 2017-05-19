@@ -175,6 +175,7 @@ classdef experimentCompareObject <handle
                 cTimelapse = cExperiment.loadCurrentTimelapse(pos);
                 [TPs,Traps] = find(self.timepointsTrapsToProcess{posi});
                 cExperiment.cTimelapse = cTimelapse;
+                cExperiment.cTimelapse.ACParams = cExperiment.ActiveContourParameters;
                 for i = 1:numel(TPs)
                     
                     TP = TPs(i);
@@ -188,11 +189,11 @@ classdef experimentCompareObject <handle
                         % one timepont at a time and don't get confused.
                         % also, strange bug where last doesn't seem to be
                         % allowed by constructor.
-                        
+                        %TODO remove
+                        gui.figure.Position = [429 184 1217 798];
                         gui.slider.Value = TP;
                         gui.slider.Min = TP;
                         gui.slider.Max = TP;
-                        
                         
                         uiwait();
                         cExperiment.saveTimelapse(pos);
@@ -383,7 +384,6 @@ classdef experimentCompareObject <handle
             % as the error type. 
             %only runs on the traps in self.curatedtimepointTraps{posi}(TP,TI)
             %that should have been labeled as true in the curateGroundTruth
-<<<<<<< HEAD
             %  
             % MATT - please check
             %
@@ -411,14 +411,12 @@ classdef experimentCompareObject <handle
             weightJoin=1.0;
             weightAdd=2;
             weightSplit=2;
-=======
             errorStruct=struct('errorMatrix',sparse(1e5,1e5),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
 %             errorMatrix=cell(); %one cell for each of the experiment names
             %within each cell make a matrix to hold the 
->>>>>>> 0d4949e04c109c4671208c48269ad6fbbf893c9e
+
             overlapThresh=.5;
             
-            errorStruct=struct('errorMatrix',sparse(1e3,1e3),'errorAddCell',sparse(1,1e3),'errorSeparate',sparse(1,1e3),'errorCalc',[]);
 
             trackingError=repmat(errorStruct,1,length(self.experimentNames));
             testExp=[];

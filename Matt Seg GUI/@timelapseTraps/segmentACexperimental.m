@@ -424,17 +424,17 @@ for TP = Timepoints
         % be a centre/edge/BG
         if have_raw_dims
             PCentre =  -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
-            %PCentre(TrapTrapImageStack>=0.5) = log(0.1);
+            PCentre(TrapTrapImageStack>=0.5) = log(0.1);
             PCentre(TrapTrapImageStack==1) = min(PCentre(:));
             
             
             PEdge   =  RawCentreDIM -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM));
-            %PEdge(TrapTrapImageStack>=0.5) = log(0.2);
+            PEdge(TrapTrapImageStack>=0.5) = log(0.2);
             PEdge(TrapTrapImageStack==1) = min(PEdge(:));
             
             
             PBG     = RawBgDIM - log(1 + exp(RawBgDIM));   
-            %PBG(TrapTrapImageStack>=0.5) = log(0.7);
+            PBG(TrapTrapImageStack>=0.5) = log(0.7);
             PBG(TrapTrapImageStack==1) = max(PBG(:));
             
             
