@@ -13,11 +13,11 @@ end
 totalTimepoints=length(cExperiment.timepointsToProcess);
 data=[];
 %only use mothers there for most of the run
-motherDur=diff(cExperiment.lineageInfo.motherInfo.motherStartEnd,1,2);
-motherDurThresh=max(motherDur)*.5;
-motherLongEnough=motherDur>=motherDurThresh;
-motherLongEnough=motherLongEnough&cExperiment.lineageInfo.motherInfo.motherStartEnd(:,1)<=mStartTime;
-motherLongEnough=motherLongEnough&cExperiment.lineageInfo.motherInfo.motherStartEnd(:,2)>=mEndTime;
+% motherDur=diff(cExperiment.lineageInfo.motherInfo.motherStartEnd,1,2);
+% motherDurThresh=max(motherDur)*.5;
+% motherLongEnough=motherDur>=motherDurThresh;
+% motherLongEnough=motherLongEnough&cExperiment.lineageInfo.motherInfo.motherStartEnd(:,1)<=mStartTime;
+% motherLongEnough=motherLongEnough&cExperiment.lineageInfo.motherInfo.motherStartEnd(:,2)>=mEndTime;
 
 motherLoc=returnMotherIndicesCellInf(cExperiment,[],motherDurThresh,motherLongEnough);
 data.motherIndices=find(motherLoc);

@@ -299,7 +299,8 @@ annotations.acq = acq;
 % Avoid overwriting pre-existing fields
 if isempty(cExperiment.id_val)
     % Only update the ID if it is empty
-    cExperiment.id_val = cExperiment.parseAcqFileIntoID(annotations.acqFile);
+    %This method currently not in my software
+%    cExperiment.id_val = cExperiment.parseAcqFileIntoID(annotations.acqFile);
 end
 fields_to_replace = {'pumpSwitches','logTimes','logPosNames','logExposureTimes'};
 if isempty(cExperiment.metadata)

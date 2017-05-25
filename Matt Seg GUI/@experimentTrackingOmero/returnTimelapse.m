@@ -24,7 +24,7 @@ catch
 end
 posName=cExperiment.dirs{timelapseNum};
 fileName=[posName 'cTimelapse_' cExperiment.rootFolder '.mat'];
-if exist([cExperiment.saveFolder fileName])==7
+if exist([cExperiment.saveFolder filesep fileName])==7
     %This cTimelapse has already been downloaded to the temporary local
     %folder
     load ([cExperiment.saveFolder filesep fileName]);

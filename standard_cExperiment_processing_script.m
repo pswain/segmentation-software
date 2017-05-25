@@ -400,14 +400,11 @@ cExperiment.compileCellInformation(poses)
 
 
 % get mother index
-for diri=poses
-    
+for diri=poses    
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
     cTimelapse.findMotherIndex('cell_centre');
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);
-
-    
+    cExperiment.saveTimelapseExperiment(diri,false);    
 end
 
 % mother processing
