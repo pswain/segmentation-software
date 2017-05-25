@@ -105,6 +105,8 @@ if ~isempty(CellResGUI.cellImageSize)
     end
 end
 
+% this slightly convoluted set of functions passes preserves the
+% ButtonDownFunction and passes it to the image.
 fun = CellResGUI.CellImageHandle.ButtonDownFcn;
 I = imshow(show_image,'Parent',CellResGUI.CellImageHandle);
 set(CellResGUI.CellImageHandle,'ButtonDownFcn',fun);

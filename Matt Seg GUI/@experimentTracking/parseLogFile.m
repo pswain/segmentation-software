@@ -15,17 +15,18 @@ function fail_flag = parseLogFile(cExperiment,logFile,progress_bar)
 fail_flag = false;
 
 if nargin<2 || isempty(logFile)
-    logFile = dir(fullfile(cExperiment.rootFolder,'*log.txt'));
-    logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+    logDirs = {cExperiment.rootFolder,cExperiment.saveFolder};
+    for d=1:length(logDirs)
+        logFile = dir(fullfile(logDirs{d},'*log.txt'));
+        logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+        % Break this loop as soon as we find a suitable candidate
+        if ~isempty(logFile), break; end
+    end
     if length(logFile)>1
-        warning('More than one log file available in "cExperiment.rootFolder". Using first found...');
+        warning(['More than one log file available in "%s". ',...
+            'Using first found...'],logDirs{d});
     end
-    if isempty(logFile)
-        fail_flag = true;
-        warning('Cannot find log file. "metadata" property not set.');
-        return
-    end
-    logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
+    logFile = fullfile(logDirs{d},logFile(1).name);
 end
 
 close_progress = false;
