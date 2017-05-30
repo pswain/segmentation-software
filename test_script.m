@@ -234,8 +234,8 @@ cExperiment_test.classifyBirthsHMM;
 cExperiment_true.cTimelapse = [];
 cExperiment_test.cTimelapse = [];
 
-cExperiment_true.logger = [];
-cExperiment_test.logger = [];
+cExperiment_true.kill_logger = true;
+cExperiment_test.kill_logger = true;
 
 if isequaln(cExperiment_test,cExperiment_true)
     
@@ -254,8 +254,8 @@ for diri=1:length(cExperiment_true.dirs)
     cTimelapse_true.ActiveContourObject = [];
     cTimelapse_test.ActiveContourObject = [];
     
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
+    cTimelapse_true.kill_logger = true;
+    cTimelapse_test.kill_logger = true;
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -290,8 +290,8 @@ cExperiment_true.cCellVision = l1.cCellVision;
 cExperiment_true.cTimelapse = [];
 cExperiment_test.cTimelapse = [];
 
-cExperiment_true.logger = [];
-cExperiment_test.logger = [];
+cExperiment_true.kill_logger = true;
+cExperiment_test.kill_logger = true;
 
 if isequaln(cExperiment_test,cExperiment_true)
     
@@ -310,8 +310,8 @@ for diri=1:length(cExperiment_true.dirs)
     cTimelapse_true.ActiveContourObject = [];
     cTimelapse_test.ActiveContourObject = [];
     
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
+    cTimelapse_true.kill_logger = true;
+    cTimelapse_test.kill_logger = true;
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -348,8 +348,9 @@ l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cE
 cExperiment_true = l2.cExperiment;
 cExperiment_true.cCellVision = l2.cCellVision;
 
-cExperiment_test.addSecondaryChannel('GFP_');
 cExperiment_test.addSecondaryChannel('GFP_001');
+cExperiment_test.addSecondaryChannel('GFP_');
+%cExperiment_test.addSecondaryChannel('GFP_001');
 cExperiment_test.addSecondaryChannel('not found');
 
 cTimelapse_true = cExperiment_true.loadCurrentTimelapse(1);
@@ -358,8 +359,8 @@ cTimelapse_test = cExperiment_test.loadCurrentTimelapse(1);
 cTimelapse_true.ActiveContourObject = [];
 cTimelapse_test.ActiveContourObject = [];
 
-cTimelapse_true.logger = [];
-cTimelapse_test.logger = [];
+cTimelapse_true.kill_logger = true;
+cTimelapse_test.kill_logger = true;
 
 if report_differences(cTimelapse_true,cTimelapse_test,'cTimelapse_true','cTimelapse_test');
     
@@ -402,8 +403,8 @@ cTimelapse_test.addTimepoints;
 cTimelapse_true.ActiveContourObject = [];
 cTimelapse_test.ActiveContourObject = [];
 
-cTimelapse_true.logger = [];
-cTimelapse_test.logger = [];
+cTimelapse_true.kill_logger = true;
+cTimelapse_test.kill_logger = true;
 
     if isequaln(cTimelapse_test,cTimelapse_true)
         
@@ -471,8 +472,8 @@ clc
 %     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
 %     cTimelapse_true.ActiveContourObject = [];
 %     cTimelapse_test.ActiveContourObject = [];
-%     cTimelapse_true.logger = [];
-%     cTimelapse_test.logger = [];
+%     cTimelapse_true.kill_logger = true;
+%     cTimelapse_test.kill_logger = true;
 % 
 %     if isequaln(cTimelapse_test,cTimelapse_true)
 %         
@@ -771,6 +772,45 @@ else
     fprintf('passedf changing image location test\n\n')
 
 end
+
+%% test lineage stuff
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/lineage_tracking_test/cExperiment.mat');
+cExperiment = l1.cExperiment;
+cExperiment.cCellVision = l1.cCellVision;
+
+poses = 1:2;
+
+params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
+
+
+% get mother index
+for diri=poses
+    
+    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
+    cTimelapse.findMotherIndex('cell_centre');
+    cExperiment.cTimelapse = cTimelapse;
+    cExperiment.saveTimelapseExperiment(diri,false);
+
+    
+end
+
+% mother processing
+paramsLineage = params.paramsLineage;
+cExperiment.extractLineageInfo(poses,paramsLineage);
+cExperiment.compileLineageInfo(poses);
+cExperiment.extractHMMTrainingStates;
+cExperiment.trainBirthHMM;
+cExperiment.classifyBirthsHMM;
+
+% save experiment 
+cExperiment.saveExperiment;
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/lineage_tracking_reference/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+
+compareExperimentTrackingObjsForTest(cExperiment,cExperiment_true,1:2, 'mother identification and lineage tracking test: ' )
 
 %% special slide GUI
 

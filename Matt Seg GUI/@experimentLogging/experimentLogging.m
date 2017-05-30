@@ -52,10 +52,10 @@ classdef experimentLogging<handle
                 shouldLog = true;
             end
             
-            if isempty(cExperiment.OmeroDatabase);
-                this.file_name = 'cExperiment_log_.txt';
-            else
+            if isa (cExperiment, 'experimentTrackingOmero')
                 this.file_name = ['cExperiment_log_',cExperiment.rootFolder,'.txt'];
+            else
+                this.file_name = 'cExperiment_log_.txt';
             end
             
             % Save a handle to the cExperiment, since it will be used to

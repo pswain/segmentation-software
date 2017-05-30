@@ -69,7 +69,7 @@ for zi=1:length(zsections)
         %cache the plane to make retrieval faster next time - this
         %doesn't work very well hence commented - need a better way
         %to speed up image browsing
-        %imwrite(toMatrix(plane, pixels)', fileName);
+        %imwrite(toMatrix(plane, pixels)', fileName);           
     catch
         %Fix upload script to prevent the need for this debug
         disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
@@ -78,11 +78,17 @@ for zi=1:length(zsections)
     end
     
     tempIm = toMatrix(plane, pixels)';
-    
+    %Images are flipped in both directions on Omero upload - so if the
+    %data was segmented from a folder before being uploaded/converted
+    %then it should be flipped to ensure data is consistent with any
+    %segmentation results
+    if strcmp(cTimelapse.segmentationSource,'Folder')
+        tempIm=rot90(tempIm);
+        tempIm=flipud(tempIm);
+    end
     if zi ==1
         timepointIm=zeros([sizeY, sizeX, length(zsections)],'like',tempIm);
-    end
-    
+    end    
     timepointIm(:,:,zi) = tempIm;
     
 end

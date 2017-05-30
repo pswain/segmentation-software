@@ -3,6 +3,10 @@ function fail_flag = parseLogFile(cExperiment,logFile,progress_bar)
 %   cExperiment: this object
 %   logFile (optional): if specified, that log file is used, otherwise
 %       a good guess is made by searching 'cExperiment.rootFolder'
+%   progress_bar (optional): specify either a parent 'Progress' object in
+%       which to create a child progress bar, or 'meta_only' to process 
+%       only the header and Acq file and skip processing the timepoints, or
+%       a logical false value to disable the GUI.
 %
 %   fail_flag : boolean
 %       an indicator of success. Is set to true if either the log file or
@@ -11,30 +15,43 @@ function fail_flag = parseLogFile(cExperiment,logFile,progress_bar)
 fail_flag = false;
 
 if nargin<2 || isempty(logFile)
-    logFile = dir(fullfile(cExperiment.rootFolder,'*log.txt'));
-    logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+    logDirs = {cExperiment.rootFolder,cExperiment.saveFolder};
+    for d=1:length(logDirs)
+        logFile = dir(fullfile(logDirs{d},'*log.txt'));
+        logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+        % Break this loop as soon as we find a suitable candidate
+        if ~isempty(logFile), break; end
+    end
     if length(logFile)>1
-        warning('More than one log file available in "cExperiment.rootFolder". Using first found...');
+        warning(['More than one log file available in "%s". ',...
+            'Using first found...'],logDirs{d});
     end
-    if isempty(logFile)
-        fail_flag = true;
-        warning('Cannot find log file. "metadata" property not set.');
-        return
-    end
-    logFile = fullfile(cExperiment.rootFolder,logFile(1).name);
+    logFile = fullfile(logDirs{d},logFile(1).name);
 end
 
 close_progress = false;
 pop_progress_bar = false;
+meta_only = false;
 
-if nargin<3 || ~isa(progress_bar,'Progress')
-    % Initialise a progress bar
-    progress_bar = Progress();
-    % Centre the dialog box
-    progress_bar.frame.setLocationRelativeTo([]);
-    % Set the progress bar title
-    progress_bar.frame.setTitle('Compiling meta data...');
-    close_progress = true;
+if nargin<3 
+    progress_bar = true;
+end
+
+if ~isa(progress_bar,'Progress')
+    if ischar(progress_bar) && strcmp(progress_bar,'meta_only')
+        progress_bar = [];
+        meta_only = true;
+    elseif islogical(progress_bar) && ~progress_bar
+        progress_bar = [];
+    else
+        % Initialise a progress bar
+        progress_bar = Progress();
+        % Centre the dialog box
+        progress_bar.frame.setLocationRelativeTo([]);
+        % Set the progress bar title
+        progress_bar.frame.setTitle('Compiling meta data...');
+        close_progress = true;
+    end
 end
 
 [logdir,~,~] = fileparts(logFile);
@@ -160,16 +177,22 @@ while ischar(tline)
             case 'timepoint'
                 parsedline = regexp(tline,lineRegExp{1},'once','tokens');
                 timepoint = str2double(parsedline{1});
+                % For 'meta_only' flag, parse only to the second timepoint
+                if meta_only && timepoint==2
+                    break
+                end
                 fprintf('.');
                 if mod(timepoint,60)==0
                     fprintf('\n');
                 end
                 % If we see a timepoint, begin progress loop over timepoints:
-                if ~pop_progress_bar
+                if ~pop_progress_bar && ~isempty(progress_bar)
                     progress_bar.push_bar('Parsing log file...',1,approxNtimepoints);
                     pop_progress_bar = true;
                 end
-                progress_bar.set_val(timepoint);
+                if ~isempty(progress_bar)
+                    progress_bar.set_val(timepoint);
+                end
             case 'position'
                 parsedline = regexp(tline,lineRegExp{1},'once','tokens');
                 position = str2double(parsedline{1});
@@ -219,33 +242,37 @@ end
 %% Save the date
 date = datestr(times(1,1),'yyyy_mm_dd');
 
-%% Convert the pump switching times to minutes:
-if ~isempty(pumpSwitches)
-    relPumpSwitches = pumpSwitches - times(1,1);
-    pumpSwitches = zeros(size(relPumpSwitches));
-    for i = 1:length(relPumpSwitches)
-        pumpSwitches(i) = sum(datevec(relPumpSwitches(i)) .* [0 0 24*60 60 1 1/60]);
+if ~meta_only
+    
+    %% Convert the pump switching times to minutes:
+    if ~isempty(pumpSwitches)
+        relPumpSwitches = pumpSwitches - times(1,1);
+        pumpSwitches = zeros(size(relPumpSwitches));
+        for i = 1:length(relPumpSwitches)
+            pumpSwitches(i) = sum(datevec(relPumpSwitches(i)) .* [0 0 24*60 60 1 1/60]);
+        end
     end
-end
-
-%% Convert timepoint times to minutes
-times = times - times(1,1);
-timesInMinutes = zeros(size(times));
-for i = 1:size(times,1)
-    for j = 1:size(times,2)
-        timesInMinutes(i,j) = sum(datevec(times(i,j)) .* [0 0 24*60 60 1 1/60]);
+    
+    %% Convert timepoint times to minutes
+    times = times - times(1,1);
+    timesInMinutes = zeros(size(times));
+    for i = 1:size(times,1)
+        for j = 1:size(times,2)
+            timesInMinutes(i,j) = sum(datevec(times(i,j)) .* [0 0 24*60 60 1 1/60]);
+        end
     end
-end
+    
+    %% Subset the timepoints and positions to those recorded in log file
+    
+    % The final value of timepoint is the last in the log file, and npos is the
+    % maximum position number seen in the log file:
+    timesInMinutes = timesInMinutes(1:timepoint,1:npos)';
+    positionStrs = positionStrs(1:npos);
+    channels = fieldnames(positionExposure);
+    for i=1:length(channels)
+        positionExposure.(channels{i}) = positionExposure.(channels{i})(1:npos);
+    end
 
-%% Subset the timepoints and positions to those recorded in log file
-
-% The final value of timepoint is the last in the log file, and npos is the
-% maximum position number seen in the log file:
-timesInMinutes = timesInMinutes(1:timepoint,1:npos)';
-positionStrs = positionStrs(1:npos);
-channels = fieldnames(positionExposure);
-for i=1:length(channels)
-    positionExposure.(channels{i}) = positionExposure.(channels{i})(1:npos);
 end
 
 %% Update cExperiment:
@@ -262,13 +289,34 @@ annotations.comments = comments;
 annotations.project = project;
 annotations.tags = tags;
 annotations.date = date;
-annotations.pumpSwitches = pumpSwitches;
-annotations.logTimes = timesInMinutes;
+if ~meta_only
+    annotations.pumpSwitches = pumpSwitches;
+    annotations.logTimes = timesInMinutes;
+end
 annotations.logPosNames = positionStrs;
 annotations.logExposureTimes = positionExposure;
 annotations.acq = acq;
 
-cExperiment.metadata = annotations;
+% Avoid overwriting pre-existing fields
+if isempty(cExperiment.id_val)
+    % Only update the ID if it is empty
+    %This method currently not in my software
+%    cExperiment.id_val = cExperiment.parseAcqFileIntoID(annotations.acqFile);
+end
+fields_to_replace = {'pumpSwitches','logTimes','logPosNames','logExposureTimes'};
+if isempty(cExperiment.metadata)
+    cExperiment.metadata = annotations;
+else
+    fields_to_update = fieldnames(annotations);
+    for j=1:length(fields_to_update)
+        field = fields_to_update{j};
+        if ismember(field,fields_to_replace) || ...
+                ~isfield(cExperiment.metadata,field) || ...
+                isempty(cExperiment.metadata.(field))
+            cExperiment.metadata.(field) = annotations.(field);
+        end
+    end
+end
 
 % Clean up progress bar:
 if pop_progress_bar

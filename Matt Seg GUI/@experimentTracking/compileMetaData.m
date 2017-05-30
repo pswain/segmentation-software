@@ -22,8 +22,10 @@ if nargin<3 || ~isa(progress_bar,'Progress')
     close_progress = true;
 end
 
-% Check that the log file has been parsed for this cExperiment
-if ~isprop(cExperiment,'metadata') || isempty(cExperiment.metadata)
+% Check that the log file has been parsed for this cExperiment (and not
+% just parsed with the 'meta_only' flag):
+if ~isprop(cExperiment,'metadata') || ~isstruct(cExperiment.metadata) || ...
+        ~isfield(cExperiment.metadata,'logTimes')
     cExperiment.parseLogFile([],progress_bar);
 end
 

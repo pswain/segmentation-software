@@ -67,7 +67,7 @@ if strcmp(dsStruct.action,'segment')
             end
         end
         cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
-        
+        cExpGUI.cExperiment.segmentationSource='Omero';%Data will be retrieved from the Omero database for segmentation
         %Copy the channels lists to the cExperiment.
         cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
         cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;
@@ -113,6 +113,12 @@ if strcmp(dsStruct.action,'segment')
                 cExperiment.saveFolder=dsStruct.OmeroDatabase.DataPath;
                 
                 %Loaded file will lack Omero objects - copy from dsStruct
+                %NEED A CONVERSION SCRIPT TO CALL HERE - FOR CASES IN WHICH
+                %EXPERIMENTS WERE CREATED FROM OMERO BUT AS
+                %EXPERIMENTTRACKING OBJECTS, NOT EXPERIMENTTRACKINGOMERO
+                %OBJECTS - EXPERIMENTTRACKING NO LONGER HAS AN
+                %OMERODATABASE FIELD.
+                %cExperiment = experimentTrackingOmero(cExperiment)
                 cExperiment.OmeroDatabase=dsStruct.OmeroDatabase;
                 cExperiment.omeroDs=dsStruct.dataset;
                 cExpGUI.cExperiment=cExperiment;
@@ -222,7 +228,7 @@ if strcmp(dsStruct.action,'segment')
                 %input this is assumed to be ab omerodatabase construction. The
                 %2nd input is then not used.
                 cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset,'not used', dsStruct.OmeroDatabase, inputName);
-                
+                cExpGUI.cExperiment.segmentationSource='Omero';%Data will be retrieved from the Omero database for segmentation
                 %Copy the channels lists to the cExperiment.
                 cExpGUI.cExperiment.experimentInformation.channels=cExpGUI.cExperiment.OmeroDatabase.Channels;
                 cExpGUI.cExperiment.experimentInformation.microscopeChannels=cExpGUI.cExperiment.OmeroDatabase.MicroscopeChannels;

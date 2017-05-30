@@ -10,12 +10,13 @@ classdef timelapseTrapsOmero<timelapseTraps
         
         
         %stuff Ivan has added
-        %omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
-        %OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-        
+        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
+        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
+        microscopeChannels
+        segmentationSource='';%Flag to determine where the source data was obtained during segmentation, can be 'Omero', 'Folder' or empty (if not segmented). Data segemented from a file folder must be flipped both vertically and horizontally to match the segmentation results
+
     end
     properties (Transient)
-        %TODO reinstate when have finished decoupling omero.
         
         %temporaryImageStorage=struct('channel',-1,'images',[]); %this is to store the loaded images from a single channel (ie BF) into memory
         %This allows the cell tracking and curating things to happen a
@@ -57,8 +58,11 @@ classdef timelapseTrapsOmero<timelapseTraps
                 cTimelapseOmero.OmeroDatabase=varargin{1};
                 cTimelapseOmero.channelNames=varargin{1}.Channels;
                 cTimelapseOmero.microscopeChannels=varargin{1}.MicroscopeChannels;
-                
+                if nargin<3
                 cTimelapseOmero.cellsToPlot=sparse(100,1e3);
+                else
+                    cTimelapseOmero.cellsToPlot=varargin{2};
+                end
             end
         end
         

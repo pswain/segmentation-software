@@ -15,10 +15,14 @@ function createTimelapsePositions(cExperimentOmero,searchString,positionsToLoad,
 oImages=cExperimentOmero.omeroDs.linkedImageList;
 
 chNames=cExperimentOmero.experimentInformation.channels;
-ch = menu('Choose channel used in segmentation (brightfield/DIC images)',chNames);
-searchString=chNames{ch};
+if isempty(searchString)
+    ch = menu('Choose channel used in segmentation (brightfield/DIC images)',chNames);
+    searchString=chNames{ch};
+end
 
-positionsToLoad=1:oImages.size;
+if ischar(positionsToLoad)&&strcmp(positionsToLoad,'all')
+    positionsToLoad=1:oImages.size;
+end
 
 if nargin<4
     pixelSize=[];

@@ -77,11 +77,7 @@ classdef timelapseTraps<handle
         ACParams = []; % active contour parameters.
         ActiveContourObject = []; % there for legacy reasons. Will be removed soon but difficult to reprocess old data sets once it is.
 
-        %stuff Ivan has added
-        %TODO remove when finished decoupling Omero
-        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
-        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-        microscopeChannels%omero thing
+       
     end
     
     properties(Dependent = true)
@@ -113,7 +109,9 @@ classdef timelapseTraps<handle
         %returnTimepoint file to check to see if something is loaded.
         % - channel
         % - images
-        
+        kill_logger = false; % convenience property for test functions. Allows me to make the logger return nothing so that I can test differences (Elco).
+                             % transient because most code now breaks of you
+                             % don't have the logger operational.
     end
     
    
@@ -310,6 +308,13 @@ classdef timelapseTraps<handle
             cTimepointTemplate = struct('filename',[],'trapLocations',[],...
                             'trapInfo',cTimelapse.trapInfoTemplate,'trapMaxCell',[]); %template for the cTimepoint structure
 
+        end
+        function val = get.logger(cTimelapse)
+            if cTimelapse.kill_logger
+                val = [];
+                return
+            end
+            val = cTimelapse.logger;
         end
 
     end

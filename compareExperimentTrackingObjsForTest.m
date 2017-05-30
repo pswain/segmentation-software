@@ -15,8 +15,8 @@ end
 cExperiment_true.cTimelapse = [];
 cExperiment_test.cTimelapse = [];
 
-cExperiment_true.logger = [];
-cExperiment_test.logger = [];
+cExperiment_true.kill_logger = true;
+cExperiment_test.kill_logger = true;
 
 
 if isequaln(cExperiment_test,cExperiment_true)
@@ -34,8 +34,8 @@ for diri=1:length(poses)
     cTimelapse_test = cExperiment_test.loadCurrentTimelapse(diri);
     
     
-    cTimelapse_true.logger = [];
-    cTimelapse_test.logger = [];
+    cTimelapse_true.kill_logger = true;
+    cTimelapse_test.kill_logger = true;
     
     if isequaln(cTimelapse_test,cTimelapse_true)
         

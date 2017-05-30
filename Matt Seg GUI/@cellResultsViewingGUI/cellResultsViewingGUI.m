@@ -1,4 +1,11 @@
 classdef cellResultsViewingGUI<handle
+            % CellResGUI=cellResultsViewingGUI(cExperiment) a GUI for
+            % viewing the data extracted for single cells along with the
+            % images of those cells at particular timepoints. Intended to
+            % be used for checking data for obvious tracking errors and
+            % such.
+            % can also modify lineage info by clicking on image (left to
+            % add, right to remove).
     properties
         figure = []; %output of the figure to which GUI is assigned
         cExperiment; % cExperiment object of the object
@@ -34,6 +41,7 @@ classdef cellResultsViewingGUI<handle
             % images of those cells at particular timepoints. Intended to
             % be used for checking data for obvious tracking errors and
             % such.
+            % can also modify lineage info by clicking on image.
             
             if nargin<1 ||isempty(cExperiment)
                 [filename, pathname] = uigetfile('*.mat', 'Pick a cExperiment File');
@@ -155,7 +163,14 @@ classdef cellResultsViewingGUI<handle
             set(CellResGUI.CellImageHandle,'XTick',[]);
             set(CellResGUI.CellImageHandle,'YTick',[]);
             
-            
+            % activate and set image click functions.
+            % due to the way imshow operates, the ButtonDownFcn will
+            % actually get passed on the the image object when it gets
+            % plotted in the CellRes_draw_cell callback.
+            % not the smartest way to do things
+            set(CellResGUI.CellImageHandle,'ButtonDownFcn',@(src,event)CellRes_image_click_cb(CellResGUI,src,event));
+            set(CellResGUI.CellImageHandle,'HitTest','on'); 
+                    
             CellResGUI.PlotHandle = axes('Parent',CellResGUI.PlotPanel,'Position',[.03 .05 .94 .9 ]);
             
             CellResGUI.slider=uicontrol('Style','slider',...
@@ -182,6 +197,11 @@ classdef cellResultsViewingGUI<handle
             
             CellResGUI.CellSelected = 0;
             set(CellResGUI.CellSelectListInterface,'Value',1);
+            
+            % make manual info
+            CellResGUI.needToSave = CellResGUI.cExperiment.populateManualLineageInfo;
+            CellResGUI.birthTypeUse = 'Manual';
+            
             CellResGUI.SelectCell();
             
         end
@@ -287,6 +307,7 @@ classdef cellResultsViewingGUI<handle
         setCellsWithLogical(CellResGUI,true(size(CellResGUI.cExperiment.cellInf(1).posNum)));
         
         end
+
         
     end
 end

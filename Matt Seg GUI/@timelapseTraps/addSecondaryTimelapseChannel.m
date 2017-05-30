@@ -89,8 +89,9 @@ if strcmp(cTimelapse.fileSoure,'swain-batman')
             loc=~cellfun('isempty',match);
             
             if any(loc)
+                % horzcat used to preserve back compatibility
                 cTimelapse.cTimepoint(i).filename = ...
-                    unique([cTimelapse.cTimepoint(i).filename(:);cellstr(vertcat(timepoint_files{loc}))]);
+                    unique([cTimelapse.cTimepoint(i).filename(:)' timepoint_files(loc)]);
 %                 timepoint_files(loc) = [];
 %                 files(files_index(loc)) = [];
 %                 files_index = files_index(1:(end-sum(loc)));
@@ -114,7 +115,8 @@ elseif strcmp(cTimelapse.fileSoure,'tyers')
             match=regexp(files(:),p1,'match');
             loc= ~cellfun('isempty',match);
             if sum(loc)>0
-                cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=(cellstr(vertcat(files{loc})));
+                % horzcat used to preserve back compatibility
+                cTimelapse.cTimepoint(i).filename(end+1:end+sum(loc))=files(loc);
             end
         end
     end
