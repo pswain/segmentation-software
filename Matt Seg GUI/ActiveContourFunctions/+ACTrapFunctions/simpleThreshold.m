@@ -50,7 +50,7 @@ end
 
 %% process
 
-
+%fprintf('CHANGE BACK TO PARFOR IN %s\n',mfilename)
 parfor ti = 1:size(stack,3)
     
     temp_im = stack(:,:,ti);

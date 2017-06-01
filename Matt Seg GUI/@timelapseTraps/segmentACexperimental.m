@@ -911,6 +911,9 @@ for TP = Timepoints
                         reordered_radii_norm = log(reordered_radii(2,:)./reordered_radii(1,:));
                         reordered_radii_1cell = reordered_radii(2,:);
                         
+                        % TODO = switch this off and make it just
+                        % probability, not the bayes factor
+                        % also, adjust probability threshold accordingly.
                         %calculate radii contribution (bayes factor of new and old cell for the found radii)
                         if mean(PreviousTimepointRadii)<threshold_radius;
                             p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
