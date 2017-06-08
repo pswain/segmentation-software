@@ -10,8 +10,6 @@ if nargin<3 || isempty(positionsToAlter)
     positionsToAlter=1:length(cExperiment.dirs);
 end
 
-cExperiment.loadCurrentTimelapse(positionsToAlter(1));
-
 button = 'OK';
 
 if isempty(cExperiment.cCellVision)
@@ -36,7 +34,7 @@ if nargin<2 || isempty(channels_for_segment)
         dialog_struct.(sprintf('forgotten_field_%d',ci)) =...
          struct('entry_name',...
                     {{sprintf('channel '' %s '' in training',cExperiment.cCellVision.training_channels{ci}),channel_name_fields{ci}}},...
-                'entry_value',{cExperiment.cTimelapse.channelNames});
+                'entry_value',{cExperiment.channelNames});
         
     end
     
@@ -45,7 +43,7 @@ if nargin<2 || isempty(channels_for_segment)
     
     for ci = 1:length(cExperiment.cCellVision.training_channels)
         
-        channels_for_segment(ci) = find(strcmp(settings.(channel_name_fields{ci}),cExperiment.cTimelapse.channelNames));
+        channels_for_segment(ci) = find(strcmp(settings.(channel_name_fields{ci}),cExperiment.channelNames));
         
     end
     
