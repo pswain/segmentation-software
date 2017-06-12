@@ -1,4 +1,4 @@
-function editCellVisionTrapOutline( cExperiment,pos,TP,channel )
+function editCellVisionTrapOutline( cExperiment,pos,TP,channel,poses)
 % editCellVisionTrapOutline( cExperiment,pos,TP,channel ) 
 % changes the trap image and outline of cCellVision attached to the
 % cExperiment file to be mopre representative for the current experiment.
@@ -49,9 +49,13 @@ if nargin<4 || isempty(channel)
     channel = channel_display_gui.channel;
 end
 
+if nargin<5
+    poses=[];
+end
+
 %set the channel for trap detection for all positions based on this
 %function.
-setTimelapsesProperty(cExperiment,[],'channelForTrapDetection',channel);
+setTimelapsesProperty(cExperiment,poses,'channelForTrapDetection',channel);
 
 fprintf('please select a single, representative trap in the following image, and then close the image \n\n')
 

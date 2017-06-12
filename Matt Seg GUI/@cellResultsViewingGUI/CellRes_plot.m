@@ -20,9 +20,14 @@ cell_data_index = (CellResGUI.cExperiment.cellInf(1).posNum == cell_position) &.
                   (CellResGUI.cExperiment.cellInf(1).trapNum == trap_number) & ...
                   (CellResGUI.cExperiment.cellInf(1).cellNum == cell_tracking_number);
 if sum(cell_data_index == 1)
-    
-    cell_data = full(CellResGUI.cExperiment.cellInf(plot_channel).(plot_field)(cell_data_index,:));
-    
+    %Hack to allow plotting of pH - based on a single standard curve so
+    %will not be correct for all experiments
+    if strcmp(plot_field,'pH')
+        ratio=full(CellResGUI.cExperiment.cellInf(2).median(cell_data_index,:)./CellResGUI.cExperiment.cellInf(1).median(cell_data_index,:));
+        cell_data=ratio*3.1+4.75;
+    else
+        cell_data = full(CellResGUI.cExperiment.cellInf(plot_channel).(plot_field)(cell_data_index,:));
+    end
     axes(CellResGUI.PlotHandle);
     xInc=((1:size(cell_data,2)))*CellResGUI.TimepointSpacing;
     plot(xInc,cell_data,'-r');
