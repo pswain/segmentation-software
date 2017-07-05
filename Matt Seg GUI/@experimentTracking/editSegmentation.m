@@ -49,6 +49,13 @@ end
 for i=1:length(positionsToIdentify)
     currentPos=positionsToIdentify(i);
     cTimelapse=loadCurrentTimelapse(cExperiment,currentPos);
+    
+    % in rare cases where active contour parameters have not been set. set
+    % them.
+    if isempty(cTimelapse.ACParams)
+        cTimelapse.ACParams = cExperiment.ActiveContourParameters;
+    end
+    
     if pos_traps_to_show_given
         traps_to_show = ((pos_traps_to_show{currentPos}(:))');
     else

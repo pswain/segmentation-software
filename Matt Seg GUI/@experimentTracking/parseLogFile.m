@@ -26,6 +26,12 @@ if nargin<2 || isempty(logFile)
         warning(['More than one log file available in "%s". ',...
             'Using first found...'],logDirs{d});
     end
+    % added by Elco. If there is no logFile found return with a fail flag
+    % (seems approriate).
+    if isempty(logFile)
+        fail_flag=true;
+        return
+    end
     logFile = fullfile(logDirs{d},logFile(1).name);
 end
 

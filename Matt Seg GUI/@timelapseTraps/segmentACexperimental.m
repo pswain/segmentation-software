@@ -447,9 +447,9 @@ for TP = Timepoints
             PBG = log(exp(PBG)./PTot);
         else
             % to stop parfor loop bugging out.
-            PCentre = [];
-            PEdge = [];
-            PBG = [];
+            PCentre = zeros(size(DecisionImageStack));
+            PEdge = PCentre;
+            PBG = PCentre;
         end
         
         TransformedImagesVIS = cell(length(TrapInfo));
