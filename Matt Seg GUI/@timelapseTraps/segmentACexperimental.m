@@ -305,6 +305,7 @@ for TP = Timepoints
         channel = AllChannelsToLoad(chi);
         TempIm = double(cTimelapse.returnSingleTimepoint(TP,channel));
         
+        
         if chi==1
             %preallocate images for speed. DIMImage is stack rather than
             %single image.

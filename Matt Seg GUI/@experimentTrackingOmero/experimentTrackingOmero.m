@@ -7,16 +7,17 @@ classdef experimentTrackingOmero < experimentTracking
     % See also EXPERIMENTTRACKING,EXPERIMENTTRACKINGGUI,TIMELAPSETRAPS
     
     properties
-        %TODO reenable when you remove from the super class.
-        %omeroDs%Omero dataset object - alternative source to rootFolder
-        %OmeroDatabase%Omero database object
-        
+         omeroDs%Omero dataset object - alternative source to rootFolder
+         OmeroDatabase%Omero database object
+         segmentationSource='';%Flag to determine where the source data was obtained during segmentation, can be 'Omero', 'Folder' or empty (if not segmented). Data segemented from a file folder must be flipped both vertically and horizontally to match the segmentation results
     end
     
     methods
         function cExperimentOmero = experimentTrackingOmero(OmeroDataSet,OmeroDataPath, OmeroDatabase,  expName)
             % cExperimentOmero = experimentTrackingOmero(OmeroDataSet,OmeroDataPath, OmeroDatabase,  expName)
-            % code written by Ivan but editted (ignorantly) by Elco -
+            % cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
+ 
+%            code written by Ivan but editted (ignorantly) by Elco -
             % should go over together.
             % variables named according to call in
             %   experimentTrackingGUI.createFromOmero
@@ -43,11 +44,10 @@ classdef experimentTrackingOmero < experimentTracking
             end
               
             % Create a new logger to log changes for this cExperiment:
-            %disp('Not generating log files now - to change open experimentTracking.m')
             cExperimentOmero.shouldLog=true;
             cExperimentOmero.logger = experimentLogging(cExperimentOmero,cExperimentOmero.shouldLog);
             
-            if ischar(OmeroDataSet)
+            if ischar(OmeroDataSet)%cExperiment is being initialised from a folder
                 cExperimentOmero.rootFolder=OmeroDataSet;
                 cExperimentOmero.saveFolder=OmeroDataPath;
             else%Experiment is being initialized from an Omero dataset - folder is an omero.model.DatasetI object
@@ -133,7 +133,7 @@ classdef experimentTrackingOmero < experimentTracking
             
             cExperimentOmero.OmeroDatabase.MicroscopeChannels = origChannels;
             cExperimentOmero.experimentInformation.MicroscopeChannels=origChannels;
-            
+            cExperimentOmero.OmeroDatabase.Channels=origChannels;
             %The first entries in
             %cExperiment.experimentInformation.channels are the
             %original channels - then followed by a channel for each

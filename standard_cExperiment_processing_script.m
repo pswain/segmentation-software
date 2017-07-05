@@ -149,7 +149,7 @@ cExpGUI.loadCellVision
 %% load standard brightfield classifier
 l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_Brightfield_2_slices_default.mat');
 cExperiment.cCellVision = l1.cCellVision;
-cExpGUI.cCellVision = l1.cCellVision;
+%cExpGUI.cCellVision = l1.cCellVision;
 
 cExperiment.setSegmentationChannels;
 
@@ -187,6 +187,10 @@ cExperiment.setSegmentationChannels;
 
 cExpGUI.cExperiment.editCellVisionTrapOutline(1,1)
 
+%% if you don't do the above set the trap detection channel to the lower brightfield channel
+
+cExperiment.ActiveContourParameters.TrapDetection.channel = 3;
+
 %% now select traps for all positions.
 % The selection of the traps defines the areas in which the code will look
 % for cells, and also sets up the organisation of the cTimelapse.
@@ -205,7 +209,7 @@ cExperiment.identifyTrapsTimelapses(poses)
 % (these are only correct if you have added the channels as prescribed -
 % adjust as necessary).
 
-lower_brightfield_channel = 1; % lower z stack slice of brightfield
+lower_brightfield_channel = 3; % lower z stack slice of brightfield
 % in this channel all cells should appear as a reasonably sharp white
 % objects with black halos (a little out of focus is best)
 
@@ -368,20 +372,25 @@ cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
 % increasing this number slows the script but allows more varied shapes.
 cExperiment.ActiveContourParameters.ActiveContour.opt_points = 6;
 
-cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationChannel = 1;
 
+%% channels that are dross and need to be set to something that's always there
+
+cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationChannel = ...
+    cExperiment.ActiveContourParameters.ImageTransformation.channel;
+cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = cExperiment.ActiveContourParameters.ImageTransformation.channel(1);
 %% Look at the results for the test position
 % it is often useful to look at the results from a single position and see
 % if anything is strange. 
 % we here run the active contour algorithm on test position we were using
 % for inspecting the decision image earlier. When you are happy that you
 % have seen enough, press ctrl C to stop it.
-
+    
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
 
 %% Actual long run (Elco standard extraction); run when happy with all the rest!
 % this block is the actual extraction for the whole experiment. It will
 % usually take a day.
+
 
 %track traps
 
@@ -401,14 +410,11 @@ cExperiment.compileCellInformation(poses)
 
 
 % get mother index
-for diri=poses
-    
+for diri=poses    
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
     cTimelapse.findMotherIndex('cell_centre');
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);
-
-    
+    cExperiment.saveTimelapseExperiment(diri,false);    
 end
 
 % mother processing

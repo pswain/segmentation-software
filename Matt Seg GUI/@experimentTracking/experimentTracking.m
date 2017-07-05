@@ -45,8 +45,6 @@ classdef experimentTracking<handle
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
         
-        OmeroDatabase %TODO delete this at end
-        omeroDs %TODO delete this at end
                                 
     end
     
@@ -298,7 +296,7 @@ classdef experimentTracking<handle
         end
     end
     
-    methods (Static,Access=private)
+    methods (Static,Access={?OmeroDatabase,?experimentTracking})
         function val = parseAcqFileIntoID(acqfile)
             [acqdir,~,~] = fileparts(acqfile);
             val = regexprep(acqdir,...
@@ -306,7 +304,7 @@ classdef experimentTracking<handle
                 'Swain Lab[/\\](?<user>[^/\\]+)[/\\]RAW DATA[/\\]',... % User ID
                 '(?<year>\d+)[/\\](?<month>\w+)[/\\](?<day>\d+)',... % Date
                 '[^/\\]*[/\\](?<name>.*)$'],... % Experiment name
-                '$<user>_$<mic>_$<year>_$<month>_$<day>_$<name>'); % Replacement string
+                '$<user>_$<mic>_$<year>_$<month>_$<day>_$<name>'); % Replacement string           
         end
     end
     

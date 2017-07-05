@@ -39,9 +39,10 @@ end
 sizeZ = pixels.getSizeZ().getValue(); % The number of z-sections available for this channel
 sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
 sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
+sizeC = pixels.getSizeC().getValue(); % The number of channels
 
-if any(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels))
-    chNum = find(strcmp(channelName,cTimelapse.OmeroDatabase.MicroscopeChannels));
+if any(strcmp(channelName,cTimelapse.microscopeChannels))
+    chNum = find(strcmp(channelName,cTimelapse.microscopeChannels));
     zsections = 1:sizeZ;
 else
     chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.microscopeChannels));
@@ -63,26 +64,38 @@ for zi=1:length(zsections)
     fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
     
     
-    %Get the image from the Omero Database
+    %Get the image from the Omero Database - if it exists for this
+    %channel and timepoint
     try
-        plane=store.getPlane(z-1, chNum-1, timepoint-1);
+        if chNum<=sizeC && z<=sizeZ
+            plane=store.getPlane(z-1, chNum-1, timepoint-1);
+            tempIm = toMatrix(plane, pixels)';
+        else %This position does not have this channel - return a black image
+            tempIm=uint16(zeros(sizeY,sizeX));
+        end            
         %cache the plane to make retrieval faster next time - this
         %doesn't work very well hence commented - need a better way
         %to speed up image browsing
-        %imwrite(toMatrix(plane, pixels)', fileName);
+        %imwrite(toMatrix(plane, pixels)', fileName);           
     catch
         %Fix upload script to prevent the need for this debug
         disp('No plane for this section channel and timepoint, return equivalent image from the previous timepoint - prevents bugs in segmentation');
         plane=store.getPlane(z-1, chNum-1, timepoint-2);
+        tempIm = toMatrix(plane, pixels)';       
         timepoint=timepoint-1;
     end
     
-    tempIm = toMatrix(plane, pixels)';
-    
+    %Images are flipped in both directions on Omero upload - so if the
+    %data was segmented from a folder before being uploaded/converted
+    %then it should be flipped to ensure data is consistent with any
+    %segmentation results
+    if strcmp(cTimelapse.segmentationSource,'Folder')
+        tempIm=rot90(tempIm);
+        tempIm=flipud(tempIm);
+    end
     if zi ==1
         timepointIm=zeros([sizeY, sizeX, length(zsections)],'like',tempIm);
-    end
-    
+    end    
     timepointIm(:,:,zi) = tempIm;
     
 end

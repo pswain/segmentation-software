@@ -78,11 +78,7 @@ classdef timelapseTraps<handle
         ACParams = []; % active contour parameters.
         ActiveContourObject = []; % there for legacy reasons. Will be removed soon but difficult to reprocess old data sets once it is.
 
-        %stuff Ivan has added
-        %TODO remove when finished decoupling Omero
-        omeroImage%The (unloaded - no data) omero image object in which the raw data is stored (or empty if the object is created from a folder of images).
-        OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
-        microscopeChannels%omero thing
+       
     end
     
     properties(Dependent = true)
