@@ -16,6 +16,9 @@ function new=addTimepoints(cTimelapse,image_acquire_time_wait)
 %                          interslice perioud but much shorter than the
 %                          inter timepoint period. Given in seconds.
 %                          Default is 10.
+%
+% returns:
+% new       -   boolean. true if any new images were added.
 
 % time to wait after image acquisition before program is allowed to update
 % the cTimelapse object.

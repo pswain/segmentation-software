@@ -56,7 +56,7 @@ end
 
 % Parse the full log file as part of the extraction to obtain the actual
 % times of acquisition for each time point:
-if ~cExperiment.logger.shouldLog || ~cExperiment.logger.use_gui
+if isempty(cExperiment.logger.shouldLog) || ~cExperiment.logger.shouldLog || ~cExperiment.logger.use_gui
     progress_bar = false;
 else
     progress_bar = cExperiment.logger.progress_bar;

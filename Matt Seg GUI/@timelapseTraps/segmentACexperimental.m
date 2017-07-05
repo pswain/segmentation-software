@@ -444,7 +444,11 @@ for TP = Timepoints
             PCentre = log(exp(PCentre)./PTot);
             PEdge = log(exp(PEdge)./PTot);
             PBG = log(exp(PBG)./PTot);
-            
+        else
+            % to stop parfor loop bugging out.
+            PCentre = [];
+            PEdge = [];
+            PBG = [];
         end
         
         TransformedImagesVIS = cell(length(TrapInfo));
@@ -841,13 +845,15 @@ for TP = Timepoints
                             
                             TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
                             %TransformedCellImage = zeros(size(SubImageSize));
-                            
-                            CellRegionImage =CellDecisionImage;
-                            %CellRegionImage = zeros(size(TransformedCellImage));
+                            TransformedCellImage = TransformedCellImage - median(TransformedCellImage(:));
+                            %CellRegionImage =CellDecisionImage;
+                            CellRegionImage = zeros(size(TransformedCellImage));
                         end
                     else
                         %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
                         TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters);
+                        TransformedCellImage = TransformedCellImage - median(TransformedCellImage(:));
+                        CellRegionImage = zeros(size(TransformedCellImage));
                     end
                     
                     %COME BACK TO LATER. NEED TO DO THE TRAP REMOVAL AGAIN
@@ -1043,7 +1049,7 @@ for TP = Timepoints
                     %remove pixels identified as cell pixels from
                     %decision image
                     TrapDecisionImage(DilateSegmentationBinary) = 2*abs(TwoStageThreshold)+1;
-                    PCentreTrap(SegmentationBinary) =  median_PCentreTrap;
+                    %PCentreTrap(SegmentationBinary) =  median_PCentreTrap;
                     
                     %update trap image so that it includes all
                     %segmented cells

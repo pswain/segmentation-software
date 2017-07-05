@@ -67,6 +67,39 @@ cExperiment_true.cCellVision = l1.cCellVision;
 
 compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
 
+%% normal timelapse edge and cente cellVision
+% start at a specific seed - should lead to the same outcome every time.
+rng('default')
+rng(1)
+
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_few_new_cellVision_test/cExperiment.mat');
+cExperiment_test = l1.cExperiment;
+cExperiment_test.cCellVision = l1.cCellVision;
+poses = 1:2;
+report_string = 'few traps new cellVision';
+%
+
+cExperiment_test.trackTrapsInTime(poses);
+
+cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
+%
+% % retrack
+params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
+%cExperiment.trackCells(poses,params.trackingDistance);
+
+%extract
+cExperiment_test.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
+cExperiment_test.extractCellInformation(poses,false);
+cExperiment_test.compileCellInformation(poses)
+%
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_few_new_cellVision_ref/cExperiment.mat');
+cExperiment_true = l1.cExperiment;
+cExperiment_true.cCellVision = l1.cCellVision;
+
+
+compareExperimentTrackingObjsForTest(cExperiment_test,cExperiment_true,poses, report_string )
+
+
 %% non trap timelapse
 
 rng('default')
@@ -329,6 +362,7 @@ fprintf('\n\n')
 %% check imsizing based on above
 
 cTimelapse_test.imSize = [200,200];
+cTimelapse_test.scaledImSize = [200,200];
 
 if all(size(cTimelapse_test.returnSingleTimepoint(1,1))==cTimelapse_test.imSize) && ...
         all(size(cTimelapse_test.returnSingleTimepointRaw(1,1))==cTimelapse_test.rawImSize)
@@ -365,6 +399,8 @@ cTimelapse_test.kill_logger = true;
 if report_differences(cTimelapse_true,cTimelapse_test,'cTimelapse_true','cTimelapse_test');
     
     fprintf('\n\n add channel test passed \n \n')
+else
+    fprintf('\n\n add channel test FAILED!! \n \n')
     
 end
 
@@ -410,7 +446,7 @@ cTimelapse_test.kill_logger = true;
         
         fprintf('\n passed addTimepoints test timelapse')
     else
-        fprintf('\n         FAILED addTimepoints test timelapse')
+        fprintf('\n         FAILED addTimepoints test timelapse (though timepointsToProcess and timepointsProcessed are expected to be different)')
         report_differences(cTimelapse_true,cTimelapse_test,sprintf('cTimelapse_true'),sprintf('cTimelapse_test'))
         
     end
@@ -567,8 +603,6 @@ report_string = 'trap tracking simple';
 l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_1_reference/cExperiment.mat');
 cExperiment_true = l1.cExperiment;
 cExperiment_true.cCellVision = l1.cCellVision;
-poses = 1:2;
-report_string = 'few traps standard';
 
 
 cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
@@ -637,13 +671,11 @@ l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/t
 cExperiment_test = l1.cExperiment;
 cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
-report_string = 'trap tracking simple';
+report_string = 'tracking no traps';
 
 l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/trap_tracking_notrap_reference/cExperiment.mat');
 cExperiment_true = l1.cExperiment;
 cExperiment_true.cCellVision = l1.cCellVision;
-poses = 1:2;
-report_string = 'few traps preserve 1';
 
 
 cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
