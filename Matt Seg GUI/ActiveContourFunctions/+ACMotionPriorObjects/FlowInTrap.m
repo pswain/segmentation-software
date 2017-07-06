@@ -3,13 +3,16 @@ classdef FlowInTrap
     %on physicaly constraints and fluid flow.
     
     % divides radius min to max into 5 bins.
-    % makes a gaussian for 
+    % makes a gaussian for size and location and combines them to make a
+    % 'motion prior'. Also allows for cell to move anywhere with a
+    % probabilitiy of self.anywhere
     
     properties
         flowLookUpTable
         sizeLookUpTable
         locMap
         radius_bins
+        anywhere = 0.2 % probability of moving to any pixel, independent of training etc.
     end
     
     methods
@@ -61,11 +64,7 @@ classdef FlowInTrap
             first_x = find(middle_x,1,'last') - r_min;
             locMap(:,1:last_x) = 3;
             locMap(:,last_x:first_x) = 2;
-            locMap(:,first_x:end) = 1;
-            
-            
-            
-            
+            locMap(:,first_x:end) = 1;    
         end
         
         
@@ -82,9 +81,8 @@ classdef FlowInTrap
             
             prior_array =  (size_prior+loc_prior)/2;
             
-            %% add flat 'move anywhere' possibility
-            anywhere = 0.2;
-            prior_array = prior_array*(1-anywhere) + anywhere;
+            % add flat 'move anywhere' possibility
+            prior_array = prior_array*(1-self.anywhere) + self.anywhere;
         end
     end
     

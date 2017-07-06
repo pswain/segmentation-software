@@ -46,6 +46,7 @@ end
 
 ACparameters = cTimelapse.ACParams.ActiveContour;
 
+EdgeFromDecisionImage = cTimelapse.ACParams.ImageTransformation.EdgeFromDecisionImage;
 % size of image used in AC edge identification. Set to just encompass the largest cell possible.
 SubImageSize = 2*cTimelapse.ACParams.ActiveContour.R_max + 1; 
 
@@ -54,7 +55,7 @@ SubImageSize = 2*cTimelapse.ACParams.ActiveContour.R_max + 1;
 % first set for identifying new cells.
 % second set for checking a cell is a tracked cell (so more stringent)
 jump_parameters =  cTimelapse.ACParams.CrossCorrelation.MotionPriorSmoothParameters;
-jump_parameters_check =cTimelapse.ACParams.CrossCorrelation.StrictMotionPriorSmoothParameters;
+jump_parameters_check = cTimelapse.ACParams.CrossCorrelation.StrictMotionPriorSmoothParameters;
 
 % size of probable cell location image
 ProspectiveImageSize = max(jump_parameters(2),jump_parameters_check(2)); 
@@ -70,14 +71,8 @@ CrossCorrelationDIMthreshold = cTimelapse.ACParams.CrossCorrelation.CrossCorrela
 % the probable location images and decision image.
 PostCellIdentificationDilateValue = cTimelapse.ACParams.CrossCorrelation.PostCellIdentificationDilateValue;% 2; %dilation applied to the cell outline to rule out new cell centres
 
-
-RadMeans = (cTimelapse.ACParams.ActiveContour.R_min:cTimelapse.ACParams.ActiveContour.R_max)';%(2:15)';
-RadRanges = [RadMeans-0.5 RadMeans+0.5];
-
 TwoStageThreshold = cTimelapse.ACParams.CrossCorrelation.twoStageThresh; % boundary in decision image for new cells negative is stricter, positive more lenient
 
-% pixels which cannot be classified as centres
-TrapPixExcludeThreshCentre = cTimelapse.ACParams.CrossCorrelation.TrapPixExcludeThreshCentre;
 % trap pixels which will not be allowed within active contour areas
 TrapPixExcludeThreshAC = cTimelapse.ACParams.ActiveContour.TrapPixExcludeThreshAC;
 % bwdist value of cell pixels which will not be allowed in the cell area (so inner (1-cellPixExcludeThresh) fraction will be ruled out of future other cell areas)
@@ -560,11 +555,14 @@ for TP = Timepoints
                 
             end %if timepoint> FirstTimepoint
             
+            % make all definite pixels in the Decision image and the
+            % PredictedCellLocation Images such that they will not be
+            % identified as cells.
             if TrapPresentBoolean
 
                 TrapTrapImage = TrapTrapImageStack(:,:,TI);
                 
-                TrapTrapLogical = TrapTrapImage > TrapPixExcludeThreshCentre;
+                TrapTrapLogical = TrapTrapImage >= 1;
                 if CrossCorrelating(TI)
                     PredictedCellLocationsAllCells{TI}(repmat(TrapTrapLogical,[1,1,size(PredictedCellLocationsAllCells{TI},3)])) = -2*abs(CrossCorrelationValueThreshold);
                     
@@ -582,6 +580,9 @@ for TP = Timepoints
         
         %begin prep for parallelised slow section
         
+        % this distinction is made so that some information can be written
+        % for this function that will not be written to the final
+        % cTimelapse object.
         SliceableTrapInfo = TrapInfo(TrapsToCheck);
         SliceableTrapInfoToWrite = SliceableTrapInfo;
         if TP>FirstTimepoint
@@ -620,8 +621,8 @@ for TP = Timepoints
         
         
         %parfor actually looking for cells
-        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        parfor TI = 1:length(TrapsToCheck)
+        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        for TI = 1:length(TrapsToCheck)
             
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
@@ -658,13 +659,12 @@ for TP = Timepoints
             ParCurrentTrapInfo.cell = NewCellStruct;
             ParCurrentTrapInfo.cellsPresent = false;
             ParCurrentTrapInfo.cellLabel = [];
-            value = 0;
             ynewcell = 0;
             xnewcell = 0;
             CellTrapImage = [];
             CIpar = [];
             
-            % for visualising if debugging code
+            % for visualisation if debugging code
             TransformedImagesVISTrap = [];
             OutlinesVISTrap = [];
             CellStatsDebugTrap = [];
@@ -677,7 +677,6 @@ for TP = Timepoints
                     %look for cells based on cross correlation with
                     %previous timepoint
                     [value,Index] = max(PredictedCellLocationsAllCells{TI}(:));
-                    %[Index] = find(PredictedCellLocationsAllCells{TI}==value,1);
                     value = value(1);
                     Index = Index(1);
                     if value>CrossCorrelationValueThreshold
@@ -691,8 +690,9 @@ for TP = Timepoints
                 
                 if ~CrossCorrelating(TI)
                     %look for cells based based on SVM decisions matrix
-                    value = min(TrapDecisionImage(:));
-                    [Index] = find(TrapDecisionImage==value,1);
+                    [value,Index] = min(TrapDecisionImage(:));
+                    value = value(1);
+                    Index = Index(1);
                     if value<TwoStageThreshold
                         [ynewcell,xnewcell] = ind2sub(size(TrapDecisionImage),Index);
                         ProceedWithCell = true;
@@ -709,74 +709,44 @@ for TP = Timepoints
                     
                     NewCellCentre = [xnewcell ynewcell];
                     
-                    
-                    CellImage = ACBackGroundFunctions.get_cell_image(ACTrapImage,...
-                        SubImageSize,...
-                        NewCellCentre );
-                    
                     NotCellsCell = ACBackGroundFunctions.get_cell_image(AllCellPixels,...
                         SubImageSize,...
                         [xnewcell ynewcell],...
                         false);
                     
                     
-                    if TrapPresentBoolean
-                        CellTrapImage = ACBackGroundFunctions.get_cell_image(TrapTrapImage,...
-                                                                             SubImageSize, ...
-                                                                             NewCellCentre );
-                        
-                        
-                        if have_raw_dims
-                            PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
-                            PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
-                            PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
-                            
-                            
-                            TransformedCellImage = -PEdgeCell + log(1-exp(PEdgeCell));%  ImageTransformFunction(PEdgeCell,TransformParameters,CellTrapImage) - PEdgeCell;%  TransformFromDIMS(PCentreCell,PEdgeCell,PBGCell);
-                            %CellRegionImage = zeros(size(TransformedCellImage));
-                            CellRegionImage = log(1-exp(PCentreCell))-PCentreCell;% - PCentreCell;%log(1-exp(PCentreCell)) - PCentreCell;%   ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
-                        else
-                            %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage+NotCellsCell);
-                            CellDecisionImage = ACBackGroundFunctions.get_cell_image(TrapDecisionImage,...
-                        SubImageSize,...
+                    
+                    CellTrapImage = ACBackGroundFunctions.get_cell_image(TrapTrapImage,...
+                        SubImageSize, ...
                         NewCellCentre );
-                            
-                            TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
-                            %TransformedCellImage = zeros(size(SubImageSize));
-                            TransformedCellImage = TransformedCellImage - median(TransformedCellImage(:));
-                            %CellRegionImage =CellDecisionImage;
-                            CellRegionImage = zeros(size(TransformedCellImage));
-                        end
+                    
+                    
+                    
+                    if have_raw_dims && EdgeFromDecisionImage
+                        % use the decision image result to get the edge
+                        PCentreCell = ACBackGroundFunctions.get_cell_image(PCentreTrap,SubImageSize,NewCellCentre );
+                        PEdgeCell = ACBackGroundFunctions.get_cell_image(PEdgeTrap,SubImageSize,NewCellCentre );
+                        PBGCell = ACBackGroundFunctions.get_cell_image(PBGTrap,SubImageSize,NewCellCentre );
+                        
+                        
+                        TransformedCellImage = -PEdgeCell + log(1-exp(PEdgeCell));
+                        CellRegionImage = log(1-exp(PCentreCell))-PCentreCell; ones(size(PEdgeCell));%  log(1-exp(PCentreCell));%PBGCell;% log( exp(-PBGCell) +  exp(-PEdgeCell)) ;
                     else
-                        %TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,NotCellsCell);
-                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters);
+                        % use some function to pick out edge
+                        CellImage = ACBackGroundFunctions.get_cell_image(ACTrapImage,...
+                            SubImageSize,...
+                            NewCellCentre );
+                        
+                        TransformedCellImage = ImageTransformFunction(CellImage,TransformParameters,CellTrapImage);
+                        
+                        % subtraction of the median has been left in for
+                        % legacy. Shouldn't effect procedure anymore.
                         TransformedCellImage = TransformedCellImage - median(TransformedCellImage(:));
                         CellRegionImage = zeros(size(TransformedCellImage));
                     end
-                    
-                    %COME BACK TO LATER. NEED TO DO THE TRAP REMOVAL AGAIN
-                    %FOR THIS TO WORK
-                    %%%%%%  cheeky little temporary addition - add a
-                    %%%%%%  proportion of the cell image to the transformed
-                    %%%%%%  image.
-                    
-                    
-                    
-                    %take cell decision image, isolate those parts which
-                    %are above TwoStageThreshold(and therefore a partof
-                    %cell centres) and add it to the TransformedCellImage,
-                    %multiplying by the 75th percentile of the
-                    %TransformedCellImage for scaling.
-                    
-                    %TransformedCellImage = TransformedCellImage + DIMproportion*(CellDecisionImage*iqr(TransformedCellImage(:)));
-                    %%%%
-                    
-                    if TrapPresentBoolean
-                        %ExcludeLogical = (CellTrapImage>=TrapPixExcludeThreshAC) | (NotCellsCell>=CellPixExcludeThresh);
-                        ExcludeLogical = (imerode(CellTrapImage>=TrapPixExcludeThreshAC,strel('disk',3),'same')| (NotCellsCell>=CellPixExcludeThresh));
-                    else
-                        ExcludeLogical = NotCellsCell>=CellPixExcludeThresh;
-                    end
+                    % this region is (roughly) forcibly excluded, so that
+                    % it cannot be included in the cell.
+                    ExcludeLogical = (CellTrapImage>=1)| (NotCellsCell>=CellPixExcludeThresh);
                     
                     if ~any(ExcludeLogical(:))
                         ExcludeLogical = [];

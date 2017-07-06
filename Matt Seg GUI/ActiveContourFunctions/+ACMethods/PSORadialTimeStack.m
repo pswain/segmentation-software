@@ -51,20 +51,16 @@ if nargin<7 || isempty(region_image)
 else
     region_image = double(region_image);
 end
-%this is done to try and stop average pixels contributing to outline so that no average of pixel
-%values need be taken.
-%forcing_images = forcing_images - median(forcing_images(:));
-Timepoints = size(forcing_images,3);%number of time points being considered
 
 %parameters set by user
-
 radial_punishing_factor = ACparameters.alpha;%0.01%weighs non image parts (none at the moment)
 time_change_punishing_factor =ACparameters.beta;%0.01 %weighs difference between consecutive time points.
-R_min = ACparameters.R_min;%1;
-R_max = ACparameters.R_max;%15; %was initial radius of starting contour. Now it is the maximum size of the cell (must be larger than 5)
+inflation_weight = ACparameters.inflation_weight;
+R_min = ACparameters.R_min;%1; Minimum size of the cell.
+R_max = ACparameters.R_max;%15; Maximum size of the cell 
 MaximumRadiusChange = ACparameters.MaximumRadiusChange;
-opt_points = ACparameters.opt_points;%8;
-visualise = ACparameters.visualise;%3; %degree of visualisation (0,1,2,3)
+opt_points = ACparameters.opt_points;% number of knots used in the spline
+visualise = ACparameters.visualise;% false. Wheher to show intermediary results etc.
 EVALS = ACparameters.EVALS;%6000; %maximum number of iterations passed to fmincon
 spread_factor = ACparameters.spread_factor;% 1; %used in particle swarm optimisation. determines spread of initial particles.
 spread_factor_prior = ACparameters.spread_factor_prior;% 0.5; %used in particle swarm optimisation. determines spread of initial particles.
@@ -72,27 +68,13 @@ seeds = ACparameters.seeds;%100; number used to initialise
 seeds_for_PSO = ACparameters.seeds_for_PSO;%best set actually used for PSO.
 %parameters internal to the program
 
-method = 'PSO';%'lbfgsb'; %'PSO','lbfgsb'
-debug = false;%if set to one the final radii found will be stored in the debug folder of the cell_serpent folder.
 res_points = 49;%number of the snake points passed to the results matrix (needs to match 'snake_size'field of OOFdataobtainer object
 %for storing results
-epochs_to_terminate = ACparameters.TerminationEpoch;%500;
 
 
 sub_image_size = (size(forcing_images,1)-1)/2; %subimage is a size 2*sub_image_size +1 square.
 
-if nargin<4 || isempty(prior)
-    prior_provided = false;
-else
-    prior_provided = true;
-    prior = reshape(prior',1,[]);
-    D2radii_prior = [];
-    for TP = 1:Timepoints
-        [D2radii_prior_part] = ACBackGroundFunctions.second_derivative_snake((prior(((TP-1)*opt_points)+(1:opt_points)))');
-        D2radii_prior = [D2radii_prior D2radii_prior_part'];
-    end
-    
-end
+
 
 if nargin<5 || isempty(radii_previous_time_point)
     use_previous_timepoint = false;
@@ -107,330 +89,125 @@ else
 end
 
 
-if visualise>=1
+if visualise
     fig_handle = figure;
-    %imshow(show_image,[])
-    %fig_handle2 = figure;
-    
+
 end
 
 
-radii_init_score_all = [];
-D2radii_all = [];
 
 siy = size(forcing_images,2);
 six = size(forcing_images,1);
 
 
-
+% if MaximumRadiusChange is <Inf, set lower/pper bounds so that radius can
+% only change by the amout allowed.
 if use_previous_timepoint
     
-    LB = kron(ones(Timepoints,1),radii_previous_time_point') - kron((1:Timepoints)',MaximumRadiusChange*ones(opt_points,1));
+    LB =radii_previous_time_point' - MaximumRadiusChange*ones(opt_points,1);
     LB(LB<R_min) = R_min;
     
-    UB = kron(ones(Timepoints,1),radii_previous_time_point') + kron((1:Timepoints)',MaximumRadiusChange*ones(opt_points,1));
+    UB = radii_previous_time_point' + MaximumRadiusChange*ones(opt_points,1);
     UB(UB>R_max) = R_max;
     
 else
-    %set lower bounds to be centre -  starting contour radius s_R
-    LB = R_min*ones(opt_points*Timepoints,1);
-    %set lower bounds to be centre +  starting contour radius s_R
+    LB = R_min*ones(opt_points,1);
     UB = R_max*ones(size(LB));
-
 end
 
-LBtemp = LB;
-UBtemp = UB;
+RminTP = LB;
+RmaxTP = UB;
 
-for iP=1:Timepoints
-    %fprintf('cell %d \n',iP)
-    if use_exclude_stack
-        [radii_init_score,angles,RminTP,RmaxTP] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max,exclude_logical_stack(:,:,iP));
-        LBtemp((iP-1)*opt_points + (1:opt_points)) = RminTP(:);
-        UBtemp((iP-1)*opt_points + (1:opt_points)) = RmaxTP(:);
-    else
-        [radii_init_score,angles] = ACBackGroundFunctions.initialise_snake_radial(forcing_images(:,:,iP),opt_points,Centers_stack(iP,1),Centers_stack(iP,2),R_min,R_max);
-        
-    end
-    radii_init_score_all = [radii_init_score_all radii_init_score'];
-    [D2radii] = ACBackGroundFunctions.second_derivative_snake(radii_init_score);
-    D2radii_all = [D2radii_all D2radii'];
+angles = linspace(0,2*pi,opt_points+1)';
+angles = angles(1:opt_points,1);
 
-   
+% use the exclude logical to change the upper and lower bound to not
+% include the excluded pixels.
+if use_exclude_stack
+    [RminTP,RmaxTP] = ACBackGroundFunctions.set_bounds_from_exclude_image(exclude_logical_stack,Centers_stack(1),Centers_stack(2),angles,LB,UB);   
+end
+LB(RminTP>LB) = RminTP(RminTP>LB);
+UB(RmaxTP<UB) = RmaxTP(RmaxTP<UB);
 
- if visualise>=1
+
+
+if visualise
+    % show forcing image, previous time point and exclude logical.
     figure(fig_handle);
-    subplot(1,Timepoints,iP);
     if use_exclude_stack
-        imshow(OverlapGreyRed(forcing_images(:,:,iP),exclude_logical_stack(:,:,iP),[],[],true),[])
+        imshow(OverlapGreyRed(forcing_images,exclude_logical_stack,[],[],true),[])
     else
-        imshow(forcing_images(:,:,iP),[])
+        imshow(forcing_images,[])
     end
-    [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_init_score,angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
-    hold on
-    plot(px,py,'b');
-    title(['timepoint ' num2str(iP)])
     
-    if use_previous_timepoint && iP==1
-        
-        [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_previous_time_point',angles,Centers_stack(iP,:),res_points,(sub_image_size*[2 2]+1));
+    if use_previous_timepoint
+        hold on
+        [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_previous_time_point',angles,Centers_stack(1,:),res_points,(sub_image_size*[2 2]+1));
         plot(px,py,'g');
-    
-    
-        
+        title('previous timepoint outline and exclude logical');
     end
     drawnow
 end
 
-
-    
-end
-
-LB(LBtemp>LB) = LBtemp(LBtemp>LB);
-UB(UBtemp<UB) = UBtemp(UBtemp<UB);
-
-%     %initialise the snake
-
-
-
-
-%% using particle optimisation tool box
-
-%parameters for particle swarm optimisation
-
-%get second derivative of radii
-
-% %parameter values used (see help pso_Trelea_vectorized for more details
-%on these
-
-%defaults parameter values
-%Pdef = [100 2000 24 2 2 0.9 0.4 1500 1e-25 250 NaN 0 0];
-
-if prior_provided %prior given
-    
-    
-    %seeds are evenly distributed cicles between Rmin and Rmax.
-    radii_init_all = linspace(0,1,floor(seeds/3));
-    PSOseed1 = (repmat(radii_init_all',1,opt_points*Timepoints).*repmat((UB-LB)',floor(seeds/3),1)) + repmat(LB',floor(seeds/3),1);
-    
-    %seed values are a distribution around the usual starting function
-    %given by 'initialise_snake_radial'
-    PSOseed2 = repmat(radii_init_score_all,floor(seeds/3),1);
-    PSOseed2 = PSOseed2-spread_factor*randn(size(PSOseed2)).*repmat(D2radii_all,size(PSOseed2,1),1);
-    if size(PSOseed2,1)>0
-        PSOseed2(1,:) = radii_init_score_all;
-    end
-    %seed values are a distribution around the prior given (if given)
-    PSOseed3 = repmat(prior,seeds-2*floor(seeds/3),1);
-    PSOseed3 = PSOseed3-spread_factor_prior*randn(size(PSOseed3)).*repmat(D2radii_prior,size(PSOseed3,1),1);
-    
-    if size(PSOseed3,1)>0
-        PSOseed3(1,:) = prior;
-    end
-    
-    PSOseed = [PSOseed1;PSOseed2;PSOseed3];
-    
-else
-    
-    %seeds are evenly distributed cicles between Rmin and Rmax.
-    radii_init_all = linspace(0,1,floor(seeds/2));
-    PSOseed1 = (repmat(radii_init_all',1,opt_points*Timepoints).*repmat((UB-LB)',floor(seeds/2),1)) + repmat(LB',floor(seeds/2),1);
-    
-    %seed values are a distribution around the usual starting function
-    %given by 'initialise_snake_radial'
-    PSOseed2 = repmat(radii_init_score_all,ceil(seeds/2)-1,1);
-    PSOseed2 = PSOseed2+spread_factor*randn(size(PSOseed2)).*repmat(D2radii_all,ceil(seeds/2)-1,1);
-    PSOseed2 = [radii_init_score_all;PSOseed2];
-    
-    
-    PSOseed = [PSOseed1;PSOseed2];
-    
-    
-end
-
-SuperLB = repmat(LB',seeds,1);
-I =PSOseed<SuperLB;
-PSOseed(I) = SuperLB(I);
-
-SuperUB = repmat(UB',seeds,1);
-I =PSOseed>SuperUB;
-PSOseed(I) = SuperUB(I);
-
-%%particle swarm optimisation
-
 %group of functions taken out of splinefit to speed up optimisation.
-[A,n,breaks,dim,jj,C] = ACBackGroundFunctions.splinefit_prep([angles; 2*pi],ones([seeds_for_PSO (opt_points+1)]),[angles; 2*pi],'p');
+[A,n,breaks,dim,jj,C] = ACBackGroundFunctions.splinefit_prep([angles; 2*pi],ones([1 (opt_points+1)]),[angles; 2*pi],'p');
 
-% now used on cost function calculation.
+% additional terms that must be precalculated for cost function calculation.
 [radii_mat,angles_mat] = ACBackGroundFunctions.radius_and_angle_matrix([six,siy]);
 
-
-switch method
-    %%Using particle swarm
-    case 'PSO'
-        
-        %default [100 2000 24 2 2 0.9 0.4 1500 1e-25 250 NaN 0 0];
-        P = [0 EVALS seeds_for_PSO 4 0.5 0.4 0.4 1500 1e-25 epochs_to_terminate NaN 3 1];
-        
-        %PSO(functname,D(dimension of problem),mv(defaut 4),VarRange(defaut [-100 100]),minmax,PSOparams,plotfcn,PSOseedValue(a particle number x D (dimension) matrix))
-        %(im_stack,center_stack,angles,radii_stack_mat,Rmin,Rmax,alpha,image_size,A,n,breaks,jj,C)
-        if use_previous_timepoint
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);    
-        else
-            function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,[siy six],use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);   
-        end
-        
-        if false
-            % refine seeds to smaller set           
-            preliminary_scores = function_to_optimise(PSOseed);
-            [~,Iscores] = sort(preliminary_scores,1,'ascend');
-            refinedPSOseeds = PSOseed(Iscores(1:seeds_for_PSO),:);
-
-            [optOUT] = ACBackGroundFunctions.pso_Trelea_vectorized_mod(function_to_optimise,opt_points*Timepoints,4,[LB UB],0,P,'',refinedPSOseeds);
-            
-            
-        radii_stack = optOUT(1:(end-1));
-        opt_score = optOUT(end);
-        end
-        % attempted new method:
-        %grad_seeds = [radii_init_score_all;LB';radii_previous_time_point];
-        if use_previous_timepoint
-        grad_seeds = [LB';radii_previous_time_point];
-        else
-            grad_seeds = LB';
-        end
-        %grad_seeds = refinedPSOseeds(1,:);
-        
-        num_seeds = size(grad_seeds,1);
-        bests = zeros(size(grad_seeds));
-        scores = zeros(num_seeds,1);
-        
-        for i = 1:num_seeds
-            [bests(i,:),scores(i)] = ACMethods.spline_grad_search(function_to_optimise,[LB UB],grad_seeds(i,:));
-        end
-        [opt_score,i] = min(scores);
-        radii_stack = bests(i,:)';
-        
-        %TODO remove this bit
-        
-        %fprintf('optimisation best result was seed %d\n',i);
-
-%%%%%%%%%%%%%%%%%%%% NOT WELL MAINTAINED  -   CHECK DIFFERENCE WITH PSO CASE BEFORE UNCOMMENTING AND USING   %%%%%%%%%%%%%%%%%        
-%     case 'fmincon' 
-%      %% using fmincon
-%         
-%         options = optimset('Algorithm','interior-point','MaxFunEvals',10*EVALS,'MaxIter',10*EVALS,'Display','off','TolFun',10e-7);
-%         
-%         %fmincon part
-%         ResultsF = Inf;
-%         for trials =1:seeds
-%         [radii_stack_temp,F] = fmincon(@(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,radii_stack,alpha,betaElco,[siy six],A,n,breaks,jj,C),PSOseed(trials,:),[],[],[],[],LB(1,:),UB(1,:),[],options);
-%         
-%         if F<ResultsF
-%             radii_stack = radii_stack_temp';
-%             ResultsF = F;
-%         end
-%         
-%         end
-%    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    %case 'lbfgsb' %use lbfgsb solver optimiser downloaded from file exchange
-    % need to fix. producing wierd results alot of the time.
-    if false    
-    %now use lbggsb onresult
-        
-        deriv_step_size = 1;
-        
-        if use_previous_timepoint
-            func_to_optimise = @(radii_internal) ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,...
-                cat(2,repmat(radii_previous_time_point,size(radii_internal,2),1),radii_internal'),...
-                radial_punishing_factor,time_change_punishing_factor,[siy six],...
-                use_previous_timepoint,A,n,breaks,jj,C);
-        else
-            func_to_optimise = @(radii_internal) ACMethods.CFRadialTimeStack(forcing_images,Centers_stack,angles,...
-                radii_internal',...
-                radial_punishing_factor,time_change_punishing_factor,[siy six],...
-                use_previous_timepoint,A,n,breaks,jj,C);
-            
-        end
-        fun = @(radii)fminunc_wrapper( radii,...
-                                func_to_optimise,...
-                                @(radii_internal) elco_numerical_derivative_wrapper(func_to_optimise, radii_internal',deriv_step_size*ones(size(radii_internal')))); 
-        
-        
-            opts = struct('x0',radii_stack,...
-                'maxIts',ACparameters.EVALS,...
-                'maxTotalIts',ACparameters.EVALS,...
-                'printEvery',Inf);
-            [res,val] = lbfgsb( fun, LB, UB, opts );
-            %[res,val] = fmincon(fun,radii_stack,[],[],[],[],LB,UB);
-            if val<opt_score
-                radii_stack = res;
-                opt_score = val;
-            else
-                fprintf('optimisation_lame\n')
-            end
-    end
+if use_previous_timepoint
+    % if the previous timepoint is used, the prrevious_timepoint_radii is
+    % appended to the radii array being costed to allow calcualtion of the
+    % time change punishing factor.
+    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);
+else
+    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_images,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);
 end
 
 
-%% non optimisation specific
-radii_res = [];
+% POWELL LIKE LINE OPTIMISATION
+if use_previous_timepoint
+    % optimise once from old outline and once from smallest cell
+    grad_seeds = [LB';radii_previous_time_point];
+else
+    % for new cells, just optimise from lower bound.
+    grad_seeds = LB';
+end
 
-for iP = 1:Timepoints
-    radii = radii_stack((((iP-1)*opt_points)+1):iP*opt_points);
-    radii_res = cat(1,radii_res,radii');
+num_seeds = size(grad_seeds,1);
+bests = zeros(size(grad_seeds));
+scores = zeros(num_seeds,1);
+
+for i = 1:num_seeds
+    [bests(i,:),scores(i)] = ACMethods.spline_grad_search(function_to_optimise,[LB UB],grad_seeds(i,:));
+end
+[opt_score,i] = min(scores);
+radii_res = bests(i,:);
+
+
+if visualise
+    % draw final outline.
+    [px,py] = ACBackGroundFunctions.get_points_from_radii(radii_res',angles,Centers_stack,res_points,([2 2]*sub_image_size)+1);
+    px2 = [px(end);px];
+    py2 = [py(end);py];
+    figure(fig_handle);
+    hold on
+    hold on
     
-    if visualise>=1
-        [px,py] = ACBackGroundFunctions.get_points_from_radii(radii,angles,Centers_stack(iP,:),res_points,([2 2]*sub_image_size)+1);
-        %make px py a looped list of the form expected by the rest of the
-        %program
-        px2 = [px(end);px];
-        py2 = [py(end);py];
-        figure(fig_handle);
-        hold on
-        if Timepoints>1 %for some reason subplot seems to crap out with hold if there is only one timepoint
-        subplot(1,Timepoints,iP);
-        end
-        hold on
-        
-        plot(px2,py2,'r');
-        drawnow
-        hold off
-            %      figure(fig_handle2);
-    end
+    plot(px2,py2,'r');
+    drawnow
+    hold off
+end
       
-end
 
-if visualise>=3
-    if false
-        pause
-    else
-        pause(0.3)
-        [pxFULL,pyFULL] = ACBackGroundFunctions.get_full_points_from_radii(radii_res(1,:)',angles,Centers_stack(1,:),([2 2]*sub_image_size)+1);
-        LogicalPoints = false(([2 2]*sub_image_size)+1);
-        LogicalPoints(pyFULL + (pxFULL-1)*(2*sub_image_size + 1)) = true;
-        OutlineImage = ACBackGroundFunctions.make_outline(forcing_images(:,:,1),LogicalPoints);
-%         OutlineImage = OverlapGreyRed(forcing_images(:,:,1),LogicalPoints,false,[],true);
-        figure_handle_2 = figure;
-        imshow(OutlineImage,[]);
-        pause
-        close(figure_handle_2)
-    end
-elseif visualise>=1
-    drawnow;
-end
-
-
-if visualise>=1
+if visualise
     
     close(fig_handle);
    
 end
 
 
-angles = repmat(angles',Timepoints,1);
+angles = angles';
 
 end
 

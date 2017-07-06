@@ -64,18 +64,7 @@ end
 
 
 if isempty(cExperiment.ActiveContourParameters)
-    cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters;
-else
-    % parse parameters so that anything that has a default value will have
-    % some value.
-    DefaultParameters = timelapseTraps.LoadDefaultACParams;
-    fields = fieldnames(DefaultParameters);
-    for fi = 1:length(fields)
-        cExperiment.ActiveContourParameters.(fields{fi}) = parse_struct(...
-            cExperiment.ActiveContourParameters.(fields{fi}),...
-            DefaultParameters.(fields{fi}) );
-    end
-    
+    cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters; 
 end
 
 if nargin<8 ||isempty(TrackTrapsInTime)

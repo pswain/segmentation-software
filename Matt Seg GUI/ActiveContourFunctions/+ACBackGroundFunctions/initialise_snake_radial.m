@@ -1,8 +1,8 @@
 function [radii,angles,RminTP,RmaxTP] = initialise_snake_radial(im,N,x,y,Rmin,Rmax,exclude_logical)
-%function [radii,angles] = initialise_snake_radial(im,N,x,y,Rmin,Rmax)
-
-
-% Initialises the snakes with a centre at x,y in the image im.
+%function [radii,angles] = initialise_snake_radial(im,N,x,y,Rmin,Rmax,exclude_logical)
+% Initialises the snakes with a centre at x,y in the image im by piking the
+% lowest value pixel along each radii.
+%
 % N      - number of snake points
 % (x,y)  - centre coordinate
 % Rmin   - minimal distance of cell edge from centre allowed

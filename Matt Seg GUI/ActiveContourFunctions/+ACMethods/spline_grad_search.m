@@ -1,11 +1,16 @@
 function [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point)
-% simple gradient descent based method for searching.
+% [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point)
+% simple Powell like line method for based optimsation.
+% taken in large part from Numerical Methods in C, but tries to take
+% advantage of parallel speed of cost function by searching multiple steps
+% at once in the linesearch.
 
+% general parameters
 max_iterations = 50;
-step_num = 5;
-jump = 4;
-max_lin_iter = 5;
-thresh = 1e-2;
+step_num = 5; % number of steps to take either side of the current point
+jump = 4; % size of the initial parameter jump (i.e. the max and min of the range over which the first search looks).
+max_lin_iter = 5; % number of linear jumps to make in 1 dimension before concluding there is no improvement to be had.
+thresh = 1e-2; % realtive threshold at which to break optimisation.
 
 dims = length(starting_point);
 vs = dims+1;
@@ -52,7 +57,8 @@ for vi = 1:vs
             iter_point = new_points(I,:);
             break
         else
-            % set steps to inner region
+            % if none of the points tried were better than the current
+            % point set steps to inner region and try again.
             steps = linspace(-steps(step_num+1),steps(step_num+1),2*step_num)';
         end
     end
@@ -64,14 +70,18 @@ if multiD_iteration==max_iterations
     fprintf('\n\noptimiser maxed out!!\n\n');
 end
 
-% replace best performing vector
+% replace vector 1 (not attached to a particular dimension) with the total
+% change on this iteration.
 improvement = diff([old_score;new_scores]);
-[best_improvement,I] = min(improvement);
+[best_improvement] = min(improvement);
+% if no improvement or only improvement below threshold, break the loop
 if all(current_point==iter_point) || (-best_improvement/abs(new_scores(end)))<thresh
     break
 end
 
 new_vec = iter_point - current_point;
+% if the total change was small than 0.5* jump, reduce jump to 2*change on
+% this iteration.
 new_jump = min(jump,2*max(abs(new_vec)));
 new_vec = new_vec/max(new_vec);
 vectors(1,:) = new_vec;
@@ -86,7 +96,4 @@ end
 best = iter_point;
 score = new_scores(end);
 
-end
-
-function [best,score] = linear_line_search(subfunction_to_optimise,LBUB,starting_point,base_step)
 end
