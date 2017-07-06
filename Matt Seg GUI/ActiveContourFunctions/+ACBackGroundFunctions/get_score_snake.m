@@ -1,5 +1,5 @@
 function ACscore = get_score_snake(forcing_image,radii,angles,centre,ACparameters,radii_previous_timepoint,region_image)
-
+% poorly maintained.
 siy = size(forcing_image,2);
 six = size(forcing_image,1);
 

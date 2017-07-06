@@ -135,7 +135,12 @@ cExperiment.logger.start_protocol('active contour segmentation',length(positions
 % notify experimentLogging:
 experimentLogging.changePos(cExperiment,positionsToIdentify(1),cTimelapse);
 
-try
+% default AC params for parsing
+DefaultParameters = timelapseTraps.LoadDefaultACParams; 
+
+
+% undo comments - just to debug
+%try
     %% Load timelapses
     for i=1:length(positionsToIdentify)
         currentPos=positionsToIdentify(i);
@@ -155,15 +160,23 @@ try
             cTimelapse.ACParams = cExperiment.ActiveContourParameters;
         end
         
-        
-        try
-            cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
-        catch err
-            rethrow(err)
+        % parse parameters so that anything that has a default value will have
+        % some value.
+        fields = fieldnames(DefaultParameters);
+        for fi = 1:length(fields)
+            cTimelapse.ACParams.(fields{fi}) = parse_struct(...
+                cTimelapse.ACParams.(fields{fi}),...
+                DefaultParameters.(fields{fi}) );
         end
+    
+        % undo - just for debugging
+        %try
+            cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+        %catch err
+        %    rethrow(err)
+        %end
         cExperiment.saveTimelapseExperiment(currentPos);
         
-        % fprintf('finished position %d.  %d of %d \n \n',currentPos,i,length(positionsToIdentify))
         
         disp.cExperiment.posSegmented(currentPos) = true;
         disp.cExperiment.posTracked(currentPos) = true;
@@ -171,10 +184,10 @@ try
     
     % Finish logging protocol
     cExperiment.logger.complete_protocol;
-catch err
-    cExperiment.logger.protocol_error;
-    rethrow(err);
-end
+%catch err
+%    cExperiment.logger.protocol_error;
+%    rethrow(err);
+%end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
 
