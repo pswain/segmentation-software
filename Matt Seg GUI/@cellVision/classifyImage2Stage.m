@@ -21,6 +21,12 @@ function  [predicted_im, decision_im, filtered_image,raw_SVM_res]=classifyImage2
 % decision_im       :   grayscale image of 'liklihood'  of being a cell
 %                       centre. Negative is more likely, 0 is the default
 %                       threshold.
+%                       Matt was at some point returning this not as an
+%                       image but as an image stack, with the second image
+%                       slice being a probability to be an edge from a multiclass
+%                       classifier. This functionality is still present but
+%                       I think it is unused. Just be warned, it may be
+%                       good to take the first slice of this value only.
 % filtered_image    :   array of filter values used. Not reshaped, so each
 %                       row is the filter values for the corresponding
 %                       pixel.
@@ -68,8 +74,7 @@ if ~isempty(cCellSVM.SVMModelLinear)
     [predict_labelLin, ~, dec_valuesLin] = predict(labels(~trapOutline(:)), sparse(filtered_image(~trapOutline(:),:)), cCellSVM.SVMModelLinear); % test the training data]\
     dec_values(~trapOutline(:))=dec_valuesLin(:,1);
     
-    % Matt and elco differed on what value the trap pixels should have in the decision image
-    % ensure there are not problems for matt from this
+    % set trap pixels to some high value
     dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
     if size(dec_valuesLin,2)>2
         dec_values(~trapOutline(:))=-dec_valuesLin(:,2);
@@ -150,7 +155,6 @@ if ~isempty(cCellSVM.SVMModelCellToOuterLinear) && ~isempty(cCellSVM.SVMModelInn
     dec_values(trapOutline(:))=max(10,2*abs(cCellSVM.twoStageThresh));
     
     decision_im=reshape(dec_values(:,1),[size(image,1) size(image,2)]);
-    
     
     raw_SVM_res = cat(3, ...
     reshape(dec_values1(:,1),[size(image,1) size(image,2)]),...

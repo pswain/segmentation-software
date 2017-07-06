@@ -399,6 +399,40 @@ classdef timelapseTraps<handle
             cTimelapse_save = cTimelapse_in.copy;
             
         end
+        
+        function DefaultParameters = LoadDefaultACParams
+            % LoadDefaultParameters
+            % Load the default parameters for the active contour method,
+            % which are saved in default_active_contour_parameters.mat
+            % inside the timelapseTraps folder.
+            DefaultParameterMatFileLocation = mfilename('fullpath');
+            FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
+            DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
+            if exist(DefaultParameterMatFileLocation,'file')
+                load(DefaultParameterMatFileLocation,'Parameters');
+            else
+                % make the 'core parameters' provided with the software the
+                % default.
+                CoreParameterLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'core_default_active_contour_parameters.mat');
+                load(CoreParameterLocation,'Parameters');
+                timelapseTraps.SaveDefaultACParams(Parameters)
+            end
+            DefaultParameters = Parameters;
+        end
+        
+        function SaveDefaultACParams(Parameters)
+            % SaveDefaultParameters
+            % save provided structure as the default parameters for the active contour method,
+            % which are saved in default_active_contour_parameters.mat
+            % inside the timelapseTraps folder.
+            % if this was a mistake, can always replace them with
+            % parameters from:
+            % core_default_active_contour_parameters.mat
+            DefaultParameterMatFileLocation = mfilename('fullpath');
+            FileSepLocation = regexp(DefaultParameterMatFileLocation,filesep);
+            DefaultParameterMatFileLocation = fullfile(DefaultParameterMatFileLocation(1:FileSepLocation(end)),'default_active_contour_parameters.mat');
+            save(DefaultParameterMatFileLocation,'Parameters');
+        end
     end
 end
 

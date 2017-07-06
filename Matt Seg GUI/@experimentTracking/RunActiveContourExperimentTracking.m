@@ -59,31 +59,23 @@ end
 
 
 if nargin<6 || isempty(OverwriteTimelapseParameters)
-    OverwriteTimelapseParameters = true; 
-
-%fairly pointless GUI
-%
-%     options = {'overwrite' 'keep individiual parameter sets'};
-%     cancel_option = 'cancel';
-%    button_answer = questdlg('Would you like to overwrite the individual timelapse parameters with the cExperiment active contour parameters? Unless you know a reason why, you probably want to choose ''overwrite'' ', ...
-%                          'overwrite:', ...
-%                          options{1},options{2},cancel_option,options{1});
-%                      
-%      if strcmp(button_answer,cancel_option)
-%          fprintf('\n\n    active contour method cancelled    \n\n')
-%          return
-%      elseif strcmp(button_answer,options{1})
-%          OverwriteTimelapseParameters = true;
-%      elseif strcmp(button_answer,options{2})
-%          OverwriteTimelapseParameters = false;
-%      end
-                     
-                     
+    OverwriteTimelapseParameters = true;                      
 end
 
 
 if isempty(cExperiment.ActiveContourParameters)
-    cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
+    cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters;
+else
+    % parse parameters so that anything that has a default value will have
+    % some value.
+    DefaultParameters = timelapseTraps.LoadDefaultACParams;
+    fields = fieldnames(DefaultParameters);
+    for fi = 1:length(fields)
+        cExperiment.ActiveContourParameters.(fields{fi}) = parse_struct(...
+            cExperiment.ActiveContourParameters.(fields{fi}),...
+            DefaultParameters.(fields{fi}) );
+    end
+    
 end
 
 if nargin<8 ||isempty(TrackTrapsInTime)
@@ -108,24 +100,7 @@ end
 if nargin<9 || isempty(LeaveFirstTimepointUnchanged)
     
     LeaveFirstTimepointUnchanged = false;
-    
-% another fairly pointless user interface
-% 
-%    options = {'leave unchanged' 'change'};
-%     cancel_option = 'cancel';
-%    button_answer = questdlg('Would you like to leave the first timepoint unchanged?', ...
-%                          'leave first timepoint unchanged:', ...
-%                          options{1},options{2},cancel_option,options{1});
-%                      
-%      if strcmp(button_answer,cancel_option)
-%          fprintf('\n\n    active contour method cancelled    \n\n')
-%          return
-%      elseif strcmp(button_answer,options{1})
-%          LeaveFirstTimepointUnchanged = true;
-%      elseif strcmp(button_answer,options{2})
-%          LeaveFirstTimepointUnchanged = false;
-%      end
-%     
+     
 end
 
 if nargin<10 || isempty(CellsToUse)
