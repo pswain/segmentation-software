@@ -146,7 +146,17 @@ cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
 %% load from GUI
 % open a GUI to select a cCellVsion from anywhere
 cExpGUI.loadCellVision
+%% Alternative when you have a corrupt cTimelapse file - only set the cCellVision for positions that are selected
+% ie positions that are defined by poses.
+file_path = mfilename('fullpath');
+filesep_loc = strfind(file_path,filesep);
+%cellVision_path = fullfile(file_path(1:(filesep_loc(end-1)-1)),  'cCellVisionFiles', 'cCellVision_Brightfield_2_slices_default.mat');
+cellVision_path = fullfile('c:\Users\Public\Segmentation code\Matt Seg GUI\cCellvisionFiles',  'cCellVisionFiles', 'cCellVision_Brightfield_2_slices_default.mat');
+[FileName,PathName,FilterIndex] = uigetfile('*.mat','Name of saved CellVision Model',cellVision_path) ;
+load(fullfile(PathName,FileName),'cCellVision');
+cExpGUI.cExperiment.cCellVision=cCellVision;
 
+cExpGUI.cExperiment.setSegmentationChannels([],poses);
 
 %% editing the cellVision trap outline (optional)
 % this is not necessary if the timelapse does not have traps.
@@ -171,7 +181,7 @@ cExpGUI.loadCellVision
 % close it. If you are not satisfied with it, rerun this block of code and
 % try again.
 
-cExpGUI.cExperiment.editCellVisionTrapOutline(1,1)
+cExpGUI.cExperiment.editCellVisionTrapOutline(1,1,[],poses)
 
 %% now select traps for all positions.
 % The selection of the traps defines the areas in which the code will look
@@ -202,7 +212,7 @@ cExperiment.ActiveContourParameters.ImageTransformation.channel = [lower_brightf
 % following function, which would be called from the GUI if you press the
 % extract Data button.
 
-cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
+cExperiment.setExtractParameters(poses,cExperiment.guiSetExtractParameters);
 
 
 

@@ -10,7 +10,7 @@ if isempty(poses)
 end
 
 for posi = poses
-    pos = poses(posi);
+    pos = posi;
     cExperiment.loadCurrentTimelapse(pos);
     cExperiment.cTimelapse.(property) = value;
     cExperiment.saveTimelapseExperiment;

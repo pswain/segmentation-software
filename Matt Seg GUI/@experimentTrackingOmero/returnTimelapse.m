@@ -46,7 +46,7 @@ if ~isempty(cTimelapse.omeroImage)
     cTimelapse.omeroImage=getImages(cTimelapse.OmeroDatabase.Session, cTimelapse.omeroImage);
 end
 %Ensure the timelapse has the channels list for the dataset
-cTimelapse.channelNames=cExperiment.experimentInformation.channels;
+cTimelapse.channelNames=cExperiment.channelNames;
 
 
 % In either case, once the timelapse is successfully loaded, trigger a
