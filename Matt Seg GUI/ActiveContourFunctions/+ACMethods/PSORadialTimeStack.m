@@ -37,6 +37,18 @@ function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_image,ACparam
 
 
 
+if nargin<3 || isempty(radii_previous_time_point)
+    use_previous_timepoint = false;
+else
+    use_previous_timepoint = true;
+end
+
+if nargin<4 || isempty(exclude_logical)
+    use_exclude_stack = false;
+else
+    use_exclude_stack = true;
+end
+
 forcing_image = double(forcing_image);
 if nargin<5 || isempty(region_image)
     region_image = zeros(size(forcing_image)); 
@@ -60,19 +72,6 @@ sub_image_size = (size(forcing_image,1)-1)/2; %subimage is a size 2*sub_image_si
 % some functions require the centre of the centre of the cell to be
 % specified. In this function, it is always the centre of the image.
 Centers_stack = round([1,1]*(sub_image_size)+1);
-
-if nargin<5 || isempty(radii_previous_time_point)
-    use_previous_timepoint = false;
-else
-    use_previous_timepoint = true;
-end
-
-if nargin<6 || isempty(exclude_logical)
-    use_exclude_stack = false;
-else
-    use_exclude_stack = true;
-end
-
 
 if visualise
     fig_handle = figure;
