@@ -1,5 +1,5 @@
-function cExperiment_orig =  append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name,delete_extractedData,changeChannelNames,do_pairs)
-% cExperiment_orig = append_cExperiment(cExperiment_orig, DirToAdd, num_timepoints,location, append_name,delete_extractedData,changeChannelNames,do_pairs)
+function cExperiment_orig =  append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs)
+% cExperiment_orig = append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs)
 %
 % adds positions 'DirToAdd' from one cExperiment to another. If num_timepoints is
 % specified, it will take that many timepoints from the new cExperiment
@@ -18,23 +18,34 @@ function cExperiment_orig =  append_cExperiment(cExperiment_orig, DirToAdd, num_
 % experiments.
 %
 % inputs:
-% cExperiment_orig          :   cExperiment to which positions are added
-% DirToAdd                  :   directories to use in adding (defaults to
-%                               all). If empty, starts with this one.
+% cExperiment_orig          :   cExperiment to which positions are added if
+%                               this is empty, the experiment being added
+%                               will become cExperiment_orig and a save
+%                               location for it will be requested.
+% pos_to_add                :   positions from the new experiment to
+%                               append. If empty they will be selected by GUI.
 % num_timepoints            :   total number of timepoints to add
-%                               distributed evenly over positions*(see
+%                               distributed evenly over positions (see
 %                               footnote)
-% location                  :   file location of experiment to be added.
-%                               Requested by GUI if absent.
-% append_name               :   name added to position to identify them
+% location                  :   file location of cExperiment to be appended.
+%                               Requested by GUI if absent or empty.
+% append_name               :   name added to position to identify them. If
+%                               empty this will be a random number.
 % delete_extracted_data     :   boolean. whether to delete extracted data
-%                               from the cTimelapses when saving
-% changeChannelNames        :   if true, change cTimelapse.channelNames to
-%                               cExperiment_orig (final one) .channelNames
-%                               . Handy for processing.
+%                               from the cTimelapses when saving. This can
+%                               make the loading rather faster and
+%                               extractedData is useless when the
+%                               purpose of the cExperiment is training a
+%                               cCellVision.
+% change_channel_names      :   if true, change cTimelapse.channelNames to
+%                               cExperiment_orig.channelNames. Handy for
+%                               processing. 
 % do_pairs                  :   if true, takes timepoints in pairs of n and
 %                               n+1 (when randomly selected). This will
 %                               result in double the number of timepoints.
+%                               This is primarily used if the cExperiment
+%                               will be used for training a shape space
+%                               model.
 %
 % * There is a slight caveat on num_timepoints. If num_timpoints is Inf,
 % nothing will be done to modify the timepoints. If it is less than Inf,
@@ -68,11 +79,11 @@ if nargin<6 || isempty(delete_extractedData)
     delete_extractedData = true;
 end
 
-if nargin<6 || isempty(changeChannelNames)
-    changeChannelNames = true;
+if nargin<7 || isempty(change_channel_names)
+    change_channel_names = true;
 end
 
-if nargin<7 || isempty(do_pairs)
+if nargin<8 || isempty(do_pairs)
     do_pairs = false;
 end
 
@@ -81,15 +92,14 @@ l1 = load(location);
 cExperiment_new = l1.cExperiment;
 cExperiment_new.cCellVision = l1.cCellVision;
 
-if nargin<2 || isempty(DirToAdd)
-    
-    [DirToAdd] = listdlg('Liststring',cExperiment_new.dirs,'SelectionMode','muliple',...
-        'Name','Positions To Append','PromptString','Please select the positions from the new cExperiment to add to the existing cExperiment');
-    
-    
+if nargin<2 || isempty(pos_to_add)
+    [pos_to_add] = listdlg('Liststring',cExperiment_new.dirs,'SelectionMode','muliple',...
+        'Name','Positions To Append','PromptString','Please select the positions from the new cExperiment to add to the existing cExperiment'); 
 end
-TPtoUse = ones(size(DirToAdd));
+TPtoUse = ones(size(pos_to_add));
 
+% if no cExperiment_orig has been provided, use the one being added but
+% remove all the directories.
 if isempty(cExperiment_orig)
     l1 = load(location);
     cExperiment_orig = l1.cExperiment;
@@ -100,17 +110,21 @@ if isempty(cExperiment_orig)
     cExperiment_orig.cellInf = [];
 end
 
-if length(DirToAdd)>num_timepoints
+% if there are more positions than timpoints to add, select a single
+% timepoint from a random subset of the positions.
+if length(pos_to_add)>num_timepoints
     
-    DirToAdd = DirToAdd(randperm(length(DirToAdd)));
-    DirToAdd = DirToAdd(1:num_timepoints);
-    TPtoUse = ones(size(DirToAdd));
+    pos_to_add = pos_to_add(randperm(length(pos_to_add)));
+    pos_to_add = pos_to_add(1:num_timepoints);
+    TPtoUse = ones(size(pos_to_add));
     
 end
 
-if length(DirToAdd)<num_timepoints
+% if there are more timpoeints to add than positions, assign timepoints
+% evenly as possible across all the positions.
+if length(pos_to_add)<num_timepoints
     
-    TPtoUse = floor(num_timepoints/length(cExperiment_new.dirs))*ones(size(DirToAdd));
+    TPtoUse = floor(num_timepoints/length(cExperiment_new.dirs))*ones(size(pos_to_add));
     remainder = mod(num_timepoints,length(cExperiment_new.dirs));
     if remainder>0
         
@@ -122,7 +136,7 @@ if length(DirToAdd)<num_timepoints
 
 end
 
-cExperiment_new.dirs = cExperiment_new.dirs(DirToAdd);
+cExperiment_new.dirs = cExperiment_new.dirs(pos_to_add);
 
 for di = 1:length(cExperiment_new.dirs)
 
@@ -132,7 +146,7 @@ for di = 1:length(cExperiment_new.dirs)
     end
     
     %set field names to be consistent across experiments
-    if changeChannelNames
+    if change_channel_names
         cTimelapse.channelNames = cExperiment_orig.channelNames;
     end
     
