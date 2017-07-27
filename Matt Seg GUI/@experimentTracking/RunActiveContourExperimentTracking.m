@@ -105,7 +105,7 @@ cTimelapse = cExperiment.loadCurrentTimelapse(positionsToIdentify(1));
 % If channel field is empty, get user to select a channel
 % bit laborious but resilient to people putting the wrong numbers
 % in the boxes (i.e. only cares about sign).
-while isempty(cExperiment.ActiveContourParameters.ImageTransformation.channel)
+while isempty(cExperiment.ActiveContourParameters.ImageTransformation.channel) && ~cExperiment.ActiveContourParameters.ImageTransformation.EdgeFromDecisionImage
     prompts = cTimelapse.channelNames;
     prompts{1} = sprintf(['The image used for the active contour method is constructed by'...
         ' the addition and subtraction of channels, and should be constructed such that '...

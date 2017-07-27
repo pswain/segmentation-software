@@ -22,7 +22,7 @@ classdef FlowInTrap
             bin_number = 6;
             self.radius_bins = linspace(cCellVision.radiusSmall,cCellVision.radiusLarge,bin_number);
             jump_size = linspace(cCellVision.radiusSmall,0.3*cCellVision.radiusLarge,(bin_number-1));
-            prior_size = cTimelapse.ACParams.CrossCorrelation.ProspectiveImageSize;
+            prior_size = cTimelapse.ACParams.CrossCorrelation.MotionPriorSmoothParameters(2);
             self.sizeLookUpTable = zeros([prior_size prior_size (bin_number-1)]);
             for ri = 1:(bin_number-1)
                 prior = fspecial('gaussian',[prior_size prior_size],jump_size(ri)); 

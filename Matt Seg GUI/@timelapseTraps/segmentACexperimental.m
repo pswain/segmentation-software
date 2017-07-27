@@ -82,10 +82,12 @@ TrapPresentBoolean = cTimelapse.trapsPresent;
 
 %object to provide priors for cell movement based on position and location.
 if TrapPresentBoolean
+    % if traps are present use the trained trap motion object
     CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
     % more stringent jump object for checking cell score
     CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
 else
+    % if traps are not present use a simple symmetric gaussian motion model.
     CrossCorrelationPriorObject = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters);
     % more stringent jump object for checking cell score
     CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters_check);
@@ -222,12 +224,6 @@ end
 % loop.
 ACparametersPass = ACparameters;
 ACparametersPass.visualise = 0;
-
-% apply more computaitonal power to cells found for the first time.
-ACparametersPassFirstFind = ACparametersPass;
-ACparametersPassFirstFind.seeds_for_PSO = 2*ACparametersPassFirstFind.seeds_for_PSO;
-ACparametersPassFirstFind.seeds = 2*ACparametersPassFirstFind.seeds;
-
 
 ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
     
@@ -715,7 +711,7 @@ for TP = Timepoints
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,PreviousTimepointRadii,ExcludeLogical,CellRegionImage);
                     else
                         [RadiiResult,AnglesResult,ACscore] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPassFirstFind,[],ExcludeLogical,CellRegionImage);
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,[],ExcludeLogical,CellRegionImage);
                         
                     end
                     

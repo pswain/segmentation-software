@@ -1,16 +1,39 @@
-function [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point)
-% [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point)
+function [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point,grad_search_params)
+% [best, score] = spline_grad_search(function_to_optimise,lower_bound_upper_bound,starting_point,grad_search_params)
 % simple Powell like line method for based optimsation.
 % taken in large part from Numerical Methods in C, but tries to take
 % advantage of parallel speed of cost function by searching multiple steps
 % at once in the linesearch.
+% grad_search_params : structure of parameters for optimisation:
+%   max_iterations  - maximum number of full linesearches over all
+%                     dimensions (default 50)
+%   step_num        - number of steps to take either side of the current
+%                     point when making the line search (default 5)
+%   jump            - size of the initial parameter jump (i.e. the max and
+%                     min of the range over which the first search looks).
+%                     (default 4)
+%   max_lin_iter    - number of linear jumps to make in 1 dimension before
+%                     concluding there is no improvement to be had.
+%                     (default 5)
+%   thresh          - realtive score change threshold at which to break
+%                     optimisation. (default 1e-2)
 
-% general parameters
-max_iterations = 50;
-step_num = 5; % number of steps to take either side of the current point
-jump = 4; % size of the initial parameter jump (i.e. the max and min of the range over which the first search looks).
-max_lin_iter = 5; % number of linear jumps to make in 1 dimension before concluding there is no improvement to be had.
-thresh = 1e-2; % realtive threshold at which to break optimisation.
+default_params = struct('max_iterations',50,...
+                        'step_num',5,...
+                        'jump',4,...
+                        'max_lin_iter',5,...
+                        'thresh',1e-2);
+if nargin<3 || isempty(grad_search_params)
+    grad_search_params = default_params;
+else
+    grad_search_params = parse_struct(grad_search_params,default_params);
+end
+
+max_iterations = grad_search_params.max_iterations;
+step_num = grad_search_params.step_num;
+jump = grad_search_params.jump;
+max_lin_iter = grad_search_params.max_lin_iter;
+thresh = grad_search_params.thresh;
 
 dims = length(starting_point);
 vs = dims+1;

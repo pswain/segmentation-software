@@ -164,7 +164,7 @@ bests = zeros(size(grad_seeds));
 scores = zeros(num_seeds,1);
 
 for i = 1:num_seeds
-    [bests(i,:),scores(i)] = ACMethods.spline_grad_search(function_to_optimise,[LB UB],grad_seeds(i,:));
+    [bests(i,:),scores(i)] = ACMethods.spline_grad_search(function_to_optimise,[LB UB],grad_seeds(i,:),ACparameters.optimisation_parameters);
 end
 [opt_score,i] = min(scores);
 radii_res = bests(i,:);
