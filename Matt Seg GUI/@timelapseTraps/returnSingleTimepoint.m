@@ -127,7 +127,7 @@ end
 % if scaledImSize (the size of the final image before rotation) and
 % rawImSize (the size of the loaded image) are different, then rescale
 if  any(cTimelapse.scaledImSize ~= cTimelapse.rawImSize)
-    new_im = zeros([cTimelapse.imSize stack_depth]);
+    new_im = zeros([cTimelapse.scaledImSize stack_depth]);
     for si = 1:stack_depth
         new_im(:,:,si) = imresize(timepointIm,cTimelapse.scaledImSize);
     end

@@ -29,6 +29,7 @@ classdef cTimelapseDisplay<handle
         channel=[]
         trapNum;
         gui_help = help('cTimelapseDisplay');
+        last_timepoint=[]; % for storing timepoint in case you want to use it for timepoint selection
     end % properties
     
     methods

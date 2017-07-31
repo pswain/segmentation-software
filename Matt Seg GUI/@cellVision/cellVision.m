@@ -114,9 +114,24 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
         saveClassificationTraining(cCellSVM);
         saveClassificationOnly(cCellSVM);
         
+        function saveCellVision(cCellVision,location)
+            % saveCellVision(cCellVision,location)
+            % to save a cellVision model, by GUi if necessary.
+            % save as a variable called cCellVision (the norm in our code).
+            
+            if nargin<2 || isempty(location)
+                [file,path] = uiputfile('','Please select a location to save the cellVision','cCellVision.mat');
+                location = fullfile(path,file);
+            end
+            save(location,'cCellVision');
+        end
     end
     
     methods (Static)
+            % to instantiate a cellVision model using and image from a
+            % cExperiment.
+            cCellVision = createCellVisionFromExperiment(cExperiment,pos);
+        
         function cCellVision = loadobj(LoadStructure)
             % load method
             % allows checks for back compatibility and what not when you

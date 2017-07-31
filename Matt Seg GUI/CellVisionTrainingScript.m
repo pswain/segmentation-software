@@ -1,20 +1,44 @@
 %% Elco's cCellVision training script
 
+%% creating a totally new cellVision model
+% if creating a totally new cellVision model, run the following 2 blocks of
+% code.
+%% load a cExperiment
+% use the usual GUI or create a cExperiment from images or load one that
+% has already been created
+cExpGUI = experimentTrackingGUI;
 
 %% select new trap image
+% use the images from this cExperiment to create the initial trap template
+% for the cellVision model. This is also a opportunity to set the scaling -
+% shrinking images if they are larger than you need to do the segmentation.
+% In general, we use a scaling such that most mother cells are around 12
+% pixels wide. 
+%After this has been created, save the cellVision model and
+% use it to select all the traps in all the experiments you will compile
+pos = 1;
+cCellVision = cellVision.createCellVisionFromExperiment(cExpGUI.cExperiment,pos);
 
-%TODO fill this in.
+%% save
+cCellVision.saveCellVision;
 
+%% COMMENCE CURATION
+% from here we assume you have done the above, creating experiments in
+% which traps have been selected using the cellVision above or an old
+% cellVision you are retraining. It is important that the traps have
+% already been selected at this stage. It is also often common, if
+% retraining an old cellVision model, to have run the active contour over
+% these experiments.
 
 %% initialise for cExperiment compilation
-
+% this sets up some variables for the compilation of experiments.
 cExperiment =[];
 % num_timepoints : this is the number of time points that will be selected
 % randomly from each experiment appended.
 num_timepoints = 5; 
 % pick_pairs : if this is true the timepoints will be picked in consecutive
-% pairs (meaning that num_timepoints * 2) timpoints will actually get
-% selected. This is only useful if the same curated experiment will be used
+% pairs (meaning that num_timepoints * 2 timpoints will actually get
+% selected). This is only useful if the same curated experiment will be used
 % for both the CellVision training and the shape space training (which is
 % only currently implemented for trap timelapses).
 pick_pairs = false;
