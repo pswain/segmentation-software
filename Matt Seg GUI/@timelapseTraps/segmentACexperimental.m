@@ -9,8 +9,10 @@ function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoi
 % best description is in the associated paper.
 %
 %   INPUTS
-% FirstTimepoint    - time point at which to start
-% LastTimepoint     - and to end
+% FirstTimepoint    - time point at which to start. If 'start' will be the
+%                     first timepoint to process. 
+% LastTimepoint     - and to end. if 'end' will be the last timepoint to
+%                     process.
 % FixFirstTimePoint - optional : if this is true the software will not alter the first timepoint
 %                     but will still use the information in finding cells.
 % TrapsToUse        - optional : column vector [trapIndex] of which
@@ -22,17 +24,20 @@ function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoi
 
 
 
-if nargin<3 || isempty(FirstTimepoint)
+if nargin<3 || isempty(FirstTimepoint) || strcmp(FirstTimepoint,'start')
     
     FirstTimepoint = min(cTimelapse.timepointsToProcess(:));
     
 end
 
-if nargin<4 || isempty(LastTimepoint)
+
+if nargin<4 || isempty(LastTimepoint) || strcmp(LastTimepoint,'end')
     
     LastTimepoint = max(cTimelapse.timepointsToProcess);
     
 end
+
+
 
 if nargin<5
     

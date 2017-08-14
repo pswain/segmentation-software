@@ -1,5 +1,5 @@
-function filt_feat=createImFilterSetElcoBF_1_3(cCellSVM,image,trapOutline)
-% filt_feat=createImFilterSetElcoBF_1_3(cCellSVM,image,trapOutline)
+function filt_feat=createImFilterSetElcoBF_1_3_EdgeCentre(cCellSVM,image,trapOutline)
+% filt_feat=createImFilterSetElcoBF_1_3_EdgeCentre(cCellSVM,image,trapOutline)
 % 
 % filter set created by Elco for cell identification using upper and lower
 % out of focus image from bright field images.

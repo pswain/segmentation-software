@@ -1,5 +1,5 @@
-function cExperiment_orig =  append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs)
-% cExperiment_orig = append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs)
+function cExperiment_orig =  append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs,refine_trap_outline)
+% cExperiment_orig = append_cExperiment(cExperiment_orig, pos_to_add, num_timepoints,location, append_name,delete_extractedData,change_channel_names,do_pairs,refine_trap_outline)
 %
 % adds positions 'DirToAdd' from one cExperiment to another. If num_timepoints is
 % specified, it will take that many timepoints from the new cExperiment
@@ -46,6 +46,16 @@ function cExperiment_orig =  append_cExperiment(cExperiment_orig, pos_to_add, nu
 %                               This is primarily used if the cExperiment
 %                               will be used for training a shape space
 %                               model.
+% refine_trap_outline       :   if this is true (default) the trap outline
+%                               will be refined for each cTimelapse before
+%                               it is appended. This can be useful, since
+%                               different merged cExperiments may have
+%                               slightly different trap orientations which
+%                               might otherwise not be easily detectable.
+%                               However, the ectra fields added to
+%                               cTimelapse.cTimepoint.trapInfo can make the
+%                               cExperiment difficult to use in other
+%                               contexts.
 %
 % * There is a slight caveat on num_timepoints. If num_timpoints is Inf,
 % nothing will be done to modify the timepoints. If it is less than Inf,
@@ -145,11 +155,6 @@ for di = 1:length(cExperiment_new.dirs)
         cTimelapse.extractedData = [];
     end
     
-    %set field names to be consistent across experiments
-    if change_channel_names
-        cTimelapse.channelNames = cExperiment_orig.channelNames;
-    end
-    
     if ~isinf(num_timepoints)
         
         % select random timepoints but maintain order
@@ -166,6 +171,16 @@ for di = 1:length(cExperiment_new.dirs)
         cTimelapse.cTimepoint = cTimelapse.cTimepoint(TPs);
         cTimelapse.timepointsToProcess = 1:length(cTimelapse.cTimepoint);
         cTimelapse.timepointsProcessed = false(size(cTimelapse.timepointsToProcess));
+    end
+    % refine the trap outline using the parameters from cExperiment.
+    if refine_trap_outline
+        cTimelapse.ACParams =cExperiment_new.ActiveContourParameters;
+        cTimelapse.refineTrapOutline(cExperiment_new.cCellVision.cTrap.trapOutline);
+    end
+    
+    %set field names to be consistent across experiments
+    if change_channel_names
+        cTimelapse.channelNames = cExperiment_orig.channelNames;
     end
     cExperiment_orig.dirs{end+1} = [append_name,cExperiment_new.dirs{di}];
     save(fullfile(cExperiment_orig.saveFolder , [append_name,cExperiment_new.dirs{di},'cTimelapse']),'cTimelapse')
