@@ -89,9 +89,17 @@ classdef experimentLogging<handle
         end
         
         function val = get.shouldLog(this)
+            if isempty(this.shouldLog_val)
+                this.shouldLog_val = false;
+            end
             val = this.shouldLog_val;
         end
         function set.shouldLog(this,val)
+            if isempty(val)
+                val = false;
+            else
+                val = logical(val(1));
+            end
             this.shouldLog_val = val;
             if ~val
                 % Logging has been turned off so safely delete the GUI 
