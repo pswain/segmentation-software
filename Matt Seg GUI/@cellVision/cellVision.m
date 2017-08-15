@@ -10,22 +10,22 @@ classdef cellVision<handle
           %                    timelapseTraps method. A logical of the trap pixels at the
           %                    last timepoint for which a decision image was calculated
           %                    (using that methd of course)
-
-        cPatchParameters
+        
+        cPatchParameters %used by Matt in Hog feature set
+        % various SVM models
         SVMModel
         SVMModelLinear
         SVMModelCellToOuterLinear
         SVMModelInnerToEdgeLinear
         SVMModelGPU
-        twoStageThresh
-        scaling
-        trainingData
+        twoStageThresh % in some old code, the threshold at which a pixel is condidered a centre 
+        scaling % set of parameters for scaling features to all lie in a similar range.
+        trainingData % structure with the fields features (Nxnum_features array) and class (length N array)
         trainingParams
         negativeSamplesPerImage
         radiusSmall %smallest radius (in pixels) used to identify and track cells
         radiusLarge % largest radius (in pixels) used to identify and track cells
         pixelSize
-        magnification=60;
         training_channels = {'DIC'} %the names of the channels in the ctimepoint object used to train the SVM.
         filterFunction = 'full' %either a string or a function handle indicating which set of filters was used in training the SVM.
         TrainDataGenerationDate = []; %date on which training data was generated (for comaprison to when it the function was edited).
@@ -63,8 +63,9 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
     methods
         
         function cCellSVM=cellVision(do_nothing)
-            %do_nothing    :    boolean that allows construction without field
-            %                   population for loading purposes. default false.
+            % cCellSVM=cellVision(do_nothing)
+            % do_nothing    :    boolean that allows construction without field
+            %                    population for loading purposes. default false.
             if nargin<1 || isempty(do_nothing)
                 do_nothing = false;
             end
@@ -86,34 +87,6 @@ linearToTwoStageParams = struct('threshold',Inf,... threshold of distance from t
             end
         end
          
-        % Basic trap procssing functions
-        selectTrapTemplate(cCellSVM,cTimelapse,cTrapFileName)
-        identifyTrapOutline(cCellSVM,cTimelapse,cCellVision,trapNum);
-        
-        %functions for processing the dictionary and training the SVM
-        %generateTrainingSet(cCellSVM,cDictionary);
-        generateTrainingSet2Stage(cCellSVM,cDictionary,frame_ss);
-        generateTrainingSetAll(cCellSVM,cDictionary,frame_ss);
-        %generateTrainingSetTimelapse(cCellSVM,cDictionary,frame_ss,type);
-        trainSVM(cCellSVM,ss,cmd);
-        trainSVM2Stage(cCellSVM,ss,decval,cmd1,cmd2);
-        trainSVMLinear(cCellSVM,ss,cmd);
-        runGridSearch(cCellSVM,ss,cmd);
-        runGridSearch2Stage(cCellSVM,ss,cmd);
-        runGridSearchLinear(cCellSVM,ss,cmd)
-        
-        %to classify an image
-        [predicted_im decision_im filtered_image]=classifyImage(cCellSVM,image);
-        [predicted_im decision_im filtered_image]=classifyImageLinear(cCellSVM,image,trapOutline);
-        filt_feat=createImFilterSetCellTrap(cCellSVM,image);
-        filt_feat=createImFilterSetCellAsic(cCellSVM,image);
-        [block cell]=createHOGFeaturesTraps(cCellSVM,image);
-        
-        %saving/loading functions
-        loadDictionary(cDictionary)
-        saveClassificationTraining(cCellSVM);
-        saveClassificationOnly(cCellSVM);
-        
         function saveCellVision(cCellVision,location)
             % saveCellVision(cCellVision,location)
             % to save a cellVision model, by GUi if necessary.
