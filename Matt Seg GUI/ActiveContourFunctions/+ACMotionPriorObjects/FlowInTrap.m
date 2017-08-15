@@ -35,7 +35,7 @@ classdef FlowInTrap
             centre_jump = cCellVision.radiusSmall;
             upstream_jump = 2*cCellVision.radiusSmall;
             
-            self.locMap = self.processTrapOutline(cCellVision.cTrap.trapOutline,cCellVision.radiusSmall);
+            self.locMap = ACMotionPriorObjects.FlowInTrap.processTrapOutline(cCellVision.cTrap.trapOutline,cCellVision.radiusSmall);
             
             prior_1 = fspecial('gaussian',prior_size,downstream_jump);
             [~,angle] = ACBackGroundFunctions.radius_and_angle_matrix([prior_size,prior_size]);
@@ -55,19 +55,7 @@ classdef FlowInTrap
             self.flowLookUpTable = cat(3, prior_1, prior_2, prior_3);
             
         end
-        
-        function locMap = processTrapOutline(self,trapOutline,r_min)
-            % makes a map: 1 downstream, 2 in middle, 3 upstream
-            locMap = ones(size(trapOutline));
-            middle_x = any(trapOutline,1);
-            last_x = find(middle_x,1,'first');
-            first_x = find(middle_x,1,'last') - r_min;
-            locMap(:,1:last_x) = 3;
-            locMap(:,last_x:first_x) = 2;
-            locMap(:,first_x:end) = 1;    
-        end
-        
-        
+
         function prior_array = returnPrior(self,cell_loc,cell_radius)
            %prior_array = returnPrior(self,cell_loc,cell_radius)
             cell_loc_index = self.locMap(cell_loc(2), cell_loc(1));
@@ -83,6 +71,19 @@ classdef FlowInTrap
             
             % add flat 'move anywhere' possibility
             prior_array = prior_array*(1-self.anywhere) + self.anywhere;
+        end
+    end
+    
+    methods (Static)
+        function locMap = processTrapOutline(trapOutline,r_min)
+            % makes a map: 1 downstream, 2 in middle, 3 upstream
+            locMap = ones(size(trapOutline));
+            middle_x = any(trapOutline,1);
+            last_x = find(middle_x,1,'first');
+            first_x = find(middle_x,1,'last') - r_min;
+            locMap(:,1:last_x) = 3;
+            locMap(:,last_x:first_x) = 2;
+            locMap(:,first_x:end) = 1;
         end
     end
     
