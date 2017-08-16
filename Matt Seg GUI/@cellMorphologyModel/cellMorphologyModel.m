@@ -4,6 +4,7 @@ classdef cellMorphologyModel <handle
     % shape models used in the paper.
     
     properties
+        angles = [] % angles at which the radii are set (should be the same for all cells)
         radii_arrays = {} % {tp1_array, tp2_array}
                           % arrays of timepoint radii at successive timepoints.
                           % Each row is single cell, with corresponding
@@ -12,7 +13,38 @@ classdef cellMorphologyModel <handle
         location_arrays = {} % as radii array but each row is the [x,y] 
                              % location of the cell at consecutive time
                              % points.
+        pos_trap_cell_array =[] % When data is extracted from an 
+                                % experimentTracking object, this is the
+                                % [position trap cellLabel] of each cell
+                                % extracted
+        trap_array = [] % when data is extracted from an experimentTracking 
+                        % object this is an image stack of the trap pixels
+                        % (doubles - 1 certain, 0 certainly not) for each
+                        % of the traps from which cells were extracted.
+        trap_index_array = [] % array indicating from which trap in trap_array
+                              % each cell was extracted.
+        mean_new_cell_model = []; % mean of the gaussian used to mode cell 
+                                  % model. Fitted to training data.
+        cov_new_cell_model = []; % covariance of the gaussian used to model
+                                 % new cell shapes. Fitted to training data.
+        thresh_tracked_cell_model = []; % threshold mean radius that distinguishes large 
+                                        % and small cells in the tracked
+                                        % cell model.
+        mean_tracked_cell_model_small = []; % mean of the log gaussian used 
+                                            % to model small tracked cell shapes. 
+                                            % Fitted to training data.
+        cov_tracked_cell_model_small = []; % covariance of the log gaussian used to model
+                                           % small tracked cell shapes.
+                                           % Fitted to training data.
+        mean_tracked_cell_model_large = []; % mean of the log gaussian used 
+                                            % to model large tracked cell shapes. 
+                                            % Fitted to training data.
+        cov_tracked_cell_model_large = []; % covariance of the log gaussian used to model
+                                           % large tracked cell shapes.
+                                           % Fitted to training data.
+         
         
+
     end
     
     methods
@@ -27,6 +59,16 @@ classdef cellMorphologyModel <handle
             if ~do_nothing
             end
             
+        end
+        
+        function clearTrainingData(cCellMorph)
+            % clearTrainingData(cCellMorph)
+            % clears all training data.
+            cCellMorph.radii_arrays = {};
+            cCellMorph.location_arrays = {};
+            cCellMorph.pos_trap_cell_array = [];
+            cCellMorph.trap_array = [];
+            cCellMorph.trap_index_array = [];
         end
         
         function saveCellMorphologyModel(cCellMorph,location)
