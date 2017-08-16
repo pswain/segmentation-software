@@ -42,6 +42,12 @@ classdef cellMorphologyModel <handle
         cov_tracked_cell_model_large = []; % covariance of the log gaussian used to model
                                            % large tracked cell shapes.
                                            % Fitted to training data.
+        motion_model = [] % motion model fitted to training data. astruct to be 
+                          % passed to ACMotionPriorObject.FlowInTrapTrained.
+                          % had the fields:
+                          % flowLookUpTable
+                          % sizeLookUpTable
+                          % radius_bins
          
         
 

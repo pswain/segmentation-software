@@ -1,6 +1,15 @@
 function radii_array = sampleShapeModel( cCellMorph,initial_radii,time_points,show_images )
+% radii_array = sampleShapeModel( cCellMorph,initial_radii,time_points,show_images )
 %
-
+% samples shape space based on trained shape model and shows the result.
+%
+% cCellMorph    -   cellMorphologyModel object that already has a shape
+%                   model.
+% initial_radii -   Radii of cell at first timepoint. If not provided, 
+%                   will be sample.
+% time_points   -   number of timepoints to sample (including the first)
+% show_images   -   boolean. Whether to show the images of the sampled
+%                   cells or not.
 if nargin<2 || isempty(initial_radii)
     initial_radii = sample_first_cell(cCellMorph);
 end
