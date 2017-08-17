@@ -1,5 +1,19 @@
 function inspectAndTrainTrackedCellModel(cCellMorph)
-
+% inspectAndTrainTrackedCellModel(cCellMorph)
+% make some simple standard inspections of the radii data before training
+% tracked cell model. 
+% expect the data training data to already be populated
+% (CELLMORPHOLOGYMODEL.EXTRACTTRAININGDATAFROMEXPERIMENT)
+%
+% shows 2 plots:
+% 1- asymptotic p value for Jarque Bera test (JBTEST) of each radii
+% individually after normalisation. Values should be low to have
+% confidence that gaussian is a good model.
+% 2- gaussian fit for each radii with data.
+%
+% my single timepoint data failed the Jarque Bera Test
+%
+% See also, JBTEST,CELLMORPHOLOGYMODEL.EXTRACTTRAININGDATAFROMEXPERIMENT
 radii_array_tp1 = cCellMorph.radii_arrays{1};
 radii_array_tp2 = cCellMorph.radii_arrays{2};
 

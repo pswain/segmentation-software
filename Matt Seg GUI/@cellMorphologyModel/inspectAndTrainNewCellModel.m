@@ -1,7 +1,7 @@
 function inspectAndTrainNewCellModel(cCellMorph,method)
 % inspectAndTrainNewCellModel(cCellMorph,method)
 % make some simple standard inspections of the radii data before training
-% first timepoint model. 
+% new cell model. 
 % expect the data training data to already be populated
 % (CELLMORPHOLOGYMODEL.EXTRACTTRAININGDATAFROMEXPERIMENT)
 %
@@ -14,10 +14,11 @@ function inspectAndTrainNewCellModel(cCellMorph,method)
 %                      training set.
 %
 % shows 2 plots:
-% asymptotic p value for Jarque Bera test (JBTEST) of each radii
-% individually.Values should be high to have confidence that gaussian is a
+% 1- asymptotic p value for Jarque Bera test (JBTEST) of each radii
+% individually. Values should be low to have confidence that gaussian is a
 % good model. 
-% gaussian fit for each radii with data.
+% 2- gaussian fit for each radii with data.
+%
 % my single timepoint data failed the Jarque Bera Test
 %
 % See also, JBTEST,CELLMORPHOLOGYMODEL.EXTRACTTRAININGDATAFROMEXPERIMENT

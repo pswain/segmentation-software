@@ -9,7 +9,7 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
         function self = FlowInTrapTrained(cTimelapse, cCellVision,smoothing_terms,trainedDataStruct)
             % self = FlowInTrapTrained(cTimelapse, cCellVision,smoothing_terms,trainedDataStruct)
             % smoothing terms are terms in a smoothing gaussian [std size]  
-            % id trainedDataStrcut is not provided, it is loaded from the
+            % if trainedDataStrcut is not provided, it is loaded from the
             % defaults.
             
             self = self@ACMotionPriorObjects.FlowInTrap(cTimelapse,cCellVision);
@@ -20,6 +20,9 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
                 % if not present, load the default data struct.
                 trainedDataStruct = ACMotionPriorObjects.FlowInTrapTrained.loadFlowLookUp;
             end
+            
+            self.radius_bins = trainedDataStruct.radius_bins;
+            
             flow_look_up = trainedDataStruct.flowLookUpTable;
             
             for i = 1:size(flow_look_up,3)
@@ -62,18 +65,18 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
                 FileSepLocation = regexp(trained_arrays_file_location,filesep);
                 trained_arrays_file_location = fullfile(trained_arrays_file_location(1:FileSepLocation(end)),'FlowInTrapTrained_array_core.mat');
                 load_struct = load(trained_arrays_file_location);
-                ACMotionPriorObjects.FlowInTrapTrained.saveFlowLookUp(load_struct.flowLookUpTable,load_struct.sizeLookUpTable)
+                ACMotionPriorObjects.FlowInTrapTrained.saveFlowLookUp(load_struct.flowLookUpTable,load_struct.sizeLookUpTable,load_struct.radius_bins)
             end
             
         end
         
-        function saveFlowLookUp(flowLookUpTable,sizeLookUpTable)
+        function saveFlowLookUp(flowLookUpTable,sizeLookUpTable,radius_bins)
             % saveFlowLookUp(flowLookUpTable,sizeLookUpTable)
             % save a new flow/size pair of array.
             trained_arrays_file_location = mfilename('fullpath');
             FileSepLocation = regexp(trained_arrays_file_location,filesep);
             trained_arrays_file_location = fullfile(trained_arrays_file_location(1:FileSepLocation(end)),'FlowInTrapTrained_array.mat');
-            save(trained_arrays_file_location,'flowLookUpTable','sizeLookUpTable');
+            save(trained_arrays_file_location,'flowLookUpTable','sizeLookUpTable','radius_bins');
         end
     end
     

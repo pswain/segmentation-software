@@ -16,13 +16,13 @@ classdef FlowInTrap
     end
     
     methods
-        function self = FlowInTrap(cTimelapse, cCellVision)
-
+        function self = FlowInTrap(prior_size, cCellVision)
+            % self = FlowInTrap(prior_size, cCellVision)
+            
             %size look up
             bin_number = 6;
             self.radius_bins = linspace(cCellVision.radiusSmall,cCellVision.radiusLarge,bin_number);
             jump_size = linspace(cCellVision.radiusSmall,0.3*cCellVision.radiusLarge,(bin_number-1));
-            prior_size = cTimelapse.ACParams.CrossCorrelation.MotionPriorSmoothParameters(2);
             self.sizeLookUpTable = zeros([prior_size prior_size (bin_number-1)]);
             for ri = 1:(bin_number-1)
                 prior = fspecial('gaussian',[prior_size prior_size],jump_size(ri)); 
@@ -53,7 +53,6 @@ classdef FlowInTrap
             prior_3 = prior_3./max(prior_3(:));
             
             self.flowLookUpTable = cat(3, prior_1, prior_2, prior_3);
-            
         end
 
         function prior_array = returnPrior(self,cell_loc,cell_radius)
