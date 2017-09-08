@@ -36,7 +36,7 @@ cExperiment.cellInf=cTimelapse.extractedData;
 % Track extracted timepoints for compilation of times from meta data:
 extractedTimepoints = false(length(cExperiment.dirs),...
     length(cTimelapse.timepointsProcessed));
-extractedTimepoints(1,:) = cTimelapse.timepointsProcessed;
+extractedTimepoints(positionsToExtract(1),:) = cTimelapse.timepointsProcessed;
 
 % list of fields that are not identically sized arrays
 fields_treated_special = {'posNum','trapNum','cellNum','extractionParameters'};
@@ -116,8 +116,7 @@ end
 
 % Compile meta data into the cellInf:
 
-%TODO - put back and leave to Julian to worry about.
-%cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
+cExperiment.compileMetaData(extractedTimepoints,cExperiment.logger.progress_bar);
 
 cExperiment.saveExperiment();
 
