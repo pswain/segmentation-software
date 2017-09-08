@@ -295,6 +295,10 @@ if ~meta_only
 end
 annotations.logPosNames = positionStrs;
 annotations.logExposureTimes = positionExposure;
+
+
+
+
 annotations.acq = acq;
 
 % Avoid overwriting pre-existing fields

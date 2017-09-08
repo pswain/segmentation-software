@@ -1,7 +1,7 @@
 function editCellVisionTrapOutline( cExperiment,pos,TP,channel,poses)
 % editCellVisionTrapOutline( cExperiment,pos,TP,channel ) 
 % changes the trap image and outline of cCellVision attached to the
-% cExperiment file to be mopre representative for the current experiment.
+% cExperiment file to be more representative for the current experiment.
 % 
 % pos       -   the position that will be used for the example trap. If not
 %               specified it is chosen randomly

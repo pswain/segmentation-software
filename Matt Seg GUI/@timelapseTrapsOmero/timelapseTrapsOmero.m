@@ -46,6 +46,7 @@ classdef timelapseTrapsOmero<timelapseTraps
                 NoAction = varargin{1};
             else
                 NoAction = false;
+                cExperiment=varargin{1};
             end
             
             % call timelapseTraps constructor as though loading (i.e. to
@@ -55,10 +56,17 @@ classdef timelapseTrapsOmero<timelapseTraps
             if ~NoAction
                 
                 cTimelapseOmero.omeroImage=omeroImage;
-                cTimelapseOmero.OmeroDatabase=varargin{1};
-                cTimelapseOmero.channelNames=varargin{1}.Channels;
-                cTimelapseOmero.microscopeChannels=varargin{1}.MicroscopeChannels;
-                if nargin<3
+                cTimelapseOmero.OmeroDatabase=varargin{1}.OmeroDatabase;
+                cTimelapseOmero.microscopeChannels=varargin{1}.experimentInformation.microscopeChannels;
+
+                %To define the channels - need to know which channels are used at this position (ie have non-zero
+                %exposure times)
+                posNum=varargin{2};
+                expos=struct2table(cExperiment.metadata.logExposureTimes);
+                usedMicroscopeChannels=table2array(expos(posNum,:))~=0;%Logical array indexing the microscope channels (ie members of cExperiment experimentInformation.microscopeChannels) used by this position
+                usedChannels=ismember(cExperiment.metadata.microscopeChannelIndices,find(usedMicroscopeChannels));%Index to the channels (including single section channels) used by this position
+                cTimelapseOmero.channelNames=cExperiment.channelNames(usedChannels);
+                if nargin<4
                 cTimelapseOmero.cellsToPlot=sparse(100,1e3);
                 else
                     cTimelapseOmero.cellsToPlot=varargin{2};
