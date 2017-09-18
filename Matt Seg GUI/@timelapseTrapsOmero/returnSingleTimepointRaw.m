@@ -41,18 +41,25 @@ sizeX = pixels.getSizeX().getValue(); % The number of pixels along the X-axis.
 sizeY = pixels.getSizeY().getValue(); % The number of pixels along the Y-axis.
 sizeC = pixels.getSizeC().getValue(); % The number of channels
 
+
 if any(strcmp(channelName,cTimelapse.microscopeChannels))
-    chNum = find(strcmp(channelName,cTimelapse.microscopeChannels));
     zsections = 1:sizeZ;
 else
-    chNum = find(cellfun(@(chan) strcmp(channelName(1:min([length(chan),length(channelName)])),chan),cTimelapse.microscopeChannels));
     zstring = regexp(channelName,'_(.*)$','tokens');
+    channelName = regexprep(channelName,'_.*$','');
     if ~isempty(zstring)
         zsections = str2double(zstring{1});
     else
         zsections =1;
     end
 end
+
+posinfo = cTimelapse.metadata.acq.positions;
+posInd = find(strcmp(posinfo.name,cTimelapse.metadata.posname),1);
+exposureTimes = table2struct(posinfo(posInd,7:end));
+chNames = fieldnames(exposureTimes);
+chNames = chNames(structfun(@(x) x>0, exposureTimes));
+chNum = find(strcmp(channelName,chNames));
 
 for zi=1:length(zsections)
     z = zsections(zi);
@@ -67,7 +74,7 @@ for zi=1:length(zsections)
     %Get the image from the Omero Database - if it exists for this
     %channel and timepoint
     try
-        if chNum<=sizeC && z<=sizeZ
+        if ~isempty(chNum) && chNum<=sizeC && z<=sizeZ
             plane=store.getPlane(z-1, chNum-1, timepoint-1);
             tempIm = toMatrix(plane, pixels)';
         else %This position does not have this channel - return a black image

@@ -411,6 +411,9 @@ cExperiment.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
 
 %extract
 cExperiment.extractCellInformation(poses,false);
+%Compile cExperiment will fail if the log file is not downloaded -
+%re-download in case it's not there
+cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,[cExperiment.metadata.experiment 'log.txt'],cExperiment.OmeroDatabase.SaveFolder);
 cExperiment.compileCellInformation(poses)
 
 

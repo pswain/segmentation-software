@@ -76,7 +76,8 @@ try
         
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperimentOmero,currentPos,cExperimentOmero.cTimelapse);
-        
+        cExperimentOmero.cTimelapse.metadata = cExperimentOmero.metadata;
+        cExperimentOmero.cTimelapse.metadata.posname = cExperimentOmero.dirs{currentPos};
         cExperimentOmero.cTimelapse.loadTimelapse(cExperimentOmero.searchString,cExperimentOmero.image_rotation,cExperimentOmero.trapsPresent,cExperimentOmero.timepointsToLoad,cExperimentOmero.pixelSize);
         
         cExperimentOmero.pixelSize=cExperimentOmero.cTimelapse.pixelSize;
