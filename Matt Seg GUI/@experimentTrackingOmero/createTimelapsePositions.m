@@ -68,11 +68,18 @@ end
 
 try
     
+    %Get the image names - allows the correct image to be loaded for each
+    %position
+    oImNames=cell(oImages.size,1);
+    for im=0:oImages.size-1
+        oImNames{im+1}=char(oImages.get(im).getName.getValue);
+    end
+       
     %% Load timelapses
     for i=1:length(positionsToLoad)
         currentPos=positionsToLoad(i);
-
-        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(i-1),cExperimentOmero,currentPos);
+        oImIndex=find(strcmp(oImNames,cExperimentOmero.dirs{currentPos}))-1;
+        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(oImIndex),cExperimentOmero,currentPos);
         
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperimentOmero,currentPos,cExperimentOmero.cTimelapse);

@@ -34,6 +34,7 @@ end
 
 cEIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
 logName=cExperiment.logger.file_name;
+logName=[cExperiment.saveFolder filesep logName];
 logIndex=strcmp(logName,faNames);
 cEIndex=find(cEIndex);
 logIndex=find(logIndex);
