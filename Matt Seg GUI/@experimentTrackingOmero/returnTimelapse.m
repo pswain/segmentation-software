@@ -36,8 +36,8 @@ else
     end
     matched=strmatch(fileName,faNames);
     disp(['Downloading ' posName 'cTimelapse_' cExperiment.rootFolder '.mat'])
-    getFileAnnotationContent(cExperiment.OmeroDatabase.Session, fileAnnotations(matched(1)), [cExperiment.saveFolder filesep fileName]);
-    load ([cExperiment.saveFolder filesep fileName]);
+    getFileAnnotationContent(cExperiment.OmeroDatabase.Session, fileAnnotations(matched(1)), fileName);
+    load (fileName);
 end
 %Saved version will not have the correct OmeroDatabase and omeroImage
 %objects - need to restore these:

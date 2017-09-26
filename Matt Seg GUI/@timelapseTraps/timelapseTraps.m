@@ -328,7 +328,8 @@ classdef timelapseTraps<handle
             % if OmeroDatabase is present, then this should be an Omero
             % type timelapse. Little ugly but keeps back compatability.
             %TODO - take away the isempty?
-            if isa(LoadStructure ,'timelapseTrapsOmero') && ~isempty(LoadStructure.OmeroDatabase)
+            if (isa(LoadStructure ,'timelapseTrapsOmero')  && ~isempty(LoadStructure.OmeroDatabase))||...
+                    (isa(LoadStructure ,'struct')  && isfield(LoadStructure,'OmeroDatabase'))
                 cTimelapse = timelapseTrapsOmero([],true);
             else
                 cTimelapse = timelapseTraps([],true);
