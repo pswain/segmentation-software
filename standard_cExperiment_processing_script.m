@@ -184,7 +184,7 @@ cExpGUI.cCellVision = l1.cCellVision;
 % close it. If you are not satisfied with it, rerun this block of code and
 % try again.
 
-cExpGUI.cExperiment.editCellVisionTrapOutline(1,1)
+cExpGUI.cExperiment.editCellVisionTrapOutline(poses(1),1)
 
 %% if you don't do the above set the trap detection channel to the lower brightfield channel
 
@@ -292,7 +292,7 @@ toc;
 % trap image.
 
 % Show the following thresholds:
-thresh1 = -4.5; %yellow: new cells (more stringent)
+thresh1 = -2.5; %yellow: new cells (more stringent)
 thresh2 = -2.5; % green : tracked cells (less stringent)
 
 trapImage = cTimelapse.returnTrapsTimepoint(1:num_traps,tp,channel_to_view);
@@ -350,7 +350,7 @@ cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThresh
 %% active contour search parameters:
 
 % more is potentially more accurate but slower
-cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 20;
+cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 30;
 
 % always needs to be bigger than the one above. Not very significant so
 % leave high.
@@ -402,6 +402,10 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(c
 % identification and active contour 
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
 
+ 
+% identification and active contour
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
 cExperiment.trackCells(poses,params.trackingDistance);
@@ -411,18 +415,18 @@ cExperiment.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
 
 %extract
 cExperiment.extractCellInformation(poses,false);
-%Compile cExperiment will fail if the log file is not downloaded -
-%re-download in case it's not there
-cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,[cExperiment.metadata.experiment 'log.txt'],cExperiment.OmeroDatabase.SaveFolder);
 cExperiment.compileCellInformation(poses)
 
 
 % get mother index
-for diri=poses    
+for diri=poses
+    
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    cTimelapse.findMotherIndex('cell_centre');
+    cTimelapse.findMotherIndex('refined_trap');
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);    
+    cExperiment.saveTimelapseExperiment(diri,false);
+
+    
 end
 
 % mother processing

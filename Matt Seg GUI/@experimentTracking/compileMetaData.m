@@ -108,11 +108,14 @@ else
 end
 
 % Set times and extractedTimepoints based on each cell's position
-positions = cExperiment.cellInf(1).posNum;
-posNames = cExperiment.dirs;
-posIndices = cellfun(@(s) find(strcmpi(cExperiment.metadata.logPosNames,s)), posNames);
-extractedTimepoints = extractedTimepoints(positions,:);
-timesInMinutes = timesInMinutes(posIndices(positions),:);
+if ~isempty(cExperiment.dirs)%If statement avoids an error when running single position experiments.
+    positions = cExperiment.cellInf(1).posNum;
+    posNames = cExperiment.dirs;
+    posIndices = cellfun(@(s) find(strcmpi(cExperiment.metadata.logPosNames,s)), posNames,'UniformOutput',false);
+    posIndices=[posIndices{:}];
+    extractedTimepoints = extractedTimepoints(positions,:);
+    timesInMinutes = timesInMinutes(posIndices(positions),:);
+end
 
 %% Update cExperiment:
 cExperiment.cellInf(1).date = cExperiment.metadata.date;

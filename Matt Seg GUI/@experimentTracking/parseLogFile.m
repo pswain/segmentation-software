@@ -26,6 +26,13 @@ if nargin<2 || isempty(logFile)
         warning(['More than one log file available in "%s". ',...
             'Using first found...'],logDirs{d});
     end
+    if isempty (logFile) && isa (cExperiment,'experimentTrackingOmero')
+    %The log file is not present in the save folder
+    disp('Downloading log file');
+    fullName=char(cExperiment.omeroDs.getName.getValue);
+    logName=[fullName(1:end-3) 'log.txt'];
+    [path, ~]=cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,logName,cExperiment.saveFolder);
+    end
     logFile = fullfile(logDirs{d},logFile(1).name);
 end
 

@@ -54,23 +54,26 @@ else
     end
 end
 
-posinfo = cTimelapse.metadata.acq.positions;
-posInd = find(strcmp(posinfo.name,cTimelapse.metadata.posname),1);
-exposureTimes = table2struct(posinfo(posInd,7:end));
-chNames = fieldnames(exposureTimes);
-chNames = chNames(structfun(@(x) x>0, exposureTimes));
-chNum = find(strcmp(channelName,chNames));
-
+if~isempty(cTimelapse.metadata.acq.positions)
+    posinfo = cTimelapse.metadata.acq.positions;
+    posInd = find(strcmp(posinfo.name,cTimelapse.metadata.posname),1);
+    exposureTimes = table2struct(posinfo(posInd,7:end));
+    chNames = fieldnames(exposureTimes);
+    chNames = chNames(structfun(@(x) x>0, exposureTimes));
+    chNum = find(strcmp(channelName,chNames));
+else
+        chNum = find(strcmp(channelName,cTimelapse.microscopeChannels));
+end
 for zi=1:length(zsections)
     z = zsections(zi);
     folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];
     if exist(folderName)==0
         mkdir(folderName);
     end
-    %Generate a filename based on the channel, timepoint and z section.
-    fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
-    
-    
+%     %Generate a filename based on the channel, timepoint and z section.
+%     fileName=[folderName filesep 'omeroDownload_' sprintf('%06d',timepoint) '_Channel',num2str(chNum) '_' sprintf('%03d',z),'.png'];
+%     
+%     
     %Get the image from the Omero Database - if it exists for this
     %channel and timepoint
     try
