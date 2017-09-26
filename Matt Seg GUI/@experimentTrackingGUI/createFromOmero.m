@@ -30,24 +30,7 @@ if strcmp(dsStruct.action,'segment')
             delete([dsStruct.OmeroDatabase.DataPath '*']);
         end
     end
-    %Code below has now been moved to the experimentTracking constructor -
-    %delete once this is tested.
-    % %Set the channels field - add a separate channel for each section in case
-    % %they are required for data extraction or segmentation:
-    % %Get the number of Z sections
-    % ims=dsStruct.dataset.linkedImageList;
-    % im=ims.get(0);%the first image - assumes all images have the same dimensions
-    % pixels=im.getPrimaryPixels;
-    % sizeZ=pixels.getSizeZ.getValue;
-    % origChannels=dsStruct.OmeroDatabase.Channels;
-    % dsStruct.OmeroDatabase.MicroscopeChannels = origChannels;
-    % if sizeZ>1
-    %     for ch=1:length(origChannels)
-    %         for z=1:sizeZ
-    %             dsStruct.OmeroDatabase.Channels{length(dsStruct.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
-    %         end
-    %     end
-    % end
+   
     
     %First check if a cExperiment exists for this dataset:
     fileAnnotations=getDatasetFileAnnotations(dsStruct.OmeroDatabase.Session,dsStruct.dataset);

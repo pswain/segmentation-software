@@ -69,29 +69,55 @@ if nargin<2 || isempty(extractedTimepoints)
         extractedTimepoints(:,cExperiment.timepointsToProcess) = true;
     end
 else
-    if size(extractedTimepoints,1)<max(extractedPositions(:)) || ...
-            size(extractedTimepoints,2) < approxNtimepoints
-        error('The provided "extractedPositions" argument has the wrong shape.');
+    if size(extractedTimepoints,1) < max(extractedPositions(:))
+        warning('"extractedTimepoints" has too few positions. Padding with false.');
+        extractedTimepointsArg = extractedTimepoints;
+        extractedTimepoints = false(max(extractedPositions(:)),...
+            size(extractedTimepointsArg,2));
+        extractedTimepoints(1:size(extractedTimepointsArg,1),:) = ...
+            extractedTimepointsArg;
     end
 end
 
 %% Refactor the arrays to the same format as cellInf arrays:
+
+% Truncate arrays to have the same time points as cellInf
+% As per compileCellInformation, use the first field that is not considered
+% special to determine the 'data_template' size:
+fields_treated_special = {'posNum','trapNum','cellNum','extractionParameters'};
+cellInfFields = fieldnames(cExperiment.cellInf);
+template_field = find(~ismember(cellInfFields,fields_treated_special),1);
+Ntimepoints = approxNtimepoints; % The number of time points in log file
+if ~isempty(template_field)
+    Ntimepoints = size(cExperiment.cellInf(1).(cellInfFields{template_field}),2);
+end
+if size(extractedTimepoints,2) < Ntimepoints
+    warning('"extractedTimepoints" has too few time points. Padding with false.');
+    extractedTimepoints = [extractedTimepoints,...
+        zeros(size(extractedTimepoints,1),Ntimepoints-size(extractedTimepoints,2))];
+else
+    extractedTimepoints = extractedTimepoints(:,1:Ntimepoints);
+end
+timesInMinutes = cExperiment.metadata.logTimes;
+if size(timesInMinutes,2) < Ntimepoints
+    warning('The log file has too few times. Padding with zeros.');
+    timesInMinutes = [timesInMinutes,...
+        zeros(size(timesInMinutes,1),Ntimepoints-size(timesInMinutes,2))];
+else
+    timesInMinutes = timesInMinutes(:,1:Ntimepoints);
+end
+
+% Set times and extractedTimepoints based on each cell's position
 positions = cExperiment.cellInf(1).posNum;
 posNames = cExperiment.dirs;
 posIndices = cellfun(@(s) find(strcmpi(cExperiment.metadata.logPosNames,s)), posNames);
-
-% Truncate the array to include the same number of timepoints as cellInf
-timesInMinutes = cExperiment.metadata.logTimes(:,1:approxNtimepoints);
-extractedTimepoints = extractedTimepoints(:,1:approxNtimepoints);
-
-% Set cell times based on that cell's position
-timesInMinutes = timesInMinutes(posIndices(positions),:);
 extractedTimepoints = extractedTimepoints(positions,:);
+timesInMinutes = timesInMinutes(posIndices(positions),:);
 
 %% Update cExperiment:
 cExperiment.cellInf(1).date = cExperiment.metadata.date;
 cExperiment.cellInf(1).times = timesInMinutes;
-cExperiment.cellInf(1).extractedTimepoints = extractedTimepoints;
+cExperiment.cellInf(1).timepointsNotProcessed = sparse(~extractedTimepoints);
 cExperiment.cellInf(1).annotations = cExperiment.metadata;
 
 % Clean up progress bar:

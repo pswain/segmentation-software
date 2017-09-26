@@ -50,7 +50,6 @@ cExperimentOmero.pixelSize=pixelSize;
 cExperimentOmero.image_rotation=image_rotation;
 cExperimentOmero.timepointsToLoad=timepointsToLoad;
 cExperimentOmero.trapsPresent = traps_present;
-cExperimentOmero.channelNames{end+1}=searchString;
 % Start adding arguments to experiment creation protocol log:
 
 cExperimentOmero.logger.add_arg('Omero experiment name',cExperimentOmero.rootFolder);
@@ -73,7 +72,7 @@ try
     for i=1:length(positionsToLoad)
         currentPos=positionsToLoad(i);
 
-        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(i-1),cExperimentOmero.OmeroDatabase);
+        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(i-1),cExperimentOmero,currentPos);
         
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperimentOmero,currentPos,cExperimentOmero.cTimelapse);
