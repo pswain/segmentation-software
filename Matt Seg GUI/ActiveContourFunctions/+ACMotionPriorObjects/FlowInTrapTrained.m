@@ -12,7 +12,7 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
             % if trainedDataStrcut is not provided, it is loaded from the
             % defaults.
             
-            self = self@ACMotionPriorObjects.FlowInTrap(cTimelapse,cCellVision);
+            self = self@ACMotionPriorObjects.FlowInTrap(max(cTimelapse.trapImSize),cCellVision);
             smoothing_element = fspecial('gaussian',smoothing_terms(2)*[1 1],smoothing_terms(1));
             smoothing_element = smoothing_element/max(smoothing_element(:));
             % load files from training mat file.
