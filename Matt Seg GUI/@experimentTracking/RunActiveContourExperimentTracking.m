@@ -67,6 +67,10 @@ if isempty(cExperiment.ActiveContourParameters)
     cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters; 
 end
 
+if isempty(cExperiment.cCellMorph)
+    cExperiment.cCellMorph = experimentTracking.loadDefaultCellMorphologyModel; 
+end
+
 if nargin<8 ||isempty(TrackTrapsInTime)
     
     options = {'track traps in time' 'don''t'};
@@ -171,7 +175,7 @@ DefaultParameters = timelapseTraps.LoadDefaultACParams;
     
         % undo - just for debugging
         %try
-            cTimelapse.segmentACexperimental(cExperiment.cCellVision,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+            cTimelapse.segmentACexperimental(cExperiment.cCellVision,cExperiment.cCellMorph,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
         %catch err
         %    rethrow(err)
         %end

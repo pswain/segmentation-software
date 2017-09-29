@@ -1,5 +1,12 @@
-function [Ftot] = CFRadialTimeStack(im_stack,angles,radii_stack_mat,radial_punishing_factor,time_change_punishing_factor,inflation_weight,first_timepoint_fixed,A,n,breaks,jj,C,region_image_stack,pixel_radii_mat,pixel_angles_mat,varargin)
-%[Ftot] = CFRadialTimeStack(im_stack,angles,radii_stack_mat,radial_punishing_factor,time_change_punishing_factor,inflation_weight,first_timepoint_fixed,A,n,breaks,jj,C,region_image_stack,pixel_radii_mat,pixel_angles_mat,varargin)
+function [Ftot] = CFRadialTimeStack(im_stack,angles,radii_stack_mat,radial_punishing_factor,...
+    time_change_punishing_factor,inflation_weight,first_timepoint_fixed,A,n,breaks,jj,C,...
+    region_image_stack,pixel_radii_mat,pixel_angles_mat,inverted_cov_1cell,mu_1cell,...
+    threshold_radius,inverted_cov_2cell_small,mu_2cell_small,inverted_cov_2cell_large,mu_2cell_large,varargin)
+% [Ftot] = CFRadialTimeStack(im_stack,angles,radii_stack_mat,radial_punishing_factor,...
+%    time_change_punishing_factor,inflation_weight,first_timepoint_fixed,A,n,breaks,jj,C,...
+%    region_image_stack,pixel_radii_mat,pixel_angles_mat,inverted_cov_1cell,mu_1cell,...
+%    threshold_radius,inverted_cov_2cell_small,mu_2cell_small,inverted_cov_2cell_large,mu_2cell_large,varargin)
+%
 %cost function for snakes algorithm written to be used used with the
 %particle optimisation toolbox from the file exchange:
 %
@@ -55,6 +62,19 @@ function [Ftot] = CFRadialTimeStack(im_stack,angles,radii_stack_mat,radial_punis
 %pixel_angles_mat                   - a matrix of the angle of each pixel
 %                                     to positive horizontal axis.
 %
+% --following are taken from cellMorphologyModel
+% inverted_cov_1cell                - inverted covariance matrix for new
+%                                     cells
+% mu_1cell                          - mean radius of new cells.
+% threshold_radius                  - threshold mean radius between small
+%                                     and large tracked cells.
+% inverted_cov_2cell_small          - inverted covariance matrix for small
+%                                     tracked cells
+% mu_2cell_small                    - mean log radius of small tracked cells.
+% inverted_cov_2cell_large          - inverted covariance matrix for large
+%                                     tracked cells
+% mu_2cell_large                    - mean log radius of large tracked cells.
+%
 %output:
 %Ftot    -  vector of scores for each proposed radii set (i.e. each row in
 %           radii_stack_mat.
@@ -64,47 +84,12 @@ radii_length = size(angles,1);
 timepoints = (size(radii_stack_mat,2)/radii_length);
 points = size(radii_stack_mat,1);
 
-%TODO = remove this and replace with something proper.
 % for trained radius punishment
 % gaussian parameters trained from cellVision training set
-inverted_cov_1cell =...
-    [0.9568   -0.9824    0.2210   -0.3336    0.2061   -0.1774
-   -0.9824    2.3140   -0.7398    0.3936   -0.2683   -0.6752
-    0.2210   -0.7398    1.4997   -0.9595    0.4939   -0.3992
-   -0.3336    0.3936   -0.9595    1.5773   -1.0942    0.4536
-    0.2061   -0.2683    0.4939   -1.0942    1.6916   -0.9590
-   -0.1774   -0.6752   -0.3992    0.4536   -0.9590    1.9724];
-
-mu_1cell = [9.1462    8.0528    6.7623    6.1910    6.0670    6.8330];
-
 c = 0.5*det(inv(inverted_cov_1cell));
 % for trained time change punishment
 % gaussian parameters from pairs of curated cells.
-inverted_cov_2cell_small =...
-  [150.0532  -55.6032    5.8445   12.8486    8.1765  -17.8547
-  -55.6032  109.4672  -14.8512    0.0212    4.8178  -12.1094
-    5.8445  -14.8512   47.9182  -10.1944   11.3427   14.3080
-   12.8486    0.0212  -10.1944   37.7482  -10.2208   -1.6160
-    8.1765    4.8178   11.3427  -10.2208   48.5290   -6.9169
-  -17.8547  -12.1094   14.3080   -1.6160   -6.9169   61.7951];
  
-mu_2cell_small = ...
-    [0.0388    0.0422   -0.0020   -0.0234    0.0017    0.0340];
- 
- 
-inverted_cov_2cell_large =...
-    [228.3962  -55.5536   12.3227   21.5177   22.8732    1.4406
-  -55.5536  199.8526    3.9693   17.2392   19.9806   -4.4419
-   12.3227    3.9693   82.6106  -18.6513   19.5364   28.0344
-   21.5177   17.2392  -18.6513   74.3356  -19.7211   18.4087
-   22.8732   19.9806   19.5364  -19.7211   70.1115  -16.8373
-    1.4406   -4.4419   28.0344   18.4087  -16.8373  109.5118 ];
-
-mu_2cell_large = ...
-    [ 0.0245    0.0264   -0.0137   -0.0488   -0.0349    0.0079];
-
-threshold_radius = 6;
-
 
 if first_timepoint_fixed
 

@@ -6,13 +6,14 @@ classdef FlowInTrapTrained < ACMotionPriorObjects.FlowInTrap
     end
     
     methods
-        function self = FlowInTrapTrained(cTimelapse, cCellVision,smoothing_terms,trainedDataStruct)
-            % self = FlowInTrapTrained(cTimelapse, cCellVision,smoothing_terms,trainedDataStruct)
+        function self = FlowInTrapTrained(cCellVision,smoothing_terms,trainedDataStruct)
+            % self = FlowInTrapTrained(cCellVision,smoothing_terms,trainedDataStruct)
             % smoothing terms are terms in a smoothing gaussian [std size]  
             % if trainedDataStrcut is not provided, it is loaded from the
             % defaults.
             
-            self = self@ACMotionPriorObjects.FlowInTrap(max(cTimelapse.trapImSize),cCellVision);
+            % first input will be overwritten by saved files, so arbitrarily set to 5. 
+            self = self@ACMotionPriorObjects.FlowInTrap(5,cCellVision);
             smoothing_element = fspecial('gaussian',smoothing_terms(2)*[1 1],smoothing_terms(1));
             smoothing_element = smoothing_element/max(smoothing_element(:));
             % load files from training mat file.

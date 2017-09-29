@@ -1,5 +1,5 @@
-function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_image,ACparameters,radii_previous_time_point,exclude_logical,region_image)
-% [radii_res,angles,score] = PSORadialTimeStack(forcing_image,ACparameters,radii_previous_time_point,exclude_logical,region_image)
+function [radii_res,angles,opt_score] = PSORadialTimeStack(forcing_image,ACparameters,radii_previous_time_point,exclude_logical,region_image,cCellMorph)
+% [radii_res,angles,score] = PSORadialTimeStack(forcing_image,ACparameters,radii_previous_time_point,exclude_logical,region_image,cCellMorph)
 %
 % function to optimise the cost function:
 %       ACBackgroundFunctions.CFRadialTimeStack 
@@ -54,6 +54,10 @@ if nargin<5 || isempty(region_image)
     region_image = zeros(size(forcing_image)); 
 else
     region_image = double(region_image);
+end
+
+if nargin<6 || isempty(cCellMorph)
+    error('cell morphology model must be provided');
 end
 
 %parameters set by user
@@ -140,13 +144,24 @@ end
 % additional terms that must be precalculated for cost function calculation.
 [radii_mat,angles_mat] = ACBackGroundFunctions.radius_and_angle_matrix([six,siy]);
 
+% terms from the cellMorphology model.
+cell_morph_terms = {inv(cCellMorph.cov_new_cell_model),cCellMorph.mean_new_cell_model,...
+    cCellMorph.thresh_tracked_cell_model,inv(cCellMorph.cov_tracked_cell_model_small),...
+    cCellMorph.mean_tracked_cell_model_small,inv(cCellMorph.cov_tracked_cell_model_large),cCellMorph.mean_tracked_cell_model_large};
+
 if use_previous_timepoint
     % if the previous timepoint is used, the prrevious_timepoint_radii is
     % appended to the radii array being costed to allow calcualtion of the
     % time change punishing factor.
-    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_image,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);
+    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(...
+        forcing_image,angles,cat(2,repmat(radii_previous_time_point,size(radii_stack,1),1),radii_stack),...
+        radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A,...
+        n,breaks,jj,C,region_image,radii_mat,angles_mat,cell_morph_terms{:});
 else
-    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(forcing_image,angles,radii_stack,radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A,n,breaks,jj,C,region_image,radii_mat,angles_mat);
+    function_to_optimise = @(radii_stack)ACMethods.CFRadialTimeStack(...
+        forcing_image,angles,radii_stack,...
+        radial_punishing_factor,time_change_punishing_factor,inflation_weight,use_previous_timepoint,A...
+        ,n,breaks,jj,C,region_image,radii_mat,angles_mat,cell_morph_terms{:});
 end
 
 

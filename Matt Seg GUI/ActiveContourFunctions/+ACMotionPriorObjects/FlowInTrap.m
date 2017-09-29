@@ -18,6 +18,7 @@ classdef FlowInTrap
     methods
         function self = FlowInTrap(prior_size, cCellVision)
             % self = FlowInTrap(prior_size, cCellVision)
+            % prior_size - integer. Size of square prior image returned.
             
             %size look up
             bin_number = 6;

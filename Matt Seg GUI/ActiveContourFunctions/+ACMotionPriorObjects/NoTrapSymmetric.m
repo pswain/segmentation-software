@@ -7,11 +7,11 @@ classdef NoTrapSymmetric < ACMotionPriorObjects.ACMotionPriorSuperClass
     end
     
     methods
-        function self = NoTrapSymmetric(cTimelapse, cCellVision,jump_terms)
-            % self = NoTrapSymmetric(cTimelapse, cCellVision,jump_terms)
+        function self = NoTrapSymmetric(cCellVision,jump_terms)
+            % self = NoTrapSymmetric(cCellVision,jump_terms)
             % just a jump prior of a fixed size (possibly modify in the
             % future to be more spread for smaller cells)
-            prior_size = cTimelapse.ACParams.CrossCorrelation.ProspectiveImageSize;
+            prior_size = jump_terms(2);
             prior_array = zeros([prior_size, prior_size]);
             prior_array(ceil([prior_size, prior_size]/2)) = 1;
             smoothing_element = fspecial('gaussian',jump_terms(2)*[1 1],jump_terms(1));

@@ -1,5 +1,5 @@
-function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
-%segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
+function segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
+%segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
 %
 % MAIN FUNCTION of the active contour based segmentation.
 %
@@ -9,6 +9,10 @@ function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoi
 % best description is in the associated paper.
 %
 %   INPUTS
+% cTimelapse        - object of the cTimelapse class to be segment.
+% cCellVision       - cCellVision cell identification model of the class cellVision.
+% cCellMorph        - cCellMorph cell morphology model of the class
+%                     cellMorphologyModel.
 % FirstTimepoint    - time point at which to start. If 'start' will be the
 %                     first timepoint to process. 
 % LastTimepoint     - and to end. if 'end' will be the last timepoint to
@@ -24,14 +28,14 @@ function segmentACexperimental(cTimelapse,cCellVision,FirstTimepoint,LastTimepoi
 
 
 
-if nargin<3 || isempty(FirstTimepoint) || strcmp(FirstTimepoint,'start')
+if nargin<4 || isempty(FirstTimepoint) || strcmp(FirstTimepoint,'start')
     
     FirstTimepoint = min(cTimelapse.timepointsToProcess(:));
     
 end
 
 
-if nargin<4 || isempty(LastTimepoint) || strcmp(LastTimepoint,'end')
+if nargin<5 || isempty(LastTimepoint) || strcmp(LastTimepoint,'end')
     
     LastTimepoint = max(cTimelapse.timepointsToProcess);
     
@@ -39,13 +43,13 @@ end
 
 
 
-if nargin<5
+if nargin<6
     
     FixFirstTimePointBoolean = false;
     
 end
 
-if nargin<6|| isempty(TrapsToUse)
+if nargin<7|| isempty(TrapsToUse)
     TrapsToCheck = cTimelapse.defaultTrapIndices;
 else
     TrapsToCheck = intersect(TrapsToUse(:,1),cTimelapse.defaultTrapIndices)';
@@ -88,14 +92,14 @@ TrapPresentBoolean = cTimelapse.trapsPresent;
 %object to provide priors for cell movement based on position and location.
 if TrapPresentBoolean
     % if traps are present use the trained trap motion object
-    CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters);
+    CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cCellVision,jump_parameters,cCellMorph.motion_model);
     % more stringent jump object for checking cell score
-    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cTimelapse,cCellVision,jump_parameters_check);
+    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.FlowInTrapTrained(cCellVision,jump_parameters_check,cCellMorph.motion_model);
 else
     % if traps are not present use a simple symmetric gaussian motion model.
-    CrossCorrelationPriorObject = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters);
+    CrossCorrelationPriorObject = ACMotionPriorObjects.NoTrapSymmetric(cCellVision,jump_parameters);
     % more stringent jump object for checking cell score
-    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.NoTrapSymmetric(cTimelapse,cCellVision,jump_parameters_check);
+    CrossCorrelationPriorObjectCheck = ACMotionPriorObjects.NoTrapSymmetric(cCellVision,jump_parameters_check);
 end
 
 %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
@@ -128,46 +132,31 @@ pTrapIsCentreEdgeBG = cTimelapse.ACParams.ImageTransformation.pTrapIsCentreEdgeB
 % gaussian parameters for single curated cells
 
 inverted_cov_1cell =...
-    [0.9568   -0.9824    0.2210   -0.3336    0.2061   -0.1774
-   -0.9824    2.3140   -0.7398    0.3936   -0.2683   -0.6752
-    0.2210   -0.7398    1.4997   -0.9595    0.4939   -0.3992
-   -0.3336    0.3936   -0.9595    1.5773   -1.0942    0.4536
-    0.2061   -0.2683    0.4939   -1.0942    1.6916   -0.9590
-   -0.1774   -0.6752   -0.3992    0.4536   -0.9590    1.9724];
+    inv(cCellMorph.cov_new_cell_model);
 
-mu_1cell = [9.1462    8.0528    6.7623    6.1910    6.0670    6.8330];
+mu_1cell = cCellMorph.mean_new_cell_model;
 
 
 % gaussian parameters from pairs of curated cells.
 inverted_cov_2cell_small =...
-  [150.0532  -55.6032    5.8445   12.8486    8.1765  -17.8547
-  -55.6032  109.4672  -14.8512    0.0212    4.8178  -12.1094
-    5.8445  -14.8512   47.9182  -10.1944   11.3427   14.3080
-   12.8486    0.0212  -10.1944   37.7482  -10.2208   -1.6160
-    8.1765    4.8178   11.3427  -10.2208   48.5290   -6.9169
-  -17.8547  -12.1094   14.3080   -1.6160   -6.9169   61.7951];
+  inv(cCellMorph.cov_tracked_cell_model_small);
  
 mu_2cell_small = ...
-    [0.0388    0.0422   -0.0020   -0.0234    0.0017    0.0340];
+    cCellMorph.mean_tracked_cell_model_small;
  
 
 log_det_cov_2cell_small = log(det(inverted_cov_2cell_small));
 
  
 inverted_cov_2cell_large =...
-    [228.3962  -55.5536   12.3227   21.5177   22.8732    1.4406
-  -55.5536  199.8526    3.9693   17.2392   19.9806   -4.4419
-   12.3227    3.9693   82.6106  -18.6513   19.5364   28.0344
-   21.5177   17.2392  -18.6513   74.3356  -19.7211   18.4087
-   22.8732   19.9806   19.5364  -19.7211   70.1115  -16.8373
-    1.4406   -4.4419   28.0344   18.4087  -16.8373  109.5118 ];
+   inv(cCellMorph.cov_tracked_cell_model_large);
 
 mu_2cell_large = ...
-    [ 0.0245    0.0264   -0.0137   -0.0488   -0.0349    0.0079];
+    cCellMorph.mean_tracked_cell_model_large;
 
 log_det_cov_2cell_large = log(det(inverted_cov_2cell_large));
 
-threshold_radius = 6;
+threshold_radius = cCellMorph.thresh_tracked_cell_model;
 
 
 
@@ -713,11 +702,10 @@ for TP = Timepoints
                         PreviousTimepointRadii = PreviousCurrentTrapInfoPar.cell(CIpar).cellRadii;
                         
                         [RadiiResult,AnglesResult,ACscore] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,PreviousTimepointRadii,ExcludeLogical,CellRegionImage);
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,PreviousTimepointRadii,ExcludeLogical,CellRegionImage,cCellMorph);
                     else
                         [RadiiResult,AnglesResult,ACscore] = ...
-                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,[],ExcludeLogical,CellRegionImage);
-                        
+                            ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,[],ExcludeLogical,CellRegionImage,cCellMorph);
                     end
                     
 
@@ -731,7 +719,7 @@ for TP = Timepoints
                         % probability, not the bayes factor
                         % also, adjust probability threshold accordingly.
                         %calculate radii contribution (bayes factor of new and old cell for the found radii)
-                        if mean(PreviousTimepointRadii)<threshold_radius;
+                        if mean(PreviousTimepointRadii)<threshold_radius
                             p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
                                 - 0.5*log_det_cov_2cell_small - sum(reordered_radii_norm) + ...
                                 (reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)');

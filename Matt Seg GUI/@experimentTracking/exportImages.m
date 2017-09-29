@@ -1,5 +1,5 @@
-function exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage)
-% exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage)
+function exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage,change_file_locations)
+% exportImages(cExperiment,positions,export_directory,root_name,timepoints,channels,do_traps,do_TrapImage,do_SegmentationResult,do_DecisionImage,change_file_locations)
 %
 % exports images for each position in pos to a different directory. 
 % if do_traps, does each trap individually to a new directory.
@@ -53,6 +53,12 @@ do_SegmentationResult = answer.do_SegRes;
 do_DecisionImage = answer.do_DIM;
 end
 
+if nargin <11 && ~do_traps
+    bt1 = 'yes';
+    change_loc = questdlg('Do you wish to change file locations to point at these images','change file locaitons?',bt1,'No',bt1);
+    change_file_locations = strcmp(change_loc,bt1);
+end
+
 %do export
 
 for posi = 1:length(positions)
@@ -71,9 +77,17 @@ for posi = 1:length(positions)
             for ch = channels
                 im = cTimelapse.returnSingleTimepoint(tp,ch);
                 im_towrite = uint16(im);
-                imwrite(im_towrite,sprintf('%s%s%s_tp%0.6d_%s.png',cT_export_directory,filesep,name,tp,cTimelapse.channelNames{ch}));
+                im_name = sprintf('%s%s%s_tp%0.6d_%s.png',cT_export_directory,filesep,name,tp,cTimelapse.channelNames{ch});
+                imwrite(im_towrite,im_name);
+                if change_file_locations
+                    cTimelapse.cTimepoint(tp).filename{ch} = im_name;
+                end
             end
             PrintReportString(tp,50)
+        end
+        if change_file_locations
+            cTimelapse.timelapseDir = 'ignore';
+            cExperiment.saveTimelapse(pos);
         end
     end
 end

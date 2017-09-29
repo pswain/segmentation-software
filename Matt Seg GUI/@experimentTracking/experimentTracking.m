@@ -81,6 +81,8 @@ classdef experimentTracking<handle
                                  % methods, copied to each timelapseTraps
                                  % object when this is run (if parameters
                                  % selected appropriately)
+        cCellMorph;  % object of the class cellMorphologyModel.
+                     % cellMorphology model used in segmentation.
                                 
         
     end
@@ -169,8 +171,6 @@ classdef experimentTracking<handle
             
             cExperiment.cellsToPlot=cell(1);
             
-            %TODO - update this to remove timelapseTrapsActiveContour
-            cExperiment.ActiveContourParameters = timelapseTrapsActiveContour.LoadDefaultParameters;
             
             %Parse the microscope acquisition metadata and attach the 
             %structure to the cExperiment object - this populates the 
@@ -184,6 +184,12 @@ classdef experimentTracking<handle
             % different from that of the old cCellVision.
             addlistener(cExperiment,'cCellVision','PreSet',@(eventData,propertyData)cCellVisionPreSet(cExperiment,eventData,propertyData));
             addlistener(cExperiment,'cCellVision','PostSet',@(eventData,propertyData)checkCellVisionScaling(cExperiment,eventData,propertyData));
+            
+            % load default models and parameters.
+            cExperiment.cCellMorph = experimentTracking.loadDefaultCellMorphologyModel;
+            cExperiment.cCellVision = experimentTracking.loadDefaultCellVision;
+            %TODO - update this to remove timelapseTrapsActiveContour
+            cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters;
             
         end
         
@@ -370,14 +376,48 @@ classdef experimentTracking<handle
                 cExperiment.posSegmented = false(size(cExperiment.dirs));
             end
             
+            if isempty(cExperiment.cCellMorph)
+                cExperiment.cCellMorph = experimentTracking.loadDefaultCellMorphologyModel;
+            end
+            
             
         end
                 
         function cCellVision = loadDefaultCellVision
-            file_path = mfilename('fullpath');
-            filesep_loc = strfind(file_path,filesep);
-            cellVision_path = fullfile(file_path(1:(filesep_loc(end-1)-1)),  'cCellVisionFiles', 'cCellVision_Brightfield_2_slices_default.mat');
-            load(cellVision_path,'cCellVision');
+            % cCellMorph = loadDefaultCellVision
+            % loads cellVision model from default_cCellVision.mat . If
+            % this file does not exist, it copies it from
+            % @experimentTracking.core_default_cCellVision.mat
+            
+            file_loc = mfilename('fullpath');
+            FileSepLocation = regexp(file_loc,filesep);
+            DefaultcCellVisionMatFileLocation = fullfile(file_loc(1:FileSepLocation(end-1)),'cCellVisionFiles','default_cCellVision.mat');
+            if ~exist(DefaultcCellVisionMatFileLocation,'file')
+                % if file does not exist, copy from
+                % @experimentTracking.core_default_cCellVision.mat (part of
+                % repository)
+                CoreParameterLocation = fullfile(file_loc(1:FileSepLocation(end)),'core_default_cCellVision.mat');
+                copyfile(CoreParameterLocation,DefaultcCellVisionMatFileLocation);
+            end
+            load(DefaultcCellVisionMatFileLocation,'cCellVision');
+        end
+        
+        function cCellMorph = loadDefaultCellMorphologyModel
+            % cCellMorph = loadDefaultCellMorphologyModel
+            % loads cell morphology model from default_cCellMorph.mat . If
+            % this file does not exist, it copies it from
+            % @experimentTracking.core_default_cCellMorph.mat
+            file_loc = mfilename('fullpath');
+            FileSepLocation = regexp(file_loc,filesep);
+            DefaultcCellVisionMatFileLocation = fullfile(file_loc(1:FileSepLocation(end-1)),'cCellMorphFiles','default_cCellMorph.mat');
+            if ~exist(DefaultcCellVisionMatFileLocation,'file')
+                % if file does not exist, copy from
+                % @experimentTracking.core_default_cCellMorph.mat (part of
+                % repository)
+                CoreParameterLocation = fullfile(file_loc(1:FileSepLocation(end)),'core_default_cCellMorph.mat');
+                copyfile(CoreParameterLocation,DefaultcCellVisionMatFileLocation);
+            end
+            load(DefaultcCellVisionMatFileLocation,'cCellMorph');
         end
         
     end
