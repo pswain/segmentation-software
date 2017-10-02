@@ -1,223 +1,130 @@
-function [d_imCenters, d_imEdges]=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-% d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,trap,trap_image,old_d_im)
+function [DecisionImageStack, EdgeImageStack]=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,traps_to_check,varargin)
+% d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,traps_to_check)
 %
-% - calculates the decision image - the image in which negative pixels
-%   indicate a pixel likely to be a cell centre 
-% - resets the trapInfo field  cTimelapse.cTimepoint(timepoint).trapInfo(trap) to be blank with
-%   segCentres populated with a sparse logical array of the areas under the
-%   two stage threshold.
-% 
+% calculates a number of images used in the segmentation software for
+% inspection and use in other parts of the code.
+%
 % cTimelapse    :   object of the timelapseTraps class
 % cCellVision   :   object of the cellVision class
 % timepoint     :   timepoint at which the segmentation is occurring.
 %                   defaults to 1.
-% trap          :   array of indices of traps at which segmentation should
-%                   be performed. defaults to 1.
-% image         :   optional. cell array of stacks of images to be used in
-%                   the segmentation procedure. Exact size of cell array
-%                   and images is different depending on the
-%                   cCellVision.method, but defaults to the output from 
-%                   cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.method)
-%                   and it should follow the convention given in that
-%                   method.
-%                   
-% old_d_im      :   optional. The decision image from the previous
-%                   timepoint, which if provided is smoothed with a
-%                   gaussian transform and then 1/6th added to the
-%                   calculated decision image to try and provide temporal
-%                   information. defaults to zeros of appropriate size.
+% traps_to_check:   array of indices of traps at which segmentation should
+%                   be performed. defaults to 1.                 
 %
-% Behaviour is dependent on cCellVision.method, but basically amounts to
-% running the same function either in a parfor loop over individual trap
-% image stacks (if method is 'linear' or 'twostage') or running the
-% segmentation outside a for loop over the whole image ('wholeIm') or over
-% a strip of trap image ('wholeTrap')
-% This affects the size of the decision image (d_im) returned but does not
-% affect the way the segCentres field is populated. 
-%
-% these methods will be differentially efficient depending on the way the
-% transformed image is calculated. 
-%
-% The decision image is also smoothed with a gaussian before being
-% returned, and if the magnification of the cTimelapse and the cCellVision
-% are different it will also be a different size from the input image, as
-% will the segCentres field.
-%
-% Also populates the:
-%       cCellVision.cTrap.currentTpOutline=trapOutline
-% field with the logical trapOutline (filled) of all the trap pixels in the
-% image. Important for the wholeIm/wholeTrap methods.
+% cut and pasted first section of segmentACexperimental code. Probably not
+% very good practice but there you go.
 
 if nargin<3
     timepoint=1;
 end
 
 if nargin<4
-    trap=1;
+    traps_to_check=1;
 end
+    
+DecisionImageChannel = cTimelapse.channelsForSegment;
 
+TrapPresentBoolean = cTimelapse.trapsPresent;
 
-if nargin<5 ||isempty(image)
-    image=cTimelapse.returnSegmenationTrapsStack(trap,timepoint,cCellVision.imageProcessingMethod);
-
-end
-
-if cCellVision.magnification/cTimelapse.magnification ~= 1
-    image=imresize(image,cCellVision.magnification/cTimelapse.magnification);
-end
-
-if nargin<6 || isempty(old_d_im)
-    old_d_im=zeros(size(image{1},1),size(image{1},2),length(image));
-end    
-
-
-switch cCellVision.method
-    case {'linear','twostage'}
-        [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
-    case {'wholeIm','wholeTrap'}
-        [d_imCenters,d_imEdges]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im);
-end
-
-end
-
-
-
-function [d_imCenters, d_imEdges]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-%[d_im]=TwoStage_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-%
-% This function now does both linear and two stage segmentation.
-% The decision image (an image of the likliness of each pixel to be a cell
-% centre - lower values being more likely - is calculated for each trap
-% using the classifyImage2Stage method of cCellVision.
-% This method does linear or two stage classification depending whether the
-% cCellVision model is capable of two stage classification.
-%
-% A number of post processing steps are then performed:
-%       - dilation with a gaussian filter
-%       - addition of the one sixth of the old_d_im, after gaussian
-%         filtering. this is to try and include temporal information.
-%
-% This is filtered using the twoStageThresh of cCellVision and stored in
-% the trapInfo structure in segCentres. this is used for the cell
-% identification by the identifyCellObjects method.
-
-% This preallocates the segmented images to speed up execution
-d_imCenters=zeros(size(old_d_im));
-d_imEdges=zeros(size(old_d_im));
-tPresent=cTimelapse.trapsPresent;
-if cTimelapse.trapsPresent
-    %used if refineTrapOutline has not been used to populate
-    %refinedTrapPixelInner/Big
-    defaultTrapOutline = 1*imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se2);
-
-    % if cTimelapse.refinedTrapOutline has been run then use this for trap
-    % outline.
-    trapOutline = cTimelapse.returnTrapsPixelsTimepoint(trap,timepoint,defaultTrapOutline);
+if TrapPresentBoolean
+    TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
+    if isempty(TrapRefineChannel)
+        TrapRefineChannel = cTimelapse.channelForTrapDetection;
+    end
+    TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
+    TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
+    if isempty(TrapRefineParameters.starting_trap_outline);
+        TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
+    end
+    TrapRefineFunction = @(stack) TrapRefineFunction(stack,TrapRefineParameters);
 else
-    trapOutline = false(size(image{1},1),size(image{1},2));
+    TrapRefineChannel = [];
 end
-%calculate the decisions image, do some transformations on it, and
-%threshold it to give segCentres.
 
-%uncomment when you change parfor to for for debugginf
-% fprintf('change back to parfor  - line 118 identifyCellCentresTrap\n')
-parfor k=1:length(trap) %CHANGE BACK TO parfor
-    [~, d_im_temp]=cCellVision.classifyImage2Stage(image{k},trapOutline(:,:,k));
-    d_imCenters(:,:,k)=d_im_temp(:,:,1);
+
+AllChannelsToLoad = unique(abs([TrapRefineChannel DecisionImageChannel]));
+    
+%ensure images are only loaded once even if used in various parts of
+%the code.
+for chi = 1:length(AllChannelsToLoad)
+    channel = AllChannelsToLoad(chi);
+    TempIm = double(cTimelapse.returnSingleTimepoint(timepoint,channel));
+    
+    
+    if chi==1
+        %preallocate images for speed. DIMImage is stack rather than
+        %single image.
+        ACImage = zeros(size(TempIm));
+        TrapRefineImage = ACImage;
+        DIMImage = zeros([size(TempIm) length(DecisionImageChannel)]);
+        
+    end
+    
+    % sum images into a single 2D image
+    if TrapPresentBoolean &&    ismember(channel,abs(TrapRefineChannel))
+        TrapRefineImage = TrapRefineImage + sign(TrapRefineChannel(channel==abs(TrapRefineChannel))) * TempIm;
+    end
+    
+    % in this case images are stacked
+    if ismember(channel,DecisionImageChannel)
+        DIMImage(:,:,channel==DecisionImageChannel) = TempIm;
+    end
+end
+
+if TrapPresentBoolean
+    %for holding trap images of trap pixels.
+    DefaultTrapOutline = 1*cCellVision.cTrap.trapOutline;
+    TrapTrapImageStack = cTimelapse.returnTrapsFromImage(TrapRefineImage,timepoint,traps_to_check);
+    TrapTrapImageStack = TrapRefineFunction(TrapTrapImageStack);
+    
+    % since this WholeTrapImage (a logical of all traps in the image)
+    % is used for normalisation we don't want to use only the traps
+    % being checked. So fill in unchecked traps with default outline
+    % from cCellVision.
+    DefaultTrapIndices = cTimelapse.defaultTrapIndices(timepoint);
+    DefaultTrapImageStack = repmat(DefaultTrapOutline,[1,1,length(DefaultTrapIndices)]);
+    for trapi = 1:length(traps_to_check)
+        trap = traps_to_check(trapi);
+        DefaultTrapImageStack(:,:,trap) = TrapTrapImageStack(:,:,trapi);
+    end
+
+else
+    TrapTrapImageStack = zeros([size(DIMImage,1), size(DIMImage,2),length(traps_to_check)]);
+end
+
+% this calculates the decision image
+% though methods exist in the cellVision class to do this more
+% directly, it was pulled ou to avoid loading the image multiple
+% times if they are used for both active contour and decision
+% image.
+[ SegmentationStackArray ] = processSegmentationTrapStack( cTimelapse,DIMImage,traps_to_check,timepoint,cCellVision.imageProcessingMethod);
+
+DecisionImageStack = zeros(size(TrapTrapImageStack));
+EdgeImageStack = DecisionImageStack;
+RawBgDIM = DecisionImageStack;
+RawCentreDIM = DecisionImageStack;
+have_raw_dims = false(1,size(TrapTrapImageStack,3));
+%fprintf('change back to parfor in DIM calculation\n')
+parfor k=1:length(traps_to_check)
+    [~, d_im_temp,~,raw_dims]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
+    DecisionImageStack(:,:,k)=d_im_temp(:,:,1);
     if size(d_im_temp,3)>1
-        d_imEdges(:,:,k)=d_im_temp(:,:,2);
+        % Matt at some point started returning a second slice for
+        % the decision image that was an edge probability. This
+        % code doesn't use that, but I keep it here to be robust
+        % against it.
+        EdgeImageStack(:,:,k)=d_im_temp(:,:,2);
     end
-%     t_im=imfilter(d_im_temp(:,:,1),fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im(:,:,k),fspecial('gaussian',4,2),'symmetric')/5;  
-    bw=medfilt2(d_im_temp(:,:,1))<cCellVision.twoStageThresh; 
-    segCenters{k}=sparse(bw>0); 
-end
-
-if tPresent
-    cCellVision.cTrap.currentTpOutline=imdilate(cCellVision.cTrap.trapOutline,cCellVision.se.se1)>0;
-end
-
-% store the segmentation result (segCenters) in the cTimelapse object.
-for k=1:length(trap)
-    if cTimelapse.trapsPresent
-        data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
-    else
-        data_template = sparse(zeros(size(image{k},1),size(image{k},2))>0);
+    if ~isempty(raw_dims)
+        have_raw_dims(k) = true;
+        RawBgDIM(:,:,k) = raw_dims(:,:,1);
+        RawCentreDIM(:,:,k) = raw_dims(:,:,2);
     end
-    if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
-        cTimelapse.cTimepoint(timepoint).trapInfo = cTimelapse.createTrapInfoTemplate(data_template);
-    end
-    %cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
-    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters{k};
-end
 end
 
 
-function [d_im,d_imEdges]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-%[d_im]=wholeIm_segmentation(cTimelapse,cCellVision,timepoint,trap,image,old_d_im)
-%
-% handles two types of cCellVision.method : wholeIm and wholeTrap. 
-%
-% In the case of wholeIm the whole image is used and the trap pixels
-% constructed accordingly using returnWholeTrapImage method of cTimelapse.
-%
-% In the case of wholeTrap the trap images are arranged in a strip and the
-% segmented all together. The trapOutline is constructed accordingly as a
-% strip of trap outline images. This may produce funny results if a half
-% cell from one trap causes a low decision image values in an adjacent
-% trap.
-%
-% wholeIm method is probably not recommended if traps are present since a
-% large number of trapPixels (untracked traps) will still be present.
-%
-% the same post processing steps of gaussian smoothing and population of
-% the:
-%       cTimelapse.cTimepoint(timepoint).cTrapInfo(trap).segCentres 
-% field are performed as above, and the cCellVision.method does not affect
-% the size of this stored segCentres.
-tPresent=cTimelapse.trapsPresent;
-if tPresent
-    if strcmp(cCellVision.method,'wholeTrap')
-        trapOutline=repmat(cCellVision.cTrap.trapOutline,[1 length(trap)]);
-    elseif strcmp(cCellVision.method,'wholeIm')
-        trapOutline = cTimelapse.returnWholeTrapImage(cCellVision.cTrap.trapOutline,timepoint);
-    else
-        error('cCellVision.method should one of {wholeIm  wholeTrap linear twostage}');
-    end
-else
-    trapOutline = zeros(cTimelapse.imSize);
 end
 
 
-trapOutline = trapOutline>0;
-if tPresent
-    cCellVision.cTrap.currentTpOutline=trapOutline;
-end
-[~,d_im_temp]=cCellVision.classifyImage2StageWhole(image{1},trapOutline);
 
-d_im=d_im_temp(:,:,1);
-if size(d_im_temp,3)>1
-    d_imEdges=d_im_temp(:,:,2);
-else
-    d_imEdges=zeros(size(d_im));
-end
-
-t_im=imfilter(d_im,fspecial('gaussian',5,1.5),'symmetric') +imfilter(old_d_im,fspecial('gaussian',4,2),'symmetric')/5; %
-bw=t_im<cCellVision.twoStageThresh;
-segCenters=cTimelapse.returnTrapsFromImage(bw,timepoint,trap);
-
-% store the segmentation result (segCenters) in the cTimelapse object.
-for k=1:length(trap)
-    if tPresent
-    data_template = sparse(zeros(size(cCellVision.cTrap.trap1,1),size(cCellVision.cTrap.trap1,2))>0);
-    else
-    data_template = sparse(zeros(size(image{k},1),size(image{k},2))>0);
-    end
-    if isempty(cTimelapse.cTimepoint(timepoint).trapInfo)
-        cTimelapse.cTimepoint(timepoint).trapInfo = cTimelapse.createTrapInfoTemplate(data_template);
-    end
-    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k))=cTimelapse.createTrapInfoTemplate(data_template);
-    cTimelapse.cTimepoint(timepoint).trapInfo(trap(k)).segCenters=segCenters(:,:,k);
-end
-
-end
 

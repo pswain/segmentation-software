@@ -26,11 +26,18 @@ if nargin<2 || isempty(logFile)
         warning(['More than one log file available in "%s". ',...
             'Using first found...'],logDirs{d});
     end
-    % added by Elco. If there is no logFile found return with a fail flag
-    % (seems approriate).
-    if isempty(logFile)
+    if isempty (logFile) 
+        if isa (cExperiment,'experimentTrackingOmero')        %The log file is not present in the save folder
+        disp('Downloading log file');
+        fullName=char(cExperiment.omeroDs.getName.getValue);
+        logName=[fullName(1:end-3) 'log.txt'];
+        [path, ~]=cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,logName,cExperiment.saveFolder);
+        else
+        %added by Elco. If there is no logFile found return with a fail flag
+        %(seems approriate).
         fail_flag=true;
         return
+        end
     end
     logFile = fullfile(logDirs{d},logFile(1).name);
 end
@@ -301,6 +308,10 @@ if ~meta_only
 end
 annotations.logPosNames = positionStrs;
 annotations.logExposureTimes = positionExposure;
+
+
+
+
 annotations.acq = acq;
 
 % Avoid overwriting pre-existing fields

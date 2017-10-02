@@ -25,3 +25,5 @@ while isempty(cell_index) && n<= length(trapInfo.cell) && trapInfo.cellsPresent
     n=n+1;
 end
 
+end
+

@@ -77,7 +77,8 @@ classdef timelapseTraps<handle
         %a parameter structure which the function makes use of.
         ACParams = []; % active contour parameters.
         ActiveContourObject = []; % there for legacy reasons. Will be removed soon but difficult to reprocess old data sets once it is.
-
+        
+        metadata = [];
        
     end
     

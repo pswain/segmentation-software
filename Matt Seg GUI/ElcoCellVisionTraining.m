@@ -374,7 +374,7 @@ gui.LaunchGUI;
 %% classify image A and show result
 %Don't do this unless you have already trained - this is for improving and
 %testing cellvisions.
-decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI,[],[]);
+decision_im = identifyCellCentersTrap(cTimelapse,cCellVision,TP,TI);
 %[predicted_im decision_im filtered_image] = cCellVision.classifyImage(A);
 gui.stack = cat(3,A,decision_im);
 gui.LaunchGUI

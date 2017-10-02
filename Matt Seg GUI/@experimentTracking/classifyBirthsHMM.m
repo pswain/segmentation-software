@@ -40,6 +40,7 @@ end
 % the daughters have been removed as a result of the HMM
 cExperiment.lineageInfo.motherInfo.birthRadiusHMM=[];
 cExperiment.lineageInfo.motherInfo.daughterLabelHMM=[];
+if ~isempty(cExperiment.lineageInfo.motherInfo.birthTimeHMM)
 for i=1:size(cExperiment.lineageInfo.motherInfo.birthTimeHMM,1)
     bTimeHMM=cExperiment.lineageInfo.motherInfo.birthTimeHMM(i,:);
     bTime=cExperiment.lineageInfo.motherInfo.birthTime(i,:);
@@ -61,6 +62,7 @@ for i=1:size(cExperiment.lineageInfo.motherInfo.birthTimeHMM,1)
         temp=temp(temp>0);
         cExperiment.lineageInfo.motherInfo.daughterLabelHMM(i,1:length(temp))=temp;
     
+end
 end
 
 cExperiment.saveExperiment

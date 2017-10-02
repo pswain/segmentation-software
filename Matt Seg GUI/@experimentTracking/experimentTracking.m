@@ -135,6 +135,10 @@ classdef experimentTracking<handle
             if nargin<2
                 fprintf('\n   Select the folder where data should be saved \n');
                 saveFolder=uigetdir(rootFolder,'Select the folder where data should be saved');
+                if isempty(saveFolder)
+                    fprintf('\n\n   No folder selected, no cExperiment created\n\n')
+                    return
+                end
             end            
 
             cExperiment.rootFolder=rootFolder;
@@ -189,7 +193,7 @@ classdef experimentTracking<handle
             cExperiment.cCellMorph = experimentTracking.loadDefaultCellMorphologyModel;
             cExperiment.cCellVision = experimentTracking.loadDefaultCellVision;
             %TODO - update this to remove timelapseTrapsActiveContour
-            cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultParameters;
+            cExperiment.ActiveContourParameters = timelapseTraps.LoadDefaultACParams;
             
         end
         

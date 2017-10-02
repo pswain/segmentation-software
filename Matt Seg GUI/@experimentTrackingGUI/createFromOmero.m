@@ -30,24 +30,7 @@ if strcmp(dsStruct.action,'segment')
             delete([dsStruct.OmeroDatabase.DataPath '*']);
         end
     end
-    %Code below has now been moved to the experimentTracking constructor -
-    %delete once this is tested.
-    % %Set the channels field - add a separate channel for each section in case
-    % %they are required for data extraction or segmentation:
-    % %Get the number of Z sections
-    % ims=dsStruct.dataset.linkedImageList;
-    % im=ims.get(0);%the first image - assumes all images have the same dimensions
-    % pixels=im.getPrimaryPixels;
-    % sizeZ=pixels.getSizeZ.getValue;
-    % origChannels=dsStruct.OmeroDatabase.Channels;
-    % dsStruct.OmeroDatabase.MicroscopeChannels = origChannels;
-    % if sizeZ>1
-    %     for ch=1:length(origChannels)
-    %         for z=1:sizeZ
-    %             dsStruct.OmeroDatabase.Channels{length(dsStruct.OmeroDatabase.Channels)+1}=[origChannels{ch} '_' num2str(z)];
-    %         end
-    %     end
-    % end
+   
     
     %First check if a cExperiment exists for this dataset:
     fileAnnotations=getDatasetFileAnnotations(dsStruct.OmeroDatabase.Session,dsStruct.dataset);
@@ -55,8 +38,10 @@ if strcmp(dsStruct.action,'segment')
     for n=1:length(fileAnnotations)
         faNames{n}=char(fileAnnotations(n).getFile.getName.getValue);
     end
-    matched=strmatch('cExperiment',faNames);
-    if isempty(matched)
+    exptName=dsStruct.dataset.getName.getValue;
+    matched=strncmp('cExperiment_',faNames,12);    
+    matched(strncmp('cExperiment_log',faNames,15))=0;%Remove the cExperiment log file
+    if nnz(matched)==0
         %No cExperiment has yet been created for this dataset.
         %Create a new cExperiment from the Omero dataset
         inputName=inputdlg('Enter a name for your cExperiment','cExperiment name',1,{'001'});
@@ -81,12 +66,8 @@ if strcmp(dsStruct.action,'segment')
     else
         %There is at least one existing cExperiment file
         
-        %Get the names of the existing files
-        expNames={''};
-        for n=1:length(matched)
-            thisName=faNames{matched(n)};
-            expNames{n}=thisName(13:end-4);%The filename format is 'cExperiment_EXPERIMENT NAME.mat'
-        end
+        %Get the names (suffixes) of the existing files
+        expNames=cellfun(@(x) x(13:end-4),faNames(matched),'UniformOutput',false);
         
         response=questdlg('There is already at least one cExperiment file associated with this dataset. Do you want to load an existing one or create a new one? If you create a new one the existing one will be unaffected.','cExperiment file exists','Load existing','Create new','Load existing');
         switch response

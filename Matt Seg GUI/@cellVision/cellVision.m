@@ -5,12 +5,7 @@ classdef cellVision<handle
         % complex structure of trap information. Only populated if the timelapse has traps.
           % trapOutline      - filled and dilated image of the traps 
           % contour          - just the edge of the trap
-          % currentTpOutline - populated by the 
-          %                         identifyCellCentersTrap
-          %                    timelapseTraps method. A logical of the trap pixels at the
-          %                    last timepoint for which a decision image was calculated
-          %                    (using that methd of course)
-        
+         
         cPatchParameters %used by Matt in Hog feature set
         % various SVM models
         SVMModel

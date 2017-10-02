@@ -121,7 +121,7 @@ for tp = timepoints
     
     if do_DecisionImage
         
-        decision_image_stack = identifyCellCentersTrap(cTimelapse,cCellVision,tp,traps,[],[]);
+        decision_image_stack = identifyCellCentersTrap(cTimelapse,cCellVision,tp,traps);
         for TIi = 1:length(traps)
             TI = traps(TIi);
             

@@ -17,7 +17,7 @@ classdef experimentTrackingOmero < experimentTracking
             % cExperimentOmero = experimentTrackingOmero(OmeroDataSet,OmeroDataPath, OmeroDatabase,  expName)
             % cExpGUI.cExperiment=experimentTrackingOmero(dsStruct(1).dataset, dsStruct.OmeroDatabase.DataPath,dsStruct.OmeroDatabase, inputName);
  
-%            code written by Ivan but editted (ignorantly) by Elco -
+%            code written by Ivan but edited (ignorantly) by Elco -
             % should go over together.
             % variables named according to call in
             %   experimentTrackingGUI.createFromOmero
@@ -42,10 +42,11 @@ classdef experimentTrackingOmero < experimentTracking
                 % function.
                 return
             end
-              
-            % Create a new logger to log changes for this cExperiment:
+            
+            % Default to enabling logging:
             cExperimentOmero.shouldLog=true;
-            cExperimentOmero.logger = experimentLogging(cExperimentOmero,cExperimentOmero.shouldLog);
+            % NB: constructor no longer needs to instantiate the logger
+            % property, see experimentTracking
             
             if ischar(OmeroDataSet)%cExperiment is being initialised from a folder
                 cExperimentOmero.rootFolder=OmeroDataSet;
@@ -102,14 +103,21 @@ classdef experimentTrackingOmero < experimentTracking
             %cExperiment object - this populates the metadata field of
             %cExperiment
             
-            %This is an Omero cExperiment - need to download the log and
+            %need to download the log and
             %acq files from the database before parsing
             expName=char(OmeroDataSet.getName.getValue);
             logName=[expName(1:end-3) 'log.txt'];
             acqName=[expName(1:end-3) 'Acq.txt'];
             logPath=cExperimentOmero.OmeroDatabase.downloadFile(OmeroDataSet,logName);
             [~]=cExperimentOmero.OmeroDatabase.downloadFile(OmeroDataSet,acqName);
-            parseFailed = cExperimentOmero.parseLogFile(logPath);
+            
+            %Parse the microscope acquisition metadata and attach the 
+            %structure to the cExperiment object - this populates the 
+            %metadata field of cExperiment. Only the meta data is collected
+            %at this stage; the full log file can be parsed at extraction
+            %since this can take an annoyingly long time with lots of
+            %positions/timepoints...
+            parseFailed = cExperimentOmero.parseLogFile(logPath,'meta_only');
             
             %Set the channels field - add a separate channel for each section in case
             %they are required for data extraction or segmentation:
@@ -134,16 +142,21 @@ classdef experimentTrackingOmero < experimentTracking
             cExperimentOmero.OmeroDatabase.MicroscopeChannels = origChannels;
             cExperimentOmero.experimentInformation.MicroscopeChannels=origChannels;
             cExperimentOmero.OmeroDatabase.Channels=origChannels;
+           
             %The first entries in
             %cExperiment.experimentInformation.channels are the
             %original channels - then followed by a channel for each
             %section.
+            %First create a record for which of the channel names in
+            %cExperiment relate to which microscope channels
+            cExperimentOmero.metadata.microscopeChannelIndices=1:length(cExperimentOmero.experimentInformation.MicroscopeChannels);
             if sizeZ>1
                 for ch=1:length(origChannels)
                     if parseFailed || cExperimentOmero.metadata.acq.channels.zsect(ch)==1%Does the channel do z sectioning?
                         for z=1:sizeZ
                             cExperimentOmero.OmeroDatabase.Channels{end+1}=...
                                                             [origChannels{ch} '_' num2str(z)];
+                            cExperimentOmero.metadata.microscopeChannelIndices(end+1)=ch;                   
                         end
                     end
                     
