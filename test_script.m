@@ -46,7 +46,8 @@ cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
 report_string = 'few traps standard';
 %
-
+l2 = load('/Users/ebakker/SkyDrive/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellMorphFiles/old_cCellMorph.mat');
+cExperiment_test.cCellMorph = l2.cCellMorph;
 cExperiment_test.trackTrapsInTime(poses);
 
 cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
@@ -78,6 +79,8 @@ cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
 report_string = 'few traps new cellVision';
 %
+l2 = load('/Users/ebakker/SkyDrive/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellMorphFiles/old_cCellMorph.mat');
+cExperiment_test.cCellMorph = l2.cCellMorph;
 
 cExperiment_test.trackTrapsInTime(poses);
 
@@ -111,6 +114,8 @@ cExperiment_test.cCellVision = l1.cCellVision;
 poses = 1:2;
 report_string = 'no traps standard';
 %
+l2 = load('/Users/ebakker/SkyDrive/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/Matt Seg GUI/cCellMorphFiles/old_cCellMorph.mat');
+cExperiment_test.cCellMorph = l2.cCellMorph;
 
 cExperiment_test.trackTrapsInTime(poses);
 
