@@ -394,8 +394,7 @@ cExperiment.trackCells(poses,params.trackingDistance);
 cExperiment.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
 
 %extract
-cExperiment.extractCellInformation(poses,false);
-cExperiment.compileCellInformation(poses)
+ 
 
 
 % get mother index

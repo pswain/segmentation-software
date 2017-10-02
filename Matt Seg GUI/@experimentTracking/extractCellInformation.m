@@ -61,7 +61,8 @@ if ~cExperiment.logger.shouldLog || ~cExperiment.logger.use_gui
 else
     progress_bar = cExperiment.logger.progress_bar;
 end
-cExperiment.parseLogFile([],progress_bar);
+
+%cExperiment.parseLogFile([],progress_bar);
 cExperiment.saveExperiment;
 
 % Finish logging protocol

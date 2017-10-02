@@ -72,6 +72,7 @@ else%The file is not yet attached to the dataset
     cExperimentOmero.OmeroDatabase.uploadFile(fileName, cExperimentOmero.omeroDs, 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment');
 end
 
+
 if saveCE
     cExperimentOmero.saveExperiment;
 end

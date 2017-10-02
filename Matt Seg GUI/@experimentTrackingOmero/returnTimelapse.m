@@ -47,7 +47,8 @@ if ~isempty(cTimelapse.omeroImage)
 end
 %Ensure the timelapse has the channels list for the dataset
 cTimelapse.channelNames=cExperiment.channelNames;
-
+cTimelapse.metadata = cExperiment.metadata;
+cTimelapse.metadata.posname = cExperiment.dirs{timelapseNum};
 
 % In either case, once the timelapse is successfully loaded, trigger a
 % PositionChanged event to notify experimentLogging
