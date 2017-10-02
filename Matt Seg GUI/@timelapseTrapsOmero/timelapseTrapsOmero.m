@@ -57,7 +57,7 @@ classdef timelapseTrapsOmero<timelapseTraps
                 
                 cTimelapseOmero.omeroImage=omeroImage;
                 cTimelapseOmero.OmeroDatabase=varargin{1}.OmeroDatabase;
-                cTimelapseOmero.microscopeChannels=varargin{1}.experimentInformation.microscopeChannels;
+                cTimelapseOmero.microscopeChannels=varargin{1}.experimentInformation.MicroscopeChannels;
 
                 %To define the channels - need to know which channels are used at this position (ie have non-zero
                 %exposure times)
