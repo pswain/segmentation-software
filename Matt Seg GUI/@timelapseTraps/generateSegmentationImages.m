@@ -1,18 +1,36 @@
-function [DecisionImageStack, EdgeImageStack]=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,traps_to_check,varargin)
-% d_im=identifyCellCentersTrap(cTimelapse,cCellVision,timepoint,traps_to_check)
+function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
+    =generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
+% [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
+%    = generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
 %
-% calculates a number of images used in the segmentation software for
-% inspection and use in other parts of the code.
+% calculates a number of images used in the segmentation software.
 %
 % cTimelapse    :   object of the timelapseTraps class
 % cCellVision   :   object of the cellVision class
 % timepoint     :   timepoint at which the segmentation is occurring.
 %                   defaults to 1.
 % traps_to_check:   array of indices of traps at which segmentation should
-%                   be performed. defaults to 1.                 
+%                   be performed. defaults to 1.
 %
-% cut and pasted first section of segmentACexperimental code. Probably not
-% very good practice but there you go.
+% OUTPUTS
+% 
+% DecisionImageStack    :   stack of images (one slice per trap) in which
+%                           centres have a low score and all else a high one.
+% EdgeImageStack        :   stack of images (one slice per trap) in which
+%                           edges have a low score and all else a high one.
+% TrapTrapImageStack    :   stack of images (one slice per trap) in which
+%                           trap pixels have a high score (1).
+% ACImage               :   Image if the size of the whole position image
+%                           used in the active contour method. Signed sum
+%                           of image channels specified in
+%                           cTimelapse.ACparams.ImageTransform.channel
+%                           normalised by gradient of trap pixels.
+% RawDecisionIms        :   cell array of image stacks. Currently:
+%                           RawDecisionIms{1} is the BG decision image
+%                           (high scores for background pixels)
+%                           RawDecisionIms{2} is the centre/edge decision image
+%                           (high scores for edge pixels)
+
 
 if nargin<3
     timepoint=1;
@@ -21,7 +39,9 @@ end
 if nargin<4
     traps_to_check=1;
 end
-    
+
+ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
+
 DecisionImageChannel = cTimelapse.channelsForSegment;
 
 TrapPresentBoolean = cTimelapse.trapsPresent;
@@ -42,8 +62,8 @@ else
 end
 
 
-AllChannelsToLoad = unique(abs([TrapRefineChannel DecisionImageChannel]));
-    
+AllChannelsToLoad = unique(abs([ACImageChannel TrapRefineChannel DecisionImageChannel]));
+
 %ensure images are only loaded once even if used in various parts of
 %the code.
 for chi = 1:length(AllChannelsToLoad)
@@ -61,6 +81,11 @@ for chi = 1:length(AllChannelsToLoad)
     end
     
     % sum images into a single 2D image
+    if ismember(channel,abs(ACImageChannel))
+        ACImage = ACImage + sign(ACImageChannel(channel==abs(ACImageChannel))) * TempIm;
+    end
+    
+    % sum images into a single 2D image
     if TrapPresentBoolean &&    ismember(channel,abs(TrapRefineChannel))
         TrapRefineImage = TrapRefineImage + sign(TrapRefineChannel(channel==abs(TrapRefineChannel))) * TempIm;
     end
@@ -70,6 +95,8 @@ for chi = 1:length(AllChannelsToLoad)
         DIMImage(:,:,channel==DecisionImageChannel) = TempIm;
     end
 end
+
+ACImage = IMnormalise(ACImage);
 
 if TrapPresentBoolean
     %for holding trap images of trap pixels.
@@ -87,10 +114,20 @@ if TrapPresentBoolean
         trap = traps_to_check(trapi);
         DefaultTrapImageStack(:,:,trap) = TrapTrapImageStack(:,:,trapi);
     end
-
+    WholeTrapImage = cTimelapse.returnWholeTrapImage(DefaultTrapImageStack,timepoint,DefaultTrapIndices);
 else
     TrapTrapImageStack = zeros([size(DIMImage,1), size(DIMImage,2),length(traps_to_check)]);
+    WholeTrapImage = zeros([size(DIMImage,1), size(DIMImage,2)]);
 end
+
+% normalise AC image by gradient at traps
+% seemed to produce the most consistent behaviour.
+TrapMask = WholeTrapImage>0;
+if any(TrapMask(:))
+    [ACImageGradX,ACImageGradY] = gradient(ACImage);
+    ACImage = ACImage/mean(sqrt(ACImageGradX(TrapMask).^2 + ACImageGradY(TrapMask).^2  ));
+end
+
 
 % this calculates the decision image
 % though methods exist in the cellVision class to do this more
@@ -121,10 +158,20 @@ parfor k=1:length(traps_to_check)
         RawCentreDIM(:,:,k) = raw_dims(:,:,2);
     end
 end
-
-
+if all(have_raw_dims);
+    RawDecisionIms = {RawBgDIM,RawCentreDIM};
+else
+    RawDecisionIms = {};
+end
 end
 
+function WholeImage = IMnormalise(WholeImage)
 
+WholeImage = double(WholeImage);
+WholeImage = WholeImage - median(WholeImage(:));
+IQ = iqr(WholeImage(:));
+if IQ>0
+    WholeImage = WholeImage./iqr(WholeImage(:));
+end
 
-
+end

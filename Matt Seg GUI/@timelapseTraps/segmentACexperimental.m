@@ -55,8 +55,14 @@ else
     TrapsToCheck = intersect(TrapsToUse(:,1),cTimelapse.defaultTrapIndices)';
 end
 
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%   EXTRACTING GENERAL PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 ACparameters = cTimelapse.ACParams.ActiveContour;
 
+% logical: whether to use the decision image to find the edge.
 EdgeFromDecisionImage = cTimelapse.ACParams.ImageTransformation.EdgeFromDecisionImage;
 % size of image used in AC edge identification. Set to just encompass the largest cell possible.
 SubImageSize = 2*cTimelapse.ACParams.ActiveContour.R_max + 1; 
@@ -82,7 +88,8 @@ CrossCorrelationDIMthreshold = cTimelapse.ACParams.CrossCorrelation.CrossCorrela
 % the probable location images and decision image.
 PostCellIdentificationDilateValue = cTimelapse.ACParams.CrossCorrelation.PostCellIdentificationDilateValue;% 2; %dilation applied to the cell outline to rule out new cell centres
 
-TwoStageThreshold = cTimelapse.ACParams.CrossCorrelation.twoStageThresh; % boundary in decision image for new cells negative is stricter, positive more lenient
+% boundary in decision image for new cells negative is stricter, positive more lenient
+TwoStageThreshold = cTimelapse.ACParams.CrossCorrelation.twoStageThresh; 
 
 % bwdist value of cell pixels which will not be allowed in the cell area (so inner (1-cellPixExcludeThresh) fraction will be ruled out of future other cell areas)
 CellPixExcludeThresh = cTimelapse.ACParams.ActiveContour.CellPixExcludeThresh;  
@@ -106,13 +113,10 @@ end
 PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;
 MaxRegistration = cTimelapse.ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
 if cTimelapse.trapsPresent
-    PerformRegistration = false; %registration should be covered by tracking in the traps.
+    %registration should be covered by tracking in the traps.
+    PerformRegistration = false;
 end
 
-if TrapPresentBoolean
-    % default trapOutline used for normalisation.
-    DefaultTrapOutline = 1*cCellVision.cTrap.trapOutline;
-end
 
 % lowest allowed probability for a cell shape and motion.
 % selected rather arbitrarily from histogram of trained values.
@@ -124,11 +128,24 @@ threshold_score = cTimelapse.ACParams.CrossCorrelation.ThresholdCellScore;
 % probability that the trap edge (the part with value of 0.5 or greater) is
 % a centre,edge or BG.
 pTrapIsCentreEdgeBG = cTimelapse.ACParams.ImageTransformation.pTrapIsCentreEdgeBG;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% for trained cell trakcing rubbish
 
-% for trained time change punishment
+%variable assignments,mostly for convenience and parallelising.
+TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
+TrapImageSize = size(cTimelapse.defaultTrapDataTemplate);
 
+% this should only be used by the algorithm if it is not making the edge
+% from the decision image.
+if ~isempty(cTimelapse.ACParams.ImageTransformation.ImageTransformFunction);
+    ImageTransformFunction = str2func(['ACImageTransformations.' cTimelapse.ACParams.ImageTransformation.ImageTransformFunction]);
+end
+
+NewCellStruct = cTimelapse.cellInfoTemplate;
+
+Timepoints = FirstTimepoint:LastTimepoint;
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%   GAUSSIAN SHAPE PRIOR PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
+ 
 % gaussian parameters for single curated cells
 
 inverted_cov_1cell =...
@@ -160,21 +177,10 @@ threshold_radius = cCellMorph.thresh_tracked_cell_model;
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%   PRE TP-LOOP SETUP   %%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%variable assignments,mostly for convenience and parallelising.
-TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
-TrapImageSize = size(cTimelapse.defaultTrapDataTemplate);
-
-ImageTransformFunction = str2func(['ACImageTransformations.' cTimelapse.ACParams.ImageTransformation.ImageTransformFunction]);
-
-NewCellStruct = cTimelapse.cellInfoTemplate;
-
-Timepoints = FirstTimepoint:LastTimepoint;
-
-%% set TP at which to start segmenting
-
+% set timepoint at which to start segmenting:
 % if the first timepoint is suppose to be fixed it should not be segmented,
 % so segmenting should only happen at FirstTimepoint + 1
 if FixFirstTimePointBoolean
@@ -218,145 +224,35 @@ end
 % loop.
 ACparametersPass = ACparameters;
 ACparametersPass.visualise = 0;
-
-ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
-    
-DecisionImageChannel = cTimelapse.channelsForSegment;
-
-if TrapPresentBoolean
-    TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
-    if isempty(TrapRefineChannel)
-        TrapRefineChannel = cTimelapse.channelForTrapDetection;
-    end
-    TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
-    TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
-    if isempty(TrapRefineParameters.starting_trap_outline);
-        TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
-    end
-    TrapRefineFunction = @(stack) TrapRefineFunction(stack,TrapRefineParameters);
-else
-    TrapRefineChannel = [];
-end
                   
 
-%% loop through timepoints
+%% %%%%%%%%%%%%%%%%%%%%%%%%%   LOOP THROUGH TIMEPOINTS  %%%%%%%%%%%%%%%%%%%%%%%%%
+
 for TP = Timepoints
     t_of_tic = tic;
     
-    % fprintf('timepoint %d \n',TP)
     % Trigger the TimepointChanged event for experimentLogging
     experimentLogging.changeTimepoint(cTimelapse,TP);
-    
-    % collect all channels used so that they are only loaded once. 
-    AllChannelsToLoad = unique(abs([ACImageChannel TrapRefineChannel DecisionImageChannel]));
-    
-    %ensure images are only loaded once even if used in various parts of
-    %the code.
-    for chi = 1:length(AllChannelsToLoad)
-        channel = AllChannelsToLoad(chi);
-        TempIm = double(cTimelapse.returnSingleTimepoint(TP,channel));
-        
-        
-        if chi==1
-            %preallocate images for speed. DIMImage is stack rather than
-            %single image.
-            ACImage = zeros(size(TempIm));
-            TrapRefineImage = ACImage;            
-            DIMImage = zeros([size(TempIm) length(DecisionImageChannel)]);
-
-        end
-        
-        % sum images into a single 2D image
-        if ismember(channel,abs(ACImageChannel))
-            ACImage = ACImage + sign(ACImageChannel(channel==abs(ACImageChannel))) * TempIm;
-        end
-        
-        % sum images into a single 2D image
-        if TrapPresentBoolean &&    ismember(channel,abs(TrapRefineChannel))
-            TrapRefineImage = TrapRefineImage + sign(TrapRefineChannel(channel==abs(TrapRefineChannel))) * TempIm;
-        end
-        
-        % in this case images are stacked
-        if ismember(channel,DecisionImageChannel)
-            DIMImage(:,:,channel==DecisionImageChannel) = TempIm;
-        end
-    end
-    
-    ACImage = IMnormalise(ACImage);
-    
-    if TrapPresentBoolean
-        %for holding trap images of trap pixels.
-        TrapTrapImageStack = cTimelapse.returnTrapsFromImage(TrapRefineImage,TP,TrapsToCheck);
-        TrapTrapImageStack = TrapRefineFunction(TrapTrapImageStack);
-        
-        % since this WholeTrapImage (a logical of all traps in the image)
-        % is used for normalisation we don't want to use only the traps
-        % being checked. So fill in unchecked traps with default outline
-        % from cCellVision.
-        DefaultTrapIndices = cTimelapse.defaultTrapIndices(TP);
-        DefaultTrapImageStack = repmat(DefaultTrapOutline,[1,1,length(DefaultTrapIndices)]);
-        for trapi = 1:length(TrapsToCheck)
-            trap = TrapsToCheck(trapi);
-            DefaultTrapImageStack(:,:,trap) = TrapTrapImageStack(:,:,trapi);
-        end
-        WholeTrapImage = cTimelapse.returnWholeTrapImage(DefaultTrapImageStack,TP,DefaultTrapIndices);
-        
-    else
-        WholeTrapImage = zeros([size(DIMImage,1), size(DIMImage,2)]);
-        TrapTrapImageStack = zeros([size(DIMImage,1), size(DIMImage,2),length(TrapsToCheck)]);
-    end
-    
-    % normalise AC image by gradient at traps
-    % seemed to produce the most consistent behaviour.
-    TrapMask = WholeTrapImage>0;
-    if any(TrapMask(:))
-        [ACImageGradX,ACImageGradY] = gradient(ACImage);
-        ACImage = ACImage/mean(sqrt(ACImageGradX(TrapMask).^2 + ACImageGradY(TrapMask).^2  ));
-    end
 
     TrapLocations = cTimelapse.cTimepoint(TP).trapLocations;
     
     if TP>= TPtoStartSegmenting;
         
-        %get decision image for each trap from SVM
-        %If the traps have not been previously segmented this also initialises the trapInfo field
+        %% GENERATE SEGMENTATION IMAGES
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
 
-        % this calculates the decision image
-        % though methods exist in the cellVision class to do this more
-        % directly, it was pulled ou to avoid loading the image multiple
-        % times if they are used for both active contour and decision
-        % image.
-        [ SegmentationStackArray ] = processSegmentationTrapStack( cTimelapse,DIMImage,TrapsToCheck,TP,cCellVision.imageProcessingMethod);
-        
-        DecisionImageStack = zeros(size(TrapTrapImageStack));
-        EdgeImageStack = DecisionImageStack;
-        RawBgDIM = DecisionImageStack;
-        RawCentreDIM = DecisionImageStack;
-        have_raw_dims = false(1,size(TrapTrapImageStack,3));
-        %fprintf('change back to parfor in DIM calculation\n')
-        parfor k=1:length(TrapsToCheck)
-            [~, d_im_temp,~,raw_dims]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
-            DecisionImageStack(:,:,k)=d_im_temp(:,:,1);
-            if size(d_im_temp,3)>1
-                % Matt at some point started returning a second slice for
-                % the decision image that was an edge probability. This
-                % code doesn't use that, but I keep it here to be robust
-                % against it.
-                EdgeImageStack(:,:,k)=d_im_temp(:,:,2);
-            end
-            if ~isempty(raw_dims)
-                have_raw_dims(k) = true;
-                RawBgDIM(:,:,k) = raw_dims(:,:,1);
-                RawCentreDIM(:,:,k) = raw_dims(:,:,2);
-            end
-        end
-        have_raw_dims = all(have_raw_dims);
-        
+        [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
+            = cTimelapse.generateSegmentationImages(cCellVision,TP,TrapsToCheck);
+
+        have_raw_dims = ~isempty(RawDecisionIms);
         % calculate log P 's for each pixel type
         % correcting trap pixels if the correction value is non nan
         if have_raw_dims
+            RawBgDIM = RawDecisionIms{1};
+            RawCentreDIM = RawDecisionIms{2};
+            
             PCentre =  -log(1 + exp(RawBgDIM)) -log(1 + exp(RawCentreDIM)) ;
             if ~any(isnan(pTrapIsCentreEdgeBG))
                 PCentre(TrapTrapImageStack>=0.5) = log(pTrapIsCentreEdgeBG(1));
@@ -407,9 +303,15 @@ for TP = Timepoints
             pause;
         end
         
-        % stored to add to forcing image later
+        % boolean of whether to identify tracked cells or new cells.
         CrossCorrelating = false(size(TrapsToCheck));
         
+        %%  CONSTRUCT PREDICTED CELL LOCATIONS
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % this section uses the motion priors, previous timpoint
+        % information and cell decision images to generate the predicted
+        % cell locations for cells at the current timepoint.
         PredictedCellLocationsAllCells = cell(size(TrapsToCheck));
         
         for TI = 1:length(TrapsToCheck)
@@ -443,25 +345,17 @@ for TP = Timepoints
                     %needs to be initialised for parpool
                 end
                 
-                
-                % instantial the probable location image stack.
+                % instantial the probable location image stack with a value
+                % for which new cells will never be identified.
                 PredictedCellLocationsAllCells{TI} = -2*abs(CrossCorrelationValueThreshold)*ones(TrapImageSize(1),TrapImageSize(2),length(PreviousCurrentTrapInfo.cell));
                 
                 for CI = 1:length(PreviousCurrentTrapInfo.cell)
-                    
-                    %ugly piece of code. If a cells is added by hand (not
-                    %by this program) it may not have a cell label. This if
-                    %statement is suppose to give it a cellLabel and
-                    %thereby prevent errors down the line.
-                    if CI>length(PreviousCurrentTrapInfo.cellLabel)
-                        cTimelapse.cTimepoint(TP).trapInfo(trap).cellLabel(CI) = cTimelapse.returnMaxCellLabel(trap)+1;
-                    end
                     
                     ExpectedCellCentre = PreviousCurrentTrapInfo.cell(CI).cellCenter;
                     
                     if PerformRegistration
                         ExpectedCellCentre = ExpectedCellCentre - reg_result;
-                        % botch fix for error over Exzpected centre being out of
+                        % botch fix for error due to Expected centre being out of
                         % range should only be necessary when registration
                         % is performed.
                         % sets predicted location to a value for which it
@@ -492,8 +386,8 @@ for TP = Timepoints
                     
                     PredictedCellLocation = log(ProbableMotionImage)+PredictedCellLocation;
                     
-                    % get the predicted location but shifted so it fits
-                    % so that it lines up with the trap image
+                    % get the predicted location but shifted so that it
+                    % lines up with the trap image
                     temp_im = ACBackGroundFunctions.get_cell_image(PredictedCellLocation,...
                         TrapImageSize,...
                         (ceil(ProspectiveImageSize/2)*[1 1] + ceil(fliplr(TrapImageSize)/2)) - ExpectedCellCentre,...
@@ -515,7 +409,7 @@ for TP = Timepoints
                 
             end %if timepoint> FirstTimepoint
             
-            % make all definite pixels in the Decision image and the
+            % make all definite trap pixels in the Decision image and the
             % PredictedCellLocation Images such that they will not be
             % identified as cells.
             if TrapPresentBoolean
@@ -538,7 +432,11 @@ for TP = Timepoints
             
         end
         
-        %begin prep for parallelised slow section
+        %% PREP FOR PARALLEL LOOP
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % Variables need to be organised in a particular way for error free
+        % and efficient parallelisation
         
         % this distinction is made so that some information can be written
         % for this function that will not be written to the final
@@ -567,14 +465,14 @@ for TP = Timepoints
         
         
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-                %%%%%%%%%%%%%%% PARALLLEL LOOP %%%%%%%%%%%%%%% 
-        
+        %%  PARALLLEL LOOP 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
         for TI = 1:length(TrapsToCheck)
             
+            %%%%%%%%%% unpack parallel variables
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
             PreviousCurrentTrapInfoPar = [];
             if CrossCorrelating(TI)
                 PreviousCurrentTrapInfoPar = SliceablePreviousTrapInfo(TI);
@@ -618,7 +516,8 @@ for TP = Timepoints
             CellStatsDebugTrap = [];
 
             
-            %look for new cells
+            %%%%%%%%%%% look for new cells
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             while CellSearch
                 
                 if CrossCorrelating(TI)
@@ -651,7 +550,9 @@ for TP = Timepoints
                     
                     
                 end
-                
+                %%%%%%%%%%% do active contour edge identification
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
                 if ProceedWithCell
                     %do active contour
                     
@@ -706,16 +607,15 @@ for TP = Timepoints
                             ACMethods.PSORadialTimeStack(TransformedCellImage,ACparametersPass,[],ExcludeLogical,CellRegionImage,cCellMorph);
                     end
                     
-
+                    %%%%%%%%%%% check cell meets criteria
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
                     % check tracked cell meets criteria of shape change
                     if CrossCorrelating(TI)
                         reordered_radii = ACBackGroundFunctions.reorder_radii(cat(1,PreviousTimepointRadii,RadiiResult));
                         reordered_radii_norm = log(reordered_radii(2,:)./reordered_radii(1,:));
                         reordered_radii_1cell = reordered_radii(2,:);
                         
-                        % TODO = switch this off and make it just
-                        % probability, not the bayes factor
-                        % also, adjust probability threshold accordingly.
                         %calculate radii contribution (bayes factor of new and old cell for the found radii)
                         if mean(PreviousTimepointRadii)<threshold_radius
                             p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
@@ -775,8 +675,8 @@ for TP = Timepoints
                         
                     end
                     
-                    %write new cell info
-                    
+                    %%%%%%%%%%% write new cell info
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     cells_found = cells_found+1;
                     NCI = NCI+1;
                     
@@ -868,6 +768,10 @@ for TP = Timepoints
         end %end traps loop
         fprintf('%d cells of %d discarded\n',cells_discarded,(cells_found+cells_discarded));
         
+        %% POST EDGE FINDING CLEANUP
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        
         TrapMaxCell(TrapsToCheck) = SliceableTrapMaxCell;
         
         %write results to cTimelapse
@@ -880,7 +784,9 @@ for TP = Timepoints
     end
     
 
-    
+    %% PREP VARIABLES FOR NEXT LOOP ITERATION
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
     PreviousWholeImage = DecisionImageStack;
     PreviousTrapInfo = TrapInfo;
     TimeOfTimepoint = toc(t_of_tic);
@@ -934,14 +840,5 @@ close(disp.figure);
 
 end
 
-function WholeImage = IMnormalise(WholeImage)
 
-WholeImage = double(WholeImage);
-WholeImage = WholeImage - median(WholeImage(:));
-IQ = iqr(WholeImage(:));
-if IQ>0
-    WholeImage = WholeImage./iqr(WholeImage(:));
-end
-
-end
 
