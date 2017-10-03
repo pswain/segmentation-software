@@ -734,7 +734,7 @@ for TP = 1%:length(cTimelapse.cTimepoint);
 
 traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
 
-tic;DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);toc
+tic;DecisionImageStack = cTimelapse.generateSegmentationImages(cCellVision,TP,traps_to_check);toc
 TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
 
 DecisionImageStack = DecisionImageStack./(2*max(abs(DecisionImageStack(:))));
@@ -756,7 +756,7 @@ for TP = 180%1:length(cTimelapse.cTimepoint);
 
 traps_to_check = 1:length(cTimelapse.cTimepoint(TP).trapInfo);
 
-DecisionImageStack = identifyCellCentersTrap(cTimelapse,cCellVision,TP,traps_to_check);
+DecisionImageStack = cTimelapse.generateSegmentationImages(cCellVision,TP,traps_to_check);
 TrapStack = double(cTimelapse.returnSingleTrapTimepoint(traps_to_check,TP));
 
 DIM2 = imfilter(DecisionImageStack,f,'same');

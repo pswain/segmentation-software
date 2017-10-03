@@ -279,7 +279,7 @@ cTimelapse.ACParams = cExpGUI.cExperiment.ActiveContourParameters;
 num_traps = length(cTimelapse.cTimepoint(tp).trapInfo);
 
 tic;
-DIM = identifyCellCentersTrap(cTimelapse,cExpGUI.cExperiment.cCellVision,tp,1:num_traps);
+DIM = cTimelapse.generateSegmentationImages(cExpGUI.cExperiment.cCellVision,tp,1:num_traps);
 toc;
 
 %% opens the 3 images with colors

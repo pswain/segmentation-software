@@ -605,13 +605,11 @@ for TP = Timepoints
             CellSearch = true;
             ProceedWithCell = false;
             NCI = 0;
-            NewCrossCorrelatedCells = [];
             ParCurrentTrapInfo.cell = NewCellStruct;
             ParCurrentTrapInfo.cellsPresent = false;
             ParCurrentTrapInfo.cellLabel = [];
             ynewcell = 0;
             xnewcell = 0;
-            CellTrapImage = [];
             CIpar = [];
             
             % for visualisation if debugging code
