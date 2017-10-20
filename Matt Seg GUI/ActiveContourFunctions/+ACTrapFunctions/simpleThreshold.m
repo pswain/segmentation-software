@@ -51,7 +51,13 @@ end
 %% process
 
 %fprintf('CHANGE BACK TO PARFOR IN %s\n',mfilename)
-parfor ti = 1:size(stack,3)
+if size(stack,3)>1
+    current_pool = gcp;
+    pool_size = current_pool.NumWorkers;
+else
+    pool_size = 0;
+end
+parfor (ti = 1:size(stack,3),pool_size)
     
     temp_im = stack(:,:,ti);
     medVal = median(temp_im(:));

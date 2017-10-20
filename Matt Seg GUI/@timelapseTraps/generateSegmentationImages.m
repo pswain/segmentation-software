@@ -1,4 +1,4 @@
-function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
+function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
     =generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
 % [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
 %    = generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
@@ -20,11 +20,11 @@ function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecis
 %                           edges have a low score and all else a high one.
 % TrapTrapImageStack    :   stack of images (one slice per trap) in which
 %                           trap pixels have a high score (1).
-% ACImage               :   Image if the size of the whole position image
+% ACTrapImageStack      :   stack of images (one slice per trap)
 %                           used in the active contour method. Signed sum
 %                           of image channels specified in
 %                           cTimelapse.ACparams.ImageTransform.channel
-%                           normalised by gradient of trap pixels.
+%                           normalised by gradient of trap pixels over whole image.
 % RawDecisionIms        :   cell array of image stacks. Currently:
 %                           RawDecisionIms{1} is the BG decision image
 %                           (high scores for background pixels)
@@ -128,7 +128,9 @@ if any(TrapMask(:))
     ACImage = ACImage/mean(sqrt(ACImageGradX(TrapMask).^2 + ACImageGradY(TrapMask).^2  ));
 end
 
-
+% make ACImage into trap image stack
+ACTrapImageStack = cTimelapse.returnTrapsFromImage(ACImage,timepoint,traps_to_check);
+    
 % this calculates the decision image
 % though methods exist in the cellVision class to do this more
 % directly, it was pulled ou to avoid loading the image multiple
@@ -142,7 +144,14 @@ RawBgDIM = DecisionImageStack;
 RawCentreDIM = DecisionImageStack;
 have_raw_dims = false(1,size(TrapTrapImageStack,3));
 %fprintf('change back to parfor in DIM calculation\n')
-parfor k=1:length(traps_to_check)
+
+if length(traps_to_check)>1
+    current_pool = gcp;
+    pool_size = current_pool.NumWorkers;
+else
+    pool_size = 0;
+end
+parfor (k=1:length(traps_to_check),pool_size)
     [~, d_im_temp,~,raw_dims]=cCellVision.classifyImage2Stage(SegmentationStackArray{k},TrapTrapImageStack(:,:,k));
     DecisionImageStack(:,:,k)=d_im_temp(:,:,1);
     if size(d_im_temp,3)>1
@@ -158,6 +167,7 @@ parfor k=1:length(traps_to_check)
         RawCentreDIM(:,:,k) = raw_dims(:,:,2);
     end
 end
+
 if all(have_raw_dims);
     RawDecisionIms = {RawBgDIM,RawCentreDIM};
 else

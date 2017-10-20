@@ -19,7 +19,7 @@ max_cell_label = zeros(size(traps));
 for ti = 1:length(traps)
     for tp = timepoint_range
         
-        max_cell_label(ti) = max([cTimelapse.cTimepoint(tp).trapInfo(traps(ti)).cellLabel max_cell_label]);
+        max_cell_label(ti) = max([cTimelapse.cTimepoint(tp).trapInfo(traps(ti)).cellLabel max_cell_label(ti)]);
         
     end
 end

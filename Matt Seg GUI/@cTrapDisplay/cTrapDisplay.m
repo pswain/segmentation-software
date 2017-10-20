@@ -18,6 +18,7 @@ classdef cTrapDisplay<handle
         traps=[];
         channel=[]
         cCellVision=[];
+        cCellMorph = [];
         trackOverlay=[]; %boolean. stores overlay input and determines whether to color cells by label.
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = [];%stores value of key being held down while it is pressed
@@ -25,11 +26,12 @@ classdef cTrapDisplay<handle
     end % properties
 
     methods
-        function cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps, trackThroughTime)
-            % cDisplay=cTrapDisplay(cTimelapse,cCellVision,overlay,channel,traps,trackThroughTime)
+        function cDisplay=cTrapDisplay(cTimelapse,cCellVision,cCellMorph,overlay,channel,traps, trackThroughTime)
+            % cDisplay=cTrapDisplay(cTimelapse,cCellVision,cCellMorph,overlay,channel,traps,trackThroughTime)
             %
             % cTimelapse        :   object of the timelapseTraps class
             % cCellVision       :   object of the cellVision class
+            % cCellMorph        :   object of the cellMorphologyModel class
             % overlay           :   boolean, default false. Whether to
             %                       colour cells by their tracking label.
             % channel           :   channel to show in the GUI. default 1.
@@ -41,18 +43,18 @@ classdef cTrapDisplay<handle
             % timelapseTraps should have had timepoints selected already.
             timepoints=cTimelapse.timepointsToProcess;
             
-            if nargin<3 || isempty(overlay)
+            if nargin<4 || isempty(overlay)
                 cDisplay.trackOverlay=false;
             else
                 cDisplay.trackOverlay=overlay;
             end
             
-            if nargin<4 || isempty(channel)
+            if nargin<5 || isempty(channel)
                 cDisplay.channel=1;
             else
                 cDisplay.channel=channel;
             end
-            if nargin<5 || isempty(traps)  
+            if nargin<6 || isempty(traps)  
                 if cTimelapse.trapsPresent 
                     traps=1:length(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
                 elseif ~cTimelapse.trapsPresent
@@ -60,7 +62,7 @@ classdef cTrapDisplay<handle
                 end
             end
             
-            if nargin<6 || isempty(trackThroughTime)
+            if nargin<7 || isempty(trackThroughTime)
                 trackThroughTime=false;
             end
             
@@ -87,6 +89,7 @@ classdef cTrapDisplay<handle
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
             cDisplay.cCellVision=cCellVision;
+            cDisplay.cCellMorph = cCellMorph;
             cDisplay.figure=figure('MenuBar','none');
             
             % width of grid of images - a little off square

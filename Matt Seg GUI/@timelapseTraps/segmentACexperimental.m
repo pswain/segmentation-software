@@ -204,7 +204,7 @@ else
 end
 
 
-disp = cTrapDisplay(cTimelapse,[],true,cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
+disp = cTrapDisplay(cTimelapse,[],[],true,cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
 
 % gui\s for visualising outputs if that is desired.
 if ACparameters.visualise
@@ -233,8 +233,6 @@ for TP = Timepoints
     
     % Trigger the TimepointChanged event for experimentLogging
     experimentLogging.changeTimepoint(cTimelapse,TP);
-
-    TrapLocations = cTimelapse.cTimepoint(TP).trapLocations;
     
     if TP>= TPtoStartSegmenting;
         
@@ -243,7 +241,7 @@ for TP = Timepoints
         
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
 
-        [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
+        [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
             = cTimelapse.generateSegmentationImages(cCellVision,TP,TrapsToCheck);
 
         have_raw_dims = ~isempty(RawDecisionIms);
@@ -448,18 +446,8 @@ for TP = Timepoints
             SliceablePreviousTrapInfo = ones(size(CrossCorrelating));
         end
         
-        SliceableTrapLocations = TrapLocations(TrapsToCheck);
         SliceableTrapMaxCell = TrapMaxCell(TrapsToCheck);
-        
-        if TrapPresentBoolean
-            ACTrapImageStack = ACBackGroundFunctions.get_cell_image(ACImage,...
-                TrapImageSize,...
-                [[SliceableTrapLocations(:).xcenter]' [SliceableTrapLocations(:).ycenter]']);
-            
-        else
-            ACTrapImageStack = ACImage;
-        end
-
+       
         cells_discarded = 0;
         cells_found = 0;
         

@@ -63,7 +63,7 @@ elseif ~cDisplay.trackOverlay
     method = 'elcoAC';
     %method='hough';
 
-    cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,timepoint,trap,selection,cellPt, method, cDisplay.channel)
+    cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,cDisplay.cCellMorph,timepoint,trap,selection,cellPt, method, cDisplay.channel)
     slider_cb(cDisplay);
 
 end
