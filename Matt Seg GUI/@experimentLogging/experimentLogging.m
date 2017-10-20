@@ -8,6 +8,7 @@ classdef experimentLogging<handle
         
         file_name
         file_dir
+        fileAnnotation_id
         
         start_time = [] % Also used to identify if a protocol is running
         protocol_name = 'creating experiment'; % default first protocol name

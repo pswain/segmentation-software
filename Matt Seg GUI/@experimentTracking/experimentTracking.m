@@ -12,7 +12,7 @@ classdef experimentTracking<handle
     % See also EXPERIMENTTRACKINGGUI,TIMELAPSETRAPS,EXPERIMENTTRACKINGOMERO
     
     properties
-        rootFolder %folder where images are. When images are held in an Omero database this property is the suffix defining the filename: cExperiment_SUFFIX.mat
+        rootFolder %folder where images are. When images are held in an Omero database (experimentTrackingOmero subclass) this property is the suffix defining the filename: cExperiment_SUFFIX.mat
         creator%string, the user who created this object(obtained by getenv('USERNAME'))
         saveFolder %folder to save the timelapse objects
         dirs % cell array of directories in rootFolder. 

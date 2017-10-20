@@ -9,6 +9,7 @@ classdef experimentTrackingOmero < experimentTracking
     properties
          omeroDs%Omero dataset object - alternative source to rootFolder
          OmeroDatabase%Omero database object
+         fileAnnotation_id%id number of the file annotation used to save the experimentTracking object in the database
          segmentationSource='';%Flag to determine where the source data was obtained during segmentation, can be 'Omero', 'Folder' or empty (if not segmented). Data segemented from a file folder must be flipped both vertically and horizontally to match the segmentation results
     end
     
