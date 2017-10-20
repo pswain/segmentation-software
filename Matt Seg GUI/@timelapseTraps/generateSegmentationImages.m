@@ -1,7 +1,7 @@
 function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
-    =generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
+    =generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check,ACParams)
 % [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
-%    = generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check)
+%    = generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check,ACParams)
 %
 % calculates a number of images used in the segmentation software.
 %
@@ -11,6 +11,12 @@ function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack
 %                   defaults to 1.
 % traps_to_check:   array of indices of traps at which segmentation should
 %                   be performed. defaults to 1.
+% ACParams      :   an active contour parameters structure. If not provided
+%                   it will use cTimelapse.ACParams with any missing fields
+%                   filled in from default. This line is there so that a
+%                   structure can be passed and time consuming loads of the
+%                   default parameter set avoided.
+%
 %
 % OUTPUTS
 % 
@@ -40,19 +46,24 @@ if nargin<4
     traps_to_check=1;
 end
 
-ACImageChannel = cTimelapse.ACParams.ImageTransformation.channel;
+if nargin<5 || isempty(ACParams)
+    % for any unspecified parameters use the default values.
+    ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
+end
+
+ACImageChannel = ACParams.ImageTransformation.channel;
 
 DecisionImageChannel = cTimelapse.channelsForSegment;
 
 TrapPresentBoolean = cTimelapse.trapsPresent;
 
 if TrapPresentBoolean
-    TrapRefineChannel = cTimelapse.ACParams.TrapDetection.channel;
+    TrapRefineChannel = ACParams.TrapDetection.channel;
     if isempty(TrapRefineChannel)
         TrapRefineChannel = cTimelapse.channelForTrapDetection;
     end
-    TrapRefineFunction =  str2func(['ACTrapFunctions.' cTimelapse.ACParams.TrapDetection.function]);
-    TrapRefineParameters = cTimelapse.ACParams.TrapDetection.functionParams;
+    TrapRefineFunction =  str2func(['ACTrapFunctions.' ACParams.TrapDetection.function]);
+    TrapRefineParameters = ACParams.TrapDetection.functionParams;
     if isempty(TrapRefineParameters.starting_trap_outline);
         TrapRefineParameters.starting_trap_outline = cCellVision.cTrap.trapOutline;
     end

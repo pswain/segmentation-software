@@ -710,7 +710,7 @@ poses = 1:2;
 
 channels_to_extract = [5 6 7];
 
-cExperiment_test.editSegmentation(cExperiment_test.cCellVision,1:2,false)
+cExperiment_test.editSegmentation(1:2,false)
 
 
 %% test Tracking curation GUI

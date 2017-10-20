@@ -18,31 +18,33 @@ function addCell(cTimelapse,cCellVision,cCellMorph,timepoint,trap_index,new_cell
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%   EXTRACTING GENERAL PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
 
+% for any unspecified parameters use the default values.
+ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
 
-ACparameters = cTimelapse.ACParams.ActiveContour;
+ActiveContourParameters = ACParams.ActiveContour;
 
 % logical: whether to use the decision image to find the edge.
-EdgeFromDecisionImage = cTimelapse.ACParams.ImageTransformation.EdgeFromDecisionImage;
+EdgeFromDecisionImage = ACParams.ImageTransformation.EdgeFromDecisionImage;
 % size of image used in AC edge identification. Set to just encompass the largest cell possible.
-SubImageSize = 2*cTimelapse.ACParams.ActiveContour.R_max + 1;
+SubImageSize = 2*ACParams.ActiveContour.R_max + 1;
 
 % bwdist value of cell pixels which will not be allowed in the cell area
 % (so inner (1-cellPixExcludeThresh) fraction will be ruled out of future
 % other cell areas)
-CellPixExcludeThresh = cTimelapse.ACParams.ActiveContour.CellPixExcludeThresh;
+CellPixExcludeThresh = ACParams.ActiveContour.CellPixExcludeThresh;
 
 % probability that the trap edge (the part with value of 0.5 or greater) is
 % a centre,edge or BG.
-pTrapIsCentreEdgeBG = cTimelapse.ACParams.ImageTransformation.pTrapIsCentreEdgeBG;
+pTrapIsCentreEdgeBG = ACParams.ImageTransformation.pTrapIsCentreEdgeBG;
 
 %variable assignments,mostly for convenience and parallelising.
-TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
+TransformParameters = ACParams.ImageTransformation.TransformParameters;
 TrapImageSize = size(cTimelapse.defaultTrapDataTemplate);
 
 % this should only be used by the algorithm if it is not making the edge
 % from the decision image.
-if ~isempty(cTimelapse.ACParams.ImageTransformation.ImageTransformFunction);
-    ImageTransformFunction = str2func(['ACImageTransformations.' cTimelapse.ACParams.ImageTransformation.ImageTransformFunction]);
+if ~isempty(ACParams.ImageTransformation.ImageTransformFunction);
+    ImageTransformFunction = str2func(['ACImageTransformations.' ACParams.ImageTransformation.ImageTransformFunction]);
 end
 
 
@@ -52,7 +54,7 @@ TrapInfo = cTimelapse.cTimepoint(timepoint).trapInfo(trap_index);
 
 % active contour code throws errors if asked to visualise in the parfor
 % loop.
-ACparametersPass = ACparameters;
+ACparametersPass = ActiveContourParameters;
 ACparametersPass.visualise = 0;
 
 
@@ -60,7 +62,7 @@ ACparametersPass.visualise = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [TrapDecisionImage, TrapEdgeImage,TrapTrapImage,TrapACImage,RawDecisionIms]...
-    = cTimelapse.generateSegmentationImages(cCellVision,timepoint,trap_index);
+    = cTimelapse.generateSegmentationImages(cCellVision,timepoint,trap_index,ACParams);
 
 have_raw_dims = ~isempty(RawDecisionIms);
 % calculate log P 's for each pixel type
@@ -111,6 +113,7 @@ end
 % for the paper and how it is done in the
 % timelapseTraps.segmentACexperimental
 AllCellPixels = zeros(TrapImageSize);
+AllCellPixelsBinary = false(TrapImageSize);
 if TrapInfo.cellsPresent
     for ci = 1:length(TrapInfo.cell)
         SegmentationBinary = imfill(full(TrapInfo.cell(ci).segmented),'holes');
@@ -120,6 +123,16 @@ if TrapInfo.cellsPresent
     end
 end
 
+% experimental modification
+% make the interior regions of already identified cells background.
+if have_raw_dims
+    AllCellPixelsBinary = AllCellPixels>0;
+    PNotEdge = exp(PCentreTrap(AllCellPixelsBinary))+exp(PBGTrap(AllCellPixelsBinary));
+    PCentreTrap(AllCellPixelsBinary) = ...
+        min(log(0.1*PNotEdge),PCentreTrap(AllCellPixelsBinary));
+    PBGTrap(AllCellPixelsBinary) = ...
+        max(log(0.9*PNotEdge),PBGTrap(AllCellPixelsBinary));
+end
 
 NotCellsCellImage = ACBackGroundFunctions.get_cell_image(AllCellPixels,...
     SubImageSize,...

@@ -25,8 +25,18 @@ if ~isempty(cell_index) && cell_index <= length(cTimelapse.cTimepoint(timepoint)
         end
     elseif length(cTimelapse.cTimepoint(timepoint).trapInfo(trap_index).cell)==1
         
-        cTimelapse.cTimepoint(timepoint).trapInfo(trap_index) = cTimelapse.trapInfoTemplate;
-        
+        try
+            cTimelapse.cTimepoint(timepoint).trapInfo(trap_index) = cTimelapse.trapInfoTemplate;
+        catch
+            % this slight strange call is because sometimes there are other
+            % fields in trapInfo (mostly refinedTrapPixel), and if these
+            % are present the above code will fail. This code below
+            % acheives the same, preserving unknown fields in trapInfo and
+            % setting any known ones to the default value.
+            cTimelapse.cTimepoint(timepoint).trapInfo(trap_index) =...
+                parse_struct(cTimelapse.trapInfoTemplate,...
+                cTimelapse.cTimepoint(timepoint).trapInfo(trap_index));
+        end
     end
     
 end

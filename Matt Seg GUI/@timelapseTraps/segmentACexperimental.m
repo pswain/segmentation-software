@@ -59,40 +59,42 @@ end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%   EXTRACTING GENERAL PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
 
+% for any unspecified parameters use the default values.
+ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
 
-ACparameters = cTimelapse.ACParams.ActiveContour;
+ACparameters = ACParams.ActiveContour;
 
 % logical: whether to use the decision image to find the edge.
 EdgeFromDecisionImage = cTimelapse.ACParams.ImageTransformation.EdgeFromDecisionImage;
 % size of image used in AC edge identification. Set to just encompass the largest cell possible.
-SubImageSize = 2*cTimelapse.ACParams.ActiveContour.R_max + 1; 
+SubImageSize = 2*ACParams.ActiveContour.R_max + 1; 
 
 % parameters for the motion prior. Passed to fspecial as smoothing
 % parameters.
 % first set for identifying new cells.
 % second set for checking a cell is a tracked cell (so more stringent)
-jump_parameters =  cTimelapse.ACParams.CrossCorrelation.MotionPriorSmoothParameters;
-jump_parameters_check = cTimelapse.ACParams.CrossCorrelation.StrictMotionPriorSmoothParameters;
+jump_parameters =  ACParams.CrossCorrelation.MotionPriorSmoothParameters;
+jump_parameters_check = ACParams.CrossCorrelation.StrictMotionPriorSmoothParameters;
 
 % size of probable cell location image
 ProspectiveImageSize = max(jump_parameters(2),jump_parameters_check(2)); 
 
 % value in probable location image cells must have before being identified.
-CrossCorrelationValueThreshold = cTimelapse.ACParams.CrossCorrelation.CrossCorrelationValueThreshold;
+CrossCorrelationValueThreshold = ACParams.CrossCorrelation.CrossCorrelationValueThreshold;
 
 % maximum value tracked cells must have in the decision image to qualify as
 % cells
-CrossCorrelationDIMthreshold = cTimelapse.ACParams.CrossCorrelation.CrossCorrelationDIMthreshold;%  -0.3; %decision image threshold above which cross correlated cells are not considered to be possible cells
+CrossCorrelationDIMthreshold = ACParams.CrossCorrelation.CrossCorrelationDIMthreshold;%  -0.3; %decision image threshold above which cross correlated cells are not considered to be possible cells
 
 % pixels by which a cells is dilated after identification for blotting in
 % the probable location images and decision image.
-PostCellIdentificationDilateValue = cTimelapse.ACParams.CrossCorrelation.PostCellIdentificationDilateValue;% 2; %dilation applied to the cell outline to rule out new cell centres
+PostCellIdentificationDilateValue = ACParams.CrossCorrelation.PostCellIdentificationDilateValue;% 2; %dilation applied to the cell outline to rule out new cell centres
 
 % boundary in decision image for new cells negative is stricter, positive more lenient
-TwoStageThreshold = cTimelapse.ACParams.CrossCorrelation.twoStageThresh; 
+TwoStageThreshold = ACParams.CrossCorrelation.twoStageThresh; 
 
 % bwdist value of cell pixels which will not be allowed in the cell area (so inner (1-cellPixExcludeThresh) fraction will be ruled out of future other cell areas)
-CellPixExcludeThresh = cTimelapse.ACParams.ActiveContour.CellPixExcludeThresh;  
+CellPixExcludeThresh = ACParams.ActiveContour.CellPixExcludeThresh;  
 
 TrapPresentBoolean = cTimelapse.trapsPresent;
 
@@ -110,8 +112,8 @@ else
 end
 
 %registers images and uses this to inform expected position. Useful in cases of big jumps like cycloheximide data sets.
-PerformRegistration = cTimelapse.ACParams.CrossCorrelation.PerformRegistration;
-MaxRegistration = cTimelapse.ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
+PerformRegistration = ACParams.CrossCorrelation.PerformRegistration;
+MaxRegistration = ACParams.CrossCorrelation.MaxRegistration;%50; %maximum allowed jump
 if cTimelapse.trapsPresent
     %registration should be covered by tracking in the traps.
     PerformRegistration = false;
@@ -120,23 +122,23 @@ end
 
 % lowest allowed probability for a cell shape and motion.
 % selected rather arbitrarily from histogram of trained values.
-threshold_probability = cTimelapse.ACParams.CrossCorrelation.ThresholdCellProbability;
+threshold_probability = ACParams.CrossCorrelation.ThresholdCellProbability;
 
 %throw away cells with a score higher than this.
-threshold_score = cTimelapse.ACParams.CrossCorrelation.ThresholdCellScore;
+threshold_score = ACParams.CrossCorrelation.ThresholdCellScore;
 
 % probability that the trap edge (the part with value of 0.5 or greater) is
 % a centre,edge or BG.
-pTrapIsCentreEdgeBG = cTimelapse.ACParams.ImageTransformation.pTrapIsCentreEdgeBG;
+pTrapIsCentreEdgeBG = ACParams.ImageTransformation.pTrapIsCentreEdgeBG;
 
 %variable assignments,mostly for convenience and parallelising.
-TransformParameters = cTimelapse.ACParams.ImageTransformation.TransformParameters;
+TransformParameters = ACParams.ImageTransformation.TransformParameters;
 TrapImageSize = size(cTimelapse.defaultTrapDataTemplate);
 
 % this should only be used by the algorithm if it is not making the edge
 % from the decision image.
-if ~isempty(cTimelapse.ACParams.ImageTransformation.ImageTransformFunction);
-    ImageTransformFunction = str2func(['ACImageTransformations.' cTimelapse.ACParams.ImageTransformation.ImageTransformFunction]);
+if ~isempty(ACParams.ImageTransformation.ImageTransformFunction);
+    ImageTransformFunction = str2func(['ACImageTransformations.' ACParams.ImageTransformation.ImageTransformFunction]);
 end
 
 NewCellStruct = cTimelapse.cellInfoTemplate;
@@ -204,7 +206,7 @@ else
 end
 
 
-disp = cTrapDisplay(cTimelapse,[],[],true,cTimelapse.ACParams.ActiveContour.ShowChannel,TrapsToCheck);
+disp = cTrapDisplay(cTimelapse,[],[],true,ACParams.ActiveContour.ShowChannel,TrapsToCheck);
 
 % gui\s for visualising outputs if that is desired.
 if ACparameters.visualise
@@ -242,7 +244,7 @@ for TP = Timepoints
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
 
         [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
-            = cTimelapse.generateSegmentationImages(cCellVision,TP,TrapsToCheck);
+            = cTimelapse.generateSegmentationImages(cCellVision,TP,TrapsToCheck,ACParams);
 
         have_raw_dims = ~isempty(RawDecisionIms);
         % calculate log P 's for each pixel type
@@ -456,6 +458,13 @@ for TP = Timepoints
         %%  PARALLLEL LOOP 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        if length(TrapsToCheck)>1
+            current_pool = gcp;
+            pool_size = current_pool.NumWorkers;
+        else
+            pool_size = 0;
+        end
+        %parfor( TI = 1:length(TrapsToCheck),pool_size)
         for TI = 1:length(TrapsToCheck)
             
             %%%%%%%%%% unpack parallel variables
@@ -736,7 +745,7 @@ for TP = Timepoints
                     EdgeConfidenceImage = bwdist(~SegmentationBinary);
                     EdgeConfidenceImage = EdgeConfidenceImage./max(EdgeConfidenceImage(:));
                     AllCellPixels = AllCellPixels + EdgeConfidenceImage;
-                    
+
                 end %if ProceedWithCell
                 
             end %while cell search
@@ -809,7 +818,7 @@ for TP = Timepoints
         guiOutline.stack = OutlinesStack;
         guiOutline.title = 'identified outlines';
         guiOutline.LaunchGUI;
-        guiTrapIM.stack = cTimelapse.returnTrapsTimepoint(TrapsToCheck,TP,cTimelapse.ACParams.ActiveContour.ShowChannel);
+        guiTrapIM.stack = cTimelapse.returnTrapsTimepoint(TrapsToCheck,TP,ACParams.ActiveContour.ShowChannel);
         guiTrapIM.title = 'trap image';
         guiTrapIM.LaunchGUI;
         for i=1:size(CellStats,1)
