@@ -13,6 +13,7 @@ function addRemoveCells(cDisplay,subAx,trap)
 % respectively. This is done using the addRemoveCells method of cTimelapse.
 % This ony happens if cTrapDisplay.trackOverlay is false (i.e. if the cells
 % are not coloured by their label)
+% See Also, TIMELAPSETRAPS.ADDREMOVECELL
 
 cp=get(subAx,'CurrentPoint');
 
@@ -58,12 +59,7 @@ elseif ~cDisplay.trackOverlay
         selection='add';
     end
     
-    % hough => circles
-    % elcoAC => active contour on point selected.
-    method = 'elcoAC';
-    %method='hough';
-
-    cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,cDisplay.cCellMorph,timepoint,trap,selection,cellPt, method, cDisplay.channel)
+    cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,cDisplay.cCellMorph,timepoint,trap,selection,cellPt)
     slider_cb(cDisplay);
 
 end

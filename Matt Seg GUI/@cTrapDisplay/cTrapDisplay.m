@@ -3,25 +3,27 @@ classdef cTrapDisplay<handle
     %
     % A GUI that allows the editing of the segmentation by addition and
     % removal of cells. The traps are shown as a grid an cells can be added
-    % and removed at individual time points by left and right clicking.
+    % and removed at individual time points by left clicking (add) and
+    % right clicking(remove).
     % 
-    % Can also open a tracking curation sub GUI that allows more detailed
-    % editing (adding and removing cells, changing their outline and the
-    % tracking across timepoints). This is done by holding down the
-    % CurateTracksKy (default 't') and clicking on a cell.
+    % One can also open a tracking curation sub GUI that allows more
+    % detailed editing (adding and removing cells, changing their outline
+    % and the tracking across timepoints). This is done by holding down the
+    % CurateTracksKey (default 't') and clicking on a cell.
     properties
         figure = []; % the figure handle for the whole GUI
-        subImage = []; 
-        subAxes=[];
-        slider = [];
-        cTimelapse=[]
-        traps=[];
-        channel=[]
-        cCellVision=[];
-        cCellMorph = [];
+        subImage = []; % array of subimages in which each image is shown
+        subAxes=[]; % array of subaxes on which each image is shown
+        slider = []; % slider object used to move through time points
+        cTimelapse=[] % timelapseTraps object displayed and edited
+        traps=[]; % indices of traps to show
+        channel=[] % channel shown
+        cCellVision=[]; %cellMorphologyModel object used to identify new cells.
+        cCellMorph = [];  %cellVision objec used to identify new cells.
         trackOverlay=[]; %boolean. stores overlay input and determines whether to color cells by label.
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
         KeyPressed = [];%stores value of key being held down while it is pressed
+        gui_help = help('cTrapDisplay');
         
     end % properties
 
@@ -69,8 +71,7 @@ classdef cTrapDisplay<handle
             
             if isempty(cTimelapse.cTimepoint(timepoints(1)).trapLocations);
                 
-                cTrapSelectDisplay(cTimelapse,cCellVision,timepoints(1));
-                
+                error('error: select traps before using the cTrapDisplay GUI');
             end
                 
             if isempty(cTimelapse.cTimepoint(timepoints(1)).trapInfo)
@@ -101,6 +102,7 @@ classdef cTrapDisplay<handle
             dis_h=max(ceil(length(traps)/dis_w),1);
             image=cTimelapse.returnTrapsTimepoint(traps,timepoints(1),cDisplay.channel);
             
+            % spacing parameters to space images with a gap between them.
             t_width=.9/dis_w;
             t_height=.9/dis_h;
             bb=.1/max([dis_w dis_h+1]);
@@ -145,9 +147,11 @@ classdef cTrapDisplay<handle
             %this pair of functions store key values of the key pressed so
             %they can influence the behaviour of the GUI.
             
-            %keydown function
-            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)KeepKey_Press_cb(cDisplay,'KeyPressed',src,event));
-            %key release function
+            %keydown function  cDisplay.keyRelease_cb(src,event))
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)cDisplay.keyPress_cb(src,event));
+            %key release function. This is different from the generic one
+            %to allow the help string to be shown and channels to be moved
+            %with button presses.
             set(cDisplay.figure,'WindowKeyReleaseFcn',@(src,event)KeepKey_Release_cb(cDisplay,'KeyPressed',src,event));
 
             

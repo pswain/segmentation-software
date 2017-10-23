@@ -45,15 +45,27 @@ for j=1:size(alltraps,3)
         end
         segLabel = max(segLabel,[],3);
         %shuffle colours so adjacent cells don't look super similar.
-        %setting first point of segLabel to trapMaxCell ensures this is
-        %consistent across all images.
-        segLabel(1)=50*(1 + floor(cDisplay.cTimelapse.returnMaxCellLabel(cDisplay.traps(j))/50));
+        
+        % bit confusing
+        %setting the highest value pixel in segLabel to be the same for all
+        %timepoints ensures the shuffling produces the same colour for a
+        %given cell label at every time point. This is acheived by setting
+        %segLabel(1) to be a value larger than maxCellLabel (for that trap)
+        %which does not change. We could have used maxCellLabel, but we
+        %chose this definition of v so that the shuffling would only change
+        %when maxCellLabel changed by 50. This means the colour of cells is
+        %reasonably consistent even as the cells are being identified and
+        %maxCellLabel is increasing.
+        v = 50*(1 + floor(cDisplay.cTimelapse.returnMaxCellLabel(cDisplay.traps(j))/50));
+        segLabel(1) = v;
+        % actually shuffle.
         trackLabel=label2rgb(segLabel,'jet','w','shuffle');
         trackLabel=double(trackLabel);
         trackLabel=trackLabel/255;
         image(repmat(segLabel>0,[1 1 3]))=1;
         image=image.*trackLabel;
     else
+        % if trackOverlay is false, simply make all cell outlines red.
         t_im=image(:,:,1);
         seg_areas=max(seg_areas,[],3);
         t_im(seg_areas)=1; 

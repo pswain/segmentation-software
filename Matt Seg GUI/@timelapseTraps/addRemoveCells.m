@@ -1,5 +1,5 @@
-function addRemoveCells(cTimelapse,cCellVision,cCellMorph,timepoint,trap,selection,pt, method, channel)
-% addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt, method, channel)
+function addRemoveCells(cTimelapse,cCellVision,cCellMorph,timepoint,trap,selection,pt)
+% addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt)
 %
 % cTimelapse        :   object of the timelapseTraps class
 % cCellVision       :   object of the cellVision class
