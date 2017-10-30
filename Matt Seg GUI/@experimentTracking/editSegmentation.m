@@ -64,7 +64,8 @@ for i=1:length(positionsToIdentify)
     %empty, then no traps should be shown for this timelapse and the GUI is
     %not opened.
     if ~(pos_traps_to_show_given && isempty(traps_to_show))
-        cTrapDisplay(cTimelapse,cExperiment.cCellVision,cExperiment.cCellMorph,show_overlap,channel,traps_to_show);
+        cT_gui = cTrapDisplay(cTimelapse,cExperiment.cCellVision,cExperiment.cCellMorph,show_overlap,channel,traps_to_show);
+        cT_gui.gui_help = HelpHoldingFunctions.experimentTracking_editSegmentationGUI(); 
     end
     
     uiwait();

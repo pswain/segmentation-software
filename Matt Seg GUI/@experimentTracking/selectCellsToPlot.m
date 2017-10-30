@@ -45,6 +45,7 @@ for i=1:length(positionsToIdentify)
         end
     else
         disp = cTrapDisplayPlot(cTimelapse,[],channel);
+        disp.gui_help = HelpHoldingFunctions.experimentTracking_cellsToPlotGUI();  
         set(disp.figure,'Name',sprintf('selecting cells: position %d of %d',i,length(positionsToIdentify)))
         uiwait();
     end
