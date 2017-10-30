@@ -1,5 +1,15 @@
 function addRemoveCells(cDisplay,subAx,trap)
-
+% addRemoveCells(cDisplay,subAx,trap)
+%
+% click call back for the cTrapDisplay GUI. Adds/removes a cell from
+%       cDisplay.cTimelapse.cellsToPlot
+% field on a left/right click. This field is later used to determine which
+% cells to extract when calling the timelapseTraps.extractData method.
+%
+% If 't' is being held down when the user clicks, a CURATECELLTRACKINGGUI
+% is opened instead.
+%
+% See Also, CURATECELLTRACKINGGUI , TIMELAPSETRAPS.EXTRACTCELLDATA
 key=cDisplay.KeyPressed;
 cDisplay.KeyPressed = [];
 %reset the key value to [] because the key release function will not
@@ -14,18 +24,16 @@ timepoint = floor(get(cDisplay.slider,'Value'));
 
 if strcmp(key,cDisplay.CurateTracksKey)
     
-    
     CellNumNearestCell = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
     
     if ~isempty(CellNumNearestCell)
         
-        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap);
+        % open a tracking curator GUI with the selected cell chosen.
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cTimelapse.cCellVision,timepoint,trap);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
         TrackingCurator.UpdateImages;
     end
-    
-    
-    
+
 else
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
@@ -38,11 +46,8 @@ else
         selection=1;
     end
     
-    
     loc = cDisplay.cTimelapse.ReturnNearestCellCentre(timepoint,trap,cellPt);
     cDisplay.cTimelapse.cellsToPlot(trap,cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(loc))=selection;
-    
-    
     
 end
 %

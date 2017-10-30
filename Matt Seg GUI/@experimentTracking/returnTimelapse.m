@@ -25,4 +25,8 @@ cTimelapse.metadata.posname = cExperiment.dirs{timelapseNum};
 % PositionChanged event to notify experimentLogging
 experimentLogging.changePos(cExperiment,timelapseNum,cTimelapse);
 
+% populate these 2 transient properties for when new cells need to be
+% detected.
+cTimelapse.cCellVision = cExperiment.cCellVision;
+cTimelapse.cCellMorph = cExperiment.cCellMorph;
 end

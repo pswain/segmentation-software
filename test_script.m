@@ -387,10 +387,7 @@ l2 =  load('~/Documents/microscope_files_swain_microscope_analysis/tests/test_cE
 cExperiment_true = l2.cExperiment;
 cExperiment_true.cCellVision = l2.cCellVision;
 
-cExperiment_test.addSecondaryChannel('GFP_001');
-cExperiment_test.addSecondaryChannel('GFP_');
-%cExperiment_test.addSecondaryChannel('GFP_001');
-cExperiment_test.addSecondaryChannel('not found');
+cExperiment_test.addSecondaryChannel({'GFP_001','GFP_','not found'});
 
 cTimelapse_true = cExperiment_true.loadCurrentTimelapse(1);
 cTimelapse_test = cExperiment_test.loadCurrentTimelapse(1);

@@ -36,12 +36,15 @@ for i=1:length(positionsToIdentify)
         traps_to_show = unique(traps_to_show);
         for trapi = 1:length(traps_to_show)
             trap_num = traps_to_show(trapi);
-            disp = cTrapDisplayPlot(cTimelapse,cCellVision,trap_num,channel);
+            disp = cTrapDisplayPlot(cTimelapse,trap_num,channel);
             set(disp.figure,'Name',sprintf('selecting cells: position %d of %d; trap %d of %d',i,length(positionsToIdentify),trapi,length(traps_to_show)))
+            % this just appends a little help for the experimentTracking
+            % version of the GUI.
+            disp.gui_help = HelpHoldingFunctions.experimentTracking_cellsToPlotGUI();
             uiwait();
         end
     else
-        disp = cTrapDisplayPlot(cTimelapse,cCellVision,[],channel);
+        disp = cTrapDisplayPlot(cTimelapse,[],channel);
         set(disp.figure,'Name',sprintf('selecting cells: position %d of %d',i,length(positionsToIdentify)))
         uiwait();
     end

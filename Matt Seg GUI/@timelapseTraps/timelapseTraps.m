@@ -114,6 +114,8 @@ classdef timelapseTraps<handle
         kill_logger = false; % convenience property for test functions. Allows me to make the logger return nothing so that I can test differences (Elco).
                              % transient because most code now breaks of you
                              % don't have the logger operational.
+        cCellVision % cellVision object for selecting new cells
+        cCellMorph % cellMorphologyModel object for selecting new cells.
     end
     
    

@@ -1,46 +1,53 @@
 classdef cTrapDisplayPlot<handle
     %  cTrapDisplayPlot
     %
-    % similar to the other cell selection GUI's shows each trap with a
-    % slider to move up and down through the timepoints. In this GUI,
-    % cells are added or removed from the timelapseTraps.cellsToPlot field
-    % by left and right clicking respectively. This is the collection of
-    % all cells for which data will be extracted when 'extractData' is run.
+    % This GUI allows the selection of cells for which data will be
+    % extracted. Cells shown in green are those for which data will be
+    % extracted, while those shown in red will be ignored. This allows
+    % erroneously cells to be removed from the dataset before any analysis
+    % is completed. 
+    % By left clicking on a red cell, you can add it to the 'to analyse'
+    % set, while right clicking on a green cell will remove it from the 'to
+    % analyse' set. The scroll wheel will move you forwards and backwards
+    % in time, and the up and down arrows will change the channel
+    % displayed.
+    % 
+    % By holding down the cell curation key ('t') and clicking on a cell
+    % you can open the curateCellTrackingGUI. This allows the tracking and
+    % outline of a cell to be modified for more detailed curation. 
     properties
-        figure = [];
-        subImage = [];
-        subAxes=[];
-        slider = [];
-        cTimelapse=[]
-        traps=[];
-        channel=[]
-        cCellVision=[];
-        trapNum;
-        
+        figure = [];% the figure in which the GUI is shown.
+        subImage = []; % the subimages in which each trap is displayed
+        subAxes=[]; % the subaxes in which each subimage is shown
+        slider = [];% slider object for moving through time
+        cTimelapse=[]; % cTImelapse object that will be modified.
+        traps=[]; % indices of traps displayed
+        channel=[]; % image channel that is displayed
+        gui_help = help('cTrapDisplayPlot');% help string for GUI (shown when h is pressed).
         CurateTracksKey = 't'; %key to hold down when clicking to curate the tracks for that cell
+        cCellVision = [];%cellVision model - used if opening a curateCellTrackingGUI
         KeyPressed = []; %stores value of key being held down while it is pressed
         
     end % properties
     
     methods
-        function cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
-            %cDisplay=cTrapDisplayPlot(cTimelapse,cCellVision,traps,channel)
+        function cDisplay=cTrapDisplayPlot(cTimelapse,traps,channel)
+            %cDisplay=cTrapDisplayPlot(cTimelapse,traps,channel)
             %
             % 
             % displaying traps for addition or removal of cells from
             % cTimelapse.cellsToPlot. 
             %
             % cTimelapse        :   object of the timelapseTraps class
-            % cCellVision       :   object of the cellVision class
             % channel           :   channel to show in the GUI. default 1.
             % traps             :   array of trap indices for the traps to
             %
             % cDisplay          :   the GUI object
-            if nargin<3 || isempty(traps)
-                traps=1:length(cTimelapse.cTimepoint(cTimelapse.timepointsToProcess(1)).trapInfo);
+            if nargin<2 || isempty(traps)
+                traps = cTimelapse.defaultTrapIndices;
             end
             
-            if nargin<4
+            if nargin<3
                 channel=1;
             end
             
@@ -53,7 +60,6 @@ classdef cTrapDisplayPlot<handle
             cDisplay.channel=channel;
             cDisplay.cTimelapse=cTimelapse;
             cDisplay.traps=traps;
-            cDisplay.cCellVision=cCellVision;
             cDisplay.figure=figure('MenuBar','none');
             
             dis_w=ceil(sqrt(length(traps)));
@@ -74,13 +80,12 @@ classdef cTrapDisplayPlot<handle
                     end
                     
                     cDisplay.subAxes(index)=subplot('Position',[(t_width+bb)*(i-1)+bb/2 (t_height+bb)*(j-1)+bb*2 t_width t_height]);
-                    cDisplay.trapNum(index)=traps(index);
                     
                     cDisplay.subImage(index)=subimage(image(:,:,i));
                     
                     set(cDisplay.subAxes(index),'xtick',[],'ytick',[])
                     
-                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.trapNum(index))); % Set the motion detector.
+                    set(cDisplay.subImage(index),'ButtonDownFcn',@(src,event)addRemoveCells(cDisplay,cDisplay.subAxes(index),cDisplay.traps(index))); % Set the motion detector.
                     set(cDisplay.subImage(index),'HitTest','on'); %now image button function will work
                     
                     index=index+1;
@@ -113,7 +118,7 @@ classdef cTrapDisplayPlot<handle
             %generic scroll wheel function that changes slider value
             set(cDisplay.figure,'WindowScrollWheelFcn',@(src,event)Generic_ScrollWheel_cb(cDisplay,src,event));
             %key press function
-            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)KeepKey_Press_cb(cDisplay,'KeyPressed',src,event));
+            set(cDisplay.figure,'WindowKeyPressFcn',@(src,event)cDisplay.keyPress_cb(src,event));
             %key release function
             set(cDisplay.figure,'WindowKeyReleaseFcn',@(src,event)KeepKey_Release_cb(cDisplay,'KeyPressed',src,event));
 
@@ -122,10 +127,5 @@ classdef cTrapDisplayPlot<handle
             
 
         end
-        
-        
-        addRemoveCells(cDisplay,subAx,trap)
-        slider_cb(cDisplay)
-        
     end
 end
