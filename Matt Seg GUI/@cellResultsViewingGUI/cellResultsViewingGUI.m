@@ -1,11 +1,61 @@
 classdef cellResultsViewingGUI<handle
-            % CellResGUI=cellResultsViewingGUI(cExperiment) a GUI for
-            % viewing the data extracted for single cells along with the
-            % images of those cells at particular timepoints. Intended to
-            % be used for checking data for obvious tracking errors and
-            % such.
-            % can also modify lineage info by clicking on image (left to
-            % add, right to remove).
+            % CellResGUI=cellResultsViewingGUI(cExperiment) 
+            %
+            % This GUI is used for viewing the extracted data and the
+            % images at the same time. It should be called run when the
+            % experiment has been processed and the data extracted.
+            %
+            % On the left are the display options. There are 3 dropdown
+            % menus to select the image channel shown, the extracted
+            % channel plotted and which extracted statistic to plot (to see
+            % the meaning of these statics look at the documentation for
+            % the extraction function). The large 'Reset Image Scale'
+            % button will reset the normalisation of the images shown.
+            % Images are normalised to a common scale, so that they can be
+            % compared between timepoints and cells. As a consequence they
+            % will sometimes be saturdated or very dim, and pressing
+            % 'Reset Image Scale' will reset the normalisation so that the
+            % brightest pixel in the current image is the maximum of the
+            % range. This is in contrast to other GUI's where all images
+            % are normalised to the 0-1 range, and are therefore not
+            % comparable. 
+            %
+            % the list centre top allows you to select cells amongst those
+            % extracted, and you can move through the list by pressing up
+            % and down. The GUI by default shows all cells extracted, but
+            % subsets can be chosen (from the command line) by using the
+            % GUI methods called setCells.... (see their documentation by
+            % running doc('cellResultsViewingGUI') for more details.
+            %
+            % The image on the right shown cell outlines overlaid on the
+            % selected image channel (normalised as described above). The
+            % selected cell is outlines in red, it's daughters (if lineage
+            % extraction has been performed) in green and all other cells
+            % in blue.
+            %
+            % The plot at the bottom shows the selected extracted data for
+            % the selected cell, with the current time point shown in the
+            % image window marked with a blue circle. One can scroll
+            % through using the scroll wheel or left and right arrows. If
+            % the cell is identified as a mother, its birth events are
+            % shown as green vertical lines on this plot.
+            %
+            % The GUI can also be used to edit lineage data. By clicking on
+            % the image one can add (left click) or remove (right click)
+            % birth events. The birth event will be at the displayed
+            % timepoint, and daughtership assigned to a cell identified
+            % occurring within 5 timepoints and encompassing the selected
+            % point. Right click will remove the next birth event, however
+            % far it is in the future. Pressing 'b' will similarly add a
+            % birth event (but with no attached daughter), 'x' will remove
+            % the next birth event, 'd' will mark the cell as dead and 't'
+            % will open the curateCellTrackingGUI (though note that
+            % extracted data will NOT be updated unless data is
+            % reextracted).
+            %
+            % Lineage is found in experimentTracking.lineageInfo
+            % Extracted data is found in experimentTracking.cellInf
+
     properties
         figure = []; %output of the figure to which GUI is assigned
         cExperiment; % cExperiment object of the object
@@ -32,6 +82,9 @@ classdef cellResultsViewingGUI<handle
         
         needToSave; %does the experiment need to be saved before continuing along - only if any edits have been made.
         birthTypeUse='HMM'; %which birthtime dataset should be shown. Can be 'HMM' or 'Manual';
+        
+        gui_help = help('cellResultsViewingGUI');
+    
     end % properties
 
     methods
@@ -80,7 +133,9 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
             if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
-                
+                % If the channels extracted is not recorded, needs to be
+                % given by the user so that the appropriate channel can be
+                % shown.
                 if ~isfield(cExperiment.cellInf,'extractionParameters')...
                         | ~isfield(cExperiment.cellInf(1).extractionParameters,'functionParameters') ...
                         | ~isfield(cExperiment.cellInf(1).extractionParameters.functionParameters,'channels')
@@ -111,6 +166,8 @@ classdef cellResultsViewingGUI<handle
                     
                 end
                 else
+                    % get extracted channel names from the extraction
+                    % parameters.
                     if strcmp(cExperiment.cellInf(1).extractionParameters.functionParameters.channels,'all')
                         CellResGUI.ChannelDataCode = cExperiment.cTimelapse.channelNames;
                     else
@@ -118,8 +175,6 @@ classdef cellResultsViewingGUI<handle
                     end
                 end
  
-            else
-                CellResGUI.ChannelDataCode = cExperiment.cTimelapse.channelNames;
             end
             
             CellResGUI.SettingsPanel = uipanel('Parent',CellResGUI.TopPanel,'Position',[.015 .015 .3 .97 ]);
@@ -198,7 +253,7 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellSelected = 0;
             set(CellResGUI.CellSelectListInterface,'Value',1);
             
-            % make manual info
+            % make manual info to record editing of lineage info.
             CellResGUI.needToSave = CellResGUI.cExperiment.populateManualLineageInfo;
             CellResGUI.birthTypeUse = 'Manual';
             
@@ -213,6 +268,9 @@ classdef cellResultsViewingGUI<handle
             %     [position_array trap_array cell_number_array]
             %where the columns of the array are vectors of the position, trap
             %number and cell number of each cell to be viewable.
+            %
+            % matlab complains about this function, and it probably could
+            % cause problems if the GUI ever got saved.
             
             
             if size(setting_array,2)~=3
@@ -235,6 +293,7 @@ classdef cellResultsViewingGUI<handle
             CellResGUI.CellsForSelection = setting_array;
             CellResGUI.CellsforSelectionDiplayString = {};
             
+            % make string for cell selection box - bit clearer.
             for celli =1:size(setting_array,1)
                 
                 CellResGUI.CellsforSelectionDiplayString{celli} = sprintf('%s   trap: %3d   cell:  %3d',CellResGUI.cExperiment.dirs{setting_array(celli,1)},setting_array(celli,2),setting_array(celli,3));
@@ -244,7 +303,10 @@ classdef cellResultsViewingGUI<handle
             
             set(CellResGUI.CellSelectListInterface,'String',CellResGUI.CellsforSelectionDiplayString);
             if set_cell
-                
+                % this slightly verbose chunk of code is to deal with cases
+                % where the cells that can be selected change and the cell
+                % that was previously selected either is, or is not, part
+                % of the new set of selectable cells.
                 [cell_present,new_cell_id] = ismember(old_id,setting_array,'rows');
                 if cell_present
                     CellResGUI.CellSelected = new_cell_id;
@@ -285,7 +347,7 @@ classdef cellResultsViewingGUI<handle
         
         function setCellsAsMothers(CellResGUI)
         % setCellsAsMothers(CellResGUI)
-        % sets the cells to only the mother cells of the cvells already selected.
+        % sets the cells to only the mother cells of the cells already selected.
         if ~isempty(CellResGUI.cExperiment.lineageInfo)
             
             mother_cell_logical = ismember(CellResGUI.CellsForSelection,...

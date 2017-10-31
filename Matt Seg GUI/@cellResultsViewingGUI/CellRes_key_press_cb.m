@@ -89,7 +89,9 @@ switch event.Key
         CellResGUI.needToSave=true;
         CellResGUI.CellRes_plot;
         CellResGUI.CellRes_draw_cell;
-
+        
+    case 'h'
+        helpdlg(CellResGUI.gui_help);
 end
 
 

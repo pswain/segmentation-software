@@ -66,11 +66,6 @@ if sum(cell_data_index == 1)
 
                   birth_times(birth_times==0) = [];
                   
-                  %weird quirk where birth times seems to be [1 0 0 0 ...]
-                  %by default.
-%                   if birth_times==1
-%                       birth_times = [];
-%                   end
                   ylim_plot = get(CellResGUI.PlotHandle,'Ylim');
                   for bi = 1:length(birth_times)
                       bt = birth_times(bi);

@@ -9,11 +9,6 @@ timepoint = CellResGUI.TimepointSelected;
 
 image_channel_number = get(CellResGUI.SelectImageChannelButton,'Value');
 
-% inserted by Matt for smooth image scrolling. Consider altering or leaving
-% out entirely.
-% only load the first channel into memory regardless
-%CellResGUI.cExperiment.cTimelapse.loadChannelIntoMemory(1);
-
 cell_image = CellResGUI.cExperiment.cTimelapse.returnSingleTrapTimepoint(trap_number,timepoint,image_channel_number);
 
 empty_outline = false(size(cell_image));
@@ -38,6 +33,8 @@ if ~isempty(CellResGUI.cExperiment.lineageInfo)
             %This is a mother, so set the mother label
             mother_label = cell_tracking_number;
             %Update labels for daughters
+            
+            % preferentially use manual info.
             if isfield(mother_info,'daughterLabelManual') && ...
                     ~isempty(mother_info.daughterLabelManual)
                 daughter_labels = mother_info.daughterLabelManual(mother_index,:);
@@ -97,7 +94,6 @@ if ~isempty(CellResGUI.cellImageSize)
     cTimelapse_cell_number = CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cellLabel == cell_tracking_number;
     
     if sum(cTimelapse_cell_number==1)
-    %GetSubStack( Stack,Centres,SizeOfSubStack)
     cell_centre = CellResGUI.cExperiment.cTimelapse.cTimepoint(timepoint).trapInfo(trap_number).cell(cTimelapse_cell_number).cellCenter;
     
     show_image = GetSubStack( show_image,[cell_centre(2) cell_centre(1) 2],[CellResGUI.cellImageSize 3]);
