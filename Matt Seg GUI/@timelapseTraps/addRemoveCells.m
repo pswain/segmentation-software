@@ -1,8 +1,14 @@
-function addRemoveCells(cTimelapse,cCellVision,cCellMorph,timepoint,trap,selection,pt)
+function addRemoveCells(cTimelapse,timepoint,trap,selection,pt)
 % addRemoveCells(cTimelapse,cCellVision,timepoint,trap,selection,pt)
 %
-% cTimelapse        :   object of the timelapseTraps class
-% cCellVision       :   object of the cellVision class
+% cTimelapse        :   object of the timelapseTraps class (which is
+%                       changed to include the new cell). This is expected
+%                       to have cCellVision and cCellMorph properties
+%                       populated with the appropriate objects to identify
+%                       cells:
+%       cCellVision       :   object of the cellVision class
+%       cCellMorph        :   object of the cellMorphologyModel class
+%
 % timepoint         :   the timepoint at which a cell should be added or
 %                       removed
 % trap              :   index of the trap from which a cell should be added
@@ -20,7 +26,7 @@ function addRemoveCells(cTimelapse,cCellVision,cCellMorph,timepoint,trap,selecti
 
 switch selection
     case 'add'
-        cTimelapse.addCell(cCellVision,cCellMorph,timepoint,trap,round(pt));
+        cTimelapse.addCell(timepoint,trap,round(pt));
     case 'remove'
         
         cell_to_remove_index = cTimelapse.ReturnNearestCellCentre(timepoint,trap,pt);

@@ -1,10 +1,14 @@
-function addCell(cTimelapse,cCellVision,cCellMorph,timepoint,trap_index,new_cell_centre)
+function addCell(cTimelapse,timepoint,trap_index,new_cell_centre)
 % addCell(cTimelapse,cCellVision,cCellMorph,timepoint,trap_index,new_cell_centre)
 %
 % cTimelapse        :   object of the timelapseTraps class (which is
-%                       changed to include the new cell)
-% cCellVision       :   object of the cellVision class
-% cCellMorph        :   object of the cellMorphologyModel class
+%                       changed to include the new cell). This is expected
+%                       to have cCellVision and cCellMorph properties
+%                       populated with the appropriate objects to identify
+%                       cells:
+%       cCellVision       :   object of the cellVision class
+%       cCellMorph        :   object of the cellMorphologyModel class
+%
 % timepoint         :   the timepoint at which a cell should be added
 % trap_index        :   index of the trap from which a cell should be added
 %                       or removed
@@ -17,6 +21,8 @@ function addCell(cTimelapse,cCellVision,cCellMorph,timepoint,trap_index,new_cell
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%   EXTRACTING GENERAL PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
+
+cCellMorph = cTimelapse.cCellMorph;
 
 % for any unspecified parameters use the default values.
 ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
@@ -62,7 +68,7 @@ ACparametersPass.visualise = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [TrapDecisionImage, TrapEdgeImage,TrapTrapImage,TrapACImage,RawDecisionIms]...
-    = cTimelapse.generateSegmentationImages(cCellVision,timepoint,trap_index,ACParams);
+    = cTimelapse.generateSegmentationImages(timepoint,trap_index,ACParams);
 
 have_raw_dims = ~isempty(RawDecisionIms);
 % calculate log P 's for each pixel type

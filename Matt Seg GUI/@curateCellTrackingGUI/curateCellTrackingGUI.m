@@ -4,21 +4,51 @@ classdef curateCellTrackingGUI<handle
     % a GUI for doing a range of curation. Primarily it allows the tracking
     % to be curated, but it also allows the cells outline to be edited
     % after the active contour has been performed and new cells to be
-    % added without effecting the shape of the other cells in the trap.
+    % added or removed.
     %
     % consecutive timepoints are shown as a film strip and numerous colour
-    % schemes are possible.
+    % schemes are possible. Either each cell has its own colouring set by
+    % its cell label or the currently selected cell is shown in yellow and
+    % all other cells are shown in blue. Pressing 'Enter' will switch
+    % between these colour schemes.
+    % 
+    % If no key is help down then right clicking will select a new cell,
+    % while left clicking will assign the cell label of the currently
+    % selected cell to the clicked on cell at all future time points. Any
+    % cell at those timepoint that currently has the selected cells cell
+    % label will be given a new cell label.
+    %
+    % If the separateTrackingKey (default 's') is held down the track will be
+    % split - the currently selected cell will be given a new cell label
+    % starting with the timepoint at which it was clicked. This is useful
+    % for splitting cells that were accidently tracked to be the same cell.
+    %
+    % If the editOutlineKey (default 'o') is held down the outline of the
+    % selected cell will be changed to be closer to the clicked point. This
+    % will only occur at the timepoint which was clicked.
+    %
+    % If the addNewCellKey (default 'p') is help down a new cell will be
+    % added centred at the clicked point.
+    % 
+    % Pressing the helpKey (default 'h') will bring up the GUI help (which
+    % is this help section by default).
+    %
+    % If the closeGUIKey (default '{') is pressed the GUI will be closed.
+    % 
+    % It's a bit of a complicated GUI, but if in doubt press enter till you
+    % see a yellow cell while the rest are blue. Right clicking with no
+    % buttons pressed will change which cell is yellow, while and most
+    % functions will effect that yellow cell.
     properties
-        figure = [];
-        subImage = [];
-        subAxes=[];
-        slider = [];
-        cTimelapse=[]
-        cCellVision=[];
-        trapIndex = 1;
-        CellLabel = 1;
-        subAxesTimepoints = [];
-        subAxesIndex = []; 
+        figure = []; % figure in which the GUI is shown
+        subImage = []; % subimages that make up the film strip
+        subAxes=[]; % subaxes in which these images are shown
+        slider = [];% the slider object that sets which timepoints is shown.
+        cTimelapse=[] % the cTimelapse object which is modified.
+        trapIndex = 1; % the index of the trap shown.
+        CellLabel = 1; % te cell label of the cell which is the focus.
+        subAxesTimepoints = []; % the timepoint corresponding to each sub image.
+        subAxesIndex = []; % the linear index of each subaxes - helps to keep track of which has been clicked on.
         Channels = 1; % which channels to show - one row per channel. Has to be set in constructor
         PermuteVector = []; %vector of permutations of cel labels to make colours more different and visualisation easier.
         ColourScheme = curateCellTrackingGUI.allowedColourSchemes{2};%'trackedCellOnly';
@@ -32,9 +62,11 @@ classdef curateCellTrackingGUI<handle
         outlineEditKey = 'o'; %the key to be pressed activate outline editing functionality
         addRemoveKey = 'p'; %the key to be pressed to use add/remove functionality
         closeKey = '[' % the key pressed to close the GUI.
-        separateTrackingKey = 's'; %the key pressed to separate a cell from the tracking of the current cell. 
-                                %to be used when the tracking joins to
-                                %cells together
+        separateTrackingKey = 's';  %the key pressed to separate a cell from the tracking of the current cell. 
+                                    %to be used when the tracking joins to
+                                    %cells together
+        helpKey = 'h'; % key to press to get help with the GUI
+        gui_help = help('curateCellTrackingGUI'); %help string for GUI.
     end % properties
     
     properties(Constant)
@@ -43,37 +75,30 @@ classdef curateCellTrackingGUI<handle
     
     
     methods
-        function TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
-            % TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
-            % cTimelapse
-            % Timepoint
-            % TrapIndex
-            % StripWidth
-            % ShowOtherChannels
-            % ColourScheme
-            
+        function TrackingCurator=curateCellTrackingGUI(cTimelapse,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
+            % TrackingCurator=curateCellTrackingGUI(cTimelapse,Timepoint,TrapIndex,StripWidth,Channels,ColourScheme)
+           
             AllowedColourSchemes = curateCellTrackingGUI.allowedColourSchemes; % a cell array of allowed colour scheme strings
             
             TrackingCurator.cTimelapse = cTimelapse;
-            TrackingCurator.cCellVision = cCellVision;
             
-            if nargin<3 || isempty(Timepoint)
+            if nargin<2 || isempty(Timepoint)
                 Timepoint = min(TrackingCurator.cTimelapse.timepointsToProcess);
             end
             
-            if ~(nargin<4 || isempty(TrapIndex))
+            if ~(nargin<3 || isempty(TrapIndex))
                 TrackingCurator.trapIndex = TrapIndex;
             end
             
-            if ~(nargin<5 || isempty(StripWidth))
+            if ~(nargin<4 || isempty(StripWidth))
                 TrackingCurator.StripWidth = StripWidth;
             end
             
-            if ~(nargin<6 || isempty(Channels))
+            if ~(nargin<5 || isempty(Channels))
                 TrackingCurator.Channels =Channels;
             end
             
-            if ~(nargin<7 || isempty(ColourScheme) )
+            if ~(nargin<6 || isempty(ColourScheme) )
                 
                 if ~any(strcmp(ColourScheme,AllowedColourSchemes))
                     
@@ -99,10 +124,8 @@ classdef curateCellTrackingGUI<handle
             TrackingCurator.PermuteVector = randperm(TrackingCurator.cTimelapse.returnMaxCellLabel(TrackingCurator.trapIndex));
 
             dis_h=(length(TrackingCurator.Channels));
-            
-            
+
             TrackingCurator.UpdateTimepointsInStrip(Timepoint);
-            
             TrackingCurator.instantiateImages;
             TrackingCurator.instantiateCellOutlines;
             TrackingCurator.DataObtained = false(1,maxTimepoint);
@@ -130,7 +153,7 @@ classdef curateCellTrackingGUI<handle
                     
                     set(TrackingCurator.subAxes(index),'xtick',[],'ytick',[])
                     
-                    set(TrackingCurator.subImage(index),'ButtonDownFcn',@(src,event) EditTracking(TrackingCurator,TrackingCurator.subAxes(index),TrackingCurator.subAxesIndex(index))); % Set the motion detector.
+                    set(TrackingCurator.subImage(index),'ButtonDownFcn',@(src,event) EditTracking(TrackingCurator,TrackingCurator.subAxes(index),TrackingCurator.subAxesIndex(index),src,event)); % Set the motion detector.
                     set(TrackingCurator.subImage(index),'HitTest','on'); %now image button function will work
                     
                     index=index+1;
@@ -153,8 +176,6 @@ classdef curateCellTrackingGUI<handle
                     'SliderStep',[1/(maxTimepoint - MiddleOfStripWidth) 10/(maxTimepoint - MiddleOfStripWidth)],...
                     'Callback',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
                 
-                %This hlistener line means that everytime the property 'Value'
-                %of TrackingCurator.slider changes the callback slider_cb is run.
                 hListener = addlistener(TrackingCurator.slider,'Value','PostSet',@(src,event)curateCellTrackingGUI_slider_cb(TrackingCurator));
                 
                 if Timepoint<min(TrackingCurator.cTimelapse.timepointsToProcess)+MiddleOfStripWidth
@@ -181,10 +202,9 @@ classdef curateCellTrackingGUI<handle
             %key release function
             set(TrackingCurator.figure,'WindowKeyReleaseFcn',@(src,event)curateCellTrackingGUI_Key_Release_cb(TrackingCurator,'keyPressed',src,event));
             
-            
         end
         
-        function Images = getImages(TrackingCurator,Timepoints,TrapIndex)
+        function Images = getImages(TrackingCurator,Timepoints)
             %Images = getImages(TrackingCurator,Timepoints,TrapIndex)
             %
             % TrackingCurator   :   self
@@ -192,8 +212,6 @@ classdef curateCellTrackingGUI<handle
             %                       retrieve images. If empty, does a
             %                       waitbar and retrieves all the images in
             %                       cTimelapse
-            % TrapIndex         :   trap index of trap to image, defaults
-            %                       to TrackingCurator.trapIndex
             %
             %Return the images of the of the trap defined by
             %TrapIndex, at the timepoints Timepoints. Images are returned
@@ -202,7 +220,6 @@ classdef curateCellTrackingGUI<handle
             
             
             %Timpoints is a row vector
-            %TrapIndex is a single index
             
             
             DoAWaitBar = false;
@@ -212,10 +229,7 @@ classdef curateCellTrackingGUI<handle
                 
             end
             
-            
-            if nargin<3
-                TrapIndex = TrackingCurator.trapIndex ;
-            end
+            TrapIndex = TrackingCurator.trapIndex ;
             
             
             if DoAWaitBar
@@ -280,16 +294,14 @@ classdef curateCellTrackingGUI<handle
         
         
         
-        function CellOutlines = getCellOutlines(TrackingCurator,Timepoints,TrapIndex)
-            %CellOutlines = getCellOutlines(TrackingCurator,Timepoints,TrapIndex,CellLabel)
+        function CellOutlines = getCellOutlines(TrackingCurator,Timepoints)
+            %CellOutlines = getCellOutlines(TrackingCurator,Timepoints)
             %
             % TrackingCurator   :   self
             % Timepoints        :   an array of timepoints at which to
             %                       retrieve images. If empty, does a
             %                       waitbar and retrieves all the images in
             %                       cTimelapse
-            % TrapIndex         :   trap index of trap to image, defaults
-            %                       to TrackingCurator.trapIndex
             %
             %returns a z-stack of images displaying the different cell
             %outlines with values given by their cell label and the
@@ -306,11 +318,7 @@ classdef curateCellTrackingGUI<handle
                 Timepoints = TrackingCurator.cTimelapse.timepointsToProcess;
             end
             
-            
-            if nargin<3
-                TrapIndex = TrackingCurator.trapIndex ;
-            end
-            
+            TrapIndex = TrackingCurator.trapIndex ;
             
             CellOutlines = zeros([size(TrackingCurator.cTimelapse.defaultTrapDataTemplate),size(Timepoints,2)]);
             if nargin<2
@@ -371,7 +379,6 @@ classdef curateCellTrackingGUI<handle
             % those stored data are used. If not, it is retrieved and
             % stored.
             
-            
             for widthi = 1:TrackingCurator.StripWidth
                 if ~TrackingCurator.DataObtained(TrackingCurator.TimepointsInStrip(widthi))
                     Image = TrackingCurator.getImages(TrackingCurator.TimepointsInStrip(widthi));
@@ -380,7 +387,7 @@ classdef curateCellTrackingGUI<handle
                         TrackingCurator.BaseImages{heighti}(:,:,TrackingCurator.TimepointsInStrip(widthi)) = Image{heighti}(:,:);
                     end
                     TrackingCurator.CellOutlines(:,:,TrackingCurator.TimepointsInStrip(widthi)) = Outline(:,:);
-                    %store information that data is saved
+                    %store the fact that data is saved
                     TrackingCurator.DataObtained(TrackingCurator.TimepointsInStrip(widthi)) = 1;
                 end
                 for heighti = 1:length(TrackingCurator.BaseImages)
@@ -408,13 +415,13 @@ classdef curateCellTrackingGUI<handle
                         case TrackingCurator.allowedColourSchemes{2}%'trackedCellOnly'
                             
                             tempImage = 0.9*tempImage;
-                            RedandGreen = tempImage;
+                            Yellow = tempImage;
                             Blue = tempImage;
                             if TrackingCurator.cTimelapse.cTimepoint(TrackingCurator.TimepointsInStrip(widthi)).trapInfo(TrackingCurator.trapIndex).cellsPresent
                                 Blue(tempOutline~=0 & tempOutline ~= TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
-                                RedandGreen(tempOutline == TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
+                                Yellow(tempOutline == TrackingCurator.PermuteVector(TrackingCurator.CellLabel)) = 0.95;
                             end
-                            tempImage = cat(3,RedandGreen,RedandGreen,Blue);
+                            tempImage = cat(3,Yellow,Yellow,Blue);
                     end
                     
                     set(TrackingCurator.subImage(TrackingCurator.subAxesIndex(heighti,widthi)),'CData',tempImage);
@@ -423,7 +430,6 @@ classdef curateCellTrackingGUI<handle
                     
                 end
             end
-            
         end
         
         function UpdateTimepointsInStrip(TrackingCurator,Timepoint)
@@ -450,34 +456,9 @@ classdef curateCellTrackingGUI<handle
                 
             end
             
-            CI = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cellLabel == TrackingCurator.CellLabel;
-            
-            % if the active contour and cross correlation method was used,
-            % there are some fields stored that indicate how the cell was
-            % deteted and its decision image score (if it was the first
-            % timepoint present) or its cross correlation score(if a later
-            % timepoint). For help in picking good parameters these are
-            % displayed in the title.
-            if any(CI) && isfield(TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI), 'crossCorrelationScore');
-                CC = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI).crossCorrelationScore;
-                DI = TrackingCurator.cTimelapse.cTimepoint(TimepointsInStrip(MiddleOfStripWidth)).trapInfo(TrackingCurator.trapIndex).cell(CI).decisionImageScore;
-                
-                if isnan(CC)
-                    set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ' Decision Image Score = ' sprintf('%f',DI)]);
-                else
-                    set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ' Cross Correlation Score = ' sprintf('%f',CC)]);
-                end
-                
-            else
-                
-                set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ]);
-                
-            end
-            
-            
-            
+            set(TrackingCurator.figure,'Name',['Tracking Curation: Timepoints ' int2str(TimepointsInStrip(1)) ' to ' int2str(TimepointsInStrip(end)) ' of trap ' int2str(TrackingCurator.trapIndex) ]);
+             
         end
-        
         
     end %methods
     

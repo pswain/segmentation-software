@@ -1,12 +1,13 @@
 function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
-    =generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check,ACParams)
+    =generateSegmentationImages(cTimelapse,timepoint,traps_to_check,ACParams)
 % [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACImage,RawDecisionIms]...
-%    = generateSegmentationImages(cTimelapse,cCellVision,timepoint,traps_to_check,ACParams)
+%    = generateSegmentationImages(cTimelapse,timepoint,traps_to_check,ACParams)
 %
 % calculates a number of images used in the segmentation software.
 %
-% cTimelapse    :   object of the timelapseTraps class
-% cCellVision   :   object of the cellVision class
+% cTimelapse    :   object of the timelapseTraps class. Must have the
+%                   cCellVision property populated.
+%        cCellVision   -   object of the cellVision class
 % timepoint     :   timepoint at which the segmentation is occurring.
 %                   defaults to 1.
 % traps_to_check:   array of indices of traps at which segmentation should
@@ -37,7 +38,7 @@ function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack
 %                           RawDecisionIms{2} is the centre/edge decision image
 %                           (high scores for edge pixels)
 
-
+cCellVision = cTimelapse.cCellVision;
 if nargin<3
     timepoint=1;
 end

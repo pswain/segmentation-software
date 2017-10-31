@@ -1,4 +1,4 @@
-function EditTracking(TrackingCurator,SubAxes,SubAxesIndex)
+function EditTracking(TrackingCurator,SubAxes,SubAxesIndex,src,event)
 % EditTracking(TrackingCurator,SubAxes,SubAxesIndex)
 %
 % does various things based on the button being held down (which is stored
@@ -9,10 +9,10 @@ function EditTracking(TrackingCurator,SubAxes,SubAxesIndex)
 % TrackingCurator.outlineEditKey   :    change the active contour result
 % TrackingCurator.addRemoveKey     :    add/remove cells making an active
 %                                       contour outline.
-first_timepoint = TrackingCurator.cTimelapse.timepointsToProcess(1);
 
 cp=get(SubAxes,'CurrentPoint');
 %convert click coords to coords relative to the center
+
 Cx=cp(1,1);
 Cy=cp(1,2);
 cellPt=[Cx Cy];
@@ -39,11 +39,10 @@ if isempty(TrackingCurator.keyPressed)
 
             oldLabel = TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell);
             OutlinesToUpdate = [];
-            TPsToUpdateMax = [];
             TrapInfoMissing = [];
             % new highest label - if new cells need to be added.
             newCellLabel = TrackingCurator.cTimelapse.returnMaxCellLabel(TrackingCurator.trapIndex)+1;
-            for TP = timepoint:length(TrackingCurator.cTimelapse.cTimepoint)
+            for TP = timepoint:max(TrackingCurator.cTimelapse.timepointsToProcess)
                 if ~isempty(TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo)
                     UpdateOutline = false;
                     TPLabels = TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel;
@@ -86,11 +85,10 @@ elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.separateTrackingKey)
         
         oldLabel = TrackingCurator.CellLabel;%TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cellLabel(CellNumNearestCell);
         OutlinesToUpdate = [];
-        TPsToUpdateMax = [];
         TrapInfoMissing = [];
         % new highest label - if new cells need to be added.
         newCellLabel = TrackingCurator.cTimelapse.returnMaxCellLabel(TrackingCurator.trapIndex)+1;
-        for TP = timepoint:length(TrackingCurator.cTimelapse.cTimepoint)
+        for TP = timepoint:max(TrackingCurator.cTimelapse.timepointsToProcess)
             if ~isempty(TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo)
                 UpdateOutline = false;
                 TPLabels = TrackingCurator.cTimelapse.cTimepoint(TP).trapInfo(TrackingCurator.trapIndex).cellLabel;
@@ -129,18 +127,15 @@ elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.outlineEditKey)
             angles');
         
         TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cell(CellIndex).cellRadii = radii;
-        
-        [px,py] = ACBackGroundFunctions.get_full_points_from_radii(radii',angles',centre,...
-            size(TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cell(CellIndex).segmented));
-        
+
         TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cell(CellIndex).segmented = ...
-            sparse(ACBackGroundFunctions.px_py_to_logical( px,py,TrackingCurator.cTimelapse.trapImSize ));
+            sparse(ACBackGroundFunctions.get_outline_from_radii( radii',angles',centre,...
+            size(TrackingCurator.cTimelapse.cTimepoint(timepoint).trapInfo(TrackingCurator.trapIndex).cell(CellIndex).segmented)));
         
         OutlinesToUpdate = timepoint;
     else
         OutlinesToUpdate=[];
     end
-    
 elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.addRemoveKey)
     
     if strcmp(get(gcbf,'SelectionType'),'alt')
@@ -154,16 +149,14 @@ elseif strcmp(TrackingCurator.keyPressed,TrackingCurator.addRemoveKey)
     
     end
     
-        method='elcoAC';
-        TrackingCurator.cTimelapse.addRemoveCells([],timepoint,TrackingCurator.trapIndex,selection,round(cellPt), method, 1);
+        TrackingCurator.cTimelapse.addRemoveCells(timepoint,TrackingCurator.trapIndex,selection,round(cellPt));
         
-    
     OutlinesToUpdate = timepoint;
     
 end
 
 for TP = OutlinesToUpdate
-    TrackingCurator.CellOutlines(:,:,TP) =TrackingCurator.getCellOutlines(TP,TrackingCurator.trapIndex);
+    TrackingCurator.CellOutlines(:,:,TP) =TrackingCurator.getCellOutlines(TP);
 end
 
 if ~isempty(TrapInfoMissing)
@@ -172,13 +165,6 @@ if ~isempty(TrapInfoMissing)
     fprintf('\n \n')
 end
 
-% debug code to make sure that the cell labels still make sense after the
-% additions and removal of cells.
-
-% legacy. Should hopefully not be necessary soon.
-TrackingCurator.cTimelapse.cTimepoint(1).trapMaxCell = TrackingCurator.cTimelapse.returnMaxCellLabel;
-
-TrackingCurator.UpdateImages;
-
+TrackingCurator.UpdateImages();
 
 end

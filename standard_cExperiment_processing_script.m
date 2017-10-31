@@ -279,7 +279,7 @@ cTimelapse.ACParams = cExpGUI.cExperiment.ActiveContourParameters;
 num_traps = length(cTimelapse.cTimepoint(tp).trapInfo);
 
 tic;
-DIM = cTimelapse.generateSegmentationImages(cExpGUI.cExperiment.cCellVision,tp,1:num_traps);
+DIM = cTimelapse.generateSegmentationImages(tp,1:num_traps);
 toc;
 
 %% opens the 3 images with colors
@@ -365,7 +365,7 @@ cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThresh
 % segmenting.
 cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = cTimelapse.channelsForSegment(1);
 
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+cExperiment.RunActiveContourExperimentTracking(pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
 
 %% Actual long run (Elco standard extraction); run when happy with all the rest!
 % this block is the actual extraction for the whole experiment. It will
@@ -375,11 +375,11 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(c
 %track traps
 
 % identification and active contour 
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
+cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
 
  
 % identification and active contour
-cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
+cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
 
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);

@@ -9,7 +9,6 @@ function curateCellTrackingGUI_KeyPress_cb(TrackingCurator,src,event)
 % in all other cases the key press is just stored like the general key
 % press GUI
 %
-
 if strcmp(event.Key,'return')
     %move tracking curator to the next colour scheme in the list
     n = find(strcmp(TrackingCurator.ColourScheme,TrackingCurator.allowedColourSchemes));
@@ -31,6 +30,8 @@ elseif strcmp(event.Key,'uparrow')
     
 elseif strcmp(event.Character,TrackingCurator.closeKey)
     close(TrackingCurator.figure)
+elseif strcmp(event.Character,TrackingCurator.helpKey)
+    helpdlg(TrackingCurator.gui_help);
 else
     TrackingCurator.keyPressed = event.Character;
 end

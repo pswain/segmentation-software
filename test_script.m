@@ -50,7 +50,7 @@ l2 = load('/Users/ebakker/SkyDrive/Dropbox/MATLAB_DROPBOX/SegmentationSoftware/M
 cExperiment_test.cCellMorph = l2.cCellMorph;
 cExperiment_test.trackTrapsInTime(poses);
 
-cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
+cExperiment_test.RunActiveContourExperimentTracking(poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
 %
 % % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
@@ -84,7 +84,7 @@ cExperiment_test.cCellMorph = l2.cCellMorph;
 
 cExperiment_test.trackTrapsInTime(poses);
 
-cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
+cExperiment_test.RunActiveContourExperimentTracking(poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
 %
 % % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
@@ -119,7 +119,7 @@ cExperiment_test.cCellMorph = l2.cCellMorph;
 
 cExperiment_test.trackTrapsInTime(poses);
 
-cExperiment_test.RunActiveContourExperimentTracking(cExperiment_test.cCellVision,poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
+cExperiment_test.RunActiveContourExperimentTracking(poses,min(cExperiment_test.timepointsToProcess),max(cExperiment_test.timepointsToProcess),true,1,false,false);
 %
 % % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment_test,poses);
@@ -847,13 +847,40 @@ cExperiment_true.cCellVision = l1.cCellVision;
 
 compareExperimentTrackingObjsForTest(cExperiment,cExperiment_true,1:2, 'mother identification and lineage tracking test: ' )
 
+
+%% TESTING GUIS
+
 %% special slide GUI
 
 % special GUI written for Ivan to extract data from slides.
 
 cExpGUI = experimentTrackingSlidesGUI;
 
+%% 
+clear all
+close all
+
+%% load generic
+l1 = load('/Users/ebakker/Documents/microscope_files_swain_microscope_analysis/tests/traps_few_test/cExperiment.mat');
+cExperiment = l1.cExperiment;
+cExperiment.cCellVision = l1.cCellVision;
+cCellVision = cExperiment.cCellVision;
+cTimelapse = cExperiment.loadCurrentTimelapse(1);
+
+
 %% test cell outline editing GUI
 
 small_im = cTimelapse.returnSingleTrapTimepoint(1,1);
 edit ACBackGroundFunctions.edit_AC_manual_TEST
+
+
+
+%% curate cell tracking GUI
+
+gui = curateCellTrackingGUI(cTimelapse,1,1,3);
+
+%% ctrapDisplay
+gui = cTrapDisplay(cTimelapse);
+
+%%
+gui = cTrapDisplayPlot(cTimelapse);

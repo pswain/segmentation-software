@@ -1,4 +1,4 @@
-function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
+function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
 %RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToIdentify,FirstTimepoint,LastTimepoint,OverwriteTimelapseParameters,ACmethod,TrackTrapsInTime,LeaveFirstTimepointUnchanged,CellsToUse)
 %runs one of a variety of active contour methods on the positions selected. Parameters must be
 %changed before execution if non standard parameters are desired.
@@ -6,7 +6,6 @@ function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToI
 %ACmethods specifies which particular method to use.
 %
 %cExperiment                        - experimentTracking object
-%cCellVision                        - cCellVision object
 %positionsToIdentify                - positions to use
 %FirstTimepoint                     - time point to start segmenting
 %LastTimepoint                      - time point to stop segmenting
@@ -24,7 +23,7 @@ function RunActiveContourExperimentTracking(cExperiment,cCellVision,positionsToI
 %                                     all the cells.
 
 
-if nargin<3 || isempty(positionsToIdentify)
+if nargin<2 || isempty(positionsToIdentify)
     positionsToIdentify=1:length(cExperiment.dirs);
 end
 
@@ -33,7 +32,7 @@ LowestAllowedTimepoint = max([LowestAllowedTimepoint;1]);
 HighestAllowedTimepoint = max(cExperiment.timepointsToProcess(:));
 HighestAllowedTimepoint = min([HighestAllowedTimepoint;cExperiment.timepointsToLoad]);
 
-if nargin <5 || (isempty(FirstTimepoint) || isempty(LastTimepoint))
+if nargin <4 || (isempty(FirstTimepoint) || isempty(LastTimepoint))
     answer = inputdlg(...
         {'Enter the timepoint at which to begin the active contour method' ;'Enter the timepoint at which to stop'},...
         'start and end times of active contour method',...
@@ -58,7 +57,7 @@ if LastTimepoint>HighestAllowedTimepoint
 end
 
 
-if nargin<6 || isempty(OverwriteTimelapseParameters)
+if nargin<5 || isempty(OverwriteTimelapseParameters)
     OverwriteTimelapseParameters = true;                      
 end
 
@@ -71,7 +70,7 @@ if isempty(cExperiment.cCellMorph)
     cExperiment.cCellMorph = experimentTracking.loadDefaultCellMorphologyModel; 
 end
 
-if nargin<8 ||isempty(TrackTrapsInTime)
+if nargin<7 ||isempty(TrackTrapsInTime)
     
     options = {'track traps in time' 'don''t'};
     cancel_option = 'cancel';
@@ -90,13 +89,13 @@ if nargin<8 ||isempty(TrackTrapsInTime)
     
 end
 
-if nargin<9 || isempty(LeaveFirstTimepointUnchanged)
+if nargin<8 || isempty(LeaveFirstTimepointUnchanged)
     
     LeaveFirstTimepointUnchanged = false;
      
 end
 
-if nargin<10 || isempty(CellsToUse)
+if nargin<9 || isempty(CellsToUse)
     
     CellsToUse = cell(size(cExperiment.dirs));
     [CellsToUse{:}] = deal([]);
@@ -175,7 +174,7 @@ DefaultParameters = timelapseTraps.LoadDefaultACParams;
     
         % undo - just for debugging
         %try
-            cTimelapse.segmentACexperimental(cExperiment.cCellVision,cExperiment.cCellMorph,FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+            cTimelapse.segmentACexperimental(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
         %catch err
         %    rethrow(err)
         %end

@@ -31,6 +31,5 @@ else
     cDisplay.KeyPressed = event.Character;
 end
 
-
 end
 

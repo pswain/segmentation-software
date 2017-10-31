@@ -121,7 +121,7 @@ for tp = timepoints
     
     if do_DecisionImage
         
-        decision_image_stack = cTimelapse.generateSegmentationImages(cCellVision,tp,traps);
+        decision_image_stack = cTimelapse.generateSegmentationImages(tp,traps);
         for TIi = 1:length(traps)
             TI = traps(TIi);
             

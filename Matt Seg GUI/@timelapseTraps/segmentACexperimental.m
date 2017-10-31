@@ -1,4 +1,4 @@
-function segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
+function segmentACexperimental(cTimelapse,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
 %segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,LastTimepoint,FixFirstTimePointBoolean,TrapsToUse)
 %
 % MAIN FUNCTION of the active contour based segmentation.
@@ -9,10 +9,13 @@ function segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,
 % best description is in the associated paper.
 %
 %   INPUTS
-% cTimelapse        - object of the cTimelapse class to be segment.
-% cCellVision       - cCellVision cell identification model of the class cellVision.
-% cCellMorph        - cCellMorph cell morphology model of the class
-%                     cellMorphologyModel.
+% cTimelapse        -   object of the timelapseTraps class (in which cells
+%                       are identified). This is expected
+%                       to have cCellVision and cCellMorph properties
+%                       populated with the appropriate objects to identify
+%                       cells:
+%       cCellVision       :   object of the cellVision class
+%       cCellMorph        :   object of the cellMorphologyModel class
 % FirstTimepoint    - time point at which to start. If 'start' will be the
 %                     first timepoint to process. 
 % LastTimepoint     - and to end. if 'end' will be the last timepoint to
@@ -28,14 +31,14 @@ function segmentACexperimental(cTimelapse,cCellVision,cCellMorph,FirstTimepoint,
 
 
 
-if nargin<4 || isempty(FirstTimepoint) || strcmp(FirstTimepoint,'start')
+if nargin<2 || isempty(FirstTimepoint) || strcmp(FirstTimepoint,'start')
     
     FirstTimepoint = min(cTimelapse.timepointsToProcess(:));
     
 end
 
 
-if nargin<5 || isempty(LastTimepoint) || strcmp(LastTimepoint,'end')
+if nargin<3 || isempty(LastTimepoint) || strcmp(LastTimepoint,'end')
     
     LastTimepoint = max(cTimelapse.timepointsToProcess);
     
@@ -43,13 +46,13 @@ end
 
 
 
-if nargin<6
+if nargin<4
     
     FixFirstTimePointBoolean = false;
     
 end
 
-if nargin<7|| isempty(TrapsToUse)
+if nargin<5|| isempty(TrapsToUse)
     TrapsToCheck = cTimelapse.defaultTrapIndices;
 else
     TrapsToCheck = intersect(TrapsToUse(:,1),cTimelapse.defaultTrapIndices)';
@@ -58,6 +61,9 @@ end
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%   EXTRACTING GENERAL PARAMETERS   %%%%%%%%%%%%%%%%%%%%%%%%%
+
+cCellVision = cTimelapse.cCellVision;
+cCellMorph = cTimelapse.cCellMorph;
 
 % for any unspecified parameters use the default values.
 ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
@@ -206,7 +212,7 @@ else
 end
 
 
-disp = cTrapDisplay(cTimelapse,[],[],true,ACParams.ActiveContour.ShowChannel,TrapsToCheck);
+disp = cTrapDisplay(cTimelapse,true,ACParams.ActiveContour.ShowChannel,TrapsToCheck);
 
 % gui\s for visualising outputs if that is desired.
 if ACparameters.visualise
@@ -244,7 +250,7 @@ for TP = Timepoints
         TrapInfo = cTimelapse.cTimepoint(TP).trapInfo;
 
         [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack,RawDecisionIms]...
-            = cTimelapse.generateSegmentationImages(cCellVision,TP,TrapsToCheck,ACParams);
+            = cTimelapse.generateSegmentationImages(TP,TrapsToCheck,ACParams);
 
         have_raw_dims = ~isempty(RawDecisionIms);
         % calculate log P 's for each pixel type

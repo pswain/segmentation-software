@@ -39,7 +39,7 @@ if strcmp(key,cDisplay.CurateTracksKey)
         else
             strip_width = 1;
         end
-        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,cDisplay.cCellVision,timepoint,trap,strip_width);
+        TrackingCurator = curateCellTrackingGUI(cDisplay.cTimelapse,timepoint,trap,strip_width);
         TrackingCurator.CellLabel = cDisplay.cTimelapse.cTimepoint(timepoint).trapInfo(trap).cellLabel(CellNumNearestCell);
         TrackingCurator.UpdateImages;
         
@@ -59,7 +59,7 @@ elseif ~cDisplay.trackOverlay
         selection='add';
     end
     
-    cDisplay.cTimelapse.addRemoveCells(cDisplay.cCellVision,cDisplay.cCellMorph,timepoint,trap,selection,cellPt)
+    cDisplay.cTimelapse.addRemoveCells(timepoint,trap,selection,cellPt)
     slider_cb(cDisplay);
 
 end

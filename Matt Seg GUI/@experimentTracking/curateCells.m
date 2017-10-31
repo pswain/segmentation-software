@@ -48,12 +48,12 @@ for posi = poses
         TP = TPs(i);
         for TI = Traps
             if do_pairs
-                gui = curateCellTrackingGUI(cTimelapse,cCellVision,TP,TI,2,curate_channel);
+                gui = curateCellTrackingGUI(cTimelapse,TP,TI,2,curate_channel);
                 gui.slider.Value = TP;
                 gui.slider.Min = TP;
                 gui.slider.Max = TP+1;
             else
-                gui = curateCellTrackingGUI(cTimelapse,cCellVision,TP,TI,1,curate_channel);
+                gui = curateCellTrackingGUI(cTimelapse,TP,TI,1,curate_channel);
                 gui.slider.Value = TP;
                 gui.slider.Min = TP;
                 gui.slider.Max = TP;
