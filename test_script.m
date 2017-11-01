@@ -884,3 +884,7 @@ gui = cTrapDisplay(cTimelapse);
 
 %%
 gui = cTrapDisplayPlot(cTimelapse);
+
+%%
+gui = cellResultsViewingGUI(cExperiment);
+

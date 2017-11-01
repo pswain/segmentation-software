@@ -27,14 +27,6 @@ function extractCellDataStandardParfor(cTimelapse)
 %                                    std  - takes standard deviation of z
 %                                           projection
 %
-% nuclearMarkerChannel    : If a nuclear tag is used, the number of that channel.
-%                           if NaN then this is ignored and nuclear
-%                           localisation set to zero.
-% maxPixOverlap           : number of nuclear pixels used to calculate
-%                           nuclearTagLoc. Also used for max5 and membrane max5.
-%
-% maxAllowedOverlap       : number of candidate nuclear pixels
-%
 % The standard data extraction method. Calculates a raft of statistics,
 % hopefully mostly self explanatory, about the cell pixels. Also allows for
 % nuclear localisation measurement by specifying a nuclearMarkerChannel :
@@ -49,28 +41,78 @@ function extractCellDataStandardParfor(cTimelapse)
 %
 % size and position information common to all cells is stored in the first
 % entry of extractedData only.
+%
+% ===== STATITICS EXTRACTED =======
+%
+% The following is a list of the the extracted statistics with some
+% description. Those marked (legacy) have ben left for legacy reasons
+% should probably be ignored.
+%
+% To clarify, the following nomenclature will be used:
+% cell pixels - the set of all pixels that make up the cell (i.e. the
+%               filled in outline of the cell)
+% cell membrane pixels - the pixels that make up the outline of the cell.
+% reduced cell pixels - all pixels contained in the cell outline after it
+%                       has been eroded by 2 pixels.
+%
+% 'radius' - the approximate radius of the cell calculated as the mean of
+%            the radii used to make the active contour outline.
+% 'radiusAC' - (legacy) zero.
+% 'radiusFL' - (legacy) Will be zero unless extractRadiusFL has been run:
+%              an old active contour method run on the fluorescent image.
+% 'area' - number of pixels which make up the cell.
+% 'eccentricity' - eccentricity of the cell taken from regionprops
+% 'mean' - the mean of the cell pixels.
+% 'median' - median of the cell pixels.
+% 'max5' - the mean of the brightest 2.5% of cell pixels.
+% 'std' - std of the cell pixels.
+% 'proteinLocalization' - the 'max5' field divided by the 'median' field.
+%                         Commonly used for nuclear localisation. 
+% 'min' - the value of the dimmest cell pixel.
+% 'imBackground' - median of all pixels which are not part of any cell.
+% 'membraneMax5' - mean of the brightest 2.5% of membrane pixels.
+% 'membraneMedian' - median of membrane pixels.
+% 'nuclearTagLoc' - (legacy) zeros.
+% 'smallmean' - the mean of the reduced cell pixels.
+% 'smallmedian' - the median of the reduced cell pixels.
+% 'smallmax5' - To obtain this data field the image is convolved with a
+%               a small disc of approximately the size of 2.5% of the cell
+%               pixels. 'smallmax5' is the maximum pixel within the cell
+%               outline in this resulting image. If bright pixels are
+%               clumped together, this should be approximately the same as
+%               'max5'.
+% 'distToNuc' - (legacy) field populated by extractNucAreaFL method.
+% 'nucArea' - (legacy) field populated by extractNucAreaFL method.
+% 'segmentedRadius' - radius calculated from 'area' assuming a circular
+%                     cell
+% 'xloc' - x location in the trap. (i.e.relative to trap centre).
+% 'yloc' - y location in the trap. (i.e.relative to trap centre).
+% 'pixel_sum' - sum of cell pixels.
+% 'pixel_variance_estimate' - if an error model has been provided (i.e.
+%                             cTimelapse.ErrorModel has be populated with
+%                             an object of the ErrorModel class, this error
+%                             model will be used to calcualte the per pixel
+%                             variance estimate and thereby calculate the
+%                             variance estimate for the pixel sum (assuming
+%                             independent pixels).                            
+% 'trapNum' - list of trap indices for each cell extracted.
+% 'cellNum' - list of cell labels for each cell extracted.
+% 'extractionParameters' - the parameters passed to this function.
+% 'posNum' - (appended by compileCellInformation) position index the
+%            position in which each cell was found.
+% 'date' - populated by compileCellInformation.
+% 'times' - populated by compileCellInformation.
+% 'timepointsNotProcessed' - populated by compileCellInformation.
+% 'annotations' - populated by compileCellInformation.
 
 parameters = cTimelapse.extractionParameters.functionParameters;
 
 type = parameters.type;
 channels = parameters.channels;
-nuclearMarkerChannel = parameters.nuclearMarkerChannel;
-maxPixOverlap = parameters.maxPixOverlap;
-maxAllowedOverlap = parameters.maxAllowedOverlap;
-
-%number of candidate pixels should not be larger than number of finally
-%allowed centre pixels.
-if maxAllowedOverlap<maxPixOverlap
-    maxAllowedOverlap = maxPixOverlap;
-end
 
 
 if strcmp(channels,'all')
     channels = 1:length(cTimelapse.channelNames);
-end
-
-if ~ismember(nuclearMarkerChannel,channels)
-    nuclearMarkerChannel = NaN;
 end
 
 numCells=sum(cTimelapse.cellsToPlot(:));
@@ -143,13 +185,6 @@ for timepoint=find(cTimelapse.timepointsProcessed)
         %switch to doube so that mathematical operations are as expected.
         tpStack=cTimelapse.returnSingleTimepoint(timepoint,channel_number,'stack');
         
-        % if the channels is the nuclear marker channel, populate the
-        % nuclearStack array with max projection, which is taken as a
-        % marker of nuclearity.
-        if channel_number == nuclearMarkerChannel
-            nuclearStack = cTimelapse.returnTrapsFromImage(max(tpStack,[],3),timepoint);
-        end
-        
         switch type
             case 'max'
                 tpStack = max(tpStack,[],3);
@@ -201,13 +236,7 @@ for timepoint=find(cTimelapse.timepointsProcessed)
             cellLocAllCellsBkg(:,:,allIndex)=imfill(cellLocAllCellsBkg(:,:,allIndex),'holes');
         end
     end
-    
-    
-%     
-%     parfor allTrapIndex=1:size(cellLocAllCellsBkg,3)
-%         cellLocAllCellsBkg(:,:,allTrapIndex)=imfill(cellLocAllCellsBkg(:,:,allTrapIndex),'holes');
-%     end
-    
+
     trapInfo=cTimelapse.cTimepoint(timepoint).trapInfo;
     for channel=1:length(channels)
         channel_number = channels(channel);
@@ -264,7 +293,6 @@ for timepoint=find(cTimelapse.timepointsProcessed)
                     flsorted=sort(cellFL(:),'descend');
                     mflsorted=sort(membraneFL(:),'descend');
                     
-                    %                     numberOverlapPixels = min(maxPixOverlap,length(cellFL));
                     ratioOverlap=ceil(length(cellFL(:))*.025);
                     ratioOverlapCont=length(cellFL(:))*.025;
                     numberOverlapPixels = min(ratioOverlap,length(cellFL));

@@ -66,23 +66,27 @@ if isequal(extractionParameters.extractFunction,@extractCellDataStandardParfor) 
             'ListSize',[300 100]);
         functionParameters.channels = answer;
         
-        % this rather ugly call 
-        settings_dlg_struct = struct(...
-            'title', 'nuclear label?',...
-            'Description','If one of the channels is a nuclear label, please specify it here. This must be on of your extraction channels. If you have no particular marker please select '' not applicable '' ',...
-            'forgotten_field_1',struct('entry_name',{{'nuclear tag field','nuclearChannel'}},'entry_value',{vertcat({'not applicable'},channel_list(functionParameters.channels))}),...
-            'forgotten_field_2',struct('entry_name',{{'number of candidate nuclear pixels','maxAllowedOverlap'}},'entry_value',{25}),...
-            'forgotten_field_3',struct('entry_name',{{'number of final nuclear pixels','maxPixOverlap'}},'entry_value',{5})...
-            );
-        
-        answer_struct = settingsdlg(settings_dlg_struct);
-        
-        functionParameters.maxAllowedOverlap = answer_struct.maxAllowedOverlap;
-        functionParameters.maxPixOverlap = answer_struct.maxPixOverlap;
-        if strcmp(answer_struct.nuclearChannel,'not applicable')
-            functionParameters.nuclearMarkerChannel = NaN;
-        else
-            functionParameters.nuclearMarkerChannel = find(strcmp(answer_struct.nuclearChannel,channel_list));
+        % this is only used by the Standard method, not the
+        % StandardParforMethod.
+        if isequal(extractionParameters.extractFunction,@extractCellDataStandard)
+            % this rather ugly call
+            settings_dlg_struct = struct(...
+                'title', 'nuclear label?',...
+                'Description','If one of the channels is a nuclear label, please specify it here. This must be on of your extraction channels. If you have no particular marker please select '' not applicable '' ',...
+                'forgotten_field_1',struct('entry_name',{{'nuclear tag field','nuclearChannel'}},'entry_value',{vertcat({'not applicable'},channel_list(functionParameters.channels))}),...
+                'forgotten_field_2',struct('entry_name',{{'number of candidate nuclear pixels','maxAllowedOverlap'}},'entry_value',{25}),...
+                'forgotten_field_3',struct('entry_name',{{'number of final nuclear pixels','maxPixOverlap'}},'entry_value',{5})...
+                );
+            
+            answer_struct = settingsdlg(settings_dlg_struct);
+            
+            functionParameters.maxAllowedOverlap = answer_struct.maxAllowedOverlap;
+            functionParameters.maxPixOverlap = answer_struct.maxPixOverlap;
+            if strcmp(answer_struct.nuclearChannel,'not applicable')
+                functionParameters.nuclearMarkerChannel = NaN;
+            else
+                functionParameters.nuclearMarkerChannel = find(strcmp(answer_struct.nuclearChannel,channel_list));
+            end
         end
     end
     

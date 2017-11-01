@@ -20,7 +20,7 @@ function setExtractParameters( cExperiment,positionsToSet,extractionParameters)
 % default.
 %
 % See also, TIMELAPSETRAPS.EXTRACTCELLDATA,
-% TIMELAPSETRAPS.EXTRACTCELLDATASTANDARD,
+% TIMELAPSETRAPS.EXTRACTCELLDATASTANDARDPARFOR,
 % EXPERIMENTTRACKING.GUISETEXTRACTPARAMETERS
 
 if nargin<2 || isempty(positionsToSet)

@@ -43,6 +43,82 @@ function extractCellDataStandard(cTimelapse)
 %
 % size and position information common to all cells is stored in the first
 % entry of extractedData only.
+%
+% ===== STATITICS EXTRACTED =======
+%
+% The following is a list of the the extracted statistics with some
+% description. Those marked (legacy) have ben left for legacy reasons
+% should probably be ignored.
+%
+% To clarify, the following nomenclature will be used:
+% cell pixels - the set of all pixels that make up the cell (i.e. the
+%               filled in outline of the cell)
+% cell membrane pixels - the pixels that make up the outline of the cell.
+% reduced cell pixels - all pixels contained in the cell outline after it
+%                       has been eroded by 2 pixels.
+% cell Halo pixels - the pixels obtained when the cell is dilated by 3 and
+%                    the cell area then removed. Basically, a ring of width
+%                    3 pixels around the cell.
+%
+% 'radius' - the approximate radius of the cell calculated as the mean of
+%            the radii used to make the active contour outline.
+% 'radiusAC' - (legacy) zero.
+% 'radiusFL' - (legacy) Will be zero unless extractRadiusFL has been run:
+%              an old active contour method run on the fluorescent image.
+% 'area' - number of pixels which make up the cell.
+% 'eccentricity' - eccentricity of the cell taken from regionprops
+% 'mean' - the mean of the cell pixels.
+% 'median' - median of the cell pixels.
+% 'max5' - the mean of the brightest maxPixOverlap of cell pixels.
+% 'std' - std of the cell pixels.
+% 'proteinLocalization' - the 'max5' field divided by the 'median' field.
+%                         Commonly used for nuclear localisation. 
+% 'min' - the value of the dimmest cell pixel.
+% 'imBackground' - median of all pixels which are not part of any cell.
+% 'membraneMax5' - mean of the brightest 2.5% of membrane pixels.
+% 'membraneMedian' - median of membrane pixels.
+% 'nuclearTagLoc' - If a nuclear channel is specified, this is obtained by
+%                   taking the brightest MaxAllowedOverlap pixels in the
+%                   of the cell pixels in the nuclear channel as candidate
+%                   pixels. It then takes the mean of the brightest
+%                   maxPixOverlap pixels in the image channel amongst the
+%                   candidate pixels. This, divided by the median of all
+%                   the cell pixels in the image channel, is the
+%                   'nuclearTagLoc'
+% 'smallmean' - the mean of the reduced cell pixels.
+% 'smallmedian' - the median of the reduced cell pixels.
+% 'smallmax5' - To obtain this data field the image is convolved with a
+%               a small disc of approximately the size of 2.5% of the cell
+%               pixels. 'smallmax5' is the maximum pixel within the cell
+%               outline in this resulting image. If bright pixels are
+%               clumped together, this should be approximately the same as
+%               'max5'.
+% 'distToNuc' - (legacy) field populated by extractNucAreaFL method.
+% 'nucArea' - (legacy) field populated by extractNucAreaFL method.
+% 'segmentedRadius' - radius calculated from 'area' assuming a circular
+%                     cell
+% 'xloc' - x location in the trap. (i.e.relative to trap centre).
+% 'yloc' - y location in the trap. (i.e.relative to trap centre).
+% 'pixel_sum' - sum of cell pixels.
+% 'pixel_variance_estimate' - if an error model has been provided (i.e.
+%                             cTimelapse.ErrorModel has be populated with
+%                             an object of the ErrorModel class, this error
+%                             model will be used to calcualte the per pixel
+%                             variance estimate and thereby calculate the
+%                             variance estimate for the pixel sum (assuming
+%                             independent pixels).                            
+% 'cellHaloMedian' - median of the cell Halo pixels.
+% 'cellHaloMean' - mean of the cell Halo pixels.
+% 'cellHaloQ95' - 9th percentile of the cell Halo pixels.
+% 'trapNum' - list of trap indices for each cell extracted.
+% 'cellNum' - list of cell labels for each cell extracted.
+% 'extractionParameters' - the parameters passed to this function.
+% 'posNum' - (appended by compileCellInformation) position index the
+%            position in which each cell was found.
+% 'date' - populated by compileCellInformation.
+% 'times' - populated by compileCellInformation.
+% 'timepointsNotProcessed' - populated by compileCellInformation.
+% 'annotations' - populated by compileCellInformation.
 
 parameters = cTimelapse.extractionParameters.functionParameters;
 
