@@ -24,6 +24,7 @@ if nargin<3 || isempty(force)
 end
 
 % Start logging protocol
+cExperiment.logger.start_protocol('compiling cell information',length(positionsToExtract));
 try
 
 cTimelapse=cExperiment.returnTimelapse(positionsToExtract(1));
@@ -123,22 +124,22 @@ cExperiment.saveExperiment();
 if exist('OmeroDatabase','class')==8%Only run this if the Omero code is available
     %If is an experimentTrackingOmero object - tag for archiving - if not,
     %run convertSegmented to upload
-    if isa (cExperiment,'experimentTrackingOmero')
-        addArchiveTag(cExperiment.id);
-        writeOmeroLog('Added archive tag',['Experiment ' cExperiment.metadata.experiment ' tagged for automated archiving: experimentTracking.compileCellInformation']);
-    else
-        %Run convertSegemented - will upload the cExperiment as a cExperimentOmero object
-        oDb=OmeroDatabase('upload','sce-bio-c04287.bio.ed.ac.uk',true);
-        cExperimentOm=oDb.convertSegmented(cExperiment);       
-    end
-    
     try
         
-        catch err
+        if isa(cExperiment,'experimentTrackingOmero')
+            addArchiveTag(cExperiment.id);
+            writeOmeroLog('Added archive tag',['Experiment ' cExperiment.metadata.experiment ' tagged for automated archiving: experimentTracking.compileCellInformation']);
+        else
+            %Run convertSegemented - will upload the cExperiment as a cExperimentOmero object
+            oDb=OmeroDatabase('upload','sce-bio-c04287.bio.ed.ac.uk',true);
+            cExperimentOm=oDb.convertSegmented(cExperiment);
+        end
+        
+    catch err
         warning ('Error adding archive tag');
         writeOmeroLog('Error adding archive tag',['Archive tagging failed for experiment ' cExperiment.metadata.experiment ': ' err.message]);
     end
-    else
+else
     warning('Experiment can''t be archived - Add Omero code to your Matlab path to enable this feature. Code available GIT@skye.bio.ed.ac.uk:~/GITrepositories/OmeroCode.git');
 end
 

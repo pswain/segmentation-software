@@ -14,6 +14,8 @@ classdef timelapseTrapsOmero<timelapseTraps
         OmeroDatabase%OmeroDatabase object representing the database that the omeroImage comes from.
         microscopeChannels
         segmentationSource='';%Flag to determine where the source data was obtained during segmentation, can be 'Omero', 'Folder' or empty (if not segmented). Data segemented from a file folder must be flipped both vertically and horizontally to match the segmentation results
+        archivedChannelNames={};%Channel names from folder cTimelapse; empty unless converted from folder cTimelapse
+        fileAnnotation_id%id number of the file annotation used to save the timelapseTrapsOmero object in the database
 
     end
     properties (Transient)
@@ -42,7 +44,7 @@ classdef timelapseTrapsOmero<timelapseTraps
             %
             % See also, TIMELAPSETRAPSOMERO.LOADTIMELAPSE
             
-            if nargin>=2 && islogical(varargin{1})
+            if nargin>=2 && islogical(varargin{1}) && varargin{1}
                 NoAction = varargin{1};
             else
                 NoAction = false;
@@ -58,16 +60,32 @@ classdef timelapseTrapsOmero<timelapseTraps
                 cTimelapseOmero.omeroImage=omeroImage;
                 cTimelapseOmero.OmeroDatabase=varargin{1}.OmeroDatabase;
                 cTimelapseOmero.microscopeChannels=varargin{1}.experimentInformation.MicroscopeChannels;
-
-                %To define the channels - need to know which channels are used at this position (ie have non-zero
-                %exposure times)
+                
+                %%%%%% WARNING %%%%%%
+                % The following code has a number of unresolved bugs:
+                % - posNum should be the *log file* posNum; consider using
+                %   a posName argument instead
+                % - varargin{2} is used for multiple variables; consider
+                %   using inputParser
+                % - metadata.logExposureTimes will be inaccurate if
+                %   parseLogFile is called with 'metaonly' flag and one of 
+                %   the channels has skip defined; use of 
+                %   metadata.acq.positions table would be preferable (this
+                %   table also contains position names); use in conjunction
+                %   with metadata.acq.channels.names
+                % - What is the purpose of the cellsToPlot argument?
+                % - Should the code be more careful in matching
+                %   MicroscopeChannels with acq.channels.names?
+                
+                %To define the channels - need to know which channels are 
+                %used at this position (i.e. have non-zero exposure times)
                 posNum=varargin{2};
                 expos=struct2table(cExperiment.metadata.logExposureTimes);
                 usedMicroscopeChannels=table2array(expos(posNum,:))~=0;%Logical array indexing the microscope channels (ie members of cExperiment experimentInformation.microscopeChannels) used by this position
                 usedChannels=ismember(cExperiment.metadata.microscopeChannelIndices,find(usedMicroscopeChannels));%Index to the channels (including single section channels) used by this position
                 cTimelapseOmero.channelNames=cExperiment.channelNames(usedChannels);
                 if nargin<4
-                cTimelapseOmero.cellsToPlot=sparse(100,1e3);
+                    cTimelapseOmero.cellsToPlot=sparse(100,1e3);
                 else
                     cTimelapseOmero.cellsToPlot=varargin{2};
                 end
@@ -82,6 +100,38 @@ classdef timelapseTrapsOmero<timelapseTraps
         end
     end
     
+    methods (Access={?timelapseTraps,?timelapseTrapsOmero,?OmeroDatabase})
+        function propNames = copyprops(cTimelapse,TemplateTimelapse,omit)
+            %COPYPROPS Copy all properties from cTimelapse into this one
+            %   This function can copy both public and private properties.
+            %   Use OMIT to specify a cellstr of properties that will not
+            %   be copied. This function gets used in the loadobj method
+            %   and also by the convertSegmented method of the 
+            %   OmeroDatabase class.
+            
+            if nargin<3 || isempty(omit), omit = {}; end
+            if ~iscellstr(omit)
+                error('The "omit" argument must be a cellstr.');
+            end
+            
+            copied = copyprops@timelapseTraps(cTimelapse,TemplateTimelapse,omit);
+            
+            % Only populate copyable fields occuring in both this object
+            % and the template object:
+            propNames = intersect(...
+                getCopyableProperties(cTimelapse,'timelapseTrapsOmero'),...
+                getCopyableProperties(TemplateTimelapse,'timelapseTrapsOmero'));
+            % Omit properties copied by parent:
+            propNames = setdiff(propNames,copied);
+            % Omit requested properties:
+            propNames = setdiff(propNames,omit);
+            
+            % Copy all properties/fields to this cTimelapse:
+            for f = 1:numel(propNames)
+                cTimelapse.(propNames{f}) = TemplateTimelapse.(propNames{f});
+            end
+        end
+    end
     
     methods (Static)
         function cTimelapseOmero = loadobj(load_structure)
