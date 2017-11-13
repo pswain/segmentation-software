@@ -54,6 +54,7 @@ else
     end
 end
 
+
 for zi=1:length(zsections)
     z = zsections(zi);
     folderName=[cTimelapse.OmeroDatabase.DownloadPath filesep char(cTimelapse.omeroImage.getName.getValue)];

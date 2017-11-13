@@ -43,7 +43,7 @@ if nargin<2 || isempty(channels_for_segment)
     
     for ci = 1:length(cExperiment.cCellVision.training_channels)
         
-        channels_for_segment(ci) = find(strcmp(settings.(channel_name_fields{ci}),cExperiment.channelNames));
+        channels_for_segment(ci) = find(strcmp(settings.(channel_name_fields{ci}),cExperiment.channelNames),1);
         
     end
     
