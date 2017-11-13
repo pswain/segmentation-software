@@ -50,7 +50,6 @@ cExperimentOmero.pixelSize=pixelSize;
 cExperimentOmero.image_rotation=image_rotation;
 cExperimentOmero.timepointsToLoad=timepointsToLoad;
 cExperimentOmero.trapsPresent = traps_present;
-cExperimentOmero.channelNames{end+1}=searchString;
 % Start adding arguments to experiment creation protocol log:
 
 cExperimentOmero.logger.add_arg('Omero experiment name',cExperimentOmero.rootFolder);
@@ -69,15 +68,23 @@ end
 
 try
     
+    %Get the image names - allows the correct image to be loaded for each
+    %position
+    oImNames=cell(oImages.size,1);
+    for im=0:oImages.size-1
+        oImNames{im+1}=char(oImages.get(im).getName.getValue);
+    end
+       
     %% Load timelapses
     for i=1:length(positionsToLoad)
         currentPos=positionsToLoad(i);
-
-        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(i-1),cExperimentOmero.OmeroDatabase);
+        oImIndex=find(strcmp(oImNames,cExperimentOmero.dirs{currentPos}))-1;
+        cExperimentOmero.cTimelapse=timelapseTrapsOmero(oImages.get(oImIndex),cExperimentOmero,currentPos);
         
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperimentOmero,currentPos,cExperimentOmero.cTimelapse);
-        
+        cExperimentOmero.cTimelapse.metadata = cExperimentOmero.metadata;
+        cExperimentOmero.cTimelapse.metadata.posname = cExperimentOmero.dirs{currentPos};
         cExperimentOmero.cTimelapse.loadTimelapse(cExperimentOmero.searchString,cExperimentOmero.image_rotation,cExperimentOmero.trapsPresent,cExperimentOmero.timepointsToLoad,cExperimentOmero.pixelSize);
         
         cExperimentOmero.pixelSize=cExperimentOmero.cTimelapse.pixelSize;

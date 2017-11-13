@@ -18,6 +18,8 @@ function cTimelapse=returnTimelapse(cExperiment,timelapseNum)
 
 
 load([cExperiment.saveFolder filesep cExperiment.dirs{timelapseNum},'cTimelapse']);
+cTimelapse.metadata = cExperiment.metadata;
+cTimelapse.metadata.posname = cExperiment.dirs{timelapseNum};
 
 % In either case, once the timelapse is successfully loaded, trigger a
 % PositionChanged event to notify experimentLogging

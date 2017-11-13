@@ -367,6 +367,6 @@ for timepoint=find(cTimelapse.timepointsProcessed)
             end
         end
     end
-end
+ end
 cTimelapse.extractedData=extractedData;
 end

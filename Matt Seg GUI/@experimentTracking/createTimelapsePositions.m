@@ -67,8 +67,10 @@ try
         cExperiment.cTimelapse=timelapseTraps([cExperiment.rootFolder filesep cExperiment.dirs{currentPos}]);
         % Trigger a PositionChanged event to notify experimentLogging
         experimentLogging.changePos(cExperiment,currentPos,cExperiment.cTimelapse);
+        cExperiment.cTimelapse.metadata = cExperiment.metadata;
+        cExperiment.cTimelapse.metadata.posname = cExperiment.dirs{timelapseNum};
         
-        cExperiment.cTimelapse.loadTimelapse(cExperiment.searchString,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.pixelSize);
+        cExperiment.loadTimelapse(cExperiment.searchString,cExperiment.image_rotation,cExperiment.trapsPresent,cExperiment.timepointsToLoad,cExperiment.pixelSize);
         
         cExperiment.pixelSize=cExperiment.cTimelapse.pixelSize;
         cExperiment.image_rotation=cExperiment.cTimelapse.image_rotation;

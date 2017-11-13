@@ -158,7 +158,6 @@ l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_DIC_default.mat');
 cExperiment.cCellVision = l1.cCellVision;
 cExpGUI.cCellVision = l1.cCellVision;
 
-cExperiment.setSegmentationChannels;
 
 
 
@@ -185,7 +184,7 @@ cExperiment.setSegmentationChannels;
 % close it. If you are not satisfied with it, rerun this block of code and
 % try again.
 
-cExpGUI.cExperiment.editCellVisionTrapOutline(1,1)
+cExpGUI.cExperiment.editCellVisionTrapOutline(poses(1),1)
 
 %% if you don't do the above set the trap detection channel to the lower brightfield channel
 
@@ -209,11 +208,11 @@ cExperiment.identifyTrapsTimelapses(poses)
 % (these are only correct if you have added the channels as prescribed -
 % adjust as necessary).
 
-lower_brightfield_channel = 3; % lower z stack slice of brightfield
+lower_brightfield_channel = cTimelapse.channelsForSegment(1); % lower z stack slice of brightfield
 % in this channel all cells should appear as a reasonably sharp white
 % objects with black halos (a little out of focus is best)
 
-cExperiment.ActiveContourParameters.ImageTransformation.channel = [lower_brightfield_channel];
+cExperiment.ActiveContourParameters.ImageTransformation.channel = cTimelapse.channelsForSegment(1);
 
 %% adjust extraction parameter
 % there are a number of parameters for the extraction. These are set by the
@@ -252,12 +251,10 @@ cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
 % look at a visualisation of the decision image with pixels below the
 % different thresholds coloured yellow and green.
 
-%% pick position, timepoint and threshold to inspect.
+%% pick position and timepoint to inspect.
 
 tp = 1; % time point to inspect
 channel_to_view = lower_brightfield_channel; % channel on which to overlay thresholds
-thresh1 = -3; %yellow: new cells (more stringent)
-thresh2 = -1; % green : tracked cells (less stringent)
 pos = poses(1); % position to inspect
 
 %% track this position 
@@ -273,7 +270,7 @@ cExperiment.trackTrapsInTime(pos);
 %% calculates the decision image
 % this only needs to be run the first time you inspect a particular
 % timepoint of a particular position. (i.e. if you change the thresholds
-% and reimage you don't re run this stage.
+% and reimage you don't re run this s tage.
 
 cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(pos);
 
@@ -293,6 +290,11 @@ toc;
 % This block of code can be rerun numerous times, changing the thresholds
 % in the code block 3 above to see different thresholds overlaid on the
 % trap image.
+
+% Show the following thresholds:
+thresh1 = -2.5; %yellow: new cells (more stringent)
+thresh2 = -2.5; % green : tracked cells (less stringent)
+
 trapImage = cTimelapse.returnTrapsTimepoint(1:num_traps,tp,channel_to_view);
 mega_image_size = ceil(sqrt(num_traps));
 
@@ -321,12 +323,12 @@ for i=1:mega_image_size
 
 end
 
-imtool(mega_image,[])
+%imtool(mega_image,[])
 figure;imshow(OverlapGreyRed(mega_trap_image,mega_image<thresh1,[],mega_image<thresh2),[])
-figure;imshow(mega_trap_image,[])
+%figure;imshow(mega_trap_image,[])
 
 
-%% set Active Contour parameters
+% set Active Contour parameters
 % having selected the thresholds above, we now set the active contour
 % parameters appropriately.
 
@@ -348,7 +350,7 @@ cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThresh
 %% active contour search parameters:
 
 % more is potentially more accurate but slower
-cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 20;
+cExperiment.ActiveContourParameters.ActiveContour.seeds_for_PSO = 30;
 
 % always needs to be bigger than the one above. Not very significant so
 % leave high.
@@ -372,20 +374,22 @@ cExperiment.ActiveContourParameters.ActiveContour.R_min = 2;
 % increasing this number slows the script but allows more varied shapes.
 cExperiment.ActiveContourParameters.ActiveContour.opt_points = 6;
 
-%% 
-
-%% channels that are dross and need to be set to something that's always there
-
+% channels that are dross and need to be set to something that's always there
 cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationChannel = ...
     cExperiment.ActiveContourParameters.ImageTransformation.channel;
 cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = cExperiment.ActiveContourParameters.ImageTransformation.channel(1);
+
 %% Look at the results for the test position
 % it is often useful to look at the results from a single position and see
 % if anything is strange. 
 % we here run the active contour algorithm on test position we were using
-% for inspecting the decision image earlier. When you are happy that you
+% for inspecting the decision image earlier. When you are happy that you v
 % have seen enough, press ctrl C to stop it.
-    
+
+% this line just sets which channel is shown in the gui as it is
+% segmenting.
+cExperiment.ActiveContourParameters.ActiveContour.ShowChannel = cTimelapse.channelsForSegment(1);
+
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
 
 %% Actual long run (Elco standard extraction); run when happy with all the rest!
@@ -395,8 +399,12 @@ cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,pos,min(c
 
 %track traps
 
-% identification and active contour
+% identification and active contour 
 cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
+
+ 
+% identification and active contour
+cExperiment.RunActiveContourExperimentTracking(cExperiment.cCellVision,poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
 
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
@@ -411,11 +419,14 @@ cExperiment.compileCellInformation(poses)
 
 
 % get mother index
-for diri=poses    
+for diri=poses
+    
     cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    cTimelapse.findMotherIndex('cell_centre');
+    cTimelapse.findMotherIndex('refined_trap');
     cExperiment.cTimelapse = cTimelapse;
-    cExperiment.saveTimelapseExperiment(diri,false);    
+    cExperiment.saveTimelapseExperiment(diri,false);
+
+    
 end
 
 % mother processing

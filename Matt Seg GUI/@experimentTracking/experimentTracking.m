@@ -12,7 +12,7 @@ classdef experimentTracking<handle
     % See also EXPERIMENTTRACKINGGUI,TIMELAPSETRAPS,EXPERIMENTTRACKINGOMERO
     
     properties
-        rootFolder %folder where images are. When images are held in an Omero database this property is the suffix defining the filename: cExperiment_SUFFIX.mat
+        rootFolder %folder where images are. When images are held in an Omero database (experimentTrackingOmero subclass) this property is the suffix defining the filename: cExperiment_SUFFIX.mat
         creator%string, the user who created this object(obtained by getenv('USERNAME'))
         saveFolder %folder to save the timelapse objects
         dirs % cell array of directories in rootFolder. 
@@ -267,10 +267,6 @@ classdef experimentTracking<handle
                 val = cExperiment.id_val;
             end
         end
-        function set.id(cExperiment,val)
-            % currently does nothing, just stops warnings.
-            % fprintf('setting id has no effect. It is a dependent property.')
-        end
         
         function val = get.logger(cExperiment)
             
@@ -290,13 +286,38 @@ classdef experimentTracking<handle
             cExperiment.logger_val.shouldLog = cExperiment.shouldLog;
             val = cExperiment.logger_val;
         end
-        function set.logger(cExperiment,val)
-            % just to stop bugs and warnings on load.
-            % fprintf('setting logger has no effect. It is a dependent property.')
+    end
+    
+    methods (Access={?experimentTracking,?experimentTrackingOmero,?OmeroDatabase})
+        function propNames = copyprops(cExperiment,TemplateExperiment,omit)
+            %COPYPROPS Copy all properties from a cExperiment into this one
+            %   This function can copy both public and private properties.
+            %   Use OMIT to specify a cellstr of properties that will not
+            %   be copied. This function gets used in the loadobj method
+            %   and also by the convertSegmented method of the 
+            %   OmeroDatabase class.
+            
+            if nargin<3 || isempty(omit), omit = {}; end
+            if ~iscellstr(omit)
+                error('The "omit" argument must be a cellstr.');
+            end
+            
+            % Only populate copyable fields occuring in both this object
+            % and the template object:
+            propNames = intersect(...
+                getCopyableProperties(cExperiment,'experimentTracking'),...
+                getCopyableProperties(TemplateExperiment,'experimentTracking'));
+            % Omit requested properties
+            propNames = setdiff(propNames,omit);
+            
+            % Copy all properties/fields to this cExperiment:
+            for f = 1:numel(propNames)
+                cExperiment.(propNames{f}) = TemplateExperiment.(propNames{f});
+            end
         end
     end
     
-    methods (Static,Access={?OmeroDatabase,?experimentTracking})
+    methods (Static,Access={?experimentTracking,?experimentTrackingOmero,?OmeroDatabase})
         function val = parseAcqFileIntoID(acqfile)
             [acqdir,~,~] = fileparts(acqfile);
             val = regexprep(acqdir,...
@@ -309,7 +330,7 @@ classdef experimentTracking<handle
     end
     
     methods(Static)
-
+        
         function cExperiment = loadobj(LoadStructure)
             % cExperiment = loadobj(LoadStructure)
             % load function to help maintain back compatability and take
@@ -318,6 +339,10 @@ classdef experimentTracking<handle
             
             %% default loading method: DO NOT CHANGE
             
+            % LoadStructure could be of class 'experimentTracking',
+            % 'experimentTrackingOmero', or a 'struct'. The following 
+            % returns fieldnames of a struct or public properties of an
+            % object:
             FieldNames = fieldnames(LoadStructure);
             
             % back compatibility with when Omero type was just a multi
@@ -325,22 +350,24 @@ classdef experimentTracking<handle
             if (ismember('OmeroDatabase',FieldNames) && ~isempty(LoadStructure.OmeroDatabase)) ||...
                     (ismember('omeroDs',FieldNames) && ~isempty(LoadStructure.omeroDs) )
                 cExperiment = experimentTrackingOmero(true);
+                % Attempt to fill in channelNames for some old Omero
+                % cExperiments that didn't save these:
+                if ~ismember('channelNames',FieldNames) || ...
+                        isempty(LoadStructure.channelNames)
+                    if ismember('experimentInformation',FieldNames) && ...
+                            isfield(LoadStructure.experimentInformation,'channels') && ...
+                            ~isempty(LoadStructure.experimentInformation.channels) && ...
+                            iscellstr(LoadStructure.experimentInformation.channels)
+                        LoadStructure.channelNames = unique(LoadStructure.experimentInformation.channels);
+                    else
+                        LoadStructure.channelNames = 'RELOAD_FROM_OMERO';
+                    end
+                end 
             else
                 cExperiment = experimentTracking(true);
             end
             
-            %only populate mutable fields occcuring in both the load object
-            %and the cTimelapse object.
-            FieldNames = intersect(FieldNames,fieldnames(cExperiment));
-            
-            for i = 1:numel(FieldNames)
-                
-                m = findprop(cExperiment,FieldNames{i});
-                if ~ismember(m.SetAccess,{'immutable','none'})
-                    cExperiment.(FieldNames{i}) = LoadStructure.(FieldNames{i});
-                end
-                
-            end
+            cExperiment.copyprops(LoadStructure);
             
             % this will check the scaling of the new cCellVision is
             % different from that of the old cCellVision.
@@ -369,7 +396,6 @@ classdef experimentTracking<handle
             if isempty(cExperiment.posSegmented)
                 cExperiment.posSegmented = false(size(cExperiment.dirs));
             end
-            
             
         end
                 
