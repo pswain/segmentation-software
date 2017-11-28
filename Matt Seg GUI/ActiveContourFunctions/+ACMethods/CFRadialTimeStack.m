@@ -180,11 +180,6 @@ for ti = 1:length(timepoints_to_optimise)
     for p=1:points
         
         %add radial punishing term
-        
-        % trained logliklihood based term.
-        %TODO - make work for all
-        if radii_length ==6 
-            
             if t==1
                 % apply single timepoint size distribution
                 radii_reordered = radii_mat(p,:);
@@ -262,7 +257,6 @@ for ti = 1:length(timepoints_to_optimise)
                             +  sum(radii_reordered_norm));
                 end
             end
-        end
         
     end
     

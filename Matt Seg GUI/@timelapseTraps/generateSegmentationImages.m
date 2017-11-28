@@ -39,15 +39,15 @@ function [DecisionImageStack, EdgeImageStack,TrapTrapImageStack,ACTrapImageStack
 %                           (high scores for edge pixels)
 
 cCellVision = cTimelapse.cCellVision;
-if nargin<3
+if nargin<2
     timepoint=1;
 end
 
-if nargin<4
+if nargin<3
     traps_to_check=1;
 end
 
-if nargin<5 || isempty(ACParams)
+if nargin<4 || isempty(ACParams)
     % for any unspecified parameters use the default values.
     ACParams = parse_struct(cTimelapse.ACParams,timelapseTraps.LoadDefaultACParams);
 end
@@ -157,7 +157,7 @@ RawCentreDIM = DecisionImageStack;
 have_raw_dims = false(1,size(TrapTrapImageStack,3));
 %fprintf('change back to parfor in DIM calculation\n')
 
-if length(traps_to_check)>1
+if length(traps_to_check)>1  && exist('gcp')
     current_pool = gcp;
     pool_size = current_pool.NumWorkers;
 else

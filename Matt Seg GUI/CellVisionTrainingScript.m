@@ -808,3 +808,21 @@ disp = experimentTrackingGUI
 
 
 
+%% show refined trapOutline
+% show the refined trap outlines identified earlier. Might help to identify
+% if cells are not being found where expected. If the coloured superimposed
+% outline does not accurately match the traps.
+for diri=poses
+    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
+    for tp = cTimelapse.timepointsToProcess
+        im = cTimelapse.returnTrapsTimepoint([],tp,2);
+        for ti = 1:length(cTimelapse.cTimepoint(tp).trapInfo)
+            imshow(OverlapGreyRed(im(:,:,ti),full(cTimelapse.cTimepoint(tp).trapInfo(ti).refinedTrapPixelsInner),[],...
+                full(cTimelapse.cTimepoint(tp).trapInfo(ti).refinedTrapPixelsBig),true),[]);
+            title(sprintf('pos: %d tp: %d trap: %d',diri,tp,ti))
+            pause(0.1);
+            
+        end
+    end
+end
+

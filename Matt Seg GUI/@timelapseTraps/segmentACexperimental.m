@@ -463,15 +463,15 @@ for TP = Timepoints
         
         %%  PARALLLEL LOOP 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
-        if length(TrapsToCheck)>1
+        %fprintf('CHANGE BACK TO PARFOR IN %s.%s\n',class(cTimelapse),mfilename)
+        if length(TrapsToCheck)>1 && exist('gcp')
             current_pool = gcp;
             pool_size = current_pool.NumWorkers;
         else
             pool_size = 0;
         end
-        %parfor( TI = 1:length(TrapsToCheck),pool_size)
-        for TI = 1:length(TrapsToCheck)
+        parfor( TI = 1:length(TrapsToCheck),pool_size)
+        %for TI = 1:length(TrapsToCheck)
             
             %%%%%%%%%% unpack parallel variables
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -710,9 +710,9 @@ for TP = Timepoints
                         % loop.
                         TransformedImagesVISTrap = cat(3,TransformedImagesVISTrap,TransformedCellImage);
                         [pxVIS,pyVIS] = ACBackGroundFunctions.get_full_points_from_radii(RadiiResult',AnglesResult',round(size(TransformedCellImage)/2),size(TransformedCellImage));
-                        SegmentationBinary = false(size(TransformedCellImage));
-                        SegmentationBinary(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
-                        OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinary);
+                        SegmentationBinaryVis = false(size(TransformedCellImage));
+                        SegmentationBinaryVis(pyVIS+size(TransformedCellImage,1)*(pxVIS-1))=true;
+                        OutlinesVISTrap = cat(3,OutlinesVISTrap,SegmentationBinaryVis);
                         CellStatsDebugTrap = cat(1,CellStatsDebugTrap,[ACscore p_score]);
                         
                     end

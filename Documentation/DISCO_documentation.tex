@@ -25,6 +25,9 @@
 \usepackage{color,soul}
 \usepackage{bm}
 
+% TODO notes
+\newcommand{\hlcom}[2]{\hl{#1} \todo{#2}}
+
 %for blank pages
 \usepackage{afterpage}
 
@@ -42,7 +45,8 @@
 
 \begin{document}
 \maketitle
-
+\include{./documentation_sections/introduction}
+\include{./documentation_sections/segmentation}
 \include{./documentation_sections/using_software_with_other_systems}
 
 

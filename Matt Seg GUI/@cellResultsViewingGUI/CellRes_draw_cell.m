@@ -63,7 +63,7 @@ for icell=1:length(trap_info.cellLabel)
     ilabel = trap_info.cellLabel(icell);
     if ~isequal(ilabel,0) && CellResGUI.ShowcellOutline
         seg_outline = full(trap_info.cell(icell).segmented);
-        if ismember(ilabel,mother_label)
+        if ismember(ilabel,mother_label) || ilabel == cell_tracking_number
             cell_outline = seg_outline;
         elseif ismember(ilabel,curr_daughter)
             curr_daughter_outline = seg_outline;

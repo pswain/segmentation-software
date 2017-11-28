@@ -1,0 +1,10 @@
+\section{Segmenting Timeseries Using the DISCO software}
+\label{sec:segmenting_timeseries}
+DISCO is a comprehensive (we hope) software for automatically segmenting cells in trap like devices and inspecting/editing the result. The processing is done through a combination of a matlab script, which is run cell by cell, and a collection of GUI's. We have found that this combination allows people to customise their personal work flows and allows the software to be easily updated and maintained. The standard work flow is:
+\begin{enumerate}
+	\item The user points the software to the images that make up the experiment and provides some basic information about the experiment.
+	\item The user checks the identification of traps in the images and sets a number of parameters, mostly by GUI.
+	\item The software uses a \textbf{cellVision Model} and \textbf{cellMorphology Model} to automatically identify and track cells in the images.
+	\item The user can at this stage check and edit the automated cell identification and tracking and select cells to exclude from the data extraction.
+	\item The software extracts data for the selected cells which can be used in analysis.
+\end{enumerate}

@@ -59,7 +59,7 @@ cExperiment = cExpGUI.cExperiment;
 
 %channels = {'Brightfield_001','Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','tdTomato','tdTomato_001','tdTomato_002','tdTomato_003','tdTomato_004','tdTomato_005'};
 channels = {'Brightfield_001','Brightfield_003','GFP','GFP_001','GFP_002','GFP_003'};
-
+channels = {'Brightfield_001','Brightfield_003','GFP'};
 
 cExperiment.addSecondaryChannel(channels);
 
@@ -148,7 +148,7 @@ cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
 % open a GUI to select a cCellVsion from anywhere
 cExpGUI.loadCellVision
 %% load standard brightfield classifier
-l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_Brightfield_2_slices_default.mat');
+l1 = load('./Matt Seg GUI/cCellvisionFiles/default_cCellVision.mat');
 cExperiment.cCellVision = l1.cCellVision;
 %cExpGUI.cCellVision = l1.cCellVision;
 
@@ -294,8 +294,8 @@ toc;
 % trap image.
 
 % Show the following thresholds:
-thresh1 = -2.5; %yellow: new cells (more stringent)
-thresh2 = -2.5; % green : tracked cells (less stringent)
+thresh1 = -1.5; %yellow: new cells (more stringent)
+thresh2 = -0.5; % green : tracked cells (less stringent)
 
 trapImage = cTimelapse.returnTrapsTimepoint(1:num_traps,tp,channel_to_view);
 mega_image_size = ceil(sqrt(num_traps));
@@ -324,10 +324,9 @@ for i=1:mega_image_size
     
 
 end
-
-%imtool(mega_image,[])
+imtool(mega_image,[])
 figure;imshow(OverlapGreyRed(mega_trap_image,mega_image<thresh1,[],mega_image<thresh2,true),[])
-%figure;imshow(mega_trap_image,[])
+figure;imshow(mega_trap_image,[])
 
 
 % set Active Contour parameters
@@ -383,8 +382,8 @@ cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsT
 
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
-cExperiment.trackCells(poses,params.trackingDistance);
-
+%cExperiment.trackCells(poses,params.trackingDistance);
+%%
 % automatically select cells
 cExperiment.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
 
@@ -430,21 +429,3 @@ cExperiment.saveExperiment;
 cExperiment.saveFolder = uigetdir;
 cExperiment.changeRootDirAllTimelapses;
 
-
-%% show refined trapOutline
-% show the refined trap outlines identified earlier. Might help to identify
-% if cells are not being found where expected. If the coloured superimposed
-% outline does not accurately match the traps.
-for diri=poses
-    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
-    for tp = cTimelapse.timepointsToProcess
-        im = cTimelapse.returnTrapsTimepoint([],tp,2);
-        for ti = 1:length(cTimelapse.cTimepoint(tp).trapInfo)
-            imshow(OverlapGreyRed(im(:,:,ti),full(cTimelapse.cTimepoint(tp).trapInfo(ti).refinedTrapPixelsInner),[],...
-                full(cTimelapse.cTimepoint(tp).trapInfo(ti).refinedTrapPixelsBig),true),[]);
-            title(sprintf('pos: %d tp: %d trap: %d',diri,tp,ti))
-            pause(0.1);
-            
-        end
-    end
-end

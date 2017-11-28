@@ -132,10 +132,7 @@ classdef cellResultsViewingGUI<handle
 
             CellResGUI.cExperiment.loadCurrentTimelapse(cExperiment.cellInf(1).posNum(1));
             
-            if length(cExperiment.cellInf) ~= length(cExperiment.cTimelapse.channelNames)
-                % If the channels extracted is not recorded, needs to be
-                % given by the user so that the appropriate channel can be
-                % shown.
+
                 if ~isfield(cExperiment.cellInf,'extractionParameters')...
                         | ~isfield(cExperiment.cellInf(1).extractionParameters,'functionParameters') ...
                         | ~isfield(cExperiment.cellInf(1).extractionParameters.functionParameters,'channels')
@@ -174,8 +171,6 @@ classdef cellResultsViewingGUI<handle
                         CellResGUI.ChannelDataCode = cExperiment.cTimelapse.channelNames(cExperiment.cellInf(1).extractionParameters.functionParameters.channels);
                     end
                 end
- 
-            end
             
             CellResGUI.SettingsPanel = uipanel('Parent',CellResGUI.TopPanel,'Position',[.015 .015 .3 .97 ]);
             

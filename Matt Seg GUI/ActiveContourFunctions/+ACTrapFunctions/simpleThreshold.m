@@ -51,7 +51,7 @@ end
 %% process
 
 %fprintf('CHANGE BACK TO PARFOR IN %s\n',mfilename)
-if size(stack,3)>1
+if size(stack,3)>1 && exist('gcp')
     current_pool = gcp;
     pool_size = current_pool.NumWorkers;
 else
