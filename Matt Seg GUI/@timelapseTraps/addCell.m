@@ -189,11 +189,16 @@ end
 % NCI = new cell index
 if TrapInfo.cellsPresent
     NCI = length(TrapInfo.cell) +1;
+    TrapInfo.cell(NCI) = cTimelapse.cellInfoTemplate;
+
 else
     NCI = 1;
+    % assigning this way causes less errors if the cTimelapse is an old one
+    % and the fields of the cell structure are a bit wrong.
+    TrapInfo.cell = cTimelapse.cellInfoTemplate;
+
 end
 
-TrapInfo.cell(NCI) = cTimelapse.cellInfoTemplate;
 
 
 TrapInfo.cellLabel(NCI) = TrapMaxCell+1;

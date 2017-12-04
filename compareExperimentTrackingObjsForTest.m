@@ -37,6 +37,12 @@ for diri=1:length(poses)
     cTimelapse_true.kill_logger = true;
     cTimelapse_test.kill_logger = true;
     
+    cTimelapse_test.cCellMorph = [];
+    cTimelapse_test.cCellVision =  [];
+    cTimelapse_true.cCellMorph = [];
+    cTimelapse_true.cCellVision =  [];
+    
+    
     if isequaln(cTimelapse_test,cTimelapse_true)
         
         fprintf('\n %s : passed standard processing: timelapse %d \n',report_string,diri)

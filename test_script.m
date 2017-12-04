@@ -723,7 +723,7 @@ cTimelapse = cExperiment_test.loadCurrentTimelapse(1);
 cTimelapse.ACParams = cExperiment_test.ActiveContourParameters;
 cCellVision = cExperiment_test.cCellVision;
 
-TrackingCurator=curateCellTrackingGUI(cTimelapse,cCellVision,1,2,7,[1 3]);
+TrackingCurator=curateCellTrackingGUI(cTimelapse,1,2,7,[1 3]);
 
 
 %%
