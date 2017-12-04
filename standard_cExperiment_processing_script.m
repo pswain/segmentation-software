@@ -189,7 +189,7 @@ cExpGUI.cExperiment.editCellVisionTrapOutline(poses(1),1)
 
 %% if you don't do the above set the trap detection channel to the lower brightfield channel
 
-cExperiment.ActiveContourParameters.TrapDetection.channel = 3;
+cExperiment.ActiveContourParameters.TrapDetection.channel = 1;
 
 %% now select traps for all positions.
 % The selection of the traps defines the areas in which the code will look
@@ -215,12 +215,20 @@ lower_brightfield_channel = cTimelapse.channelsForSegment(1); % lower z stack sl
 
 cExperiment.ActiveContourParameters.ImageTransformation.channel = cTimelapse.channelsForSegment(1);
 
+%% adjust autoselect parameters
+% these are the parameters that will be used to automatically select cells
+% for which data will be extracted. If you intend to use daughter data
+% (i.e. extract births) it is best to make this lenient.
+
+cExperiment.selectCellSelectParamsGUI();
 %% adjust extraction parameter
 % there are a number of parameters for the extraction. These are set by the
 % following function, which would be called from the GUI if you press the
 % extract Data button.
 
-cExperiment.setExtractParameters([],cExperiment.guiSetExtractParameters);
+extraction_parameters = cExperiment.guiSetExtractParameters;
+cExperiment.setExtractParameters([],extraction_parameters);
+
 
 
 
@@ -385,7 +393,7 @@ params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
 %cExperiment.trackCells(poses,params.trackingDistance);
 %%
 % automatically select cells
-cExperiment.selectCellsToPlotAutomatic(poses,params.paramsCellSelect);
+cExperiment.selectCellsToPlotAutomatic(poses);
 
 %extract
 cExperiment.extractCellInformation(poses,false);

@@ -44,7 +44,7 @@ classdef experimentTracking<handle
                          %  segmentCellDisplay.
         
         lineageInfo %for all of the cell births and stuff that occure during the timelapse
-        
+        cellAutoSelectParams = [];
                                 
     end
     
