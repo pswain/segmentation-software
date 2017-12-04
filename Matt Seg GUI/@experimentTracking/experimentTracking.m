@@ -255,8 +255,9 @@ classdef experimentTracking<handle
                     if fail_flag
                         val = '';
                     else
+                        val = cExperiment.parseAcqFileIntoID(cExperiment.metadata.acqFile);
+                        cExperiment.id_val = val;
                         cExperiment.saveExperiment; % Save changes made by parseLogFile
-                        val = cExperiment.id_val; % Updated by parseLogFile script
                     end
                 else
                     val = cExperiment.parseAcqFileIntoID(cExperiment.metadata.acqFile);

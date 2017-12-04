@@ -318,12 +318,6 @@ annotations.logExposureTimes = positionExposure;
 
 annotations.acq = acq;
 
-% Avoid overwriting pre-existing fields
-if isempty(cExperiment.id_val)
-    % Only update the ID if it is empty
-    %This method currently not in my software
-%    cExperiment.id_val = cExperiment.parseAcqFileIntoID(annotations.acqFile);
-end
 fields_to_replace = {'pumpSwitches','logTimes','logPosNames','logExposureTimes'};
 if isempty(cExperiment.metadata)
     cExperiment.metadata = annotations;
@@ -465,8 +459,13 @@ while ischar(tline)
             case 'channels'
                 channelTable = addRowFromLine(channelTable,tline,channelDefaults);
                 % Add columns to positions list and defaults:
+                channelName = channelTable.names{end};
+                count = sum(ismember(channelTable.names,channelName));
+                if count>1
+                    channelName = sprintf('%s_%u',channelName,count);
+                end
                 pointsTable = horzcat(pointsTable,table([],...
-                    'VariableNames',channelTable.names(end)));
+                    'VariableNames',{channelName}));
                 pointsDefaults = [pointsDefaults,{NaN}];
             case 'zsect'
                 zsectStruct = ...
