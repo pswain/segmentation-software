@@ -189,7 +189,8 @@ end
 % NCI = new cell index
 if TrapInfo.cellsPresent
     NCI = length(TrapInfo.cell) +1;
-    TrapInfo.cell(NCI) = cTimelapse.cellInfoTemplate;
+    % can cause problems with older timelapses and not really necessary.
+    %TrapInfo.cell(NCI) = cTimelapse.cellInfoTemplate;
 
 else
     NCI = 1;
