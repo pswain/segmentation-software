@@ -54,12 +54,20 @@ function  [predicted_im, decision_im, filtered_image,raw_SVM_res]=classifyImage2
 if nargin<3 || isempty(trapOutline)
     trapOutline=imdilate(cCellSVM.cTrap.trapOutline,cCellSVM.se.se2);
 end
-
-filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
-trapOutline = trapOutline>=1;
-filtered_image=double(filtered_image);
-filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
-filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));
+% protection in case cellVision hasn't been trained yet.
+if ~isempty(cCellSVM.scaling.min)
+    filtered_image=getFilteredImage(cCellSVM,image,trapOutline);
+    trapOutline = trapOutline>=1;
+    filtered_image=double(filtered_image);
+    filtered_image=(filtered_image - repmat(cCellSVM.scaling.min,size(filtered_image,1),1));
+    filtered_image=filtered_image*spdiags(1./(cCellSVM.scaling.max-cCellSVM.scaling.min)',0,size(filtered_image,2),size(filtered_image,2));
+else
+    filtered_image = zeros(size(image,1),size(image,2));
+    predicted_im = filtered_image;
+    decision_im = filtered_image;
+    raw_SVM_res = [];
+    return
+end
 
 labels=ones(size(image,1)*size(image,2),1);
 dec_values=zeros(size(image,1)*size(image,2),1);

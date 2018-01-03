@@ -47,7 +47,7 @@ cCellMorph.extractTrainingDataFromExperiment(l.cExperiment);
 % 'new_only' is better if you have a large enough data set (over 1000
 % curated pairs).
 
-method = 'new_only';
+method = 'tp1';
 
 cCellMorph.inspectAndTrainNewCellModel(method);
 

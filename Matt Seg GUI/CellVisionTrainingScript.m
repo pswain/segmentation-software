@@ -8,6 +8,16 @@
 % has already been created
 cExpGUI = experimentTrackingGUI;
 
+%% add channels to the cExperiment
+% corresponding to the 'add Channel' button, which does the same thing
+% individually. Adds the other channels (i.e. those in addition to initial
+% Brightfield channel) to the cExperiment so that they are accessible in
+% the processing and data extraction.
+channels = {'Brightfield_001','Brightfield_003','GFP'};
+
+cExperiment.addSecondaryChannel(channels);
+
+
 %% select new trap image
 % use the images from this cExperiment to create the initial trap template
 % for the cellVision model. This is also a opportunity to set the scaling -
@@ -19,16 +29,47 @@ cExpGUI = experimentTrackingGUI;
 pos = 1;
 cCellVision = cellVision.createCellVisionFromExperiment(cExpGUI.cExperiment,pos);
 
+%% identify traps using the cellVision
+% if you intend to use this same experiment to train the cellVision model,
+% and it has not been segmented using another cellVision model (i.e. this
+% is a totally first time totally raw training), you will have to execute
+% this block to select traps and track them. The cExperiment will then be
+% ready to be 'appended' in the blocks below. 
+% If this is a totally new cellVision model, then it is best to curate only
+% one experiment and train using that, and use the cellVision model so
+% produced to speed up curation of other experiments you intend to use to
+% train your final cellVision model.
+cExperiment = cExpGUI.cExperiment;
+cExperiment.cCellVision = cCellVision;
+
+% allows you to rule out any timepoints where, for example, the traps
+% become very crowded.
+cExperiment.selectTPToProcess;
+
+% now select traps for all positions.
+% The selection of the traps defines the areas in which the code will look
+% for cells, and also sets up the organisation of the cTimelapse.
+cExperiment.identifyTrapsTimelapses;
+
+% this identifies the traps at all future timepoints using the result
+% curated at the first timepoint.
+cExperiment.trackTrapsInTime;
+
+% the experiment can now be loaded in the 'apped cExperiments' section of
+% the code.
 %% save
 cCellVision.saveCellVision;
+
 
 %% COMMENCE CURATION
 % from here we assume you have done the above, creating experiments in
 % which traps have been selected using the cellVision above or an old
 % cellVision you are retraining. It is important that the traps have
-% already been selected at this stage. It is also often common, if
-% retraining an old cellVision model, to have run the active contour over
-% these experiments.
+% already been selected at this stage by following the standard processing
+% script:
+%  standard_cExperiment_processing_script.m  
+% It is also often common, if retraining an old cellVision model, to have
+% run the active contour over these experiments.
 
 %% initialise for cExperiment compilation
 % this sets up some variables for the compilation of experiments.
@@ -59,6 +100,34 @@ refine_trap_outline = true;
 % With the settings below, cExperiment files are selected by GUI.
 
 cExperiment = append_cExperiment(cExperiment,[],num_timepoints,[],[],[],[],pick_pairs,refine_trap_outline);
+
+
+%% Configure edge identification parameters
+% In general the cellVision model is used to identify the edges of cell and
+% find the outline. If you are training a cellVision model from scratch,
+% this will not be possible and you will have to fall back on our older
+% image transformation methods to quickly curate cell edges. To do this you
+% will have to change the Active Contour parameters of the cExperiment.
+% Below are two standard changes, but you may need to fiddle more to get a
+% good result (see documentation)
+
+% this flag will tell the software not to use the result from the
+% cellVision model (which will meaningless if it has not yet been trained)
+% and to instead use the image transform to find the edge.
+cExperiment.ActiveContourParameters.ImageTransformation.EdgeFromDecisionImage = false;
+
+% in general a channel must be specified on which to perform the
+% transformation. The default transformation works well on images where the
+% cell is a bright object surrounded by a dark halo. If only the inverse is
+% available (a dark object with a white halo, such as in phase contrast),
+% one can use - the channel index. e.g
+% lower_brighfield_channel = -2;
+lower_brighfield_channel = 2;
+cExperiment.ActiveContourParameters.ImageTransformation.channel = lower_brightfield_channel;
+
+% if these settings do not provide good results, one can dive into the
+% other available transformation stored in 
+%   ActiveContourFunctions/+ACImageTransformations
 
 %% editing GUI
 % The below block is the most convenient way to edit the cells outlines. It

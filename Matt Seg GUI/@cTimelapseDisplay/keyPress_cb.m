@@ -28,7 +28,7 @@ elseif strcmp(event.Key,'uparrow')
 elseif strcmp(event.Key,'h')
     helpdlg(cDisplay.gui_help);
 else
-    cDisplay.keyPressed = event.Character;
+    % do nothing.
 end
 
 

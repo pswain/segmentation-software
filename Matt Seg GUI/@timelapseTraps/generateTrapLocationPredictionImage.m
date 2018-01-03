@@ -14,7 +14,12 @@ image=cTimelapse.returnSingleTimepoint(timepoint,channel);
 
 image=padarray(image,[cTrap.bb_height cTrap.bb_width],median(image(:)));
 
-trap_prediction_image = (normxcorr2(cTrap.trap1,image)+normxcorr2(cTrap.trap2,image))/2;
+trap_prediction_image = normxcorr2(cTrap.trap1,image);
+% in some older cellVIsion models, 2 trap images were used for tracking to
+% make detection robust.
+if isfield(cTrap,'trap2')
+    trap_prediction_image = (trap_prediction_image+normxcorr2(cTrap.trap2,image))/2;
+end
 trap_prediction_image = ...
     trap_prediction_image(2*cTrap.bb_height+1:end-2*cTrap.bb_height,2*cTrap.bb_width+1:end-2*cTrap.bb_width);
 

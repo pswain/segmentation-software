@@ -15,10 +15,4 @@ cExpGUI.channel = 1;
 
 set(cExpGUI.figure,'Name',cExpGUI.cExperiment.saveFolder);
 
-if ~cExpGUI.cExperiment.trapsPresent
-    set(cExpGUI.selectTrapsToProcessButton,'Enable','off');
-else
-    set(cExpGUI.selectTrapsToProcessButton,'Enable','on');
-end
-
 end
