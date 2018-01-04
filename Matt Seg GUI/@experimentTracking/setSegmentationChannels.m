@@ -42,13 +42,16 @@ if nargin<2 || isempty(channels_for_segment)
     if ~isempty(cExperiment.cCellVision.trainingImageExample)
         dialog_struct.Description = [dialog_struct.Description,' A seperate figure should '...
         'be open showing you example images from the training'];
-    f = figure;
-    N_images = size(cExperiment.cCellVision.trainingImageExample,3);
-    for n = 1:N_images
-        subplot(1,N_images,n);
-        imshow(cExperiment.cCellVision.trainingImageExample(:,:,n),[]);
-        title(cExperiment.cCellVision.training_channels{n},'Interpreter','none');
-    end
+        f = figure;
+        N_images = size(cExperiment.cCellVision.trainingImageExample,3);
+        for n = 1:N_images
+            subplot(1,N_images,n);
+            imshow(cExperiment.cCellVision.trainingImageExample(:,:,n),[]);
+            title(cExperiment.cCellVision.training_channels{n},'Interpreter','none');
+        end
+        gui_open = true;
+    else
+        gui_open = false;
     end
     
 	[settings button] = settingsdlg(dialog_struct);
@@ -77,8 +80,12 @@ if strcmp(button,'OK')
         end
     end
     fprintf('\n channels for segmentation set \n\n')
+    if gui_open
+        close(f);
+    end
 else
     fprintf('\n CANCEL: No timelapse has been altered.\n\n')
 end
+
 end
 end

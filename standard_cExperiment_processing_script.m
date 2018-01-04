@@ -28,6 +28,26 @@ cExpGUI = experimentTrackingGUI;
 % positions (i.e. is not skipped or starts after timepoint 1) and appears
 % ONLY ONCE (so 'brightfield_' is not a good idea if you took brightfield z
 % stacks).
+%% add channels
+% corresponding to the 'add Channel' button, which does the same thing
+% individually. Adds the other channels (i.e. those in addition to initial
+% Brightfield channel) to the cExperiment so that they are accessible in
+% the processing and data extraction.
+%This step is not necessary for cExperiments created from the Omero
+%database as they should have all channels added automatically
+
+%channels = {'Brightfield_001','Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','tdTomato','tdTomato_001','tdTomato_002','tdTomato_003','tdTomato_004','tdTomato_005'};
+channels = {'Brightfield_001','Brightfield_003','GFP','GFP_001','GFP_002','GFP_003'};
+channels = {'Brightfield_001','Brightfield_003','GFP'};
+
+cExpGUI.cExperiment.addSecondaryChannel(channels);
+
+
+% this block of code will ensure those channels are visible in the cExpGUI
+set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
+cExpGUI.channel = 1;
+
+fprintf('done adding channels \n')
 
 %% select poses
 % running the following code will define poses as those positions
@@ -49,26 +69,6 @@ cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(poses(1));
 cExperiment = cExpGUI.cExperiment;
 
 
-%% add channels
-% corresponding to the 'add Channel' button, which does the same thing
-% individually. Adds the other channels (i.e. those in addition to initial
-% Brightfield channel) to the cExperiment so that they are accessible in
-% the processing and data extraction.
-%This step is not necessary for cExperiments created from the Omero
-%database as they should have all channels added automatically
-
-%channels = {'Brightfield_001','Brightfield_003','Brightfield_004','Brightfield_005','GFP','GFP_001','GFP_002','GFP_003','GFP_004','GFP_005','tdTomato','tdTomato_001','tdTomato_002','tdTomato_003','tdTomato_004','tdTomato_005'};
-channels = {'Brightfield_001','Brightfield_003','GFP','GFP_001','GFP_002','GFP_003'};
-channels = {'Brightfield_001','Brightfield_003','GFP'};
-
-cExperiment.addSecondaryChannel(channels);
-
-
-% this block of code will ensure those channels are visible in the cExpGUI
-set(cExpGUI.selectChannelButton,'String',cExpGUI.cExperiment.channelNames,'Value',1);
-cExpGUI.channel = 1;
-
-fprintf('done adding channels \n')
 
 
 %% set TP to process
@@ -78,58 +78,6 @@ fprintf('done adding channels \n')
 
 cExperiment.selectTPToProcess;
 
-%% setting offset
-% this stage can usually be ignored but is included for completeness.
-
-% the different channels acquired can be 'offset' with respect to each
-% other. i.e. it might be necessary to shift them a pixel or two
-% up/down/left/right to get them to 'overlap' properly. This is done using
-% the setChannelOffset method of the cExperiment.
-
-%% try an offset
-% this stage can usually be ignored but is included for completeness.
-
-% here we set the offset of the DIC channel by comparing it to another
-% channel (GFP) and checking the outcome by eye. DIC is most often poorly
-% registered with the other channels. 
-% Play with the offset assignment and see how the outcome looks.
-
-cTimelapse = cExperiment.loadCurrentTimelapse(poses(1));
-
-DICch = 1;
-GFPch = 6;
-timepoint = 100;
-
-cTimelapse.offset(1,:) = [0 0];
-im1 = cTimelapse.returnSingleTimepoint(timepoint,DICch);
-im2 = cTimelapse.returnSingleTimepoint(timepoint,GFPch);
-
-im1 = (im1-min(im1(:)))/iqr(im1(:));
-im2 = (im2-min(im2(:)))/iqr(im2(:));
-
-figure(5);
-imshow(OverlapGreyRed(im1,im2),[]);
-
-%% set offset
-% this stage can usually be ignored but is included for completeness.
-
-% having found a good offset above, we set it for all positions.
-cExpGUI.cExperiment.setChannelOffset;
-
-%% set flat field (optional)
-% this stage can usually be ignored but is included for completeness.
-
-% often a fluorescent channel has an uneven illumination, and therefore
-% response, across the field. This can be compensated by providing a flat
-% field correction, by which an image is premultiplied before it is
-% returned.
-%
-% Elco has some methods for finding this, but it is generally the inverse
-% of an image of a fluorescent slide of constant brightness. It is set
-% using the following method.
-
-cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
-%BGcorrGFP is the image by which the final image will be premultiplied.
 
 %% load a cCellVision
 
@@ -177,8 +125,11 @@ cExpGUI.cCellVision = l1.cCellVision;
 % You will then be required to select a single, representative trap. 
 %
 % the software will then require you to select trap features and edit the
-% outline it finds for them by clicking on the images displayed. If in
-% doubt - press enter.
+% outline it finds for them by clicking on the images displayed. This
+% generally requires a furious amount of clicking while slowly moving the
+% cursor around the trap. Annoying, but it was an easy way to allow a large
+% range of trap outlines and imaging modalities.
+% If in doubt - press enter.
 %
 % Finally, it will show you an overlap image of the representative trap and
 % the refined trap outline. When you are finised inspecting this image,
@@ -198,23 +149,6 @@ cExperiment.ActiveContourParameters.TrapDetection.channel = 1;
 cExperiment.identifyTrapsTimelapses(poses)
 
 
-%% setting parameters for active contour cell identification
-% We will now set the parameters for the active contour cell identification
-% method, the standard automated method for identifying cells in the lab.
-%
-% Though there are many parameters, we will here set only the most relevant
-% ones.
-
-%% set channels used for edge detection
-% (these are only correct if you have added the channels as prescribed -
-% adjust as necessary).
-
-lower_brightfield_channel = cTimelapse.channelsForSegment(1); % lower z stack slice of brightfield
-% in this channel all cells should appear as a reasonably sharp white
-% objects with black halos (a little out of focus is best)
-
-cExperiment.ActiveContourParameters.ImageTransformation.channel = cTimelapse.channelsForSegment(1);
-
 %% adjust autoselect parameters
 % these are the parameters that will be used to automatically select cells
 % for which data will be extracted. If you intend to use daughter data
@@ -233,14 +167,6 @@ cExperiment.setExtractParameters([],extraction_parameters);
 
 
 %% ELco Standard extraction
-
-%% refine trap Pixels for the first position to be processed
-% uses the refinement_channel to make a refined trap outline that can
-% improve the elimination of traps. 
-% refinement_channel shoudl be out of focus bright field in which traps are
-% white surrounded by black outline.
-
-
 
 %% inspect decision image
 
@@ -350,16 +276,6 @@ cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationValueThresh
                         cExperiment.ActiveContourParameters.CrossCorrelation.CrossCorrelationDIMthreshold;
 
 
-%% other parameters
-% below are code blocks for setting other, less commonly changed
-% parameters. It is not really necessary but they can be played with for
-% better performance.
-% I have tried to give some explanation of what they do.
-
-%% active contour search parameters:
-
-% put something about parameters here.
-
 
 %% Look at the results for the test position
 % it is often useful to look at the results from a single position and see
@@ -380,10 +296,7 @@ cExperiment.RunActiveContourExperimentTracking(pos,min(cExperiment.timepointsToP
 
 
 %track traps
-
-% identification and active contour 
-cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,true,false);
-
+cExperiment.trackTrapsInTime(poses);
  
 % identification and active contour
 cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsToProcess),max(cExperiment.timepointsToProcess),true,1,false,false);
@@ -391,7 +304,7 @@ cExperiment.RunActiveContourExperimentTracking(poses,min(cExperiment.timepointsT
 % retrack
 params = standard_extraction_cExperiment_parameters_default(cExperiment,poses);
 %cExperiment.trackCells(poses,params.trackingDistance);
-%%
+%
 % automatically select cells
 cExperiment.selectCellsToPlotAutomatic(poses);
 
@@ -437,3 +350,79 @@ cExperiment.saveExperiment;
 cExperiment.saveFolder = uigetdir;
 cExperiment.changeRootDirAllTimelapses;
 
+%% setting offset
+% this stage can usually be ignored but is included for completeness.
+
+% the different channels acquired can be 'offset' with respect to each
+% other. i.e. it might be necessary to shift them a pixel or two
+% up/down/left/right to get them to 'overlap' properly. This is done using
+% the setChannelOffset method of the cExperiment.
+
+%% try an offset
+% this stage can usually be ignored but is included for completeness.
+
+% here we set the offset of the DIC channel by comparing it to another
+% channel (GFP) and checking the outcome by eye. DIC is most often poorly
+% registered with the other channels. 
+% Play with the offset assignment and see how the outcome looks.
+
+cTimelapse = cExperiment.loadCurrentTimelapse(poses(1));
+
+DICch = 1;
+GFPch = 6;
+timepoint = 100;
+
+cTimelapse.offset(1,:) = [0 0];
+im1 = cTimelapse.returnSingleTimepoint(timepoint,DICch);
+im2 = cTimelapse.returnSingleTimepoint(timepoint,GFPch);
+
+im1 = (im1-min(im1(:)))/iqr(im1(:));
+im2 = (im2-min(im2(:)))/iqr(im2(:));
+
+figure(5);
+imshow(OverlapGreyRed(im1,im2),[]);
+
+%% set offset
+% this stage can usually be ignored but is included for completeness.
+
+% having found a good offset above, we set it for all positions.
+cExpGUI.cExperiment.setChannelOffset;
+
+%% set flat field (optional)
+% this stage can usually be ignored but is included for completeness.
+
+% often a fluorescent channel has an uneven illumination, and therefore
+% response, across the field. This can be compensated by providing a flat
+% field correction, by which an image is premultiplied before it is
+% returned.
+%
+% Elco has some methods for finding this, but it is generally the inverse
+% of an image of a fluorescent slide of constant brightness. It is set
+% using the following method.
+
+cExpGUI.cExperiment.setBackgroundCorrection(BGcorrGFP)
+%BGcorrGFP is the image by which the final image will be premultiplied.
+
+%% Use old image transform methods for finding edges
+% By default the software use the cellVision model to identify edges as
+% well as centres. If you would prefer to use an image transform to detect
+% edges instead (the old way of doing the processing) you can set the
+% parameters as described below.
+%
+% this flag will tell the software not to use the result from the
+% cellVision model (which will meaningless if it has not yet been trained)
+% and to instead use the image transform to find the edge.
+cExperiment.ActiveContourParameters.ImageTransformation.EdgeFromDecisionImage = false;
+
+% in general a channel must be specified on which to perform the
+% transformation. The default transformation works well on images where the
+% cell is a bright object surrounded by a dark halo. If only the inverse is
+% available (a dark object with a white halo, such as in phase contrast),
+% one can use - the channel index. e.g
+% lower_brighfield_channel = -2;
+lower_brighfield_channel = 2;
+cExperiment.ActiveContourParameters.ImageTransformation.channel = lower_brightfield_channel;
+
+% if these settings do not provide good results, one can dive into the
+% other available transformation stored in 
+%   ActiveContourFunctions/+ACImageTransformations

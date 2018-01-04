@@ -57,7 +57,7 @@ for i=1:length(positionsToIdentify)
     
     cTimelapse.ACParams = cExperiment.ActiveContourParameters;
 
-    curateCellTrackingGUI(cTimelapse,cExperiment.cCellVision,1,1,1,1);
+    curateCellTrackingGUI(cTimelapse,1,1,1,1);
     uiwait();
     
     % set the timepoints to be processed to be true so that it will be

@@ -6,13 +6,13 @@ function RunActiveContourExperimentTracking(cExperiment,positionsToIdentify,Firs
 %ACmethods specifies which particular method to use.
 %
 %cExperiment                        - experimentTracking object
-%positionsToIdentify                - positions to use
+%positionsToIdentify                - positions to analyse
 %FirstTimepoint                     - time point to start segmenting
 %LastTimepoint                      - time point to stop segmenting
 %OverwriteTimelapseParameters       - whether to overwrite the cTimelapse
 %                                     parameters with cExperiment
 %                                     parameters
-%ACmethod                           - which method to use (chosen by dialog)
+%ACmethod                           - DEFUNCT - no longer does anything
 %TrackTrapsInTime                   - whether to track the traps first
 %LeaveFirstTimepointUnchanged       - boolean. whether to leave the outline
 %                                     of the first time point fixed.
@@ -142,8 +142,7 @@ experimentLogging.changePos(cExperiment,positionsToIdentify(1),cTimelapse);
 DefaultParameters = timelapseTraps.LoadDefaultACParams; 
 
 
-% undo comments - just to debug
-%try
+try
     %% Load timelapses
     for i=1:length(positionsToIdentify)
         currentPos=positionsToIdentify(i);
@@ -172,12 +171,8 @@ DefaultParameters = timelapseTraps.LoadDefaultACParams;
                 DefaultParameters.(fields{fi}) );
         end
     
-        % undo - just for debugging
-        %try
-            cTimelapse.segmentACexperimental(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
-        %catch err
-        %    rethrow(err)
-        %end
+        cTimelapse.segmentACexperimental(FirstTimepoint,LastTimepoint,LeaveFirstTimepointUnchanged,CellsToUse{currentPos});
+
         cExperiment.saveTimelapseExperiment(currentPos);
         
         
@@ -187,10 +182,10 @@ DefaultParameters = timelapseTraps.LoadDefaultACParams;
     
     % Finish logging protocol
     cExperiment.logger.complete_protocol;
-%catch err
-%    cExperiment.logger.protocol_error;
-%    rethrow(err);
-%end
+catch err
+    cExperiment.logger.protocol_error;
+    rethrow(err);
+end
 
 fprintf(['finished running active contour method on experiment ' datestr(now) ' \n \n'])
 
