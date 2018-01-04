@@ -7,56 +7,66 @@ function saveExperiment(cExperiment)
 %non-serializable errors.
 cExperiment.cTimelapse=[];
 omeroDatabase=cExperiment.OmeroDatabase;
-cExperiment.OmeroDatabase=cExperiment.OmeroDatabase.Server;
+cExperiment.OmeroDatabase=omeroDatabase.Server;
 omeroDs=cExperiment.omeroDs;
 cExperiment.omeroDs=double(omeroDs.getId.getValue);
 fileName=[cExperiment.saveFolder filesep 'cExperiment_' cExperiment.rootFolder '.mat'];
 if iscell(fileName)
-    fileName=fileName{:};
+    fileName=fileName{:}; % equivalent to fileName{1};
 end
 
+cE_description = 'cExperiment file uploaded by @experimentTracking.saveTimelapseExperiment';
+lF_description = 'cExperiment log file uploaded by @experimentTracking.saveExperiment';
+
+% If fileAnnotation IDs have not already been set for this experiment,
+% determine them before saving the object. Start by getting the
+% fileAnnotations for this dataset:
+if isempty(cExperiment.fileAnnotation_id) || isempty(cExperiment.logFileAnnotation_id)
+    fileAnnotations = getDatasetFileAnnotations(omeroDatabase.Session,omeroDs);
+else
+    % Both IDs are already known, so retrieve fileAnnotations directly:
+    fileAnnotations = getFileAnnotations(omeroDatabase.Session,...
+        [cExperiment.fileAnnotation_id,cExperiment.logFileAnnotation_id]);
+end
+fA_Ids = arrayfun(@(x) x.getId().getValue(),fileAnnotations);
+
+% Now check if IDs are specified, and if not, make a 'dummy' update call to
+% ensure the files have an associated fileAnnotation:
+if isempty(cExperiment.fileAnnotation_id)
+    cE_fA = omeroDatabase.updateFile(omeroDs,fileName,'dummy',true,...
+        'dsFiles',fileAnnotations,'description',cE_description);
+    cExperiment.fileAnnotation_id = cE_fA.getId().getValue();
+else
+    cE_fA = fileAnnotations(fA_Ids==cExperiment.fileAnnotation_id);
+end
+logFileName = fullfile(cExperiment.logger.file_dir,cExperiment.logger.file_name);
+if isempty(cExperiment.logFileAnnotation_id)
+    lF_fA = omeroDatabase.updateFile(omeroDs,logFileName,'dummy',true,...
+        'dsFiles',fileAnnotations,'description',lF_description);
+    cExperiment.logFileAnnotation_id = lF_fA.getId().getValue();
+else
+    lF_fA = fileAnnotations(fA_Ids==cExperiment.logFileAnnotation_id);
+end
 
 %Save cCellVision as a seperate variable
 cCellVision=cExperiment.cCellVision;
 cExperiment.cCellVision=[];
 
 save(fileName,'cExperiment','cCellVision');
-%Update or upload the file - first need to find the file annotation
-%object
 
-%Are there existing cExperiment and log files representing this cExperiment?
-fileAnnotations=getDatasetFileAnnotations(omeroDatabase.Session,omeroDs);
-%Create a cell array of file annotation names
-faNames = {};
-for n=1:length(fileAnnotations)
-    faNames{n}=char(fileAnnotations(n).getFile.getName.getValue);
-end
-
-cEIndex=strcmp(['cExperiment_' cExperiment.rootFolder '.mat'],faNames);
-logName=cExperiment.logger.file_name;
-logName=[cExperiment.saveFolder filesep logName];
-logIndex=strcmp(logName,faNames);
-cEIndex=find(cEIndex);
-logIndex=find(logIndex);
-%Upload or update the cExperiment file
-if ~isempty(cEIndex)
-    cEIndex=cEIndex(1);
-    disp(['Uploading file ' char(fileAnnotations(cEIndex).getFile.getName.getValue)]);
-    fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(cEIndex), fileName);
-else%The file is not yet attached to the dataset
-    omeroDatabase.uploadFile(fileName, omeroDs, 'cExperiment file uploaded by @experimentTracking.saveTimelapseExperiment');
-end
 %Restore the cExperiment object
 cExperiment.omeroDs=omeroDs;
 cExperiment.OmeroDatabase=omeroDatabase;
 cExperiment.cCellVision=cCellVision;
-%Upload or update the log file
-if ~isempty(logIndex)
-    logIndex=logIndex(1);
-    disp(['Uploading file ' logName]);
-    fA = updateFileAnnotation(omeroDatabase.Session, fileAnnotations(logIndex), logName);
-else%The file is not yet attached to the dataset
-    logFileName=[cExperiment.saveFolder filesep 'cExperiment_log_' cExperiment.rootFolder '.txt'];
-    omeroDatabase.uploadFile(logFileName, omeroDs, 'cExperiment log file uploaded by @experimentTracking.saveTimelapseExperiment');
+
+% Update the files on Omero:
+omeroDatabase.updateFile(omeroDs,fileName,'dsFiles',cE_fA,...
+    'description',cE_description);
+% Only update the log file if it exists (some people may have
+% shouldLog=false):
+if exist(logFileName,'file')==2
+    omeroDatabase.updateFile(omeroDs,logFileName,'dsFiles',lF_fA,...
+        'description',lF_description);
 end
+
 end

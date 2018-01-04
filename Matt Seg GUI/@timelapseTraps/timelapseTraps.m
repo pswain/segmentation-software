@@ -323,38 +323,56 @@ classdef timelapseTraps<handle
 
     end
     
+    methods (Access={?timelapseTraps,?timelapseTrapsOmero,?OmeroDatabase})
+        function propNames = copyprops(cTimelapse,TemplateTimelapse,omit)
+            %COPYPROPS Copy all properties from a cTimelapse into this one
+            %   This function can copy both public and private properties.
+            %   Use OMIT to specify a cellstr of properties that will not
+            %   be copied. This function gets used in the loadobj method
+            %   and also by the convertSegmented method of the 
+            %   OmeroDatabase class.
+            
+            if nargin<3 || isempty(omit), omit = {}; end
+            if ~iscellstr(omit)
+                error('The "omit" argument must be a cellstr.');
+            end
+            
+            % Only populate copyable fields occuring in both this object
+            % and the template object:
+            propNames = intersect(...
+                getCopyableProperties(cTimelapse,'timelapseTraps'),...
+                getCopyableProperties(TemplateTimelapse,'timelapseTraps'));
+            % Omit requested properties
+            propNames = setdiff(propNames,omit);
+            
+            % Copy all properties/fields to this cTimelapse:
+            for f = 1:numel(propNames)
+                cTimelapse.(propNames{f}) = TemplateTimelapse.(propNames{f});
+            end
+        end
+    end
     
     methods (Static)
         function cTimelapse = loadobj(LoadStructure)
             
             %% default loading method: DO NOT CHANGE
             
+            % LoadStructure could be of class 'timelapseTraps',
+            % 'timelapseTrapsOmero', or a 'struct'. The following 
+            % returns fieldnames of a struct or public properties of an
+            % object:
+            FieldNames = fieldnames(LoadStructure);
+            
             % if OmeroDatabase is present, then this should be an Omero
             % type timelapse. Little ugly but keeps back compatability.
-            %TODO - take away the isempty?
-            if isa(LoadStructure ,'timelapseTrapsOmero') && ~isempty(LoadStructure.OmeroDatabase)
+            if (ismember('OmeroDatabase',FieldNames) && ~isempty(LoadStructure.OmeroDatabase)) ||...
+                    (ismember('omeroImage',FieldNames) && ~isempty(LoadStructure.omeroImage))
                 cTimelapse = timelapseTrapsOmero([],true);
             else
                 cTimelapse = timelapseTraps([],true);
             end
             
-            FieldNames = fieldnames(LoadStructure);
-            %only populate mutable fields occcuring in both the load object
-            %and the cTimelapse object.
-            FieldNames = intersect(FieldNames,fieldnames(cTimelapse));
-            
-            % fields to ignore for some reason or other
-            ignoreFields = {'trapImSize'};
-            
-            for i = 1:numel(FieldNames)
-                
-                m = findprop(cTimelapse,FieldNames{i});
-                %fprintf([FieldNames{i} '\n'])
-                if ~ismember(m.SetAccess,{'immutable','none'}) & ~ismember(FieldNames{i},ignoreFields)
-                    cTimelapse.(FieldNames{i}) = LoadStructure.(FieldNames{i});
-                end
-                
-            end
+            cTimelapse.copyprops(LoadStructure);
             
             %% back compatibility checks and what not
             %when a new field is added this load operation should be
@@ -378,7 +396,7 @@ classdef timelapseTraps<handle
             end
             
             if size(cTimelapse.offset,1)<length(cTimelapse.channelNames)
-                cTimelapse.offset(end+1:length(cTimelapse.channelNames)) = 0;
+                cTimelapse.offset(end+1:length(cTimelapse.channelNames),:) = 0;
             end
             
             

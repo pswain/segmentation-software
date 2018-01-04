@@ -16,29 +16,23 @@ function cTimelapse=returnTimelapse(cExperiment,timelapseNum)
 try
     cExperiment.OmeroDatabase.Client.ice_getConnection;
 catch
-    if ischar (cExperiment.OmeroDatabase)
-        cExperiment.OmeroDatabase=OmeroDatabase('upload',cExperiment.OmeroDatabase);
+    if isa(cExperiment.OmeroDatabase,'OmeroDatabase')
+        cExperiment.OmeroDatabase.login;
     else
-        cExperiment.OmeroDatabase=cExperiment.OmeroDatabase.login;
+        disp('Initialsing OmeroDatabase...');
+        cExperiment.OmeroDatabase = OmeroDatabase('upload',cExperiment.OmeroDatabase);
     end
 end
+
 posName=cExperiment.dirs{timelapseNum};
 fileName=[posName 'cTimelapse_' cExperiment.rootFolder '.mat'];
-if exist([cExperiment.saveFolder filesep fileName])==7
-    %This cTimelapse has already been downloaded to the temporary local
-    %folder
-    load ([cExperiment.saveFolder filesep fileName]);
-else
-    %Get file from the database
-    fileAnnotations=getDatasetFileAnnotations(cExperiment.OmeroDatabase.Session,cExperiment.omeroDs);
-    for n=1:length(fileAnnotations)
-        faNames{n}=char(fileAnnotations(n).getFile.getName.getValue);
-    end
-    matched=strmatch(fileName,faNames);
-    disp(['Downloading ' posName 'cTimelapse_' cExperiment.rootFolder '.mat'])
-    getFileAnnotationContent(cExperiment.OmeroDatabase.Session, fileAnnotations(matched(1)), [cExperiment.saveFolder filesep fileName]);
-    load ([cExperiment.saveFolder filesep fileName]);
-end
+
+% Download/update the specified cTimelapse if necessary:
+localFile = cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,fileName);
+
+% Load the cTimelapse
+load(localFile);
+
 %Saved version will not have the correct OmeroDatabase and omeroImage
 %objects - need to restore these:
 cTimelapse.OmeroDatabase=cExperiment.OmeroDatabase;

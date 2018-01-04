@@ -15,31 +15,41 @@ function fail_flag = parseLogFile(cExperiment,logFile,progress_bar)
 fail_flag = false;
 
 if nargin<2 || isempty(logFile)
-    logDirs = {cExperiment.rootFolder,cExperiment.saveFolder};
-    for d=1:length(logDirs)
-        logFile = dir(fullfile(logDirs{d},'*log.txt'));
-        logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
-        % Break this loop as soon as we find a suitable candidate
-        if ~isempty(logFile), break; end
-    end
-    if length(logFile)>1
-        warning(['More than one log file available in "%s". ',...
-            'Using first found...'],logDirs{d});
-    end
-    if isempty (logFile) 
-        if isa (cExperiment,'experimentTrackingOmero')        %The log file is not present in the save folder
-        disp('Downloading log file');
-        fullName=char(cExperiment.omeroDs.getName.getValue);
-        logName=[fullName(1:end-3) 'log.txt'];
-        [path, ~]=cExperiment.OmeroDatabase.downloadFile(cExperiment.omeroDs,logName,cExperiment.saveFolder);
+    if isa(cExperiment,'experimentTrackingOmero') && ...
+            ~isa(cExperiment.OmeroDatabase,'OmeroDatabase') && ...
+            cExperiment.OmeroDatabase.sessionActive
+        % Ensure all log files (including the acq file) are already
+        % downloaded to the saveFolder (NB: downloadFiles will not
+        % re-download if they are already present and up-to-date):
+        filePaths = cExperiment.OmeroDatabase.downloadFiles(...
+            cExperiment.omeroDs,[],cExperiment.saveFolder);
+        logFile = filePaths(1).log;
+    else
+        logDirs = {cExperiment.rootFolder,cExperiment.saveFolder};
+        for d=1:length(logDirs)
+            logFile = dir(fullfile(logDirs{d},'*log.txt'));
+            logFile = logFile(~strcmp({logFile.name},'cExperiment_log.txt'));
+            % Break this loop as soon as we find a suitable candidate
+            if ~isempty(logFile), break; end
+        end
+        if isempty(logFile)
+            warning('The log file could not be found. Skipping parseLogFile...');
+            fail_flag = true;
+            return
+        else
+            if length(logFile)>1
+                warning(['More than one log file available in "%s". ',...
+                    'Using first found...'],logDirs{d});
+            end
         else
         %added by Elco. If there is no logFile found return with a fail flag
         %(seems approriate).
         fail_flag=true;
         return
         end
+            logFile = fullfile(logDirs{d},logFile(1).name);
+        end
     end
-    logFile = fullfile(logDirs{d},logFile(1).name);
 end
 
 close_progress = false;
@@ -314,12 +324,6 @@ annotations.logExposureTimes = positionExposure;
 
 annotations.acq = acq;
 
-% Avoid overwriting pre-existing fields
-if isempty(cExperiment.id_val)
-    % Only update the ID if it is empty
-    %This method currently not in my software
-%    cExperiment.id_val = cExperiment.parseAcqFileIntoID(annotations.acqFile);
-end
 fields_to_replace = {'pumpSwitches','logTimes','logPosNames','logExposureTimes'};
 if isempty(cExperiment.metadata)
     cExperiment.metadata = annotations;
@@ -461,8 +465,13 @@ while ischar(tline)
             case 'channels'
                 channelTable = addRowFromLine(channelTable,tline,channelDefaults);
                 % Add columns to positions list and defaults:
+                channelName = channelTable.names{end};
+                count = sum(ismember(channelTable.names,channelName));
+                if count>1
+                    channelName = sprintf('%s_%u',channelName,count);
+                end
                 pointsTable = horzcat(pointsTable,table([],...
-                    'VariableNames',channelTable.names(end)));
+                    'VariableNames',{channelName}));
                 pointsDefaults = [pointsDefaults,{NaN}];
             case 'zsect'
                 zsectStruct = ...

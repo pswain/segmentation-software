@@ -20,7 +20,6 @@ function saveTimelapseExperiment(cExperimentOmero,currentPos, saveCE)
 %
 % See also, EXPERIMENTTRACKING.LOADCURRENTTIMELAPSE
 
-%TODO work out why currentPose isn't used.
 if nargin<2 || isempty(currentPos)
     currentPos = cExperimentOmero.currentPos;
 end
@@ -29,51 +28,52 @@ if nargin<3
     saveCE=false;
 end
 
-
-%Save code for Omero loaded cExperiments - upload cExperiment file to
+%Save code for Omero loaded cTimelapses - upload cExperiment file to
 %Omero database. Use the alternative method saveExperiment if you want
 %to save only the cExperiment file.
 
 cTimelapse = cExperimentOmero.cTimelapse;
 
-%Replace any existing cExperiment and cTimelapse files for the same
-%dataset.
-fileAnnotations=getDatasetFileAnnotations(cExperimentOmero.OmeroDatabase.Session,cExperimentOmero.omeroDs);
-dsName=char(cExperimentOmero.cTimelapse.omeroImage.getName.getValue);%Name is equivalent to the position folder name
-
-%Create a cell array of file annotation names
-for n=1:length(fileAnnotations)
-    faNames{n}=char(fileAnnotations(n).getFile.getName.getValue);
+% posName should be equivalent to the position folder name
+posName = char(cTimelapse.omeroImage.getName().getValue());
+% Verify that the currentPos is correct
+if ~strcmp(posName,cExperimentOmero.dirs(currentPos))
+    error('"currentPos" does not match the current cTimelapse');
 end
-
-
-
-%Need to save to temp file before updating the file in the database.
 
 %cTimelapse file
 %Before saving, replace image object with its Id and the OmeroDatabase object with the server name - avoids a non-serializable warning
-oD=cTimelapse.OmeroDatabase;
+oD = cTimelapse.OmeroDatabase;
 omeroImage=cTimelapse.omeroImage;
 cTimelapse.omeroImage=cTimelapse.omeroImage.getId.getValue;
 cTimelapse.OmeroDatabase=cTimelapse.OmeroDatabase.Server;
-fileName=[cExperimentOmero.saveFolder filesep dsName 'cTimelapse_' cExperimentOmero.rootFolder '.mat'];
+fileName=[cExperimentOmero.saveFolder filesep posName 'cTimelapse_' cExperimentOmero.rootFolder '.mat'];
+
+cT_description = 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment';
+
+% If fileAnnotation IDs have not already been set for this cTimelapse,
+% determine them before saving the object.
+if isempty(cTimelapse.fileAnnotation_id)
+    fileAnnotations = getDatasetFileAnnotations(oD.Session,cExperimentOmero.omeroDs);
+    % Make a 'dummy' update call to ensure the files have an associated 
+    % fileAnnotation:
+    cT_fA = oD.updateFile(cExperimentOmero.omeroDs,fileName,'dummy',true,...
+        'dsFiles',fileAnnotations,'description',cT_description);
+    cTimelapse.fileAnnotation_id = cT_fA.getId().getValue();
+else
+    % The ID is already known, so retrieve fileAnnotations directly:
+    cT_fA = getFileAnnotations(oD.Session,cTimelapse.fileAnnotation_id);
+end
+
+% Save cTimelapse object, then restore image and OmeroDatabase objects
 save(fileName,'cTimelapse');
-%Restore image and OmeroDatabase objects
 cTimelapse.omeroImage=omeroImage;
 cTimelapse.OmeroDatabase=oD;
-faIndex=strcmp([dsName 'cTimelapse_' cExperimentOmero.rootFolder '.mat'],faNames);
-faIndex=find(faIndex);
 
-if ~isempty(faIndex)
-    faIndex=faIndex(1);
-    disp(['Uploading file ' char(fileAnnotations(faIndex).getFile.getName.getValue)]);
-    fA = updateFileAnnotation(cExperimentOmero.OmeroDatabase.Session, fileAnnotations(faIndex), fileName);
-else%The file is not yet attached to the dataset
-    cExperimentOmero.OmeroDatabase.uploadFile(fileName, cExperimentOmero.omeroDs, 'cTimelapse file uploaded by @experimentTracking.saveTimelapseExperiment');
-end
+% Update the file on Omero:
+oD.updateFile(cExperimentOmero.omeroDs,fileName,...
+    'dsFiles',cT_fA,'description',cT_description);
 
+if saveCE, cExperimentOmero.saveExperiment; end
 
-if saveCE
-    cExperimentOmero.saveExperiment;
-end
 end

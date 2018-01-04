@@ -6,11 +6,8 @@ classdef experimentLogging<handle
     properties
         cExperiment
         
-        file_name
-        file_dir
-        
         start_time = [] % Also used to identify if a protocol is running
-        protocol_name = 'creating experiment'; % default first protocol name
+        protocol_name = 'creating experiment' % default first protocol name
         protocol_args = ''
         position = [] % Index of current position, empty if not initialised
         npos = [] % Total number of positions to iterate over
@@ -22,6 +19,9 @@ classdef experimentLogging<handle
     end
     
     properties (Dependent)
+        file_name
+        file_dir
+        
         progress_bar
         shouldLog
         use_gui
@@ -29,11 +29,12 @@ classdef experimentLogging<handle
     end
     
     properties (Transient,Access=private)
-        progress_bar_obj = [];
+        progress_bar_obj = []
         shouldLog_val
-        use_gui_val = true;
-        stop_on_error_val = true;
+        use_gui_val = true
+        stop_on_error_val = true
         file_handle = []
+        file_handle_dir = ''
     end
     
     properties (Transient)
@@ -52,12 +53,6 @@ classdef experimentLogging<handle
                 shouldLog = true;
             end
             
-            if isa (cExperiment, 'experimentTrackingOmero')
-                this.file_name = ['cExperiment_log_',cExperiment.rootFolder,'.txt'];
-            else
-                this.file_name = 'cExperiment_log_.txt';
-            end
-            
             % Save a handle to the cExperiment, since it will be used to
             % update the log file name and find the loaded timeLapse:
             this.cExperiment = cExperiment;
@@ -69,8 +64,20 @@ classdef experimentLogging<handle
                 addlistener(cExperiment,'LogMsg',@this.log_message);
             
             % Initialise the log file properties
-            this.file_dir = cExperiment.saveFolder;
             this.shouldLog = shouldLog;
+        end
+        
+        function val = get.file_name(this)
+            if isa(this.cExperiment,'experimentTrackingOmero')
+                val = ['cExperiment_log_' this.cExperiment.rootFolder '.txt'];
+            else
+                val = 'cExperiment_log_.txt';
+            end
+        end
+            
+        function val = get.file_dir(this)
+            % Always return the most up-to-date saveFolder
+            val = this.cExperiment.saveFolder;
         end
         
         function val = get.progress_bar(this)
@@ -90,13 +97,15 @@ classdef experimentLogging<handle
         
         function val = get.shouldLog(this)
             if isempty(this.shouldLog_val)
-                this.shouldLog_val = false;
+                % Unless explicitly set to false, default is true
+                this.shouldLog_val = true;
             end
             val = this.shouldLog_val;
         end
         function set.shouldLog(this,val)
             if isempty(val)
-                val = false;
+                % Unless explicitly set to false, default is true
+                val = true;
             else
                 val = logical(val(1));
             end
@@ -426,17 +435,16 @@ classdef experimentLogging<handle
         function open_logfile(this)
             if this.shouldLog
                 if isempty(this.file_handle)
-                    % Update file_dir in case it has changed:
-                    this.file_dir = this.cExperiment.saveFolder;
-                    % Open the file
+                    % Open the file and record the handle dir
+                    this.file_handle_dir = this.file_dir;
                     this.file_handle = ...
-                        fopen(fullfile(this.file_dir,this.file_name),'at');
-                elseif ~strcmp(this.file_dir,this.cExperiment.saveFolder)
+                        fopen(fullfile(this.file_handle_dir,this.file_name),'at');
+                elseif ~strcmp(this.file_handle_dir,this.file_dir)
                     % Close the old file handle
                     this.close_logfile;
-                    % Update file_dir since it has changed (and also ensure
-                    % that we never enter an infinite loop...)
-                    this.file_dir = this.cExperiment.saveFolder;
+                    % Update file_handle_dir since it has changed (and also
+                    % ensure that we never enter an infinite loop...)
+                    this.file_handle_dir = this.file_dir;
                     % Try opening the log file again
                     this.open_logfile;
                 else
