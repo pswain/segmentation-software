@@ -29,20 +29,20 @@ if sum(cell_data_index == 1)
         cell_data = full(CellResGUI.cExperiment.cellInf(plot_channel).(plot_field)(cell_data_index,:));
     end
     axes(CellResGUI.PlotHandle);
-    xInc=((1:size(cell_data,2)))*CellResGUI.TimepointSpacing;
+    xInc=((1:size(cell_data,2)) -1)*CellResGUI.TimepointSpacing;
     plot(xInc,cell_data,'-r');
     tData=cell_data;
     tData(tData==0)=[];
     yMin=min(tData);yMax=max(tData);
     try
         ylim([yMin yMax]);
-        xlim([1 max(xInc(:))]);
+        xlim([min(xInc(:)) max(xInc(:))]);
     end
     hold on
     
     timepoint_index = CellResGUI.cExperiment.timepointsToProcess == timepoint;
     
-    p = plot(timepoint*CellResGUI.TimepointSpacing,cell_data(timepoint_index),'ob');
+    p = plot((timepoint-1)*CellResGUI.TimepointSpacing,cell_data(timepoint_index),'ob');
     set(p,'MarkerFaceColor',get(p,'Color'));
     
     % mother plotting stuff

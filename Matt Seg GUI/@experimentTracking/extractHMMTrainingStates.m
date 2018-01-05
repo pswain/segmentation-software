@@ -23,8 +23,10 @@ for trapIndex=1:length(motherTraps);%(cTimelapse.extractedData(1).trapNum)
             tempTrap=cExperiment.cellInf(1).trapNum==trap;
             tempCell=cExperiment.cellInf(1).cellNum==cellL;
             daughterLoc=tempPos & tempTrap & tempCell;
-            indTrapCells{trapIndex}.rad(index,:)=cExperiment.cellInf(1).radius(daughterLoc,:);
-            index=index+1;
+            if any(daughterLoc)
+                indTrapCells{trapIndex}.rad(index,:)=cExperiment.cellInf(1).radius(daughterLoc,:);
+                index=index+1;
+            end
         end
 end
 

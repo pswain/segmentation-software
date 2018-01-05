@@ -36,37 +36,29 @@ params.birthRadiusThresh=str2double(answer{6});
 params.daughterGRateThresh=str2double(answer{7});
 
 
+poses=get(cExpGUI.posList,'Value');
 
+cExperiment = cExpGUI.cExperiment;
 
-%Call the cExperiment method to extract the budding information - populates
-%cExperiment.lineageInfo
-cExpGUI.cExperiment.extractBirthsInfo(params);
+% get mother index
+for diri=poses
+    
+    cTimelapse = cExperiment.loadCurrentTimelapse(diri);
+    cTimelapse.findMotherIndex;
+    cExperiment.cTimelapse = cTimelapse;
+    cExperiment.saveTimelapseExperiment(diri,false);
 
+    
+end
 
+% mother processing
+cExperiment.extractLineageInfo(poses,params);
+cExperiment.compileLineageInfo(poses);
+cExperiment.extractHMMTrainingStates;
+cExperiment.trainBirthHMM;
+cExperiment.classifyBirthsHMM;
 
-
-
-cExpGUI.cExperiment.extractLineageInfo(find(cExpGUI.cExperiment.posTracked),params);
-
-
-cExpGUI.cExperiment.compileLineageInfo;
-
-cExpGUI.cExperiment.extractHMMTrainingStates;
-%
-% cExperiment.trainBirthHMM;
-
-% b=load('C:\Users\mcrane2\OneDrive\timelapses\18-Apr 2014\cExperiment.mat')
-% cExperiment.lineageInfo.birthHMM.estTrans=b.cExperiment.lineageInfo.birthHMM.estTrans;
-% cExperiment.lineageInfo.birthHMM.estEmis=b.cExperiment.lineageInfo.birthHMM.estEmis;
-
-
-load('birthHMM_robin.mat')
-
-cExpGUI.cExperiment.classifyBirthsHMM(birthHMM);
-
-%Compile the data into other useful forms for plotting. The function
-%compileBirthsForPlot is in the births plotting folder in General Functions
-%and is based on an old function called extractDandruffData
-cExpGUI.cExperiment.lineageInfo.dataForPlot=compileBirthsForPlot(cExpGUI.cExperiment);
+% save experiment 
+cExperiment.saveExperiment;
 
 end

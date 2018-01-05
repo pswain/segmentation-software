@@ -9,7 +9,12 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
     % outlines to be modified) and the identify cells does the active
     % contour method. 
     % tracking of traps and cells is automatically taken care of.
-    
+    properties
+        loadCellVisionButton
+        identifyCellsButton
+        addSecondaryChannelButton
+        
+    end
     methods
         function cExpGUI = experimentTrackingSlidesGUI(make_buttons)
             % cExpGUI = experimentTrackingSlidesGUI(make_buttons)
@@ -129,7 +134,7 @@ classdef experimentTrackingSlidesGUI < experimentTrackingGUI
             cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(poses(1));
             cExpGUI.cExperiment.ActiveContourParameters.ImageTransformation.channel = cTimelapse.channelsForSegment(1);
             %cExpGUI.cExperiment.setSegmentationChannels;
-            cExpGUI.cExperiment.RunActiveContourExperimentTracking(cExpGUI.cExperiment.cCellVision,poses,1,1,true,1,false,false);
+            cExpGUI.cExperiment.RunActiveContourExperimentTracking(poses,1,1,true,1,false,false);
 
         end
         
