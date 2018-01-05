@@ -56,16 +56,11 @@ fprintf('done adding channels \n')
 
 poses = cExpGUI.posList.Value;
 
-%% load a cTimelapse
-% the cExperiment object organises cTimelapse objects - one for each
-% position. One cTimelapse is loaded here for easy access to some of its
-% properties, but it will not be saved by default.
-% 
+%% make cExperiment object accessible
 % Here we also make the cExperiment object accessible. Since it is a handle
 % object, changes to it will also affect the cExperiment object in the
 % cExpGUI.
 
-cTimelapse = cExpGUI.cExperiment.loadCurrentTimelapse(poses(1));
 cExperiment = cExpGUI.cExperiment;
 
 
@@ -94,7 +89,7 @@ cExperiment.selectTPToProcess;
 
 %% load from GUI
 % open a GUI to select a cCellVsion from anywhere
-cExpGUI.loadCellVision
+cExperiment.loadCellVisionByGUI;
 %% load standard brightfield classifier
 l1 = load('./Matt Seg GUI/cCellvisionFiles/default_cCellVision.mat');
 cExperiment.cCellVision = l1.cCellVision;
@@ -105,8 +100,8 @@ cExperiment.setSegmentationChannels;
 %% load standard DIC classifier
 l1 = load('./Matt Seg GUI/cCellvisionFiles/cCellVision_DIC_default.mat');
 cExperiment.cCellVision = l1.cCellVision;
-cExpGUI.cCellVision = l1.cCellVision;
 
+cExperiment.setSegmentationChannels;
 
 
 
@@ -143,6 +138,9 @@ cExpGUI.cExperiment.editCellVisionTrapOutline(poses(1),1)
 cExperiment.ActiveContourParameters.TrapDetection.channel = 1;
 
 %% now select traps for all positions.
+% This is still necessary even if you don't have traps but will not ask you
+% to do anything.
+%
 % The selection of the traps defines the areas in which the code will look
 % for cells, and also sets up the organisation of the cTimelapse.
 
@@ -198,6 +196,8 @@ pos = poses(1); % position to inspect
 % pick a different position to inspect (i.e. the result is saved for a
 % particular position). If you want to go back and change the thresholds,
 % inspect different timepoints etc. you do not need to run this again.
+%
+% this still needs to be run if you have no traps.
 
 cExperiment.trackTrapsInTime(pos);
 

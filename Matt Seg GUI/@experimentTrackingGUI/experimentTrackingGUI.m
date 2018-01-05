@@ -131,12 +131,15 @@ classdef experimentTrackingGUI<handle
             
             cExpGUI.createExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Create New Experiment',...
                 'Units','normalized','Position',[.025 .85 .95 .15],'Callback',@(src,event)createExperiment(cExpGUI));
-            thisPath=mfilename('fullpath');
-            k=strfind(thisPath,'Matt Seg GUI');
-            omeroIcon=imread([thisPath(1:k+12) 'OmeroIcon.jpg']);
-            cExpGUI.createFromOmeroButton = uicontrol('Parent', cExpGUI.expPanel,'Style','pushbutton','CData',omeroIcon...
-               ,'Units','normalized','Position',[.75 .87 .17 .11],'Callback',@(src,event)createFromOmero(cExpGUI),'TooltipString','Create, load, delete or archive an experiment in the Omero database');
-
+            
+            if exist('OmeroDatabase','class')==8
+                thisPath=mfilename('fullpath');
+                k=strfind(thisPath,'Matt Seg GUI');
+                omeroIcon=imread([thisPath(1:k+12) 'OmeroIcon.jpg']);
+                
+                cExpGUI.createFromOmeroButton = uicontrol('Parent', cExpGUI.expPanel,'Style','pushbutton','CData',omeroIcon...
+                    ,'Units','normalized','Position',[.75 .87 .17 .11],'Callback',@(src,event)createFromOmero(cExpGUI),'TooltipString','Create, load, delete or archive an experiment in the Omero database');
+            end
             cExpGUI.loadSavedExperimentButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load Experiment File',...
                 'Units','normalized','Position',[.025 .7 .95 .15],'Callback',@(src,event)loadSavedExperiment(cExpGUI));
 %            cExpGUI.loadCellVisionButton = uicontrol(cExpGUI.expPanel,'Style','pushbutton','String','Load CellVision Model',...
