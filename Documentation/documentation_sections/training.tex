@@ -1,0 +1,22 @@
+\section{Training a cellVision /cellMorphology Model Model for Use With DISCO}
+\label{sec:training}
+
+The DISCO software uses techniques from supervised machine learning to provide a robust automated segmentation of cell images. This means that before use the software must be trained i.e. provided with a set of images in which cells have been accurately segmented in order to learn the shape and appearance of the cell. \\
+
+There are two trained components to the DISCO software:
+\begin{description}
+	\item[cellVision Model] This object is responsible for classifying pixels in an image as either cell edge, cell interior or background. It takes images of the cells (usually a stack of brightfield of phase contrast images), performs transformations to these images to generate a set of features for each pixel and then produces a pixelwise probability of being in the three categories above.
+	\item[cellMorphologyModel] This object encodes the shape of cells, how they change shape over time and how they move in the traps. It receives a collection of curated cell outlines and consecutive timepoints and uses this to learn a probability of a certain cell shape with no reference to the images.
+\end{description}
+
+
+The cellVision model is trained using the script \texttt{CellVisionTrainingScript.m} and the cellMorphology model is trained using the \texttt{MorphologyModelTrainingScript.m}. In both cases, as with the standard processing, one steps through the well annotated cells of the script to complete the training. \\
+There main work of the training is creating the curated cExperiment (i.e. checking and manually correcting outlines of cells in a collection of images) and can take a few hours for a trained user. This is done at the top of \texttt{CellVIsionTrainingScript.m}, and the result can be used for training both the cellVision and cellMorphology model. To get a robust performance you should use images from a number of experiments as explained in the script, but it is not necessary to have more than about 30 timepoints total, so I usually take 10 timepoints (or 5 timepoint pairs if training a cellMorphology model too) from 3 experiments.\\  
+There are broadly 2 cases where one would want to train a new set of models:
+\begin{enumerate}
+	\item The software is underperforming due to changes in imaging conditions or trap design and you want to retrain an exisiting cellVision model to improve performance.
+	\item You are training an entirely new cellVision model for a new microscope/imaging modality for which you have no preexisting cellVision model.
+\end{enumerate}
+
+In both cases you need to curate a set of cell outlines, but in the first case it is sensible to use an existing cellVision model to do an automated segmentation to correct rather than starting from scratch. In the 2nd case it is often easiest to train a cellVision model on a very small curated data set (5 timepoints) first, and then use this to get an automated segmentation to correct. If you are training an entirely new cellVision model, you will need to set the software to find outlines based on an image transform rather than using the cellVision pixel classification (even if you are just clicking to add cells). How to do this is detailed in the cellVision training script.\\
+It is often not necessary to train both the cellVision and the cellMorphology model. You only need to retrain the cellMorphology model if you are changing trap design, cell type (such that the cell size changes) or magnification (such that the size in the image changes). You might retrain the cellVision model to improve performance on a new microscope or imaging modality without changing the cellMorphology model. If you are only training the cellVision model, and not the cellMorphology model, it is better not to pick timepoints as consecutive pairs (at the time of writing, this meant setting the \texttt{pick\_pairs} variable to false.)

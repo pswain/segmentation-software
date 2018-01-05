@@ -1,0 +1,6 @@
+\section{Using DISCO when there are no traps}
+\label{sec:no_traps}
+
+It should be possible to use DISCO when there are no traps present (such as slides, matec dishes or the cellasic device), but since this is rarely used in the lab it is likely to be a little buggy. \\
+To do this the procedure is the same. You \textbf{can} use a cellVision and cellMorphology model trained for cells in traps with good results (provided the imaging modality is similar), but there are one or two in the standard script that cells that shouldn't be run and one or two that should be run even though they seem nonsensical given that you have no traps, so read the comments carefully.\\
+If processing slides at single time points (i.e. not timelapses but collections of single timepoints such as for fixed cells) then there is a special GUI (\texttt{experimentTrackingSlidesGUI}) expressly for this purpose. The underlying software and procedure is the same but everything can be done via the buttons (so no need to use the script) and the GUI's are a little better suited to single slides. Note, this GUI is rarely used in the swain lab so may be a bit buggy.

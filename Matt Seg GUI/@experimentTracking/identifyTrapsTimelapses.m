@@ -66,7 +66,7 @@ try
         
         % if there are not traps and not clearing trapInfo, don't bother to
         % load and go to the next iteration of the for loop
-        if ~(cExperiment.trapsPresent || any(clearTrapInfo))
+        if ~(cExperiment.trapsPresent || any(ClearTrapInfo))
             continue
         end
         

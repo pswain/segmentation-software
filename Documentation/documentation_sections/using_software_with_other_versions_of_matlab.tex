@@ -1,0 +1,16 @@
+\section{Using DISCO with Later Versions of Matlab}
+\label{sec:other_matlabs}
+
+The core of the cell identification software uses the \href{https://github.com/cjlin1/libsvm}{libsvm} library to train and apply linear SVM for pixel classification. The mex files for this are provided, pre-compiled with the software. \\
+Unfortunately the original files that were compiled to create these mex files have been lost, and the libsvm library has moved on such that the function calls have changed. Further, later versions of matlab do not seem to necessarily be able to use mex files compiled by older versions. For this reason, matlab versions beyond 2015b will not be able to use the software without some recoding and retraining.\\
+This has not yet been undertaken, partly due to laziness and partly because recoding the training and classification is a good opportunity to take a serious look at whether some other classifier (random forest, neural networks etc.) wouldn't provide a better result. \\
+When it comes time to retrain, the two parts of the code that will have to be altered are:\\ \texttt{cellVision.classifyImage2Stage}\\
+ and the various \texttt{cellVision} methods called in \texttt{ CellVisionTrainingScript.m}:
+ \begin{itemize} 
+ \item \texttt{generateTrainingSetTimelapseCellEdge}
+ \item \texttt{trainSVMCellToOuterLinear} 
+ \item \texttt{trainSVMInnerToEdgeLinear} 
+\end{itemize}
+This is probably all best done by creating a new subclass of \texttt{cellVision}, but I leave such structural decisions to the inheritor.
+\vspace*{1cm}
+\\This obviously all goes pretty deep into the code, and as such I recommend liasing with current members of the swain lab, or the other author Matt Crane, when undertaking this.

@@ -80,8 +80,7 @@ num_timepoints = 5;
 % pick_pairs : if this is true the timepoints will be picked in consecutive
 % pairs (meaning that num_timepoints * 2 timpoints will actually get
 % selected). This is only useful if the same curated experiment will be used
-% for both the CellVision training and the shape space training (which is
-% only currently implemented for trap timelapses).
+% for both the CellVision training and the cellMorphologyModel training.
 pick_pairs = false;
 % reefine_trap_outline : setting this to true will cause the trap outlines
 % to be refined. This is done based on the
