@@ -105,7 +105,7 @@ CellPixExcludeThresh = ACParams.ActiveContour.CellPixExcludeThresh;
 TrapPresentBoolean = cTimelapse.trapsPresent;
 
 %object to provide priors for cell movement based on position and location.
-if TrapPresentBoolean
+if TrapPresentBoolean && ~isempty(cCellMorph.motion_model)
     % if traps are present use the trained trap motion object
     CrossCorrelationPriorObject = ACMotionPriorObjects.FlowInTrapTrained(cCellVision,jump_parameters,cCellMorph.motion_model);
     % more stringent jump object for checking cell score
@@ -183,6 +183,8 @@ log_det_cov_2cell_large = log(det(inverted_cov_2cell_large));
 
 threshold_radius = cCellMorph.thresh_tracked_cell_model;
 
+alpha = ACparameters.alpha;
+beta = ACparameters.beta;
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%   PRE TP-LOOP SETUP   %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -620,15 +622,27 @@ for TP = Timepoints
                         reordered_radii_1cell = reordered_radii(2,:);
                         
                         %calculate radii contribution (bayes factor of new and old cell for the found radii)
-                        if mean(PreviousTimepointRadii)<threshold_radius
-                            p_score = -(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
-                                - 0.5*log_det_cov_2cell_small - sum(reordered_radii_norm) + ...
-                                (reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)');
+                        if beta>0 && alpha >0
+                            % this if statement was included so that the
+                            % alpha and beta could be set to 0 and then any
+                            % set of opt_points could be used for training
+                            % cellMorphology model.
+                            %
+                            % multiplication by alpha and beta to ensure
+                            % that if shape constraints are slack the cell
+                            % isn't thrown away too often.
+                            if mean(PreviousTimepointRadii)<threshold_radius
+                                p_score = beta*(-(reordered_radii_norm - mu_2cell_small)*inverted_cov_2cell_small*((reordered_radii_norm - mu_2cell_small)') ...
+                                    - 0.5*log_det_cov_2cell_small - sum(reordered_radii_norm)) + ...
+                                    alpha*((reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)'));
+                            else
+                                p_score = beta*(-(reordered_radii_norm - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_norm - mu_2cell_large)')...
+                                    - 0.5*log_det_cov_2cell_large - sum(reordered_radii_norm)) + ...
+                                    alpha*((reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)'));
+                                
+                            end
                         else
-                            p_score = -(reordered_radii_norm - mu_2cell_large)*inverted_cov_2cell_large*((reordered_radii_norm - mu_2cell_large)')...
-                                - 0.5*log_det_cov_2cell_large - sum(reordered_radii_norm) + ...
-                                (reordered_radii_1cell - mu_1cell)*inverted_cov_1cell*((reordered_radii_1cell - mu_1cell)');
-                        
+                            p_score = 1;
                         end
                         
                         % intended to supress matlab warnings

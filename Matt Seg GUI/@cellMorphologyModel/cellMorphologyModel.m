@@ -116,7 +116,26 @@ classdef cellMorphologyModel <handle
             %compatibility.
             
 
-        end
+        end 
+    end
+    
+    methods(Static)
+        
+    function blank_cell_morph = makeInocuousCellMorphModel(opt_points,average_radius)
+    % function blank_cell_morph = makeInocuousCellMorphModel(opt_points,average_radius)
+    % makes a cellMorphology model that imposes almost nothing about shape.
+    % For use in training a new cellMorphologyModel with a different number
+    % of opt_points.
+    blank_cell_morph = cellMorphologyModel;
+    blank_cell_morph.mean_new_cell_model = ones(1,opt_points)*average_radius;
+    blank_cell_morph.cov_new_cell_model = diag(blank_cell_morph.mean_new_cell_model.^2);
+    blank_cell_morph.thresh_tracked_cell_model = average_radius;
+    blank_cell_morph.mean_tracked_cell_model_small = ones(1,opt_points);
+    blank_cell_morph.cov_tracked_cell_model_small = diag(blank_cell_morph.mean_tracked_cell_model_small);
+    blank_cell_morph.mean_tracked_cell_model_large = blank_cell_morph.mean_tracked_cell_model_small;
+    blank_cell_morph.cov_tracked_cell_model_large = blank_cell_morph.cov_tracked_cell_model_small;
+    end
+        
     end
     
 end

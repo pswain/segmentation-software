@@ -353,6 +353,11 @@ classdef timelapseTraps<handle
     end
     
     methods (Static)
+        
+        function help_string = helpOnActiveContourParameters
+            help_string = HelpHoldingFunctions.active_contour_parameters()
+        end
+        
         function cTimelapse = loadobj(LoadStructure)
             
             %% default loading method: DO NOT CHANGE

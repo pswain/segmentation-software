@@ -450,6 +450,14 @@ classdef experimentTracking<handle
             load(DefaultcCellVisionMatFileLocation,'cCellMorph');
         end
         
+        function ACParams = loadDefaultActiveContourParameters
+            ACParams = timelapseTraps.LoadDefaultACParams;
+        end
+        
+        function help_string = helpOnActiveContourParameters()
+            help_string = HelpHoldingFunctions.active_contour_parameters()
+        end
+        
     end
 end
 

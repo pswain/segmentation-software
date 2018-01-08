@@ -7,6 +7,23 @@
 % consecutive timepoint pairs. If you haven't done this, or you aren't sure
 % what it means, look at the CellVisionTrainingScript.m
 
+%% training a cellMorphology model with a different number of radii
+% the cell outline is determined by
+% experimentTracking.ActiveContourParameters.ACparams.opt_points.
+% if you want to use a different numebr of radii, to get a coarser or more
+% detailed outline, you will have to change this parameter and then train
+% an entirely newMorphology model, processing and curating the images with
+% this number of opt_points. To do this, use the following method to make a
+% cellMorphologyModel and set cExperiment.cCellMorph to this object, and
+% then process the whole experiment anew.
+%
+% this will also require setting the follow parameters;
+% cExperiment.ActiveContourParameters.ActiveContour.inflation_weight = 0;
+% p.CrossCorrelation.ThresholdCellProbability = 0;
+% p.CrossCorrelation.ThresholdCellScore = Inf;
+
+BlankCellMorph = cellMorphologyModel.makeInocuousCellMorphModel(opt_points,average_cell_radius);
+
 %% create cellMorphologyModel
 % like the cellVision model, this is a class to extract training data and
 % train the model.
